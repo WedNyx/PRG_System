@@ -1,3 +1,5 @@
+export type IniciativaEntry = { nome: string; valor: number }
+
 export type Database = {
   public: {
     Tables: {
@@ -29,6 +31,12 @@ export type Database = {
           codigo_convite: string
           mestre_id: string
           imagem_url: string | null
+          mapa_url: string | null
+          grid_cols: number
+          grid_rows: number
+          fog_ativo: boolean
+          fog_revelado: string[]
+          iniciativa: IniciativaEntry[]
           created_at: string
         }
         Insert: {
@@ -39,6 +47,12 @@ export type Database = {
           codigo_convite?: string
           mestre_id: string
           imagem_url?: string | null
+          mapa_url?: string | null
+          grid_cols?: number
+          grid_rows?: number
+          fog_ativo?: boolean
+          fog_revelado?: string[]
+          iniciativa?: IniciativaEntry[]
           created_at?: string
         }
         Update: {
@@ -46,6 +60,12 @@ export type Database = {
           descricao?: string | null
           sistema?: string
           imagem_url?: string | null
+          mapa_url?: string | null
+          grid_cols?: number
+          grid_rows?: number
+          fog_ativo?: boolean
+          fog_revelado?: string[]
+          iniciativa?: IniciativaEntry[]
         }
         Relationships: []
       }
@@ -72,10 +92,14 @@ export type Database = {
           player_id: string
           nome: string
           is_npc: boolean
-          dados: Record<string, unknown>
+          dados: Record<string, string | number>
           pos_x: number
           pos_y: number
           token_url: string | null
+          hp_atual: number
+          hp_max: number
+          cor: string
+          visivel: boolean
           created_at: string
           updated_at: string
         }
@@ -85,19 +109,27 @@ export type Database = {
           player_id: string
           nome: string
           is_npc?: boolean
-          dados?: Record<string, unknown>
+          dados?: Record<string, string | number>
           pos_x?: number
           pos_y?: number
           token_url?: string | null
+          hp_atual?: number
+          hp_max?: number
+          cor?: string
+          visivel?: boolean
           created_at?: string
           updated_at?: string
         }
         Update: {
           nome?: string
-          dados?: Record<string, unknown>
+          dados?: Record<string, string | number>
           pos_x?: number
           pos_y?: number
           token_url?: string | null
+          hp_atual?: number
+          hp_max?: number
+          cor?: string
+          visivel?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -110,6 +142,7 @@ export type Database = {
           expressao: string
           resultados: number[]
           total: number
+          is_secreta: boolean
           created_at: string
         }
         Insert: {
@@ -119,6 +152,7 @@ export type Database = {
           expressao: string
           resultados: number[]
           total: number
+          is_secreta?: boolean
           created_at?: string
         }
         Update: {
@@ -128,10 +162,58 @@ export type Database = {
         }
         Relationships: []
       }
+      mensagens: {
+        Row: {
+          id: string
+          campanha_id: string
+          player_id: string
+          conteudo: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          campanha_id: string
+          player_id: string
+          conteudo: string
+          created_at?: string
+        }
+        Update: {
+          conteudo?: string
+        }
+        Relationships: []
+      }
+      notas: {
+        Row: {
+          campanha_id: string
+          conteudo: string
+          updated_at: string
+        }
+        Insert: {
+          campanha_id: string
+          conteudo?: string
+          updated_at?: string
+        }
+        Update: {
+          conteudo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      entrar_com_codigo: {
+        Args: { codigo: string }
+        Returns: string
+      }
+    }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
   }
 }
+
+export type Campanha = Database['public']['Tables']['campanhas']['Row']
+export type Personagem = Database['public']['Tables']['personagens']['Row']
+export type Mensagem = Database['public']['Tables']['mensagens']['Row']
+export type Rolagem = Database['public']['Tables']['rolagens']['Row']
+export type Profile = Database['public']['Tables']['profiles']['Row']

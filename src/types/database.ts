@@ -1,4 +1,5 @@
 export type IniciativaEntry = { nome: string; valor: number }
+export type Macro = { nome: string; expressao: string }
 
 export type Database = {
   public: {
@@ -37,6 +38,7 @@ export type Database = {
           fog_ativo: boolean
           fog_revelado: string[]
           iniciativa: IniciativaEntry[]
+          iniciativa_turno: number
           created_at: string
         }
         Insert: {
@@ -53,6 +55,7 @@ export type Database = {
           fog_ativo?: boolean
           fog_revelado?: string[]
           iniciativa?: IniciativaEntry[]
+          iniciativa_turno?: number
           created_at?: string
         }
         Update: {
@@ -66,6 +69,7 @@ export type Database = {
           fog_ativo?: boolean
           fog_revelado?: string[]
           iniciativa?: IniciativaEntry[]
+          iniciativa_turno?: number
         }
         Relationships: []
       }
@@ -100,6 +104,8 @@ export type Database = {
           hp_max: number
           cor: string
           visivel: boolean
+          condicoes: string[]
+          macros: Macro[]
           created_at: string
           updated_at: string
         }
@@ -117,6 +123,8 @@ export type Database = {
           hp_max?: number
           cor?: string
           visivel?: boolean
+          condicoes?: string[]
+          macros?: Macro[]
           created_at?: string
           updated_at?: string
         }
@@ -130,6 +138,8 @@ export type Database = {
           hp_max?: number
           cor?: string
           visivel?: boolean
+          condicoes?: string[]
+          macros?: Macro[]
           updated_at?: string
         }
         Relationships: []
@@ -168,6 +178,8 @@ export type Database = {
           campanha_id: string
           player_id: string
           conteudo: string
+          tipo: string
+          destinatario_id: string | null
           created_at: string
         }
         Insert: {
@@ -175,6 +187,8 @@ export type Database = {
           campanha_id: string
           player_id: string
           conteudo: string
+          tipo?: string
+          destinatario_id?: string | null
           created_at?: string
         }
         Update: {
@@ -183,6 +197,83 @@ export type Database = {
         Relationships: []
       }
       notas: {
+        Row: {
+          campanha_id: string
+          conteudo: string
+          updated_at: string
+        }
+        Insert: {
+          campanha_id: string
+          conteudo?: string
+          updated_at?: string
+        }
+        Update: {
+          conteudo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cenas: {
+        Row: {
+          id: string
+          campanha_id: string
+          nome: string
+          mapa_url: string | null
+          grid_cols: number
+          grid_rows: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          campanha_id: string
+          nome: string
+          mapa_url?: string | null
+          grid_cols?: number
+          grid_rows?: number
+          created_at?: string
+        }
+        Update: {
+          nome?: string
+          mapa_url?: string | null
+          grid_cols?: number
+          grid_rows?: number
+        }
+        Relationships: []
+      }
+      handouts: {
+        Row: {
+          id: string
+          campanha_id: string
+          titulo: string
+          conteudo: string
+          imagem_url: string | null
+          para_todos: boolean
+          destinatarios: string[]
+          visivel: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          campanha_id: string
+          titulo: string
+          conteudo?: string
+          imagem_url?: string | null
+          para_todos?: boolean
+          destinatarios?: string[]
+          visivel?: boolean
+          created_at?: string
+        }
+        Update: {
+          titulo?: string
+          conteudo?: string
+          imagem_url?: string | null
+          para_todos?: boolean
+          destinatarios?: string[]
+          visivel?: boolean
+        }
+        Relationships: []
+      }
+      journal: {
         Row: {
           campanha_id: string
           conteudo: string
@@ -217,3 +308,5 @@ export type Personagem = Database['public']['Tables']['personagens']['Row']
 export type Mensagem = Database['public']['Tables']['mensagens']['Row']
 export type Rolagem = Database['public']['Tables']['rolagens']['Row']
 export type Profile = Database['public']['Tables']['profiles']['Row']
+export type Cena = Database['public']['Tables']['cenas']['Row']
+export type Handout = Database['public']['Tables']['handouts']['Row']

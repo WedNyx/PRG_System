@@ -3,9 +3,18 @@
 import { createClient } from '@/lib/supabase/server'
 import { rolarExpressao } from '@/lib/dice'
 
-export async function enviarMensagem(campanhaId: string, conteudo: string) {
+const TIPOS_VALIDOS = ['fala', 'ooc', 'emote', 'sussurro']
+
+export async function enviarMensagem(
+  campanhaId: string,
+  conteudo: string,
+  tipo: string = 'fala',
+  destinatarioId: string | null = null
+) {
   const texto = conteudo.trim()
   if (!texto) return { error: 'Mensagem vazia.' }
+  if (!TIPOS_VALIDOS.includes(tipo)) return { error: 'Tipo de mensagem inválido.' }
+  if (tipo === 'sussurro' && !destinatarioId) return { error: 'Sussurro precisa de destinatário.' }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -15,6 +24,8 @@ export async function enviarMensagem(campanhaId: string, conteudo: string) {
     campanha_id: campanhaId,
     player_id: user.id,
     conteudo: texto.slice(0, 2000),
+    tipo,
+    destinatario_id: tipo === 'sussurro' ? destinatarioId : null,
   })
 
   if (error) return { error: error.message }

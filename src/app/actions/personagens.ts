@@ -48,6 +48,7 @@ export async function atualizarFicha(
     hp_max?: number
     cor?: string
     token_url?: string | null
+    macros?: { nome: string; expressao: string }[]
   }
 ) {
   const supabase = await createClient()
@@ -90,5 +91,43 @@ export async function atualizarHp(personagemId: string, hpAtual: number) {
     .update({ hp_atual: hpAtual })
     .eq('id', personagemId)
   if (error) return { error: error.message }
+  return {}
+}
+
+export async function atualizarCondicoes(personagemId: string, condicoes: string[]) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('personagens')
+    .update({ condicoes })
+    .eq('id', personagemId)
+  if (error) return { error: error.message }
+  return {}
+}
+
+export async function criarNpcDoBestiario(
+  campanhaId: string,
+  monstro: { nome: string; hp: number; ca: number; cor: string; ataques: string; descricao: string }
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado' }
+
+  const { error } = await supabase.from('personagens').insert({
+    campanha_id: campanhaId,
+    player_id: user.id,
+    nome: monstro.nome,
+    is_npc: true,
+    visivel: false,
+    cor: monstro.cor,
+    hp_atual: monstro.hp,
+    hp_max: monstro.hp,
+    dados: {
+      ca: monstro.ca,
+      ataques: monstro.ataques,
+      historia: monstro.descricao,
+    },
+  })
+  if (error) return { error: error.message }
+  revalidatePath(`/campanha/${campanhaId}`)
   return {}
 }

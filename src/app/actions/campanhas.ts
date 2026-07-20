@@ -80,3 +80,107 @@ export async function salvarNotas(campanhaId: string, conteudo: string) {
   if (error) return { error: error.message }
   return {}
 }
+
+export async function atualizarTurno(campanhaId: string, turno: number) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('campanhas')
+    .update({ iniciativa_turno: turno })
+    .eq('id', campanhaId)
+  if (error) return { error: error.message }
+  return {}
+}
+
+// ── Cenas ──────────────────────────────────────────────────────
+
+export async function salvarCena(
+  campanhaId: string,
+  cena: { nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number }
+) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('cenas')
+    .insert({ campanha_id: campanhaId, ...cena })
+    .select('*')
+    .single()
+  if (error) return { error: error.message }
+  return { cena: data }
+}
+
+export async function ativarCena(campanhaId: string, cenaId: string) {
+  const supabase = await createClient()
+  const { data: cena, error } = await supabase.from('cenas').select('*').eq('id', cenaId).single()
+  if (error || !cena) return { error: error?.message ?? 'Cena não encontrada' }
+
+  const { error: upError } = await supabase
+    .from('campanhas')
+    .update({
+      mapa_url: cena.mapa_url,
+      grid_cols: cena.grid_cols,
+      grid_rows: cena.grid_rows,
+      fog_revelado: [],
+    })
+    .eq('id', campanhaId)
+  if (upError) return { error: upError.message }
+  return {}
+}
+
+export async function deletarCena(cenaId: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('cenas').delete().eq('id', cenaId)
+  if (error) return { error: error.message }
+  return {}
+}
+
+// ── Handouts ───────────────────────────────────────────────────
+
+export async function criarHandout(formData: FormData) {
+  const supabase = await createClient()
+  const campanhaId = formData.get('campanha_id') as string
+  const titulo = (formData.get('titulo') as string)?.trim()
+  const conteudo = (formData.get('conteudo') as string)?.trim() ?? ''
+  const imagemUrl = (formData.get('imagem_url') as string)?.trim() || null
+  const destinatarios = formData.getAll('destinatarios') as string[]
+  const paraTodos = destinatarios.length === 0
+
+  if (!titulo) return { error: 'O handout precisa de um título.' }
+
+  const { error } = await supabase.from('handouts').insert({
+    campanha_id: campanhaId,
+    titulo,
+    conteudo,
+    imagem_url: imagemUrl,
+    para_todos: paraTodos,
+    destinatarios,
+  })
+  if (error) return { error: error.message }
+  revalidatePath(`/campanha/${campanhaId}`)
+  return {}
+}
+
+export async function alternarHandout(handoutId: string, campanhaId: string, visivel: boolean) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('handouts').update({ visivel }).eq('id', handoutId)
+  if (error) return { error: error.message }
+  revalidatePath(`/campanha/${campanhaId}`)
+  return {}
+}
+
+export async function deletarHandout(handoutId: string, campanhaId: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('handouts').delete().eq('id', handoutId)
+  if (error) return { error: error.message }
+  revalidatePath(`/campanha/${campanhaId}`)
+  return {}
+}
+
+// ── Journal compartilhado ──────────────────────────────────────
+
+export async function salvarJournal(campanhaId: string, conteudo: string) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('journal')
+    .upsert({ campanha_id: campanhaId, conteudo, updated_at: new Date().toISOString() })
+  if (error) return { error: error.message }
+  return {}
+}

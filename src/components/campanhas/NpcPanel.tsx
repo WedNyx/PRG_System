@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { alternarVisibilidadeNpc, deletarPersonagem } from '@/app/actions/personagens'
+import { alternarVisibilidadeNpc, criarNpcDoBestiario, deletarPersonagem } from '@/app/actions/personagens'
+import { bestiario } from '@/lib/bestiario'
 import type { Personagem } from '@/types/database'
 import CriarPersonagemForm from './CriarPersonagemForm'
 
@@ -69,6 +70,52 @@ export default function NpcPanel({ campanhaId, npcs }: { campanhaId: string; npc
         </div>
       )}
       <CriarPersonagemForm campanhaId={campanhaId} isNpc={true} />
+      <BestiarioForm campanhaId={campanhaId} />
+    </div>
+  )
+}
+
+function BestiarioForm({ campanhaId }: { campanhaId: string }) {
+  const [selecionado, setSelecionado] = useState('')
+  const [adicionando, setAdicionando] = useState(false)
+
+  const monstro = bestiario.find((m) => m.id === selecionado)
+
+  async function adicionar() {
+    if (!monstro) return
+    setAdicionando(true)
+    await criarNpcDoBestiario(campanhaId, monstro)
+    setAdicionando(false)
+    setSelecionado('')
+  }
+
+  return (
+    <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3 space-y-2">
+      <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">
+        🐉 Ou adicione do bestiário:
+      </p>
+      <div className="flex gap-2">
+        <select
+          value={selecionado}
+          onChange={(e) => setSelecionado(e.target.value)}
+          className="flex-1 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
+        >
+          <option value="">Escolha uma criatura...</option>
+          {bestiario.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.nome} (HP {m.hp} · CA {m.ca})
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={adicionar}
+          disabled={!monstro || adicionando}
+          className="bg-amber-500 hover:bg-amber-400 disabled:bg-slate-800 disabled:text-slate-600 text-slate-950 font-semibold px-4 py-2 rounded-lg text-sm transition-colors shrink-0"
+        >
+          {adicionando ? '...' : '+ Invocar'}
+        </button>
+      </div>
+      {monstro && <p className="text-xs text-slate-500 italic">{monstro.descricao}</p>}
     </div>
   )
 }

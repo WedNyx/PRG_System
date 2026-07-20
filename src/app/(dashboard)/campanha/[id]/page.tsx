@@ -5,6 +5,8 @@ import { sistemaLabel } from '@/lib/fichas'
 import CriarPersonagemForm from '@/components/campanhas/CriarPersonagemForm'
 import NpcPanel from '@/components/campanhas/NpcPanel'
 import NotasMestre from '@/components/campanhas/NotasMestre'
+import HandoutsPanel from '@/components/campanhas/HandoutsPanel'
+import JournalCompartilhado from '@/components/campanhas/JournalCompartilhado'
 
 export const metadata = {
   title: 'Campanha — PRG System',
@@ -34,9 +36,15 @@ export default async function CampanhaPage({ params }: { params: Promise<{ id: s
   const npcs = personagens?.filter((p) => p.is_npc) ?? []
   const meusPersonagens = pcs.filter((p) => p.player_id === user!.id)
 
-  const { data: nota } = souMestre
-    ? await supabase.from('notas').select('conteudo').eq('campanha_id', id).maybeSingle()
-    : { data: null }
+  const [{ data: nota }, { data: handouts }, { data: journal }] = await Promise.all([
+    souMestre
+      ? supabase.from('notas').select('conteudo').eq('campanha_id', id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.from('handouts').select('*').eq('campanha_id', id).order('created_at'),
+    supabase.from('journal').select('conteudo').eq('campanha_id', id).maybeSingle(),
+  ])
+
+  const membrosLista = memberIds.map((mid) => ({ id: mid, username: nomePor.get(mid) ?? '?' }))
 
   return (
     <div className="p-8">
@@ -135,6 +143,27 @@ export default async function CampanhaPage({ params }: { params: Promise<{ id: s
             })}
           </div>
           {meusPersonagens.length === 0 && <CriarPersonagemForm campanhaId={id} isNpc={false} />}
+        </section>
+
+        {/* Handouts */}
+        <section>
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+            📜 Handouts {souMestre && '(cartas e segredos para os players)'}
+          </h2>
+          <HandoutsPanel
+            campanhaId={id}
+            handouts={handouts ?? []}
+            membros={membrosLista}
+            souMestre={souMestre}
+          />
+        </section>
+
+        {/* Journal compartilhado */}
+        <section>
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+            📖 Diário da Campanha
+          </h2>
+          <JournalCompartilhado campanhaId={id} conteudoInicial={journal?.conteudo ?? ''} />
         </section>
 
         {/* Painel do Mestre */}

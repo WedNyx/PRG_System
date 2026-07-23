@@ -1,11 +1,12 @@
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import type { Database } from '@/types/database'
+import { sistemaLabel } from '@/lib/fichas'
+import type { Campanha } from '@/types/database'
+import DashboardActions from '@/components/campanhas/DashboardActions'
 
 export const metadata = {
   title: 'Campanhas — PRG System',
 }
-
-type Campanha = Database['public']['Tables']['campanhas']['Row']
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -36,14 +37,7 @@ export default async function DashboardPage() {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold text-slate-100">Minhas Campanhas</h1>
-          <div className="flex gap-3">
-            <button className="bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:border-slate-600 px-4 py-2 rounded-lg text-sm transition-colors">
-              Entrar com código
-            </button>
-            <button className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
-              + Nova Campanha
-            </button>
-          </div>
+          <DashboardActions />
         </div>
 
         {totalCampanhas === 0 ? (
@@ -88,18 +82,12 @@ export default async function DashboardPage() {
   )
 }
 
-const sistemaLabel: Record<string, string> = {
-  dnd5e: 'D&D 5e',
-  tormenta20: 'Tormenta 20',
-  coc: 'Call of Cthulhu',
-  vtm: 'Vampire: The Masquerade',
-  pathfinder2e: 'Pathfinder 2e',
-  custom: 'Sistema Customizado',
-}
-
 function CampanhaCard({ campanha, role }: { campanha: Campanha; role: 'mestre' | 'player' }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl p-5 transition-colors cursor-pointer group">
+    <Link
+      href={`/campanha/${campanha.id}`}
+      className="block bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl p-5 transition-colors cursor-pointer group"
+    >
       <div className="flex items-start justify-between mb-3">
         <h3 className="font-semibold text-slate-100 group-hover:text-white transition-colors">
           {campanha.nome}
@@ -123,6 +111,6 @@ function CampanhaCard({ campanha, role }: { campanha: Campanha; role: 'mestre' |
           {campanha.codigo_convite}
         </span>
       </div>
-    </div>
+    </Link>
   )
 }

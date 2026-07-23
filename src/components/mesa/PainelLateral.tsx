@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
+import { MessageSquare, Swords, Send, Dices } from 'lucide-react'
 import { enviarMensagem, rolarDados } from '@/app/actions/mesa'
 import { atualizarIniciativa, atualizarTurno } from '@/app/actions/campanhas'
 import { detectarCritico } from '@/lib/dice'
@@ -86,19 +89,19 @@ export default function PainelLateral({
       <div className="flex border-b border-slate-800">
         <button
           onClick={() => setAba('chat')}
-          className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+          className={`flex-1 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
             aba === 'chat' ? 'text-amber-400 border-b-2 border-amber-400' : 'text-slate-500 hover:text-slate-300'
           }`}
         >
-          💬 Chat & Dados
+          <MessageSquare size={14} /> Chat & Dados
         </button>
         <button
           onClick={() => setAba('iniciativa')}
-          className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+          className={`flex-1 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
             aba === 'iniciativa' ? 'text-amber-400 border-b-2 border-amber-400' : 'text-slate-500 hover:text-slate-300'
           }`}
         >
-          ⚔️ Iniciativa
+          <Swords size={14} /> Iniciativa
         </button>
       </div>
 
@@ -212,7 +215,14 @@ function AbaChat({
           </p>
         )}
         {feed.map((item) => (
-          <FeedItem key={item.id} item={item} nomes={nomes} meuId={meuId} />
+          <motion.div
+            key={item.id}
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <FeedItem item={item} nomes={nomes} meuId={meuId} />
+          </motion.div>
         ))}
         <div ref={fimRef} />
       </div>
@@ -277,7 +287,7 @@ function AbaChat({
           onClick={() => expressao.trim() && rolar(expressao)}
           className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-sm transition-colors"
         >
-          🎲
+          <Dices size={16} />
         </button>
       </div>
       {souMestre && (
@@ -321,7 +331,7 @@ function AbaChat({
           type="submit"
           className="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm transition-colors"
         >
-          ➤
+          <Send size={14} />
         </button>
       </form>
     </>
@@ -406,6 +416,7 @@ function AbaIniciativa({
 }) {
   const [nome, setNome] = useState('')
   const [valor, setValor] = useState('')
+  const [listaRef] = useAutoAnimate()
 
   const ordenada = [...iniciativa].sort((a, b) => b.valor - a.valor)
   const turnoAtual = ordenada.length > 0 ? turno % ordenada.length : 0
@@ -456,7 +467,7 @@ function AbaIniciativa({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto space-y-1.5">
+      <div ref={listaRef} className="flex-1 overflow-y-auto space-y-1.5">
         {ordenada.length === 0 && (
           <p className="text-xs text-slate-600 text-center mt-8">
             Nenhuma iniciativa rolada ainda.

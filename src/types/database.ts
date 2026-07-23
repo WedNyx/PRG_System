@@ -290,6 +290,29 @@ export type Database = {
         }
         Relationships: []
       }
+      desenhos: {
+        Row: {
+          id: string
+          campanha_id: string
+          autor_id: string
+          cor: string
+          pontos: number[]
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          campanha_id: string
+          autor_id: string
+          cor?: string
+          pontos?: number[]
+          created_at?: string
+        }
+        Update: {
+          cor?: string
+          pontos?: number[]
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {
@@ -310,3 +333,4 @@ export type Rolagem = Database['public']['Tables']['rolagens']['Row']
 export type Profile = Database['public']['Tables']['profiles']['Row']
 export type Cena = Database['public']['Tables']['cenas']['Row']
 export type Handout = Database['public']['Tables']['handouts']['Row']
+export type Desenho = Database['public']['Tables']['desenhos']['Row']

@@ -53,3 +53,27 @@ export async function rolarDados(campanhaId: string, expressao: string, secreta:
   if (error) return { error: error.message }
   return { resultado }
 }
+
+export async function criarDesenho(campanhaId: string, cor: string, pontos: number[]) {
+  if (pontos.length < 4 || pontos.length > 2000) return { error: 'Traço inválido.' }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Não autenticado' }
+
+  const { error } = await supabase.from('desenhos').insert({
+    campanha_id: campanhaId,
+    autor_id: user.id,
+    cor,
+    pontos,
+  })
+  if (error) return { error: error.message }
+  return {}
+}
+
+export async function limparDesenhos(campanhaId: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('desenhos').delete().eq('campanha_id', campanhaId)
+  if (error) return { error: error.message }
+  return {}
+}

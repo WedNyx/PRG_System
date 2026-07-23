@@ -17,8 +17,14 @@ export default async function MesaPage({ params }: { params: Promise<{ id: strin
 
   const souMestre = campanha.mestre_id === user!.id
 
-  const [{ data: personagens }, { data: mensagens }, { data: rolagens }, { data: membrosRaw }, { data: cenas }] =
-    await Promise.all([
+  const [
+    { data: personagens },
+    { data: mensagens },
+    { data: rolagens },
+    { data: membrosRaw },
+    { data: cenas },
+    { data: desenhos },
+  ] = await Promise.all([
       supabase.from('personagens').select('*').eq('campanha_id', id),
       supabase
         .from('mensagens')
@@ -36,6 +42,7 @@ export default async function MesaPage({ params }: { params: Promise<{ id: strin
       souMestre
         ? supabase.from('cenas').select('*').eq('campanha_id', id).order('created_at')
         : Promise.resolve({ data: [] as Cena[] }),
+      supabase.from('desenhos').select('*').eq('campanha_id', id).order('created_at'),
     ])
 
   const memberIds = [campanha.mestre_id, ...(membrosRaw?.map((m) => m.player_id) ?? [])]
@@ -51,6 +58,7 @@ export default async function MesaPage({ params }: { params: Promise<{ id: strin
       mensagensIniciais={(mensagens ?? []).reverse()}
       rolagensIniciais={(rolagens ?? []).reverse()}
       cenasIniciais={cenas ?? []}
+      desenhosIniciais={desenhos ?? []}
       membros={perfis ?? []}
       meuId={user!.id}
       souMestre={souMestre}

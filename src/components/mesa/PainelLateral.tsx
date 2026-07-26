@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useAutoAnimate } from '@formkit/auto-animate/react'
-import { MessageSquare, Swords, Send, Dices } from 'lucide-react'
+import { MessageSquare, Swords, Send, Dices, Music } from 'lucide-react'
 import { enviarMensagem, rolarDados } from '@/app/actions/mesa'
 import { atualizarIniciativa, atualizarTurno } from '@/app/actions/campanhas'
 import { detectarCritico } from '@/lib/dice'
-import type { IniciativaEntry, Macro, Mensagem, Rolagem } from '@/types/database'
+import MusicaAmbiente from './MusicaAmbiente'
+import type { IniciativaEntry, Macro, Mensagem, MusicaMesa, Rolagem } from '@/types/database'
 
 export type ItemFeed =
   | {
@@ -64,6 +65,7 @@ export default function PainelLateral({
   feed,
   iniciativa,
   turno,
+  musica,
   nomes,
   membros,
   meuId,
@@ -75,6 +77,7 @@ export default function PainelLateral({
   feed: ItemFeed[]
   iniciativa: IniciativaEntry[]
   turno: number
+  musica: MusicaMesa | null
   nomes: Record<string, string>
   membros: Membro[]
   meuId: string
@@ -82,7 +85,7 @@ export default function PainelLateral({
   macros: Macro[]
   onRolarIniciativaTodos: () => void
 }) {
-  const [aba, setAba] = useState<'chat' | 'iniciativa'>('chat')
+  const [aba, setAba] = useState<'chat' | 'iniciativa' | 'musica'>('chat')
 
   return (
     <div className="w-80 shrink-0 bg-slate-900 border-l border-slate-800 flex flex-col h-full">
@@ -93,7 +96,7 @@ export default function PainelLateral({
             aba === 'chat' ? 'text-amber-400 border-b-2 border-amber-400' : 'text-slate-500 hover:text-slate-300'
           }`}
         >
-          <MessageSquare size={14} /> Chat & Dados
+          <MessageSquare size={14} /> Chat
         </button>
         <button
           onClick={() => setAba('iniciativa')}
@@ -102,6 +105,14 @@ export default function PainelLateral({
           }`}
         >
           <Swords size={14} /> Iniciativa
+        </button>
+        <button
+          onClick={() => setAba('musica')}
+          className={`flex-1 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+            aba === 'musica' ? 'text-amber-400 border-b-2 border-amber-400' : 'text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          <Music size={14} /> Música
         </button>
       </div>
 
@@ -115,7 +126,7 @@ export default function PainelLateral({
           souMestre={souMestre}
           macros={macros}
         />
-      ) : (
+      ) : aba === 'iniciativa' ? (
         <AbaIniciativa
           campanhaId={campanhaId}
           iniciativa={iniciativa}
@@ -123,6 +134,8 @@ export default function PainelLateral({
           souMestre={souMestre}
           onRolarTodos={onRolarIniciativaTodos}
         />
+      ) : (
+        <MusicaAmbiente campanhaId={campanhaId} musica={musica} souMestre={souMestre} />
       )}
     </div>
   )

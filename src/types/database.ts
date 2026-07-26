@@ -1,5 +1,6 @@
 export type IniciativaEntry = { nome: string; valor: number }
 export type Macro = { nome: string; expressao: string }
+export type MusicaMesa = { videoId: string; titulo: string; tocando: boolean }
 
 export type Database = {
   public: {
@@ -39,6 +40,7 @@ export type Database = {
           fog_revelado: string[]
           iniciativa: IniciativaEntry[]
           iniciativa_turno: number
+          musica_mesa: MusicaMesa | null
           created_at: string
         }
         Insert: {
@@ -56,6 +58,7 @@ export type Database = {
           fog_revelado?: string[]
           iniciativa?: IniciativaEntry[]
           iniciativa_turno?: number
+          musica_mesa?: MusicaMesa | null
           created_at?: string
         }
         Update: {
@@ -70,6 +73,7 @@ export type Database = {
           fog_revelado?: string[]
           iniciativa?: IniciativaEntry[]
           iniciativa_turno?: number
+          musica_mesa?: MusicaMesa | null
         }
         Relationships: []
       }

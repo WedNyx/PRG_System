@@ -481,6 +481,7 @@ export default function MesaClient({
           feed={feed}
           iniciativa={campanha.iniciativa}
           turno={campanha.iniciativa_turno}
+          musica={campanha.musica_mesa}
           nomes={nomes}
           membros={membros}
           meuId={meuId}

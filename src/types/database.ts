@@ -1,5 +1,6 @@
 export type IniciativaEntry = { nome: string; valor: number }
 export type Macro = { nome: string; expressao: string }
+export type MusicaMesa = { videoId: string; titulo: string; tocando: boolean }
 
 export type Database = {
   public: {
@@ -39,6 +40,7 @@ export type Database = {
           fog_revelado: string[]
           iniciativa: IniciativaEntry[]
           iniciativa_turno: number
+          musica_mesa: MusicaMesa | null
           created_at: string
         }
         Insert: {
@@ -56,6 +58,7 @@ export type Database = {
           fog_revelado?: string[]
           iniciativa?: IniciativaEntry[]
           iniciativa_turno?: number
+          musica_mesa?: MusicaMesa | null
           created_at?: string
         }
         Update: {
@@ -70,6 +73,7 @@ export type Database = {
           fog_revelado?: string[]
           iniciativa?: IniciativaEntry[]
           iniciativa_turno?: number
+          musica_mesa?: MusicaMesa | null
         }
         Relationships: []
       }
@@ -106,6 +110,7 @@ export type Database = {
           visivel: boolean
           condicoes: string[]
           macros: Macro[]
+          moldura: string | null
           created_at: string
           updated_at: string
         }
@@ -125,6 +130,7 @@ export type Database = {
           visivel?: boolean
           condicoes?: string[]
           macros?: Macro[]
+          moldura?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -140,7 +146,32 @@ export type Database = {
           visivel?: boolean
           condicoes?: string[]
           macros?: Macro[]
+          moldura?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      conquistas: {
+        Row: {
+          id: string
+          campanha_id: string
+          titulo: string
+          descricao: string
+          emoji: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          campanha_id: string
+          titulo: string
+          descricao?: string
+          emoji?: string
+          created_at?: string
+        }
+        Update: {
+          titulo?: string
+          descricao?: string
+          emoji?: string
         }
         Relationships: []
       }
@@ -334,3 +365,4 @@ export type Profile = Database['public']['Tables']['profiles']['Row']
 export type Cena = Database['public']['Tables']['cenas']['Row']
 export type Handout = Database['public']['Tables']['handouts']['Row']
 export type Desenho = Database['public']['Tables']['desenhos']['Row']
+export type Conquista = Database['public']['Tables']['conquistas']['Row']

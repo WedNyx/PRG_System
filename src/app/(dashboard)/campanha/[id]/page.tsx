@@ -7,6 +7,8 @@ import NpcPanel from '@/components/campanhas/NpcPanel'
 import NotasMestre from '@/components/campanhas/NotasMestre'
 import HandoutsPanel from '@/components/campanhas/HandoutsPanel'
 import JournalCompartilhado from '@/components/campanhas/JournalCompartilhado'
+import ConquistasPanel from '@/components/campanhas/ConquistasPanel'
+import { MolduraRing } from '@/components/ui/MolduraAvatar'
 
 export const metadata = {
   title: 'Campanha — PRG System',
@@ -36,12 +38,13 @@ export default async function CampanhaPage({ params }: { params: Promise<{ id: s
   const npcs = personagens?.filter((p) => p.is_npc) ?? []
   const meusPersonagens = pcs.filter((p) => p.player_id === user!.id)
 
-  const [{ data: nota }, { data: handouts }, { data: journal }] = await Promise.all([
+  const [{ data: nota }, { data: handouts }, { data: journal }, { data: conquistas }] = await Promise.all([
     souMestre
       ? supabase.from('notas').select('conteudo').eq('campanha_id', id).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase.from('handouts').select('*').eq('campanha_id', id).order('created_at'),
     supabase.from('journal').select('conteudo').eq('campanha_id', id).maybeSingle(),
+    supabase.from('conquistas').select('*').eq('campanha_id', id).order('created_at'),
   ])
 
   const membrosLista = memberIds.map((mid) => ({ id: mid, username: nomePor.get(mid) ?? '?' }))
@@ -118,11 +121,17 @@ export default async function CampanhaPage({ params }: { params: Promise<{ id: s
                     podeAbrir ? 'hover:border-slate-600 transition-colors' : ''
                   }`}
                 >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-slate-950 font-bold shrink-0"
-                    style={{ backgroundColor: p.cor }}
-                  >
-                    {p.nome[0]?.toUpperCase()}
+                  <div className="relative w-10 h-10 shrink-0">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-slate-950 font-bold overflow-hidden bg-cover bg-center"
+                      style={{
+                        backgroundColor: p.cor,
+                        backgroundImage: p.token_url ? `url(${p.token_url})` : undefined,
+                      }}
+                    >
+                      {!p.token_url && p.nome[0]?.toUpperCase()}
+                    </div>
+                    <MolduraRing moldura={p.moldura} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-slate-100 truncate">{p.nome}</p>
@@ -164,6 +173,14 @@ export default async function CampanhaPage({ params }: { params: Promise<{ id: s
             📖 Diário da Campanha
           </h2>
           <JournalCompartilhado campanhaId={id} conteudoInicial={journal?.conteudo ?? ''} />
+        </section>
+
+        {/* Conquistas / marcos da história */}
+        <section>
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+            🏆 Conquistas
+          </h2>
+          <ConquistasPanel campanhaId={id} conquistas={conquistas ?? []} souMestre={souMestre} />
         </section>
 
         {/* Painel do Mestre */}

@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { IniciativaEntry } from '@/types/database'
+import type { IniciativaEntry, MusicaMesa } from '@/types/database'
 
 export async function criarCampanha(formData: FormData) {
   const supabase = await createClient()
@@ -68,6 +68,13 @@ export async function atualizarFog(
 export async function atualizarIniciativa(campanhaId: string, iniciativa: IniciativaEntry[]) {
   const supabase = await createClient()
   const { error } = await supabase.from('campanhas').update({ iniciativa }).eq('id', campanhaId)
+  if (error) return { error: error.message }
+  return {}
+}
+
+export async function atualizarMusica(campanhaId: string, musica: MusicaMesa | null) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('campanhas').update({ musica_mesa: musica }).eq('id', campanhaId)
   if (error) return { error: error.message }
   return {}
 }

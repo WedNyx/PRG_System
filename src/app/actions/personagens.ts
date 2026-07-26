@@ -49,6 +49,7 @@ export async function atualizarFicha(
     cor?: string
     token_url?: string | null
     macros?: { nome: string; expressao: string }[]
+    moldura?: string | null
   }
 ) {
   const supabase = await createClient()

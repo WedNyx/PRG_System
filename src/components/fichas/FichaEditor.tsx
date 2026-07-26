@@ -5,7 +5,8 @@ import { atualizarFicha } from '@/app/actions/personagens'
 import { rolarDados } from '@/app/actions/mesa'
 import { uploadImagem } from '@/lib/upload'
 import { modificadorD20, type TemplateFicha } from '@/lib/fichas'
-import type { Macro, Personagem } from '@/types/database'
+import { MOLDURAS, MolduraRing, type MolduraId } from '@/components/ui/MolduraAvatar'
+import type { Conquista, Macro, Personagem } from '@/types/database'
 
 const CORES_TOKEN = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
 
@@ -14,17 +15,22 @@ export default function FichaEditor({
   campanhaId,
   template,
   podeEditar,
+  conquistas,
 }: {
   personagem: Personagem
   campanhaId: string
   template: TemplateFicha
   podeEditar: boolean
+  conquistas: Conquista[]
 }) {
   const [nome, setNome] = useState(personagem.nome)
   const [hpAtual, setHpAtual] = useState(personagem.hp_atual)
   const [hpMax, setHpMax] = useState(personagem.hp_max)
   const [cor, setCor] = useState(personagem.cor)
   const [tokenUrl, setTokenUrl] = useState(personagem.token_url)
+  const [moldura, setMoldura] = useState<MolduraId>(
+    MOLDURAS.some((m) => m.id === personagem.moldura) ? (personagem.moldura as MolduraId) : 'nenhuma'
+  )
   const [dados, setDados] = useState<Record<string, string | number>>(personagem.dados ?? {})
   const [macros, setMacros] = useState<Macro[]>(personagem.macros ?? [])
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -46,6 +52,7 @@ export default function FichaEditor({
       cor,
       token_url: tokenUrl,
       macros,
+      moldura: moldura === 'nenhuma' ? null : moldura,
     })
     setStatus(result?.error ? 'error' : 'saved')
     if (!result?.error) setTimeout(() => setStatus('idle'), 2000)
@@ -77,17 +84,20 @@ export default function FichaEditor({
       {/* Cabeçalho da ficha */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
         <div className="flex flex-wrap items-center gap-4">
-          <button
-            onClick={() => podeEditar && fileRef.current?.click()}
-            title={podeEditar ? 'Clique para enviar imagem do token' : undefined}
-            className="w-16 h-16 rounded-full flex items-center justify-center text-slate-950 font-bold text-2xl shrink-0 overflow-hidden bg-cover bg-center"
-            style={{
-              backgroundColor: cor,
-              backgroundImage: tokenUrl ? `url(${tokenUrl})` : undefined,
-            }}
-          >
-            {!tokenUrl && (nome[0]?.toUpperCase() ?? '?')}
-          </button>
+          <div className="relative w-16 h-16 shrink-0">
+            <button
+              onClick={() => podeEditar && fileRef.current?.click()}
+              title={podeEditar ? 'Clique para enviar imagem do token' : undefined}
+              className="w-16 h-16 rounded-full flex items-center justify-center text-slate-950 font-bold text-2xl overflow-hidden bg-cover bg-center"
+              style={{
+                backgroundColor: cor,
+                backgroundImage: tokenUrl ? `url(${tokenUrl})` : undefined,
+              }}
+            >
+              {!tokenUrl && (nome[0]?.toUpperCase() ?? '?')}
+            </button>
+            <MolduraRing moldura={moldura} />
+          </div>
           <input ref={fileRef} type="file" accept="image/*" onChange={enviarToken} className="hidden" />
           <div className="flex-1 min-w-48">
             <label className="block text-xs text-slate-500 mb-1">Nome</label>
@@ -158,7 +168,46 @@ export default function FichaEditor({
             </span>
           </div>
         )}
+
+        {/* Moldura animada do token/avatar */}
+        {podeEditar && (
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-slate-500 mr-1">Moldura:</span>
+            {MOLDURAS.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setMoldura(m.id)}
+                title={m.nome}
+                className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors flex items-center gap-1 ${
+                  moldura === m.id
+                    ? 'bg-amber-500/15 border-amber-500/50 text-amber-300'
+                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {m.emoji} {m.nome}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Conquistas / marcos da campanha */}
+      {conquistas.length > 0 && (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+          <h3 className="text-sm font-semibold text-amber-400 mb-4">🏆 Conquistas da Campanha</h3>
+          <div className="space-y-2">
+            {conquistas.map((c) => (
+              <div key={c.id} className="flex items-start gap-3 bg-slate-800/60 border border-slate-700/50 rounded-lg px-3 py-2.5">
+                <span className="text-xl shrink-0">{c.emoji}</span>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-slate-200">{c.titulo}</p>
+                  {c.descricao && <p className="text-xs text-slate-500 mt-0.5">{c.descricao}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Feedback de rolagem */}
       {ultimaRolagem && (

@@ -17,9 +17,10 @@ export default async function FichaPage({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: campanha }, { data: personagem }] = await Promise.all([
+  const [{ data: campanha }, { data: personagem }, { data: conquistas }] = await Promise.all([
     supabase.from('campanhas').select('*').eq('id', id).single(),
     supabase.from('personagens').select('*').eq('id', fichaId).single(),
+    supabase.from('conquistas').select('*').eq('campanha_id', id).order('created_at'),
   ])
 
   if (!campanha || !personagem || personagem.campanha_id !== id) notFound()
@@ -44,6 +45,7 @@ export default async function FichaPage({
           campanhaId={id}
           template={template}
           podeEditar={podeEditar}
+          conquistas={conquistas ?? []}
         />
       </div>
     </div>

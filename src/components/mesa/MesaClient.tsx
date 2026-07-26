@@ -31,6 +31,7 @@ import {
 import { criarDesenho, limparDesenhos } from '@/app/actions/mesa'
 import { uploadImagem } from '@/lib/upload'
 import { condicoesDisponiveis } from '@/lib/condicoes'
+import { MolduraRing } from '@/components/ui/MolduraAvatar'
 import type { Campanha, Cena, Desenho, Mensagem, Personagem, Rolagem } from '@/types/database'
 import MapaGrid, { type CursorRemoto, type ModoMapa, type Ping } from './MapaGrid'
 import PainelLateral, { mensagemParaItem, rolagemParaItem, type ItemFeed } from './PainelLateral'
@@ -523,14 +524,17 @@ function TokenPopover({
   return (
     <div className="absolute bottom-4 left-4 z-40 bg-slate-900/95 backdrop-blur border border-slate-700 rounded-xl p-4 w-72 shadow-2xl">
       <div className="flex items-center gap-3 mb-3">
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center text-slate-950 font-bold shrink-0 overflow-hidden bg-cover bg-center"
-          style={{
-            backgroundColor: personagem.cor,
-            backgroundImage: personagem.token_url ? `url(${personagem.token_url})` : undefined,
-          }}
-        >
-          {!personagem.token_url && personagem.nome[0]?.toUpperCase()}
+        <div className="relative w-10 h-10 shrink-0">
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center text-slate-950 font-bold overflow-hidden bg-cover bg-center"
+            style={{
+              backgroundColor: personagem.cor,
+              backgroundImage: personagem.token_url ? `url(${personagem.token_url})` : undefined,
+            }}
+          >
+            {!personagem.token_url && personagem.nome[0]?.toUpperCase()}
+          </div>
+          <MolduraRing moldura={personagem.moldura} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-slate-100 truncate text-sm">

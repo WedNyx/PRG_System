@@ -39,7 +39,7 @@ export default async function FichaPage({
         >
           ← {campanha.nome}
         </Link>
-        <FichaEditor
+        <Link href={`/ficha-v8?campanha=\${encodeURIComponent(id)}&personagem=\${encodeURIComponent(fichaId)}`} className="mt-5 inline-flex rounded-xl border border-violet-400/40 bg-violet-950/50 px-4 py-3 text-violet-200 hover:bg-violet-900/50">🌙 Abrir ficha Lunethernnyis V8 (modo local)</Link>\n        <p className="mt-2 text-xs text-slate-400">A V8 salva no navegador e permite exportar JSON. Ainda não sincroniza automaticamente com a ficha online.</p>\n        <FichaEditor
           personagem={personagem}
           campanhaId={id}
           template={template}

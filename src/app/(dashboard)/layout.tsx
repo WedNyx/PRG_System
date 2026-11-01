@@ -9,15 +9,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username')
+    .select('username, avatar_url')
     .eq('id', user!.id)
     .single()
+
+  const avatarUrl = profile?.avatar_url
+    ? supabase.storage.from('profile-avatars').getPublicUrl(profile.avatar_url).data.publicUrl
+    : null
 
   const initial = profile?.username?.[0]?.toUpperCase() ?? '?'
 
   return (
     <div className="min-h-screen bg-slate-950 flex">
-      <LembrarPerfil apelido={profile?.username ?? 'Aventureiro'} />
+      <LembrarPerfil apelido={profile?.username ?? 'Aventureiro'} avatar={avatarUrl} />
       <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
         <div className="p-6 border-b border-slate-800">
           <h1 className="text-xl font-bold text-amber-400">PRG System</h1>
@@ -32,12 +36,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <span className="text-base">🏰</span>
             Campanhas
           </Link>
+          <Link href="/perfil" className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors text-sm">
+            <span className="text-base">🌙</span>
+            Meu perfil
+          </Link>
         </nav>
 
         <div className="p-4 border-t border-slate-800">
           <div className="flex items-center gap-3 px-3 py-2 mb-1">
             <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-slate-950 font-bold text-sm shrink-0">
-              {initial}
+              {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover" /> : initial}
             </div>
             <div className="min-w-0">
               <p className="text-sm font-medium text-slate-200 truncate">

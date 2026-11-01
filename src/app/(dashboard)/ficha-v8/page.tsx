@@ -1,12 +1,12 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { Suspense, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Dados3D, { type Dados3DHandle } from '@/components/mesa/Dados3D'
 import { rolarExpressao } from '@/lib/dice'
 
-export default function FichaV8Page() {
+function FichaV8Conteudo() {
   const search = useSearchParams()
   const personagem = search.get('personagem') ?? ''
   const campanha = search.get('campanha') ?? ''
@@ -53,4 +53,8 @@ export default function FichaV8Page() {
         sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" />
     </div>
   )
+}
+
+export default function FichaV8Page() {
+  return <Suspense fallback={<p className="p-6 text-violet-200">Carregando ficha V8...</p>}><FichaV8Conteudo /></Suspense>
 }

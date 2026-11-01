@@ -11,8 +11,8 @@ describe('validarApelidoAventureiro', () => {
   it('recusa apelido longo', () => {
     expect(validarApelidoAventureiro('a'.repeat(41)).ok).toBe(false)
   })
-  it('recusa controles', () => {
-    expect(validarApelidoAventureiro('Wed\nNyx').ok).toBe(false)
+  it('recusa caracteres de controle', () => {
+    expect(validarApelidoAventureiro('Wed\u0000Nyx').ok).toBe(false)
   })
   it('recusa valores que não são texto', () => {
     expect(validarApelidoAventureiro(null).ok).toBe(false)

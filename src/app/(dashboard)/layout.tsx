@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import LembrarPerfil from '@/components/auth/LembrarPerfil'
 import { createClient } from '@/lib/supabase/server'
 import { logout } from '@/app/actions/auth'
 
@@ -16,6 +17,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="min-h-screen bg-slate-950 flex">
+      <LembrarPerfil apelido={profile?.username ?? 'Aventureiro'} />
       <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
         <div className="p-6 border-b border-slate-800">
           <h1 className="text-xl font-bold text-amber-400">PRG System</h1>

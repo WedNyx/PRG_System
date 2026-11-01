@@ -22,7 +22,9 @@ export async function atualizarAvatar(caminho: string) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return { error: 'Entre na sua conta para editar o perfil.' }
   // Aceita apenas objetos no diretório do próprio usuário.
-  if (!new RegExp('^' + user.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '/avatar-[a-z0-9-]+\\.(png|jpg|webp)$').test(caminho)) {
+  const prefixo = user.id + '/'
+  const nomeArquivo = caminho.startsWith(prefixo) ? caminho.slice(prefixo.length) : ''
+  if (!/^avatar-[a-z0-9-]+\.(png|jpg|webp)$/.test(nomeArquivo)) {
     return { error: 'Imagem inválida.' }
   }
   const { error } = await supabase.from('profiles').update({ avatar_url: caminho }).eq('id', user.id)

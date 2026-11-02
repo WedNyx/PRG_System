@@ -37,6 +37,7 @@ function lerImagem(file: File): Promise<string> {
 
 export default function PortalAventureiros() {
   const [perfis, setPerfis] = useState<Perfil[]>([])
+  const [versao, setVersao] = useState<{ version: string; revision: string | null } | null>(null)
   const [modal, setModal] = useState<'criar' | 'editar' | null>(null)
   const [gerenciando, setGerenciando] = useState(false)
   const [editandoId, setEditandoId] = useState<string | null>(null)
@@ -53,6 +54,14 @@ export default function PortalAventureiros() {
   const nameRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { setPerfis(lerPerfis()) }, [])
+  useEffect(() => {
+    let active = true
+    fetch('/api/version', { cache: 'no-store' })
+      .then(response => { if (!response.ok) throw new Error('Versão indisponível'); return response.json() })
+      .then(data => { if (active && typeof data.version === 'string') setVersao(data) })
+      .catch(() => {})
+    return () => { active = false }
+  }, [])
   useEffect(() => {
     if (modal) nameRef.current?.focus()
   }, [modal])
@@ -216,6 +225,14 @@ export default function PortalAventureiros() {
             {gerenciando ? '✓ Concluir edição' : '✎ Gerenciar perfis'}
           </button>
         </section>
+        <div className="flex flex-wrap items-center justify-center gap-3 pb-3 text-xs text-[#b4aeca]">
+          <span title="Versão publicada nesta instalação">PRG System v{versao?.version ?? '0.1.0'}</span>
+          {versao?.revision && <span title="Identificador da implantação">Build {versao.revision}</span>}
+          <button type="button" onClick={() => window.location.reload()}
+            className="rounded-md border border-[#62527e] px-2 py-1 text-[#b99bff] hover:bg-[#34294f]">
+            ↻ Verificar atualização
+          </button>
+        </div>
         <p className="mx-auto max-w-2xl pb-6 text-center text-xs text-[#b4aeca]">
           Versão de testes: os perfis e fotos ficam apenas neste navegador. A Ficha V8 também usa armazenamento local.
           Não há sincronização entre dispositivos; guarde backups das suas fichas.

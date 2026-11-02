@@ -24,34 +24,14 @@ function lerPerfis(): Perfil[] {
   } catch { return [] }
 }
 
-function reduzirImagem(file: File): Promise<string> {
+function lerImagem(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      reject(new Error('Escolha uma imagem JPG, PNG ou WebP.'))
-      return
-    }
-    if (file.size > MAX_AVATAR_BYTES) {
-      reject(new Error('A imagem deve ter no máximo 5 MB.'))
-      return
-    }
-    const url = URL.createObjectURL(file)
-    const image = new Image()
-    image.onload = () => {
-      try {
-        const canvas = document.createElement('canvas')
-        const size = 320
-        canvas.width = size
-        canvas.height = size
-        const context = canvas.getContext('2d')
-        if (!context) throw new Error('Não foi possível processar a imagem.')
-        const side = Math.min(image.width, image.height)
-        context.drawImage(image, (image.width - side) / 2, (image.height - side) / 2, side, side, 0, 0, size, size)
-        resolve(canvas.toDataURL('image/jpeg', 0.78))
-      } catch { reject(new Error('Não foi possível processar a imagem.')) }
-      finally { URL.revokeObjectURL(url) }
-    }
-    image.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Imagem inválida.')) }
-    image.src = url
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return reject(new Error('Use JPG, PNG ou WebP.'))
+    if (file.size > MAX_AVATAR_BYTES) return reject(new Error('Limite de 5 MB por foto.'))
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(new Error('Erro ao ler a imagem.'))
+    reader.readAsDataURL(file)
   })
 }
 
@@ -64,6 +44,11 @@ export default function PortalAventureiros() {
   const [avatar, setAvatar] = useState<string | undefined>()
   const [erro, setErro] = useState('')
   const [processando, setProcessando] = useState(false)
+  const [crop, setCrop] = useState<string | null>(null)
+  const [cropSize, setCropSize] = useState({ width: 1, height: 1 })
+  const [zoom, setZoom] = useState(1)
+  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const dragging = useRef<{ x: number; y: number; px: number; py: number } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const nameRef = useRef<HTMLInputElement>(null)
 
@@ -83,7 +68,39 @@ export default function PortalAventureiros() {
     }
   }
 
+  function constrain(x: number, y: number, z = zoom) {
+    const scale = Math.max(256 / cropSize.width, 256 / cropSize.height) * z
+    const maxX = Math.max(0, (cropSize.width * scale - 256) / 2)
+    const maxY = Math.max(0, (cropSize.height * scale - 256) / 2)
+    return { x: Math.max(-maxX, Math.min(maxX, x)), y: Math.max(-maxY, Math.min(maxY, y)) }
+  }
+
+  async function confirmarFoto() {
+    if (!crop) return
+    setProcessando(true)
+    try {
+      const image = new Image()
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve()
+        image.onerror = () => reject(new Error('Imagem inválida'))
+        image.src = crop
+      })
+      const canvas = document.createElement('canvas')
+      canvas.width = canvas.height = 320
+      const context = canvas.getContext('2d')
+      if (!context) throw new Error('Erro ao preparar a foto.')
+      const scale = Math.max(320 / image.width, 320 / image.height) * zoom
+      const p = constrain(position.x, position.y)
+      context.drawImage(image, (320 - image.width * scale) / 2 + p.x * 1.25,
+        (320 - image.height * scale) / 2 + p.y * 1.25, image.width * scale, image.height * scale)
+      setAvatar(canvas.toDataURL('image/jpeg', 0.78))
+      setCrop(null)
+    } catch { setErro('Não foi possível recortar a imagem.') }
+    finally { setProcessando(false) }
+  }
+
   function fechar() {
+    setCrop(null)
     setModal(null)
     setEditandoId(null)
     setErro('')
@@ -113,13 +130,26 @@ export default function PortalAventureiros() {
     if (!file) return
     setProcessando(true)
     setErro('')
-    try { setAvatar(await reduzirImagem(file)) }
+    try {
+      const src = await lerImagem(file)
+      const img = new Image()
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve()
+        img.onerror = () => reject(new Error('Imagem inválida.'))
+        img.src = src
+      })
+      setCropSize({ width: img.naturalWidth, height: img.naturalHeight })
+      setPosition({ x: 0, y: 0 })
+      setZoom(1)
+      setCrop(src)
+    }
     catch (error) { setErro(error instanceof Error ? error.message : 'Falha ao carregar a foto.') }
     finally { setProcessando(false) }
   }
 
   function salvar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (crop) { setErro('Confirme o recorte da foto primeiro.'); return }
     const validacao = validarApelidoAventureiro(apelido)
     if (!validacao.ok) { setErro(validacao.erro); return }
     if (perfis.some(p => p.id !== editandoId && p.apelido.toLocaleLowerCase('pt-BR') === validacao.apelido.toLocaleLowerCase('pt-BR'))) {
@@ -216,7 +246,44 @@ export default function PortalAventureiros() {
                   </button>
                   {avatar && <button type="button" onClick={() => setAvatar(undefined)} className="rounded-lg border border-[#62527e] px-3 py-2 text-sm">Remover foto</button>}
                 </div>
-                <p className="text-center text-xs text-[#b4aeca]">JPG, PNG ou WebP até 5 MB. Recorte quadrado central automático.</p>
+                <p className="text-center text-xs text-[#b4aeca]">JPG, PNG ou WebP até 5 MB.</p>
+                {crop && (
+                  <div className="w-full rounded-xl border border-[#62527e] bg-[#100f20] p-3">
+                    <p className="mb-3 text-center text-sm text-[#ed9cd8]">Arraste e ajuste sua foto</p>
+                    <div className="relative mx-auto h-64 w-64 touch-none overflow-hidden rounded-xl border-2 border-[#b99bff]"
+                      onPointerDown={e => {
+                        e.currentTarget.setPointerCapture(e.pointerId)
+                        dragging.current = { x: e.clientX, y: e.clientY, px: position.x, py: position.y }
+                      }}
+                      onPointerMove={e => {
+                        const d = dragging.current
+                        if (d) setPosition(constrain(d.px + e.clientX - d.x, d.py + e.clientY - d.y))
+                      }}
+                      onPointerUp={() => { dragging.current = null }}
+                      onPointerCancel={() => { dragging.current = null }}>
+                      <img src={crop} alt="Prévia do recorte" draggable={false}
+                        className="pointer-events-none absolute max-w-none select-none"
+                        style={{
+                          width: cropSize.width * Math.max(256 / cropSize.width, 256 / cropSize.height) * zoom,
+                          height: cropSize.height * Math.max(256 / cropSize.width, 256 / cropSize.height) * zoom,
+                          left: '50%', top: '50%',
+                          transform: 'translate(calc(-50% + ' + position.x + 'px), calc(-50% + ' + position.y + 'px))'
+                        }} />
+                    </div>
+                    <label htmlFor="avatar-zoom" className="mt-3 block text-sm text-[#b4aeca]">Zoom: {Math.round(zoom * 100)}%</label>
+                    <input id="avatar-zoom" type="range" min="1" max="3" step="0.05" value={zoom}
+                      onChange={e => {
+                        const next = Number(e.target.value)
+                        setZoom(next)
+                        setPosition(constrain(position.x, position.y, next))
+                      }} className="w-full accent-[#b99bff]" />
+                    <div className="mt-3 flex gap-2">
+                      <button type="button" onClick={() => setCrop(null)} className="flex-1 rounded-lg border border-[#62527e] p-2 text-sm">Cancelar</button>
+                      <button type="button" onClick={confirmarFoto} disabled={processando}
+                        className="flex-1 rounded-lg bg-[#7654bb] p-2 text-sm font-semibold">Usar esta foto</button>
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <label htmlFor="apelido" className="mb-2 block text-sm text-[#b4aeca]">Apelido do aventureiro</label>
@@ -227,7 +294,7 @@ export default function PortalAventureiros() {
               {erro && <p role="alert" className="rounded-lg border border-red-500/40 p-3 text-sm text-red-200">{erro}</p>}
               <div className="flex gap-2">
                 <button type="button" onClick={fechar} className="flex-1 rounded-lg border border-[#62527e] px-3 py-3">Cancelar</button>
-                <button type="submit" disabled={processando} className="flex-1 rounded-lg border border-[#a689e5] bg-[#7654bb] px-3 py-3 font-semibold hover:bg-[#8a67ce] disabled:opacity-50">
+                <button type="submit" disabled={processando || Boolean(crop)} className="flex-1 rounded-lg border border-[#a689e5] bg-[#7654bb] px-3 py-3 font-semibold hover:bg-[#8a67ce] disabled:opacity-50">
                   {modal === 'criar' ? 'Criar perfil' : 'Salvar alterações'}
                 </button>
               </div>

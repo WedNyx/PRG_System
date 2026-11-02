@@ -1,9 +1,5 @@
-import EntradaAventureiro from '@/components/auth/EntradaAventureiro'
-
-export const metadata = {
-  title: 'Portal de Aventuras — PRG System',
-}
+import { redirect } from 'next/navigation'
 
 export default function LoginPage() {
-  return <EntradaAventureiro />
+  redirect('/portal')
 }

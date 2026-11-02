@@ -31,7 +31,7 @@ function FichaV8Conteudo() {
     <div className="min-h-screen bg-[#0d0c19] text-[#f4f0ff]">
       {animacao && <Dados3D ref={dadosRef} somAtivo={false} />}
       <header className="flex flex-wrap items-center gap-3 border-b border-[#373251] bg-[#19172c] px-4 py-3">
-        <Link href={campanha ? '/campanha/' + encodeURIComponent(campanha) : '/dashboard'} className="text-sm text-[#b99bff] hover:underline">← Voltar à campanha</Link>
+        <Link href={campanha ? '/campanha/' + encodeURIComponent(campanha) : '/portal'} className="text-sm text-[#b99bff] hover:underline">← Voltar ao portal</Link>
         <h1 className="font-bold text-lg">🌙 Lunethernnyis · Ficha V8</h1>
         <span className="text-xs text-[#b4aeca]">Salvamento neste navegador · sem sincronização automática</span>
       </header>

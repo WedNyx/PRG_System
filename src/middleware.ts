@@ -3,8 +3,13 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
-  // Portal experimental e Ficha V8 local: não dão acesso a dados privados do Supabase.
-  if (pathname === '/portal' || pathname === '/ficha-v8') {
+  // Perfis experimentais e Ficha V8 local não dependem de autenticação.
+  // Campanhas e dados privados continuam protegidos pela autenticação anterior.
+  if (pathname === '/' || pathname === '/portal' ||
+      pathname === '/login' || pathname === '/register' || pathname === '/ficha-v8') {
+    if (pathname === '/' || pathname === '/login' || pathname === '/register') {
+      return NextResponse.redirect(new URL('/portal', request.url))
+    }
     return NextResponse.next({ request })
   }
 
@@ -24,13 +29,8 @@ export async function middleware(request: NextRequest) {
       },
     }
   )
-
   const { data: { user } } = await supabase.auth.getUser()
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register')
-  if (!user && !isAuthPage) return NextResponse.redirect(new URL('/login', request.url))
-  if (user && isAuthPage) return NextResponse.redirect(new URL('/dashboard', request.url))
-  if (pathname === '/' && user) return NextResponse.redirect(new URL('/dashboard', request.url))
-  if (pathname === '/' && !user) return NextResponse.redirect(new URL('/login', request.url))
+  if (!user) return NextResponse.redirect(new URL('/portal', request.url))
   return supabaseResponse
 }
 

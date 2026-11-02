@@ -72,9 +72,6 @@ export default function PortalAventureiros() {
             Criar perfil
           </button>
         </form>
-        <p className="text-center mt-8 text-sm text-violet-300">
-          <Link href="/login" className="underline">Acesso antigo por e-mail (temporário)</Link>
-        </p>
       </div>
     </main>
   )

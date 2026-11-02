@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   // Perfis experimentais e Ficha V8 local não dependem de autenticação.
   // Campanhas e dados privados continuam protegidos pela autenticação anterior.
   if (pathname === '/' || pathname === '/portal' ||
-      pathname === '/login' || pathname === '/register' || pathname === '/ficha-v8') {
+      pathname === '/login' || pathname === '/register' || pathname === '/ficha-v8' || pathname === '/ficha-v8.html') {
     if (pathname === '/' || pathname === '/login' || pathname === '/register') {
       return NextResponse.redirect(new URL('/portal', request.url))
     }

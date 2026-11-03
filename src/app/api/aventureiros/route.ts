@@ -4,7 +4,9 @@ import { validarApelidoAventureiro } from '@/lib/auth/aventureiro'
 export const dynamic = 'force-dynamic'
 const enabled = () => process.env.PRG_SHARED_PROFILES === 'true'
 const url = () => process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-const key = () => process.env.SUPABASE_SERVICE_ROLE_KEY
+// Compatibilidade com a variável secreta já usada no projeto.
+// Nunca disponibilizar esta chave em variáveis NEXT_PUBLIC_ ou no cliente.
+const key = () => process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
 const headers = () => ({ apikey: key()!, Authorization: 'Bearer ' + key()!, 'Content-Type': 'application/json' })
 const unavailable = () => NextResponse.json({ erro: 'Catálogo compartilhado ainda não configurado.' }, { status: 503 })
 

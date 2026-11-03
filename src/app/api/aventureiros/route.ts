@@ -25,7 +25,11 @@ export async function POST(request: NextRequest) {
   if (!origin || origin !== request.nextUrl.origin) return NextResponse.json({ erro: 'Origem não permitida.' }, { status: 403 })
   if (Number(request.headers.get('content-length') || 0) > 160_000) return NextResponse.json({ erro: 'Foto muito grande.' }, { status: 413 })
   let payload: unknown
-  try { payload = await request.json() } catch { return NextResponse.json({ erro: 'Dados inválidos.' }, { status: 400 }) }
+  try {
+    const raw = await request.text()
+    if (raw.length > 160_000) return NextResponse.json({ erro: 'Foto muito grande.' }, { status: 413 })
+    payload = JSON.parse(raw)
+  } catch { return NextResponse.json({ erro: 'Dados inválidos.' }, { status: 400 }) }
   if (!payload || typeof payload !== 'object') return NextResponse.json({ erro: 'Dados inválidos.' }, { status: 400 })
   const body = payload as Record<string, unknown>
   const valid = validarApelidoAventureiro(body.apelido)

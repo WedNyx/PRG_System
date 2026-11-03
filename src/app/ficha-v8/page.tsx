@@ -28,7 +28,7 @@ function FichaV8Conteudo() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d0c19] text-[#f4f0ff]">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#0d0c19] text-[#f4f0ff]">
       {animacao && <Dados3D ref={dadosRef} somAtivo={false} />}
       <header className="flex flex-wrap items-center gap-3 border-b border-[#373251] bg-[#19172c] px-4 py-3">
         <Link href={campanha ? '/campanha/' + encodeURIComponent(campanha) : '/portal'} className="text-sm text-[#b99bff] hover:underline">← Voltar ao portal</Link>
@@ -49,7 +49,7 @@ function FichaV8Conteudo() {
       <p className="px-4 pt-2 text-xs text-[#b4aeca]">
         As rolagens são locais e não são enviadas ao chat. Use “Salvar minha ficha” na V8 para baixar seu backup JSON.
       </p>
-      <iframe title="Ficha de personagem V8" src={src} className="w-full border-0 min-h-[1100px] h-[calc(100vh-160px)]"
+      <iframe title="Ficha de personagem V8" src={src} className="block w-full min-h-0 flex-1 border-0"
         sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" />
     </div>
   )

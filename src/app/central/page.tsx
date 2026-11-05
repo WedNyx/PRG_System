@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
+import FichasIndependentes from '@/components/central/FichasIndependentes'
 import { BookOpen, Castle, ChevronRight, Dice5, House, Menu, MoonStar, ScrollText, UserRound, X } from 'lucide-react'
 
 type Perfil = { id: string; apelido: string; avatar?: string }
@@ -110,9 +111,7 @@ function CentralContent() {
             <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Tipos de ficha">
               {(['independentes', 'campanhas'] as const).map(tab => <button type="button" key={tab} role="tab" aria-selected={fichasTab === tab} onClick={() => setFichasTab(tab)} className={`rounded-xl px-5 py-3 text-sm font-semibold ${fichasTab === tab ? 'bg-[#7652ac] text-white' : 'border border-[#55456e] text-[#cfc0df]'}`}>{tab === 'independentes' ? 'Independentes' : 'Campanhas'}</button>)}
             </div>
-            <section className="mt-5 rounded-2xl border border-[#55456e] bg-[#201a32] p-6">
-              {fichasTab === 'independentes' ? <><h2 className="text-xl font-semibold">Personagens independentes</h2><p className="mt-2 text-sm text-[#c4b6d4]">Continue usando a Ficha V8 existente. Nesta etapa, os dados dela permanecem no armazenamento local do navegador.</p><Link href={sheetUrl} className="mt-5 inline-flex rounded-xl bg-[#7652ac] px-5 py-3 text-sm font-semibold hover:bg-[#8b68c4]">Abrir Ficha V8 <ChevronRight size={18} className="ml-2" /></Link></> : <><h2 className="text-xl font-semibold">Fichas de campanhas</h2><p className="mt-2 text-sm text-[#c4b6d4]">Quando o módulo de campanhas estiver conectado, suas fichas atribuídas aparecerão aqui, separadas por aventura.</p></>}
-            </section>
+            {fichasTab === 'independentes' ? <FichasIndependentes aventureiroId={perfil.id} /> : <section className="mt-5 rounded-2xl border border-[#55456e] bg-[#201a32] p-6"><h2 className="text-xl font-semibold">Fichas de campanhas</h2><p className="mt-2 text-sm text-[#c4b6d4]">Quando o módulo de campanhas estiver conectado, suas fichas atribuídas aparecerão aqui, separadas por aventura.</p></section>}
           </>}
           {section === 'campanhas' && <>
             <h1 className="text-3xl font-bold">Campanhas</h1><p className="mt-2 text-[#bfb2cf]">Jogue com seus amigos ou prepare uma nova história.</p>

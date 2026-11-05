@@ -7,6 +7,7 @@ import { validarApelidoAventureiro } from '@/lib/auth/aventureiro'
 type Perfil = { id: string; apelido: string; avatar?: string }
 const KEY = 'prg-aventureiros-demo-v1'
 const SELECTED_KEY = 'prg-aventureiro-selecionado-v1'
+const CLOUD_ENABLED = process.env.NEXT_PUBLIC_PRG_SHARED_PROFILES === 'true'
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024
 
 function lerPerfis(): Perfil[] {
@@ -53,7 +54,16 @@ export default function PortalAventureiros() {
   const fileRef = useRef<HTMLInputElement>(null)
   const nameRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { setPerfis(lerPerfis()) }, [])
+  useEffect(() => {
+    setPerfis(lerPerfis())
+    if (!CLOUD_ENABLED) return
+    let active = true
+    fetch('/api/aventureiros', { cache: 'no-store' })
+      .then(async response => { if (!response.ok) throw new Error('Nuvem indisponível'); return response.json() })
+      .then(data => { if (active && Array.isArray(data.perfis)) setPerfis(data.perfis) })
+      .catch(() => { if (active) setErro('Nuvem indisponível. Seus perfis locais continuam preservados.') })
+    return () => { active = false }
+  }, [])
   useEffect(() => {
     let active = true
     fetch('/api/version', { cache: 'no-store' })
@@ -126,6 +136,7 @@ export default function PortalAventureiros() {
   }
 
   function abrirEdicao(perfil: Perfil) {
+    if (CLOUD_ENABLED) { setErro('A edição na nuvem ainda não está disponível.'); return }
     setEditandoId(perfil.id)
     setApelido(perfil.apelido)
     setAvatar(perfil.avatar)
@@ -156,7 +167,7 @@ export default function PortalAventureiros() {
     finally { setProcessando(false) }
   }
 
-  function salvar(event: FormEvent<HTMLFormElement>) {
+  async function salvar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (crop) { setErro('Confirme o recorte da foto primeiro.'); return }
     const validacao = validarApelidoAventureiro(apelido)
@@ -165,7 +176,23 @@ export default function PortalAventureiros() {
       setErro('Já existe um aventureiro com esse apelido.')
       return
     }
-    if (modal === 'criar' && perfis.length >= 50) { setErro('Limite de 50 perfis neste navegador.'); return }
+    if (!CLOUD_ENABLED && modal === 'criar' && perfis.length >= 50) { setErro('Limite de 50 perfis neste navegador.'); return }
+    if (CLOUD_ENABLED) {
+      if (modal !== 'criar') { setErro('A edição de perfis da nuvem será liberada após definirmos a proteção.'); return }
+      setProcessando(true)
+      try {
+        const response = await fetch('/api/aventureiros', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apelido: validacao.apelido, avatar }),
+        })
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.erro || 'Não foi possível salvar na nuvem.')
+        setPerfis(current => [...current, result.perfil])
+        fechar()
+      } catch (error) { setErro(error instanceof Error ? error.message : 'Falha ao salvar.') }
+      finally { setProcessando(false) }
+      return
+    }
     const novos = modal === 'editar'
       ? perfis.map(p => p.id === editandoId ? { ...p, apelido: validacao.apelido, avatar } : p)
       : [...perfis, { id: crypto.randomUUID(), apelido: validacao.apelido, avatar }]
@@ -173,6 +200,7 @@ export default function PortalAventureiros() {
   }
 
   function excluir() {
+    if (CLOUD_ENABLED) { setErro('Exclusão na nuvem indisponível nesta etapa.'); return }
     if (!editandoId) return
     if (!window.confirm('Excluir este perfil deste navegador? Essa ação não apaga a Ficha V8.')) return
     const novos = perfis.filter(p => p.id !== editandoId)
@@ -200,7 +228,7 @@ export default function PortalAventureiros() {
           <div aria-label="Escolha um aventureiro" className="mt-10 flex w-full max-w-4xl flex-wrap justify-center gap-5 sm:gap-8">
             {perfis.map(perfil => (
               <div key={perfil.id} className="group relative flex w-28 flex-col items-center gap-3 sm:w-36">
-                {gerenciando && (
+                {gerenciando && !CLOUD_ENABLED && (
                   <button onClick={() => abrirEdicao(perfil)} aria-label={'Editar perfil ' + perfil.apelido}
                     className="absolute -right-1 -top-2 z-10 rounded-full border border-[#b99bff] bg-[#34294f] px-2 py-1 text-sm shadow-lg">✎</button>
                 )}
@@ -216,7 +244,7 @@ export default function PortalAventureiros() {
             ))}
             {perfis.length === 0 && (
               <div className="rounded-xl border border-dashed border-[#51466a] px-8 py-10 text-center text-[#b4aeca]">
-                Ainda não há aventureiros neste dispositivo.<br />Crie o primeiro perfil para começar!
+                {CLOUD_ENABLED ? 'Ainda não há aventureiros compartilhados.' : 'Ainda não há aventureiros neste dispositivo.'}<br />Crie o primeiro perfil para começar!
               </div>
             )}
           </div>
@@ -234,7 +262,7 @@ export default function PortalAventureiros() {
           </button>
         </div>
         <p className="mx-auto max-w-2xl pb-6 text-center text-xs text-[#b4aeca]">
-          Versão de testes: os perfis e fotos ficam apenas neste navegador. A Ficha V8 também usa armazenamento local.
+          {CLOUD_ENABLED ? 'Perfis compartilhados em teste: os perfis locais não são importados automaticamente.' : 'Versão de testes: os perfis e fotos ficam apenas neste navegador.'} A Ficha V8 ainda usa armazenamento local.
           Não há sincronização entre dispositivos; guarde backups das suas fichas.
         </p>
       </div>

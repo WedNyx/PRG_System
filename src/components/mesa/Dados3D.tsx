@@ -61,7 +61,7 @@ const Dados3D = forwardRef<Dados3DHandle, { somAtivo: boolean }>(function Dados3
           assetPath: '/assets/dice-box/',
           theme: 'default',
           themeColor: '#f59e0b',
-          scale: 6,
+          scale: 7.5,
           gravity: 1.4,
           throwForce: 6,
           lightIntensity: 1,

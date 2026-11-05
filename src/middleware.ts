@@ -3,10 +3,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
-  // Perfis experimentais e Ficha V8 local não dependem de autenticação.
+  // Portal, Central do Aventureiro e Ficha V8 local não dependem de autenticação legada.
   // Campanhas e dados privados continuam protegidos pela autenticação anterior.
   if (pathname === '/' || pathname === '/portal' ||
-      pathname === '/login' || pathname === '/register' || pathname === '/ficha-v8' || pathname === '/ficha-v8.html') {
+      pathname === '/login' || pathname === '/register' || pathname === '/central' || pathname === '/ficha-v8' || pathname === '/ficha-v8.html') {
     if (pathname === '/' || pathname === '/login' || pathname === '/register') {
       return NextResponse.redirect(new URL('/portal', request.url))
     }

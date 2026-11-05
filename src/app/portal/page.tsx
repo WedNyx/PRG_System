@@ -233,7 +233,11 @@ export default function PortalAventureiros() {
                     className="absolute -right-1 -top-2 z-10 rounded-full border border-[#b99bff] bg-[#34294f] px-2 py-1 text-sm shadow-lg">✎</button>
                 )}
                 <Link href={'/central?personagem=' + encodeURIComponent(perfil.id)}
-                  onClick={() => localStorage.setItem(SELECTED_KEY, perfil.id)}
+                  onClick={event => {
+                    event.preventDefault()
+                    try { localStorage.setItem(SELECTED_KEY, perfil.id) } catch {}
+                    window.location.assign('/central?personagem=' + encodeURIComponent(perfil.id))
+                  }}
                   className="flex w-full flex-col items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b99bff]">
                   <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border-2 border-[#51466a] bg-[#28233e] text-5xl font-bold text-[#b99bff] shadow-xl transition-all duration-200 group-hover:scale-105 group-hover:border-[#b99bff] group-hover:shadow-[0_0_24px_#7654bb66]">
                     {perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : perfil.apelido[0].toUpperCase()}

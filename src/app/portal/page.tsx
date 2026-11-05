@@ -232,7 +232,7 @@ export default function PortalAventureiros() {
                   <button onClick={() => abrirEdicao(perfil)} aria-label={'Editar perfil ' + perfil.apelido}
                     className="absolute -right-1 -top-2 z-10 rounded-full border border-[#b99bff] bg-[#34294f] px-2 py-1 text-sm shadow-lg">✎</button>
                 )}
-                <Link href={'/ficha-v8?personagem=' + encodeURIComponent(perfil.id)}
+                <Link href={'/central?personagem=' + encodeURIComponent(perfil.id)}
                   onClick={() => localStorage.setItem(SELECTED_KEY, perfil.id)}
                   className="flex w-full flex-col items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b99bff]">
                   <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border-2 border-[#51466a] bg-[#28233e] text-5xl font-bold text-[#b99bff] shadow-xl transition-all duration-200 group-hover:scale-105 group-hover:border-[#b99bff] group-hover:shadow-[0_0_24px_#7654bb66]">

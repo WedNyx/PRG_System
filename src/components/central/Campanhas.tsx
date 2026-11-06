@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { BookOpen, Castle, Pencil, Plus, Save, X } from 'lucide-react'
+import { CAMPOS, REGRAS, permissoesPadrao, type Permissoes, type Regra } from '@/lib/campanhas/permissoes'
 
 export type Modelo = 'A' | 'B' | 'C'
 type Campanha = {
@@ -11,7 +12,8 @@ type Campanha = {
   descricao: string
   sistema: string
   modeloPadrao: Modelo
-  excecoes: Record<string, Modelo>
+  excecoes: Record<string, Partial<Permissoes>>
+  permissoes?: Permissoes
   criadaEm: string
 }
 const PREFIX = 'prg-campanhas-rascunho-v1-'
@@ -38,6 +40,7 @@ export default function Campanhas({ aventureiroId }: { aventureiroId: string }) 
   const [descricao, setDescricao] = useState('')
   const [sistema, setSistema] = useState('Lunethernnyis — Opositores')
   const [modelo, setModelo] = useState<Modelo>('C')
+  const [regras, setRegras] = useState<Permissoes>(permissoesPadrao('C'))
   const [erro, setErro] = useState('')
   const [ready, setReady] = useState(false)
   const key = PREFIX + aventureiroId
@@ -51,10 +54,10 @@ export default function Campanhas({ aventureiroId }: { aventureiroId: string }) 
   }, [aventureiroId])
 
   function startCreate() {
-    setEditing(null); setNome(''); setDescricao(''); setSistema('Lunethernnyis — Opositores'); setModelo('C'); setErro(''); setMode('criar')
+    setEditing(null); setNome(''); setDescricao(''); setSistema('Lunethernnyis — Opositores'); setModelo('C'); setRegras(permissoesPadrao('C')); setErro(''); setMode('criar')
   }
   function startEdit(c: Campanha) {
-    setEditing(c.id); setNome(c.nome); setDescricao(c.descricao); setSistema(c.sistema); setModelo(c.modeloPadrao); setErro(''); setMode('editar')
+    setEditing(c.id); setNome(c.nome); setDescricao(c.descricao); setSistema(c.sistema); setModelo(c.modeloPadrao); setRegras(c.permissoes || permissoesPadrao(c.modeloPadrao)); setErro(''); setMode('editar')
   }
   function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -64,8 +67,8 @@ export default function Campanhas({ aventureiroId }: { aventureiroId: string }) 
     }
     try {
       const next = editing
-        ? campanhas.map(c => c.id === editing ? { ...c, nome: n, descricao: d, sistema: s, modeloPadrao: modelo } : c)
-        : [...campanhas, { id: crypto.randomUUID(), mestreId: aventureiroId, nome: n, descricao: d, sistema: s, modeloPadrao: modelo, excecoes: {}, criadaEm: new Date().toISOString() }]
+        ? campanhas.map(c => c.id === editing ? { ...c, nome: n, descricao: d, sistema: s, modeloPadrao: modelo, permissoes: regras } : c)
+        : [...campanhas, { id: crypto.randomUUID(), mestreId: aventureiroId, nome: n, descricao: d, sistema: s, modeloPadrao: modelo, permissoes: regras, excecoes: {}, criadaEm: new Date().toISOString() }]
       if (next.length > 100) { setErro('Limite de 100 rascunhos neste navegador.'); return }
       localStorage.setItem(key, JSON.stringify(next))
       setCampanhas(next); setMode('lista'); setEditing(null); setErro('')
@@ -82,7 +85,7 @@ export default function Campanhas({ aventureiroId }: { aventureiroId: string }) 
         <div className="flex items-start gap-3"><BookOpen className="shrink-0 text-[#c5a7ff]"/><div className="min-w-0"><h2 className="break-words text-lg font-semibold">{c.nome}</h2><p className="mt-1 text-sm text-[#c4b6d4]">{c.sistema}</p></div></div>
         {c.descricao && <p className="mt-3 whitespace-pre-wrap break-words text-sm text-[#d1c4df]">{c.descricao}</p>}
         <p className="mt-3 text-sm text-[#d4baff]">Modelo padrão {c.modeloPadrao} — {modelos.find(m => m.id === c.modeloPadrao)?.nome}</p>
-        <p className="mt-1 text-xs text-[#ab9bbc]">Exceções individuais: disponíveis quando houver participantes autenticados.</p>
+        <p className="mt-1 text-xs text-[#ab9bbc]">{CAMPOS.length} áreas configuráveis · Exceções individuais: aguardando participantes autenticados.</p>
         <button type="button" onClick={() => startEdit(c)} className="mt-4 inline-flex items-center gap-2 rounded-lg border border-[#70588c] px-3 py-2 text-sm hover:bg-[#38294d]"><Pencil size={16}/> Editar configurações</button>
       </article>)}</div>
     </> : <form onSubmit={save} className="max-w-2xl space-y-5 rounded-2xl border border-[#55456e] bg-[#201a32] p-5 sm:p-7">
@@ -92,10 +95,11 @@ export default function Campanhas({ aventureiroId }: { aventureiroId: string }) 
       <label className="block text-sm font-medium">Sistema de RPG<input required minLength={2} maxLength={80} value={sistema} onChange={e => setSistema(e.target.value)} className="mt-2 w-full rounded-xl border border-[#70588c] bg-[#151123] p-3 text-white"/></label>
       <fieldset className="space-y-3"><legend className="mb-3 font-semibold">Modelo padrão de edição das fichas</legend>
         {modelos.map(m => <label key={m.id} className={'flex cursor-pointer gap-3 rounded-xl border p-4 ' + (modelo === m.id ? 'border-[#b79aff] bg-[#3a2a53]' : 'border-[#55456e]')}>
-          <input type="radio" name="modelo" checked={modelo === m.id} onChange={() => setModelo(m.id)} className="accent-[#b79aff]"/>
+          <input type="radio" name="modelo" checked={modelo === m.id} onChange={() => { setModelo(m.id); setRegras(permissoesPadrao(m.id)) }} className="accent-[#b79aff]"/>
           <span><strong>{m.id} — {m.nome}</strong><span className="mt-1 block text-sm text-[#c9b9d8]">{m.detalhe}</span></span>
         </label>)}
       </fieldset>
+      <fieldset className="space-y-3"><legend className="font-semibold">Permissões por área da ficha</legend><p className="text-sm text-[#c9b9d8]">Personalize o modelo padrão. As regras são apenas configurações locais nesta etapa.</p>{CAMPOS.map(campo => <label key={campo.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#55456e] p-3 text-sm"><span>{campo.titulo}</span><select aria-label={'Permissão para ' + campo.titulo} value={regras[campo.id]} onChange={e => setRegras(atual => ({ ...atual, [campo.id]: e.target.value as Regra }))} className="rounded-lg border border-[#70588c] bg-[#151123] p-2 text-white">{REGRAS.map(regra => <option key={regra.id} value={regra.id}>{regra.titulo}</option>)}</select></label>)}</fieldset>
       <p className="text-xs leading-relaxed text-[#b9a7ca]">O modelo escolhido será o padrão da campanha. Futuramente o mestre poderá atribuir exceções por jogador, com verificação no servidor. Alterar o padrão não apagará fichas.</p>
       {erro && <p role="alert" className="text-sm text-red-200">{erro}</p>}
       <button type="submit" className="inline-flex items-center gap-2 rounded-xl bg-[#7652ac] px-5 py-3 font-semibold hover:bg-[#8b68c4]"><Save size={18}/> Salvar rascunho</button>

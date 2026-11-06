@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import FichasIndependentes from '@/components/central/FichasIndependentes'
+import Campanhas from '@/components/central/Campanhas'
 import { BookOpen, Castle, ChevronRight, Dice5, House, Menu, MoonStar, ScrollText, UserRound, X } from 'lucide-react'
 
 type Perfil = { id: string; apelido: string; avatar?: string }
@@ -25,7 +26,6 @@ function CentralContent() {
   const params = useSearchParams()
   const [section, setSection] = useState<Section>('inicio')
   const [fichasTab, setFichasTab] = useState<'independentes' | 'campanhas'>('independentes')
-  const [campanhaTab, setCampanhaTab] = useState<'entrar' | 'criar' | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [perfil, setPerfil] = useState<Perfil | null>(null)
   const [loading, setLoading] = useState(true)
@@ -55,7 +55,7 @@ function CentralContent() {
     return () => { active = false }
   }, [params])
 
-  const choose = (next: Section) => { setSection(next); setMenuOpen(false); setCampanhaTab(null) }
+  const choose = (next: Section) => { setSection(next); setMenuOpen(false) }
   const cardClass = 'group rounded-2xl border border-[#55456e] bg-[#201a32]/90 p-5 text-left transition hover:-translate-y-0.5 hover:border-[#b79aff] hover:bg-[#2b2143] focus-visible:outline-2 focus-visible:outline-[#c5a7ff]'
   const sheetUrl = '/ficha-v8?personagem=' + encodeURIComponent(perfil?.id || '')
 
@@ -114,12 +114,8 @@ function CentralContent() {
             {fichasTab === 'independentes' ? <FichasIndependentes aventureiroId={perfil.id} /> : <section className="mt-5 rounded-2xl border border-[#55456e] bg-[#201a32] p-6"><h2 className="text-xl font-semibold">Fichas de campanhas</h2><p className="mt-2 text-sm text-[#c4b6d4]">Quando o módulo de campanhas estiver conectado, suas fichas atribuídas aparecerão aqui, separadas por aventura.</p></section>}
           </>}
           {section === 'campanhas' && <>
-            <h1 className="text-3xl font-bold">Campanhas</h1><p className="mt-2 text-[#bfb2cf]">Jogue com seus amigos ou prepare uma nova história.</p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <button type="button" className={cardClass} onClick={() => setCampanhaTab('entrar')}><Castle className="mb-4 text-[#c3a4f5]" size={30} /><h2 className="font-semibold">Entrar em campanha</h2><p className="mt-2 text-sm text-[#bfb2cf]">Suas campanhas e acesso por código de convite.</p></button>
-              <button type="button" className={cardClass} onClick={() => setCampanhaTab('criar')}><BookOpen className="mb-4 text-[#c3a4f5]" size={30} /><h2 className="font-semibold">Criar campanha</h2><p className="mt-2 text-sm text-[#bfb2cf]">Nome, sistema de RPG e código de convite.</p></button>
-            </div>
-            {campanhaTab && <div className="mt-5 rounded-2xl border border-[#55456e] bg-[#201a32] p-6"><h2 className="text-xl font-semibold">{campanhaTab === 'entrar' ? 'Entrar em campanha' : 'Criar campanha'}</h2><p className="mt-2 text-sm text-[#c4b6d4]">{campanhaTab === 'entrar' ? 'O acesso por código e a lista de campanhas serão implementados na próxima etapa.' : 'O formulário e o armazenamento de campanhas serão implementados na próxima etapa. Nenhuma campanha é criada nesta prévia.'}</p></div>}
+            <h1 className="text-3xl font-bold">Campanhas</h1><p className="mt-2 text-[#bfb2cf]">Prepare suas aventuras e defina as regras de edição das fichas.</p>
+            <Campanhas aventureiroId={perfil.id} />
           </>}
           {section === 'sistemas' && <><h1 className="text-3xl font-bold">Sistemas de RPG</h1><p className="mt-2 text-[#bfb2cf]">Os modelos de fichas serão adicionados gradualmente.</p><div className="mt-6 rounded-2xl border border-[#55456e] bg-[#201a32] p-6"><h2 className="text-xl font-semibold">Lunethernnyis — Opositores</h2><p className="mt-2 text-sm text-[#c4b6d4]">A Ficha V8 existente continua disponível para uso.</p><Link href={sheetUrl} className="mt-4 inline-flex items-center text-[#c7a8ff] underline underline-offset-4">Abrir ficha atual <ChevronRight size={16} /></Link></div><p className="mt-5 text-sm text-[#bfb2cf]">D&D, Ordem Paranormal, Assimilação e outros sistemas: modelos ainda não implementados.</p></>}
           {section === 'historico' && <><h1 className="text-3xl font-bold">Histórico de rolagens</h1><p className="mt-2 text-[#bfb2cf]">Em breve, suas rolagens estarão organizadas por aventureiro e campanha.</p><div className="mt-6 rounded-2xl border border-[#55456e] bg-[#201a32] p-6 text-sm text-[#c4b6d4]">O histórico compartilhado ainda não está conectado. As rolagens existentes na Ficha V8 continuam disponíveis nela.</div><Link href={sheetUrl} className="mt-4 inline-flex items-center text-[#c7a8ff] underline underline-offset-4">Abrir Ficha V8 <ChevronRight size={16} /></Link></>}

@@ -18,7 +18,7 @@ export default function EntradaAventureiro() {
         const dados: unknown = JSON.parse(salvo)
         if (dados && typeof dados === 'object' && 'apelido' in dados &&
             typeof dados.apelido === 'string' && dados.apelido.length <= 40) {
-          setPerfil({ apelido: dados.apelido })
+          setPerfil({ apelido: dados.apelido, avatar: 'avatar' in dados && typeof dados.avatar === 'string' && dados.avatar.startsWith('https://') ? dados.avatar : undefined })
         }
       }
     } catch {
@@ -44,7 +44,7 @@ export default function EntradaAventureiro() {
           <button onClick={() => setMostrarLogin(true)}
             className="group flex flex-col items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 rounded-xl p-3">
             <span className="w-28 h-28 rounded-2xl bg-violet-900 border-2 border-violet-600 group-hover:border-violet-300 flex items-center justify-center text-5xl font-semibold text-violet-100">
-              {perfil.apelido.slice(0, 1).toUpperCase()}
+              {perfil.avatar ? <img src={perfil.avatar} alt="Avatar do perfil" className="w-full h-full object-cover rounded-2xl" /> : perfil.apelido.slice(0, 1).toUpperCase()}
             </span>
             <span className="text-xl font-medium text-white">{perfil.apelido}</span>
             <span className="text-sm text-violet-300">Continuar</span>

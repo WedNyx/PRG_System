@@ -97,3 +97,26 @@ describe('outros', () => {
     expect(calcular(s, d).derivados.perspicacia).toBe(2)
   })
 })
+
+describe('Faroeste Arcano', () => {
+  const s = sistemaPorId('faroeste-arcano')!
+  it('pistoleiro nível 5: BBA +6, CA de classe +2, Fort +3', () => {
+    const d = fichaVazia(s); d.campos.nivel_pistoleiro = 5; d.atributos.CON = 14; d.atributos.DES = 14
+    const c = calcular(s, d)
+    expect(c.derivados.bba).toBe(6); expect(c.derivados.fortitude).toBe(5)
+    expect(c.derivados.ca).toBe(10 + 2 + 2); expect(c.derivados.iniciativa).toBe(2 + 4)
+  })
+  it('multiclasse soma as tabelas', () => {
+    const d = fichaVazia(s); d.campos.nivel_desgarrado = 3; d.campos.nivel_rastreador = 2
+    const c = calcular(s, d)
+    expect(c.derivados.nivel).toBe(5); expect(c.derivados.bba).toBe(1 + 2); expect(c.derivados.reflexos).toBe(3 + 0)
+  })
+  it('Atletismo usa o melhor entre FOR e DES', () => {
+    const d = fichaVazia(s); d.atributos.FOR = 8; d.atributos.DES = 16; d.pericias.atletismo = 4
+    expect(calcular(s, d).pericias.atletismo).toBe(7)
+  })
+  it('avisa graduação acima do máximo', () => {
+    const d = fichaVazia(s); d.campos.nivel_pistoleiro = 1; d.pericias.cavalgar = 5
+    expect(calcular(s, d).limites[0].excedido).toBe(true)
+  })
+})

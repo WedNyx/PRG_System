@@ -2,6 +2,7 @@
 export type CampoDef = { id: string; nome: string; tipo: 'texto' | 'numero' | 'area'; padrao?: string | number }
 export type AtributoDef = { id: string; nome: string; min: number; max: number; padrao: number }
 export type TreinoDef = { id: string; nome: string; formula: string; custo?: number }
+/** atributo pode ser 'FOR/DES': usa o melhor modificador dos dois. */
 export type PericiaDef = { id: string; nome: string; atributo?: string; grupo?: string }
 export type DerivadoDef = { id: string; nome: string; formula: string; dica?: string }
 export type RecursoDef = { id: string; nome: string; formula?: string; maxFixo?: number }
@@ -31,6 +32,12 @@ export type Sistema = {
     total: string
   }
   recursos: RecursoDef[]
+  /**
+   * Tabelas por classe e nível (estilo d20): para cada coluna (ex.: bba, fort), soma os
+   * valores de todas as classes no nível informado em `campoNivel` (multiclasse).
+   * Gera as variáveis prog_<coluna> e nivel_total.
+   */
+  progressoes?: { classes: { id: string; nome: string; campoNivel: string; tabela: Record<string, number[]> }[] }
   /** Avisos de criação/evolução (não bloqueiam; mostram quando passa do limite). */
   limites?: LimiteDef[]
   listas: { id: string; nome: string }[]

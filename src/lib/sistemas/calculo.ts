@@ -50,32 +50,47 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
   }
   vars.soma_atributos = soma; vars.atributos_zero = zeros; vars.maior_atributo = maior === -Infinity ? 0 : maior
 
+  if (s.progressoes) {
+    let total = 0
+    const somas: Record<string, number> = {}
+    for (const cl of s.progressoes.classes) {
+      const n = Math.max(0, Math.min(20, Math.floor(vars[cl.campoNivel] ?? 0)))
+      total += n
+      for (const [col, valores] of Object.entries(cl.tabela)) somas[col] = (somas[col] ?? 0) + (n > 0 ? valores[n - 1] ?? 0 : 0)
+    }
+    for (const [col, v] of Object.entries(somas)) vars['prog_' + col] = v
+    vars.nivel_total = total
+  }
+
   // Derivados podem depender uns dos outros (ex.: nível → limite); avalia em ordem, duas passadas.
   const derivados: Record<string, number | null> = {}
   const calcDerivados = () => { for (const x of s.derivados) { derivados[x.id] = avaliarSeguro(x.formula, vars); vars[x.id] = derivados[x.id] ?? 0 } }
   calcDerivados()
 
   const pericias: Record<string, number | null> = {}
-  let custo = 0
+  let custo = 0, maiorValor = 0
   const qtd: Record<string, number> = {}
   if (s.pericias) {
     const treinos = Object.fromEntries((s.pericias.treinos ?? []).map(t => [t.id, t]))
     for (const p of s.pericias.lista) {
       const escolha = d.pericias[p.id]
       let treino = 0, valor = 0
-      if (s.pericias.modo === 'valor') valor = num(escolha)
+      if (s.pericias.modo === 'valor') { valor = num(escolha); if (valor > maiorValor) maiorValor = valor }
       else {
         const t = treinos[String(escolha)] ?? s.pericias.treinos?.[0]
         if (t) { treino = avaliarSeguro(t.formula, vars) ?? 0; custo += t.custo ?? 0; qtd[t.id] = (qtd[t.id] ?? 0) + 1 }
       }
-      const atr = p.atributo ? vars[p.atributo] ?? 0 : 0
-      const mod = p.atributo ? mods[p.atributo] ?? 0 : 0
+      // 'FOR/DES' = usa o melhor dos dois
+      const opcoes = p.atributo ? p.atributo.split('/') : []
+      const melhor = opcoes.reduce<string | null>((m, a) => m === null || (mods[a] ?? -99) > (mods[m] ?? -99) ? a : m, null)
+      const atr = melhor ? vars[melhor] ?? 0 : 0
+      const mod = melhor ? mods[melhor] ?? 0 : 0
       pericias[p.id] = avaliarSeguro(s.pericias.total, { ...vars, ATR: atr, MOD: mod, TREINO: treino, VALOR: valor })
       vars['per_' + p.id] = s.pericias.modo === 'valor' ? valor : treino
       vars['tot_' + p.id] = pericias[p.id] ?? 0
     }
   }
-  vars.custo_pericias = custo
+  vars.custo_pericias = custo; vars.maior_valor_pericia = maiorValor
   for (const t of s.pericias?.treinos ?? []) vars['qtd_' + t.id] = qtd[t.id] ?? 0
   calcDerivados() // de novo, agora com as perícias disponíveis (ex.: Percepção passiva)
 

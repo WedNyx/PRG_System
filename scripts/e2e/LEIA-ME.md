@@ -1,0 +1,19 @@
+# Testes ponta a ponta da API (Fases 1 e 2)
+
+Simulam três aventureiros (mestre, jogador e intruso) contra um banco real.
+
+1. Postgres local + PostgREST (ou um projeto/branch de teste do Supabase) com as migrações `005` e `006` aplicadas.
+2. Cadastre os aventureiros de teste:
+   ```sql
+   insert into prg_public_adventurers(id, apelido) values
+     ('11111111-1111-4111-8111-111111111111','Mestra Lua'),
+     ('22222222-2222-4222-8222-222222222222','Jogador Sol'),
+     ('33333333-3333-4333-8333-333333333333','Intruso');
+   ```
+3. Rode o site com `PRG_SHARED_PROFILES=true`, `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` apontando para esse banco.
+4. Execute:
+   ```bash
+   PRG_BASE=http://localhost:3000 KEY=<service_role> node scripts/e2e/fase1-campanhas.mjs
+   PRG_BASE=http://localhost:3000 node scripts/e2e/fase2-fichas-permissoes.mjs
+   ```
+Nunca rode contra o banco de produção: os testes criam campanhas e fichas.

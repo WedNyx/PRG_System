@@ -83,3 +83,31 @@ export function rota<C>(fn: (req: NextRequest, ctx: C) => Promise<NextResponse>)
   }
 }
 export const ok = (dados: unknown, status = 200) => NextResponse.json(dados, { status, headers: { 'Cache-Control': 'no-store' } })
+
+// ---- Fase 2: histórico e regras da campanha ----
+export type EntradaHistorico = {
+  ficha_id?: string | null; campanha_id?: string | null; autor_id: string
+  tipo: 'edicao' | 'pedido' | 'decisao' | 'envio' | 'aprovacao' | 'bloqueio' | 'npc' | 'administracao'
+  categoria?: string | null; descricao?: string; antes?: unknown; depois?: unknown
+}
+/** Registra no histórico. Falhar aqui não deve impedir a ação principal. */
+export async function registrar(entradas: EntradaHistorico[]) {
+  if (!entradas.length) return
+  try { await rest('prg_historico', { method: 'POST', body: JSON.stringify(entradas.map(e => ({ ...e, descricao: (e.descricao ?? '').slice(0, 600) }))) }) }
+  catch (e) { console.error('[prg-historico]', e instanceof Error ? e.message : '') }
+}
+
+export type FichaRow = {
+  id: string; dono_id: string; campanha_id: string | null; origem_id: string | null; sistema: string; nome: string
+  dados: Record<string, unknown>; versao: number; status: string; npc: boolean; oculta: boolean
+  bloqueada: boolean; areas_bloqueadas: string[]; observacao_mestre: string
+}
+export async function buscarFicha(id: string): Promise<FichaRow | null> {
+  const [f] = await rest<FichaRow[]>(`prg_fichas?select=*&id=eq.${q(id)}&limit=1`)
+  return f ?? null
+}
+export async function regrasDoJogador(campanhaId: string, aventureiroId: string) {
+  const [c] = await rest<{ permissoes: Record<string, string>; modelo_padrao: string; estado: string }[]>(`prg_campanhas?select=permissoes,modelo_padrao,estado&id=eq.${q(campanhaId)}`)
+  const [m] = await rest<{ excecoes: Record<string, string> }[]>(`prg_campanha_membros?select=excecoes&campanha_id=eq.${q(campanhaId)}&aventureiro_id=eq.${q(aventureiroId)}`)
+  return { campanha: c, excecoes: m?.excecoes ?? {} }
+}

@@ -66,3 +66,28 @@ Isso **não prova identidade**: alguém que saiba o ID de um perfil consegue agi
 - **Criar ficha com o jogador**: o mestre cria a ficha já aprovada, pertencendo ao jogador.
 - **Notificações ao mestre**: contador de pendências na lista de campanhas.
 - Testes: `src/lib/nuvem/categorias.test.ts` + `scripts/e2e/` (40 + 46 cenários contra banco real).
+
+# Fase 3 — Mesa virtual nas campanhas novas
+- Migrações `007` + `007b` (APLICADAS em 08/11/2026): cenas, tokens, desenhos, eventos (chat/rolagens) e iniciativa; bucket `prg-mesa`.
+- Página `/mesa?campanha=<id>`, com o botão "Abrir mesa virtual" na campanha. Reaproveita o `MapaGrid` e os dados 3D da mesa antiga.
+- **Cenas** (mestre): criar com link ou imagem enviada (até 5 MB), tamanho da grade, mostrar para todos, névoa (revelar/esconder/cobrir de novo).
+- **Tokens**:
+  - O mestre cria tokens avulsos, de NPC ou de jogador, e pode deixá-los escondidos.
+  - O jogador coloca na mesa e move o próprio personagem.
+  - PV e condições podem ser mudados pelo dono do token e pelo mestre.
+- **Chat e rolagens**:
+  - Os dados são rolados NO SERVIDOR.
+  - Visibilidade: todos, "só o mestre" (secreta) ou privada para alguém.
+  - `/r 1d20+2` no chat também rola.
+  - O histórico é permanente, com busca por jogador, tipo e personagem.
+- **Iniciativa**: o mestre ordena, avança turno e rodada e adiciona os tokens rolando 1d20.
+- **Tempo real**:
+  - O canal Supabase Realtime (broadcast) só avisa que algo mudou; os dados sempre vêm da API, com as permissões aplicadas. Também leva ping, cursores e quem está online.
+  - Sem Realtime, a tela atualiza a cada 4 s.
+- A mesa antiga (`/mesa/[id]`, login por e-mail) foi mantida sem alterações.
+
+# Ajustes de interface
+- O sistema da campanha agora é escolhido numa lista, com a opção "Outro".
+- "Nova ficha" pergunta o sistema antes de criar.
+- A Ficha V8 volta para o início (`/central`).
+- As fichas dos outros sistemas ganharam menu lateral por seções (Principal, Atributos e perícias, Habilidades, Equipamentos, Anotações) e uma barra fixa com PV e Defesa.

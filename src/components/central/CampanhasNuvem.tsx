@@ -1,11 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { BookOpen, Castle, Check, Copy, Crown, DoorOpen, Link2, Loader2, Pencil, Plus, RefreshCw, Save, Settings, Shield, Trash2, Upload, UserMinus, X } from 'lucide-react'
 import { CAMPOS, REGRAS, permissoesPadrao, type Modelo, type Permissoes, type Regra } from '@/lib/campanhas/permissoes'
 import { ESTADOS, ESTADO_TITULO, type EstadoCampanha } from '@/lib/nuvem/validacao'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import PainelFichasCampanha from './PainelFichasCampanha'
+import SeletorSistemaCampanha from './SeletorSistemaCampanha'
 import { SISTEMAS, SISTEMA_V8 } from '@/lib/sistemas/catalogo'
 import { campanhasLocais, marcarImportado, type CampanhaLocal } from '@/lib/nuvem/locais'
 
@@ -114,7 +116,7 @@ function FormCampanha({ aventureiroId, campanha, onFechar }: { aventureiroId: st
     <div className="flex items-center justify-between gap-3"><h2 className="text-xl font-semibold">{campanha ? 'Editar campanha' : 'Nova campanha'}</h2><button type="button" onClick={() => onFechar(false)} aria-label="Cancelar" className="rounded-lg p-2 hover:bg-[#38294d]"><X size={20} /></button></div>
     <label className="block text-sm font-medium">Nome da campanha<input required minLength={3} maxLength={80} value={nome} onChange={e => setNome(e.target.value)} className="mt-2 w-full rounded-xl border border-[#70588c] bg-[#151123] p-3 text-white" placeholder="Ex.: Ecos da Lua Partida" /></label>
     <label className="block text-sm font-medium">Descrição<textarea maxLength={600} rows={3} value={descricao} onChange={e => setDescricao(e.target.value)} className="mt-2 w-full rounded-xl border border-[#70588c] bg-[#151123] p-3 text-white" /></label>
-    <label className="block text-sm font-medium">Sistema de RPG<input required minLength={2} maxLength={80} value={sistema} onChange={e => setSistema(e.target.value)} className="mt-2 w-full rounded-xl border border-[#70588c] bg-[#151123] p-3 text-white" /></label>
+    <div className="block text-sm font-medium">Sistema de RPG<SeletorSistemaCampanha valor={sistema} onChange={setSistema} classe="mt-2 w-full rounded-xl border border-[#70588c] bg-[#151123] p-3 text-white" /></div>
     <fieldset className="space-y-3"><legend className="mb-3 font-semibold">Modelo padrão de edição das fichas</legend>
       {modelos.map(m => <label key={m.id} className={'flex cursor-pointer gap-3 rounded-xl border p-4 ' + (modelo === m.id ? 'border-[#b79aff] bg-[#3a2a53]' : 'border-[#55456e]')}>
         <input type="radio" name="modelo" checked={modelo === m.id} onChange={() => { setModelo(m.id); setRegras(permissoesPadrao(m.id)) }} className="accent-[#b79aff]" />
@@ -168,6 +170,7 @@ function Gerenciar({ aventureiroId, id, onVoltar, onEditar }: { aventureiroId: s
         <span className={'rounded-full px-3 py-1 text-sm ' + corEstado[c.estado]}>{ESTADO_TITULO[c.estado]}</span>
       </div>
       {c.descricao && <p className="mt-3 whitespace-pre-wrap break-words text-sm text-[#d1c4df]">{c.descricao}</p>}
+      <Link href={'/mesa?campanha=' + c.id} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#7652ac] px-4 py-2.5 font-semibold hover:bg-[#8b68c4]">🗺️ Abrir mesa virtual</Link>
       {admin && <div className="mt-4 flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => onEditar(c)} className={btn}><Pencil size={16} /> Editar</button>
         <label className="flex items-center gap-2 text-sm">Estado
@@ -247,5 +250,7 @@ function Excecoes({ campanha, membro, ocupado, salvar }: { campanha: Campanha; m
 function sistemaDaCampanha(nome: string) {
   const n = nome.toLowerCase()
   if (n.includes('lunethernnyis') || n.includes('opositores')) return SISTEMA_V8
+  const exato = SISTEMAS.find(s => s.nome.toLowerCase() === n)
+  if (exato) return exato.id
   return SISTEMAS.find(s => n.includes(s.nome.toLowerCase().split(' ')[0]))?.id ?? SISTEMA_V8
 }

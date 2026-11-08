@@ -4,20 +4,18 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Cloud, Loader2, Plus, ScrollText, Trash2, Upload } from 'lucide-react'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
+import { fichasLocais, lerFichaLocal, marcarImportado, type FichaLocal } from '@/lib/nuvem/locais'
 import { sistemaPorId, SISTEMA_V8 } from '@/lib/sistemas/catalogo'
 
 const linkFicha = (f: { id: string; sistema: string }) => (f.sistema === SISTEMA_V8 ? '/ficha-v8?nuvem=' : '/ficha?nuvem=') + f.id
 
 type Ficha = { id: string; nome: string; sistema: string; status: string; campanha_id: string | null; atualizada_em: string; campanha: { nome: string } | null }
-const LISTA_LOCAL = 'prg-fichas-independentes-v1-'
-const CHAVE_V8 = 'lunethernnyis-ficha-v8-'
-const IMPORTADAS = 'prg-fichas-importadas-v1-'
 const msg = (e: unknown) => e instanceof ErroNuvem ? e.message : 'Falha de conexão. Tente novamente.'
 
 /** Fichas sincronizadas. `tipo` separa independentes das fichas de campanha. */
 export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: string; tipo: 'independentes' | 'campanhas' }) {
   const [fichas, setFichas] = useState<Ficha[] | null>(null)
-  const [locais, setLocais] = useState<{ id: string; nome: string }[]>([])
+  const [locais, setLocais] = useState<FichaLocal[]>([])
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState(false)
 
@@ -26,21 +24,9 @@ export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: st
     catch (e) { setErro(msg(e)); setFichas([]) }
   }, [aventureiroId])
 
-  const lerLocais = useCallback(() => {
-    try {
-      const lista: unknown = JSON.parse(localStorage.getItem(LISTA_LOCAL + aventureiroId) || '[]')
-      const ids = (Array.isArray(lista) ? lista : []).map(f => f?.id).filter((v): v is string => typeof v === 'string')
-      if (localStorage.getItem(CHAVE_V8 + aventureiroId)) ids.unshift(aventureiroId) // ficha original do perfil
-      const ja = new Set<string>(JSON.parse(localStorage.getItem(IMPORTADAS + aventureiroId) || '[]'))
-      setLocais([...new Set(ids)].filter(id => !ja.has(id) && localStorage.getItem(CHAVE_V8 + id)).map(id => {
-        let nome = 'Personagem sem nome'
-        try { const d = JSON.parse(localStorage.getItem(CHAVE_V8 + id) || 'null'); if (d?.fields?.name?.trim()) nome = d.fields.name.trim().slice(0, 90) } catch {}
-        return { id, nome }
-      }))
-    } catch { setLocais([]) }
-  }, [aventureiroId])
-
-  useEffect(() => { carregar(); if (tipo === 'independentes') lerLocais() }, [carregar, lerLocais, tipo])
+  const lerLocais = useCallback((nuvem: Ficha[]) => setLocais(fichasLocais(new Set(nuvem.map(f => f.id)))), [])
+  useEffect(() => { carregar() }, [carregar])
+  useEffect(() => { if (tipo === 'independentes' && fichas) lerLocais(fichas) }, [fichas, lerLocais, tipo])
 
   async function criar() {
     setOcupado(true); setErro('')
@@ -50,17 +36,14 @@ export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: st
     } catch (e) { setErro(msg(e)); setOcupado(false) }
   }
 
-  async function importar() {
-    if (!window.confirm(`Enviar ${locais.length} ficha(s) deste navegador para a nuvem? As cópias locais não serão apagadas.`)) return
+  async function importar(f: FichaLocal) {
     setOcupado(true); setErro('')
-    const ja: string[] = (() => { try { return JSON.parse(localStorage.getItem(IMPORTADAS + aventureiroId) || '[]') } catch { return [] } })()
-    for (const f of locais) {
-      try {
-        await api('fichas', { method: 'POST', body: { dados: JSON.parse(localStorage.getItem(CHAVE_V8 + f.id) || '{}') }, aventureiro: aventureiroId })
-        ja.push(f.id); localStorage.setItem(IMPORTADAS + aventureiroId, JSON.stringify(ja))
-      } catch (e) { setErro(`Parou em "${f.nome}": ${msg(e)}`); break }
-    }
-    lerLocais(); await carregar(); setOcupado(false)
+    try {
+      const dados = lerFichaLocal(f.chave)
+      await api('fichas', { method: 'POST', aventureiro: aventureiroId, body: f.tipo === 'v8' ? { dados } : { dados, sistema: f.sistema } })
+      marcarImportado(f.chave)
+      await carregar()
+    } catch (e) { setErro(`Não foi possível enviar "${f.nome}": ${msg(e)}`) } finally { setOcupado(false) }
   }
 
   async function excluir(f: Ficha) {
@@ -89,9 +72,13 @@ export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: st
         <p className="mt-1 text-sm text-[#c4b6d4]">Sincronizadas: abra no celular ou no computador.</p></div>
       {tipo === 'independentes' && <button type="button" disabled={ocupado} onClick={criar} className="inline-flex items-center gap-2 rounded-xl bg-[#7652ac] px-4 py-3 text-sm font-semibold hover:bg-[#8b68c4] disabled:opacity-50"><Plus size={18} /> Nova ficha</button>}
     </div>
-    {locais.length > 0 && <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#67517f] bg-[#2b2140] p-4 text-sm">
-      <span>{locais.length} ficha(s) salvas só neste navegador: {locais.map(f => f.nome).join(', ')}</span>
-      <button type="button" disabled={ocupado} onClick={importar} className="inline-flex items-center gap-2 rounded-lg border border-[#70588c] px-3 py-2 hover:bg-[#38294d]"><Upload size={16} /> Enviar para a nuvem</button>
+    {locais.length > 0 && <div className="mt-4 rounded-xl border border-[#67517f] bg-[#2b2140] p-4 text-sm">
+      <p className="font-semibold">Fichas salvas só neste navegador</p>
+      <p className="mt-1 text-xs text-[#c4b6d4]">Envie para a nuvem as que forem suas. As cópias locais não são apagadas.</p>
+      <ul className="mt-3 space-y-2">{locais.map(f => <li key={f.chave} className="flex flex-wrap items-center gap-2 rounded-lg bg-[#171325] p-2">
+        <span className="min-w-0 flex-1"><span className="font-semibold">{f.nome}</span><span className="block text-xs text-[#b5a5c8]">{f.tipo === 'v8' ? 'Ficha V8' : sistemaPorId(f.sistema ?? '')?.nome ?? f.sistema}{f.perfil ? ' · perfil local “' + f.perfil + '”' : ''}</span></span>
+        <button type="button" disabled={ocupado} onClick={() => importar(f)} className="inline-flex items-center gap-1 rounded-lg border border-[#70588c] px-3 py-1.5 hover:bg-[#38294d] disabled:opacity-50"><Upload size={15} /> Enviar</button>
+      </li>)}</ul>
     </div>}
     {erro && <p role="alert" className="mt-4 text-sm text-red-200">{erro}</p>}
     {lista === null && <p className="mt-5 flex items-center gap-2 text-[#cbb9dc]"><Loader2 className="animate-spin" size={18} /> Carregando...</p>}

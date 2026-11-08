@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { BookOpen, Castle, Pencil, Plus, Save, X } from 'lucide-react'
 import { CAMPOS, REGRAS, permissoesPadrao, type Permissoes, type Regra } from '@/lib/campanhas/permissoes'
+import CampanhasNuvem from './CampanhasNuvem'
+import { NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 
 export type Modelo = 'A' | 'B' | 'C'
 type Campanha = {
@@ -32,7 +34,12 @@ const valid = (c: unknown): c is Campanha => {
     isModelo(v.modeloPadrao) && typeof v.criadaEm === 'string' &&
     !!v.excecoes && typeof v.excecoes === 'object' && !Array.isArray(v.excecoes)
 }
+/** Com a nuvem ativa, usa campanhas no servidor; sem ela, mantém os rascunhos locais. */
 export default function Campanhas({ aventureiroId }: { aventureiroId: string }) {
+  return NUVEM_ATIVA ? <CampanhasNuvem aventureiroId={aventureiroId} /> : <CampanhasLocais aventureiroId={aventureiroId} />
+}
+
+function CampanhasLocais({ aventureiroId }: { aventureiroId: string }) {
   const [campanhas, setCampanhas] = useState<Campanha[]>([])
   const [mode, setMode] = useState<'lista' | 'criar' | 'editar'>('lista')
   const [editing, setEditing] = useState<string | null>(null)

@@ -5,17 +5,26 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Dados3D, { type Dados3DHandle } from '@/components/mesa/Dados3D'
 import { rolarExpressao, type ResultadoRolagem } from '@/lib/dice'
+import { useFichaNuvem, type EstadoSync } from '@/components/fichas/useFichaNuvem'
 
 const TIPOS = [4, 6, 8, 10, 12, 20, 100] as const
 type TipoDado = typeof TIPOS[number]
 type Quantidades = Record<TipoDado, number>
 const INICIAL: Quantidades = { 4: 0, 6: 0, 8: 0, 10: 0, 12: 0, 20: 1, 100: 0 }
 const MAX_DADOS = 20
+const ROTULO_SYNC: Record<EstadoSync, string> = {
+  carregando: 'Carregando da nuvem...', pronto: '☁️ Sincronizada', salvando: '☁️ Salvando...', salvo: '☁️ Salvo na nuvem',
+  offline: '⚠️ Sem conexão · salvo neste aparelho', conflito: '⚠️ Conflito de versões', erro: '⚠️ Erro ao sincronizar', leitura: '👁️ Somente leitura (mestre)',
+}
+const NUVEM_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function FichaV8Conteudo() {
   const search = useSearchParams()
-  const personagem = search.get('personagem') ?? ''
+  const nuvemParam = search.get('nuvem') ?? ''
+  const nuvemId = NUVEM_ID.test(nuvemParam) ? nuvemParam : null
+  const personagem = nuvemId ?? search.get('personagem') ?? ''
   const campanha = search.get('campanha') ?? ''
+  const sync = useFichaNuvem(nuvemId)
   const src = useMemo(() => '/ficha-v8.html?personagem=' + encodeURIComponent(personagem), [personagem])
   const dadosRef = useRef<Dados3DHandle>(null)
   const resultadoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -61,12 +70,19 @@ function FichaV8Conteudo() {
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#0d0c19] text-[#f4f0ff]">
       {animacao && <Dados3D ref={dadosRef} somAtivo={false} />}
       <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-[#373251] bg-[#19172c] px-4 py-3">
-        <Link href={campanha ? '/campanha/' + encodeURIComponent(campanha) : '/portal'} className="text-sm text-[#b99bff] hover:underline">← Voltar ao portal</Link>
+        <Link href={campanha ? '/campanha/' + encodeURIComponent(campanha) : nuvemId ? '/central' : '/portal'} className="text-sm text-[#b99bff] hover:underline">← Voltar ao portal</Link>
         <h1 className="font-bold text-lg">🌙 Lunethernnyis · Ficha V8</h1>
-        <span className="text-xs text-[#b4aeca]">Salvamento neste navegador · sem sincronização automática</span>
+        <span className="text-xs text-[#b4aeca]" aria-live="polite">{nuvemId ? ROTULO_SYNC[sync.estado] : 'Salvamento neste navegador · sem sincronização automática'}</span>
       </header>
-      <iframe title="Ficha de personagem V8" src={src} className="block w-full min-h-0 flex-1 border-0"
-        sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" />
+      {nuvemId && sync.erro && <div role="alert" className="flex shrink-0 flex-wrap items-center gap-3 border-b border-[#62527e] bg-[#2b2140] px-4 py-2 text-sm">
+        <span className="flex-1">{sync.erro}</span>
+        {sync.estado === 'conflito' && <>
+          <button type="button" onClick={() => sync.resolver('nuvem')} className="rounded-lg border border-[#b99bff] px-3 py-1">Usar a versão da nuvem</button>
+          <button type="button" onClick={() => { if (window.confirm('Substituir a versão da nuvem pela deste aparelho?')) sync.resolver('aparelho') }} className="rounded-lg border border-[#62527e] px-3 py-1">Manter a deste aparelho</button>
+        </>}
+      </div>}
+      {nuvemId && !sync.pronta ? <div className="flex flex-1 items-center justify-center text-[#b4aeca]">{sync.estado === 'erro' ? 'Não foi possível abrir a ficha.' : 'Carregando ficha da nuvem...'}</div> : <iframe title="Ficha de personagem V8" src={src} className="block w-full min-h-0 flex-1 border-0"
+        sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" />}
 
       <button type="button" onClick={() => setPainel(aberto => !aberto)}
         aria-expanded={painel} aria-controls="central-dados" aria-label={painel ? 'Fechar central de dados' : 'Abrir central de dados'}

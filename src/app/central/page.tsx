@@ -8,7 +8,8 @@ import FichasIndependentes from '@/components/central/FichasIndependentes'
 import Campanhas from '@/components/central/Campanhas'
 import FichasNuvem from '@/components/central/FichasNuvem'
 import SistemasGaleria from '@/components/central/SistemasGaleria'
-import { BookOpen, Castle, ChevronRight, Dice5, House, Menu, MoonStar, ScrollText, UserRound, X } from 'lucide-react'
+import { BookOpen, Castle, ChevronRight, Dice5, House, Menu, MoonStar, ScrollText, Sparkles, UserRound, X } from 'lucide-react'
+import { VERSOES } from '@/lib/versoes'
 
 type Perfil = { id: string; apelido: string; avatar?: string }
 type Section = 'inicio' | 'fichas' | 'campanhas' | 'sistemas' | 'historico'
@@ -88,6 +89,7 @@ function CentralContent() {
           </nav>
           <div className="mt-8 border-t border-[#49375f] pt-4">
             <Link href="/portal" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><UserRound size={19} />Trocar aventureiro</Link>
+            <Link href="/novidades" className="mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><Sparkles size={19} />Novidades · v{VERSOES[0].versao}</Link>
           </div>
         </aside>
         <div className="min-w-0 flex-1 px-4 py-8 sm:px-7 lg:px-10">

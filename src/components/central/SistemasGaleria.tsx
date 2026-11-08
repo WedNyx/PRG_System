@@ -4,8 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { BookOpen, ChevronRight, Loader2, Plus, Sparkles } from 'lucide-react'
 import { SISTEMAS } from '@/lib/sistemas/catalogo'
-import { fichaVazia } from '@/lib/sistemas/calculo'
-import { api, ErroNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
+import { ErroNuvem } from '@/lib/nuvem/cliente'
+import { criarEAbrirFicha } from '@/lib/sistemas/criar'
 
 const SELO: Record<string, { texto: string; cor: string }> = {
   autoral: { texto: 'Autoral', cor: 'bg-[#4a2d63] text-[#e7c6ff]' },
@@ -19,20 +19,9 @@ export default function SistemasGaleria({ aventureiroId, fichaV8Url }: { aventur
 
   async function criar(sistema: string) {
     setCriando(sistema); setErro('')
-    try {
-      if (NUVEM_ATIVA) {
-        const r = await api<{ ficha: { id: string } }>('fichas', { method: 'POST', aventureiro: aventureiroId, body: { sistema } })
-        window.location.assign('/ficha?nuvem=' + r.ficha.id)
-      } else {
-        const id = crypto.randomUUID()
-        const s = SISTEMAS.find(x => x.id === sistema)!
-        localStorage.setItem('prg-ficha-gen-' + id, JSON.stringify(fichaVazia(s)))
-        const lista = JSON.parse(localStorage.getItem('prg-fichas-gen-lista-' + aventureiroId) || '[]')
-        localStorage.setItem('prg-fichas-gen-lista-' + aventureiroId, JSON.stringify([...lista, { id, sistema, criadaEm: new Date().toISOString() }]))
-        window.location.assign('/ficha?local=' + id)
-      }
-    } catch (e) { setErro(e instanceof ErroNuvem ? e.message : 'Não foi possível criar a ficha.'); setCriando('') }
+    try { await criarEAbrirFicha(sistema, aventureiroId) } catch (e) { setErro(e instanceof ErroNuvem ? e.message : 'Não foi possível criar a ficha.'); setCriando('') }
   }
+
 
   return <div className="mt-6 space-y-4">
     {erro && <p role="alert" className="text-sm text-red-200">{erro}</p>}

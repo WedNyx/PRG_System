@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Cloud, History, Loader2, Plus, ScrollText, Send, Trash2, Upload } from 'lucide-react'
 import { SeloStatus } from './PainelFichasCampanha'
+import EscolherSistema from './EscolherSistema'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import { fichasLocais, lerFichaLocal, marcarImportado, type FichaLocal } from '@/lib/nuvem/locais'
 import { sistemaPorId, SISTEMA_V8 } from '@/lib/sistemas/catalogo'
@@ -22,6 +23,7 @@ export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: st
   const [enviando, setEnviando] = useState<string | null>(null)
   const [campanhas, setCampanhas] = useState<{ id: string; nome: string; estado: string }[]>([])
   const [aviso, setAviso] = useState('')
+  const [escolher, setEscolher] = useState(false)
 
   const carregar = useCallback(async () => {
     try { setFichas((await api<{ fichas: Ficha[] }>('fichas', { aventureiro: aventureiroId })).fichas); setErro('') }
@@ -32,13 +34,7 @@ export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: st
   useEffect(() => { carregar() }, [carregar])
   useEffect(() => { if (tipo === 'independentes' && fichas) lerLocais(fichas) }, [fichas, lerLocais, tipo])
 
-  async function criar() {
-    setOcupado(true); setErro('')
-    try {
-      const r = await api<{ ficha: { id: string } }>('fichas', { method: 'POST', body: {}, aventureiro: aventureiroId })
-      window.location.assign('/ficha-v8?nuvem=' + r.ficha.id)
-    } catch (e) { setErro(msg(e)); setOcupado(false) }
-  }
+
 
   async function importar(f: FichaLocal) {
     setOcupado(true); setErro('')
@@ -98,7 +94,7 @@ export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: st
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h2 className="flex items-center gap-2 text-xl font-semibold"><Cloud size={20} className="text-[#c3a4f5]" /> {tipo === 'independentes' ? 'Personagens independentes' : 'Fichas de campanhas'}</h2>
         <p className="mt-1 text-sm text-[#c4b6d4]">Sincronizadas: abra no celular ou no computador.</p></div>
-      {tipo === 'independentes' && <button type="button" disabled={ocupado} onClick={criar} className="inline-flex items-center gap-2 rounded-xl bg-[#7652ac] px-4 py-3 text-sm font-semibold hover:bg-[#8b68c4] disabled:opacity-50"><Plus size={18} /> Nova ficha</button>}
+      {tipo === 'independentes' && <button type="button" disabled={ocupado} onClick={() => setEscolher(true)} className="inline-flex items-center gap-2 rounded-xl bg-[#7652ac] px-4 py-3 text-sm font-semibold hover:bg-[#8b68c4] disabled:opacity-50"><Plus size={18} /> Nova ficha</button>}
     </div>
     {locais.length > 0 && <div className="mt-4 rounded-xl border border-[#67517f] bg-[#2b2140] p-4 text-sm">
       <p className="font-semibold">Fichas salvas só neste navegador</p>
@@ -108,6 +104,7 @@ export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: st
         <button type="button" disabled={ocupado} onClick={() => importar(f)} className="inline-flex items-center gap-1 rounded-lg border border-[#70588c] px-3 py-1.5 hover:bg-[#38294d] disabled:opacity-50"><Upload size={15} /> Enviar</button>
       </li>)}</ul>
     </div>}
+    {escolher && <EscolherSistema aventureiroId={aventureiroId} onFechar={() => setEscolher(false)} />}
     {erro && <p role="alert" className="mt-4 text-sm text-red-200">{erro}</p>}
     {aviso && <p role="status" className="mt-4 rounded-lg bg-[#1f4a35] p-3 text-sm text-[#a9f0c8]">{aviso}</p>}
     {lista === null && <p className="mt-5 flex items-center gap-2 text-[#cbb9dc]"><Loader2 className="animate-spin" size={18} /> Carregando...</p>}

@@ -260,7 +260,7 @@ export default function PortalAventureiros() {
           </button>
         </section>
         <div className="flex flex-wrap items-center justify-center gap-3 pb-3 text-xs text-[#b4aeca]">
-          <span title="Versão publicada nesta instalação">PRG System v{versao?.version ?? '0.1.0'}</span>
+          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.5.0'}</Link>
           {versao?.revision && <span title="Identificador da implantação">Build {versao.revision}</span>}
           <button type="button" onClick={() => window.location.reload()}
             className="rounded-md border border-[#62527e] px-2 py-1 text-[#b99bff] hover:bg-[#34294f]">
@@ -268,7 +268,7 @@ export default function PortalAventureiros() {
           </button>
         </div>
         <p className="mx-auto max-w-2xl pb-6 text-center text-xs text-[#b4aeca]">
-          {CLOUD_ENABLED ? 'Perfis compartilhados em teste: os perfis locais não são importados automaticamente.' : 'Versão de testes: os perfis e fotos ficam apenas neste navegador.'} A Ficha V8 ainda usa armazenamento local.
+          {CLOUD_ENABLED ? 'Perfis compartilhados em teste: os perfis locais não são importados automaticamente.' : 'Versão de testes: os perfis e fotos ficam apenas neste navegador.'}
           Não há sincronização entre dispositivos; guarde backups das suas fichas.
         </p>
       </div>

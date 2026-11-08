@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   // Portal, Central do Aventureiro e Ficha V8 local não dependem de autenticação legada.
   // Campanhas e dados privados continuam protegidos pela autenticação anterior.
   // API da nuvem (perfis/campanhas/fichas) faz suas próprias verificações no servidor.
-  if (pathname === '/api/aventureiros' || pathname.startsWith('/api/prg/') || pathname.startsWith('/convite/') || pathname === '/ficha' || pathname === '/historico') {
+  if (pathname === '/api/aventureiros' || pathname === '/api/version' || pathname.startsWith('/api/prg/') || pathname.startsWith('/convite/') || pathname === '/ficha' || pathname === '/historico' || pathname === '/mesa' || pathname === '/novidades') {
     return NextResponse.next({ request })
   }
   if (pathname === '/' || pathname === '/portal' ||

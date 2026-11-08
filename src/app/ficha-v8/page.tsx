@@ -70,7 +70,7 @@ function FichaV8Conteudo() {
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#0d0c19] text-[#f4f0ff]">
       {animacao && <Dados3D ref={dadosRef} somAtivo={false} />}
       <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-[#373251] bg-[#19172c] px-4 py-3">
-        <Link href={campanha ? '/campanha/' + encodeURIComponent(campanha) : nuvemId ? '/central' : '/portal'} className="text-sm text-[#b99bff] hover:underline">← Voltar ao portal</Link>
+        <Link href="/central" className="text-sm text-[#b99bff] hover:underline">← Voltar ao início</Link>
         <h1 className="font-bold text-lg">🌙 Lunethernnyis · Ficha V8</h1>
         <span className="text-xs text-[#b4aeca]" aria-live="polite">{nuvemId ? ROTULO_SYNC[sync.estado] : 'Salvamento neste navegador · sem sincronização automática'}</span>
       </header>

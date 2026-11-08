@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { AlertTriangle, Dice5, Info } from 'lucide-react'
 import { calcular } from '@/lib/sistemas/calculo'
@@ -36,7 +36,41 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
   const grupos = new Map<string, NonNullable<Sistema['pericias']>['lista']>()
   for (const p of s.pericias?.lista ?? []) grupos.set(p.grupo ?? '', [...(grupos.get(p.grupo ?? '') ?? []), p])
 
-  return <div className="space-y-4">
+  const secaoDeLista = (id: string) => /inventario|equipamento|armas|protecao|ataques|dinheiro/.test(id) ? 'equipamentos'
+    : /habilidade|tecnica|talento|magia|poder|facanha|transforma|rituais|tracos/.test(id) ? 'habilidades' : 'anotacoes'
+  const listasDe = (sec: string) => s.listas.filter(l => secaoDeLista(l.id) === sec)
+  const SECOES = ([
+    { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade e recursos', ok: true },
+    { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? 'Atributos e perícias' : s.pericias.titulo ?? 'Perícias') : 'Atributos', sub: 'Testes e rolagens', ok: s.atributos.length > 0 || !!s.pericias },
+    { id: 'habilidades', icone: '🌌', nome: 'Habilidades e poderes', sub: 'Técnicas, talentos, magias', ok: listasDe('habilidades').length > 0 },
+    { id: 'equipamentos', icone: '⚔️', nome: 'Armas e equipamentos', sub: 'Inventário e itens', ok: listasDe('equipamentos').length > 0 },
+    { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ok: true },
+  ] as const).filter(x => x.ok)
+  const [secao, setSecao] = useState<string>('principal')
+  const ir = (id: string) => { setSecao(id); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+  const recursoPrincipal = s.recursos.find(r => c.recursosMax[r.id])
+  const defesa = s.derivados.find(x => /^(defesa|ca)$/.test(x.id))
+
+  return <div>
+    <div className="sticky top-[57px] z-10 -mx-3 mb-4 flex items-center gap-3 overflow-x-auto border-b border-[#373251] bg-[#100d1c]/95 px-3 py-2 backdrop-blur sm:-mx-6 sm:px-6">
+      <span className="shrink-0 truncate font-semibold text-[#e4d3ff]">{d.nome || 'Personagem'}</span>
+      {recursoPrincipal && (() => { const max = c.recursosMax[recursoPrincipal.id] ?? 0, at = d.recursos[recursoPrincipal.id]?.atual ?? 0
+        return <span className="shrink-0 rounded-lg border border-[#62527e] bg-[#201a32] px-3 py-1 text-sm">❤️ {recursoPrincipal.nome.split(' ')[0]} <strong>{at} / {max}</strong></span> })()}
+      {defesa && <span className="shrink-0 rounded-lg border border-[#62527e] bg-[#201a32] px-3 py-1 text-sm">🛡️ {defesa.nome.split(' (')[0]} <strong>{c.derivados[defesa.id] ?? '—'}</strong></span>}
+    </div>
+    <div className="lg:flex lg:gap-6">
+      <nav aria-label="Seções da ficha" className="mb-4 lg:mb-0 lg:w-60 lg:shrink-0">
+        <div className="flex gap-2 overflow-x-auto pb-1 lg:sticky lg:top-[120px] lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-[#55456e] lg:bg-[#201a32] lg:p-3">
+          <p className="hidden px-2 pb-1 text-xs font-bold uppercase tracking-widest text-[#ed9cd8] lg:block">🌙 Menu da ficha</p>
+          {SECOES.map(x => <button key={x.id} type="button" onClick={() => ir(x.id)} aria-current={secao === x.id ? 'page' : undefined}
+            className={'shrink-0 rounded-xl px-3 py-2 text-left text-sm transition lg:w-full ' + (secao === x.id ? 'bg-[#5b4380] text-white' : 'bg-[#201a32] text-[#d6c8e8] hover:bg-[#2b2140] lg:bg-transparent')}>
+            <span className="whitespace-nowrap">{x.icone} {x.nome}</span>
+            <span className="hidden text-xs text-[#c4b6d4] lg:block">{x.sub}</span>
+          </button>)}
+        </div>
+      </nav>
+      <div className="min-w-0 flex-1 space-y-4">
+        {secao === 'principal' && <>
     <section className={card}>
       <label className="block text-sm font-semibold">Nome do personagem
         <input value={d.nome} maxLength={90} disabled={somenteLeitura} onChange={e => set('nome', e.target.value)} className={input + ' mt-1 text-lg font-bold'} placeholder="Ex.: Lyra Nyx" /></label>
@@ -49,26 +83,10 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         </label>)}
       </div>
     </section>
-
     {c.limites.some(l => l.excedido) && <section role="alert" className="rounded-2xl border border-[#c98b3a] bg-[#3a2a14] p-4 text-sm text-[#f6dca8]">
       <p className="flex items-center gap-2 font-semibold"><AlertTriangle size={18} /> Acima do limite das regras</p>
       <ul className="mt-2 list-disc pl-5">{c.limites.filter(l => l.excedido).map(l => <li key={l.nome}>{l.nome}: {l.uso} de {l.max}</li>)}</ul>
     </section>}
-
-    {s.atributos.length > 0 && <section className={card}>
-      <h2 className="mb-3 font-bold text-[#ed9cd8]">Atributos</h2>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-8">
-        {s.atributos.map(a => <div key={a.id} className="rounded-xl border border-[#5e4b78] bg-[#171325] p-2 text-center sm:p-3">
-          <p className="text-xs uppercase tracking-wider text-[#c4b6d4]" title={a.nome}>{a.id}</p>
-          <input type="number" aria-label={a.nome} min={a.min} max={a.max} value={d.atributos[a.id] ?? a.padrao} disabled={somenteLeitura}
-            onChange={e => set('atributos', { ...d.atributos, [a.id]: Math.max(a.min, Math.min(a.max, Number(e.target.value) || 0)) })}
-            className="mt-1 w-full bg-transparent text-center text-2xl font-black text-white outline-none" />
-          {s.formulaModificador && <p className="text-sm text-[#d4baff]">{sinal(c.mods[a.id])}</p>}
-          <p className="mt-1 truncate text-[10px] text-[#a998bd]">{a.nome}</p>
-        </div>)}
-      </div>
-    </section>}
-
     {(s.derivados.length > 0 || s.recursos.length > 0) && <section className={card}>
       <h2 className="mb-3 font-bold text-[#ed9cd8]">Valores e recursos</h2>
       {s.derivados.length > 0 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -94,7 +112,30 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         })}
       </div>}
     </section>}
-
+        </>}
+        {secao === 'atributos' && <>
+    {c.limites.some(l => l.excedido) && <section role="alert" className="rounded-2xl border border-[#c98b3a] bg-[#3a2a14] p-4 text-sm text-[#f6dca8]">
+      <p className="flex items-center gap-2 font-semibold"><AlertTriangle size={18} /> Acima do limite das regras</p>
+      <ul className="mt-2 list-disc pl-5">{c.limites.filter(l => l.excedido).map(l => <li key={l.nome}>{l.nome}: {l.uso} de {l.max}</li>)}</ul>
+    </section>}
+    {s.atributos.length > 0 && <section className={card}>
+      <h2 className="mb-3 font-bold text-[#ed9cd8]">Atributos</h2>
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-8">
+        {s.atributos.map(a => <div key={a.id} className="rounded-xl border border-[#5e4b78] bg-[#171325] p-2 text-center sm:p-3">
+          <p className="text-xs uppercase tracking-wider text-[#c4b6d4]" title={a.nome}>{a.id}</p>
+          <input type="number" aria-label={a.nome} min={a.min} max={a.max} value={d.atributos[a.id] ?? a.padrao} disabled={somenteLeitura}
+            onChange={e => set('atributos', { ...d.atributos, [a.id]: Math.max(a.min, Math.min(a.max, Number(e.target.value) || 0)) })}
+            className="mt-1 w-full bg-transparent text-center text-2xl font-black text-white outline-none" />
+          {s.formulaModificador && <p className="text-sm text-[#d4baff]">{sinal(c.mods[a.id])}</p>}
+          <p className="mt-1 truncate text-[10px] text-[#a998bd]">{a.nome}</p>
+        </div>)}
+      </div>
+    </section>}
+    {d20 && s.atributos.length > 0 && <section className={card}>
+      <h2 className="mb-2 flex items-center gap-2 font-bold text-[#ed9cd8]"><Dice5 size={18} /> Teste de atributo</h2>
+      <div className="flex flex-wrap gap-2">{s.atributos.map(a => <button key={a.id} type="button" onClick={() => rolar(a.nome, s.formulaModificador ? c.mods[a.id] : c.vars[a.id])}
+        className="rounded-lg border border-[#5e4b78] px-3 py-2 text-sm hover:bg-[#34294f]">{a.id} {sinal(s.formulaModificador ? c.mods[a.id] : c.vars[a.id])}</button>)}</div>
+    </section>}
     {s.pericias && <section className={card}>
       <h2 className="mb-1 font-bold text-[#ed9cd8]">{s.pericias.titulo ?? 'Perícias'}</h2>
       {podeRolar && <p className="mb-3 text-xs text-[#a998bd]">Toque no valor para rolar.</p>}
@@ -114,23 +155,36 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         </div>
       </div>)}
     </section>}
-
-    {d20 && s.atributos.length > 0 && <section className={card}>
-      <h2 className="mb-2 flex items-center gap-2 font-bold text-[#ed9cd8]"><Dice5 size={18} /> Teste de atributo</h2>
-      <div className="flex flex-wrap gap-2">{s.atributos.map(a => <button key={a.id} type="button" onClick={() => rolar(a.nome, s.formulaModificador ? c.mods[a.id] : c.vars[a.id])}
-        className="rounded-lg border border-[#5e4b78] px-3 py-2 text-sm hover:bg-[#34294f]">{a.id} {sinal(s.formulaModificador ? c.mods[a.id] : c.vars[a.id])}</button>)}</div>
-    </section>}
-
-    <section className="grid gap-4 lg:grid-cols-2">
-      {s.listas.map(l => <label key={l.id} className={card + ' block'}>
+        </>}
+        {secao === 'habilidades' && <>
+    <section className="grid gap-4">
+      {listasDe('habilidades').map(l => <label key={l.id} className={card + ' block'}>
         <span className="font-bold text-[#ed9cd8]">{l.nome}</span>
         <textarea rows={6} value={d.listas[l.id] ?? ''} disabled={somenteLeitura} maxLength={20000} onChange={e => set('listas', { ...d.listas, [l.id]: e.target.value })} className={input + ' mt-2'} />
       </label>)}
     </section>
-
+        </>}
+        {secao === 'equipamentos' && <>
+    <section className="grid gap-4">
+      {listasDe('equipamentos').map(l => <label key={l.id} className={card + ' block'}>
+        <span className="font-bold text-[#ed9cd8]">{l.nome}</span>
+        <textarea rows={6} value={d.listas[l.id] ?? ''} disabled={somenteLeitura} maxLength={20000} onChange={e => set('listas', { ...d.listas, [l.id]: e.target.value })} className={input + ' mt-2'} />
+      </label>)}
+    </section>
+        </>}
+        {secao === 'anotacoes' && <>
+    <section className="grid gap-4">
+      {listasDe('anotacoes').map(l => <label key={l.id} className={card + ' block'}>
+        <span className="font-bold text-[#ed9cd8]">{l.nome}</span>
+        <textarea rows={6} value={d.listas[l.id] ?? ''} disabled={somenteLeitura} maxLength={20000} onChange={e => set('listas', { ...d.listas, [l.id]: e.target.value })} className={input + ' mt-2'} />
+      </label>)}
+    </section>
     {(s.observacoes?.length || s.creditos) && <section className={card + ' text-xs text-[#bfb2cf]'}>
       {s.observacoes?.map(o => <p key={o} className="mb-2 flex gap-2"><Info size={14} className="mt-0.5 shrink-0" /> {o}</p>)}
       {s.creditos && <p className="mt-2 border-t border-[#3d3152] pt-2 text-[11px] leading-relaxed text-[#9d8db0]">{s.creditos}</p>}
     </section>}
+        </>}
+      </div>
+    </div>
   </div>
 }

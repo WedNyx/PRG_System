@@ -103,7 +103,7 @@ function Conteudo() {
 
   return <main className="min-h-screen bg-[#100d1c] text-[#f2ebff]">
     <header className="sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b border-[#373251] bg-[#19172c]/95 px-4 py-3 backdrop-blur">
-      <Link href="/central" className="text-sm text-[#b99bff] hover:underline">← Central</Link>
+      <Link href="/central" className="text-sm text-[#b99bff] hover:underline">← Início</Link>
       <h1 className="min-w-0 flex-1 truncate font-bold">{sistema?.nome ?? 'Ficha'}</h1>
       <span className="text-xs text-[#b4aeca]" aria-live="polite">{ROTULO[estado]}</span>
     </header>

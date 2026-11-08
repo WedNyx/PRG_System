@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import SeletorSistemaCampanha from './SeletorSistemaCampanha'
 import { BookOpen, Castle, Pencil, Plus, Save, X } from 'lucide-react'
 import { CAMPOS, REGRAS, permissoesPadrao, type Permissoes, type Regra } from '@/lib/campanhas/permissoes'
 import CampanhasNuvem from './CampanhasNuvem'
@@ -99,7 +100,7 @@ function CampanhasLocais({ aventureiroId }: { aventureiroId: string }) {
       <div className="flex items-center justify-between gap-3"><h2 className="text-xl font-semibold">{mode === 'criar' ? 'Nova campanha' : 'Editar campanha'}</h2><button type="button" onClick={() => { setMode('lista'); setErro('') }} aria-label="Cancelar" className="rounded-lg p-2 hover:bg-[#38294d]"><X size={20}/></button></div>
       <label className="block text-sm font-medium">Nome da campanha<input required minLength={3} maxLength={80} value={nome} onChange={e => setNome(e.target.value)} className="mt-2 w-full rounded-xl border border-[#70588c] bg-[#151123] p-3 text-white" placeholder="Ex.: Ecos da Lua Partida"/></label>
       <label className="block text-sm font-medium">Descrição<textarea maxLength={600} rows={3} value={descricao} onChange={e => setDescricao(e.target.value)} className="mt-2 w-full rounded-xl border border-[#70588c] bg-[#151123] p-3 text-white" placeholder="Conte sobre sua aventura..."/></label>
-      <label className="block text-sm font-medium">Sistema de RPG<input required minLength={2} maxLength={80} value={sistema} onChange={e => setSistema(e.target.value)} className="mt-2 w-full rounded-xl border border-[#70588c] bg-[#151123] p-3 text-white"/></label>
+      <div className="block text-sm font-medium">Sistema de RPG<SeletorSistemaCampanha valor={sistema} onChange={setSistema} classe="mt-2 w-full rounded-xl border border-[#70588c] bg-[#151123] p-3 text-white" /></div>
       <fieldset className="space-y-3"><legend className="mb-3 font-semibold">Modelo padrão de edição das fichas</legend>
         {modelos.map(m => <label key={m.id} className={'flex cursor-pointer gap-3 rounded-xl border p-4 ' + (modelo === m.id ? 'border-[#b79aff] bg-[#3a2a53]' : 'border-[#55456e]')}>
           <input type="radio" name="modelo" checked={modelo === m.id} onChange={() => { setModelo(m.id); setRegras(permissoesPadrao(m.id)) }} className="accent-[#b79aff]"/>

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Plus, ScrollText, Trash2, ChevronRight } from 'lucide-react'
+import FichasNuvem from './FichasNuvem'
+import { NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 
 type Ficha = { id: string; criadaEm: string }
 const prefix = 'prg-fichas-independentes-v1-'
@@ -10,6 +12,10 @@ const storagePrefix = 'lunethernnyis-ficha-v8-'
 const validId = (id: string) => /^[a-zA-Z0-9-]{1,80}$/.test(id)
 
 export default function FichasIndependentes({ aventureiroId }: { aventureiroId: string }) {
+  return NUVEM_ATIVA ? <FichasNuvem aventureiroId={aventureiroId} tipo="independentes" /> : <FichasLocais aventureiroId={aventureiroId} />
+}
+
+function FichasLocais({ aventureiroId }: { aventureiroId: string }) {
   const [fichas, setFichas] = useState<Ficha[]>([])
   const [nomes, setNomes] = useState<Record<string, string>>({})
   const [erro, setErro] = useState('')

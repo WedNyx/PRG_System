@@ -43,3 +43,10 @@ Isso **não prova identidade**: alguém que saiba o ID de um perfil consegue agi
   - Origin ausente
 - Navegador (Playwright): ficha editada no "celular" aparece no "computador"; conflito detectado; fluxo de convite completo no celular, sem erros de JavaScript.
 - Não testado: o Supabase real deste projeto (falta acesso) e a unificação com as campanhas antigas do login por e-mail. A unificação está planejada para a Fase 1b, porque depende de decidir como ligar contas antigas a aventureiros.
+
+## Sistemas de RPG (motor de modelos)
+- `src/lib/sistemas/`: formato de sistema (`tipos.ts`), avaliador de fórmulas seguro (`formula.ts`, sem `eval`), cálculo da ficha (`calculo.ts`) e catálogo (`catalogo.ts`).
+- Modelos: Lunethernnyis automático (só regras aprovadas; avisos de limite de criação), D&D 5e SRD 5.2 (CC-BY-4.0), Pathfinder 2e Remaster (ORC), Fate Core (CC-BY-3.0), Blades in the Dark (CC-BY-3.0), Basic Roleplaying (ORC), Ordem Paranormal e Tormenta20 (somente estrutura, sem texto dos livros) e Ficha livre.
+- Créditos exigidos pelas licenças aparecem no fim de cada ficha.
+- Página `/ficha?nuvem=<id>` (ou `?local=<id>` sem nuvem): salva automaticamente, detecta conflito de versão, rolagem 1d20 ao tocar na perícia.
+- O mesmo formato será usado pelo construtor de sistemas autorais.

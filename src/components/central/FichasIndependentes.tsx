@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Plus, ScrollText, Trash2, ChevronRight } from 'lucide-react'
 import FichasNuvem from './FichasNuvem'
 import { NUVEM_ATIVA } from '@/lib/nuvem/cliente'
+import { sistemaPorId } from '@/lib/sistemas/catalogo'
 
 type Ficha = { id: string; criadaEm: string }
 const prefix = 'prg-fichas-independentes-v1-'
@@ -79,6 +80,25 @@ function FichasLocais({ aventureiroId }: { aventureiroId: string }) {
       </div>)}
     </div>
     {ready && fichas.length === 0 && <p className="mt-5 rounded-xl border border-dashed border-[#594871] p-6 text-center text-sm text-[#c4b6d4]">Nenhuma ficha independente ainda. Crie seu primeiro personagem!</p>}
+    <FichasOutrosSistemas aventureiroId={aventureiroId} />
     <p className="mt-5 text-xs leading-relaxed text-[#ad9dbe]">Os dados ainda não são sincronizados entre dispositivos. Antes de apagar ou trocar de navegador, exporte um backup JSON de cada ficha. Ao voltar desta tela, os nomes serão atualizados.</p>
   </section>
+}
+
+/** Fichas de outros sistemas (D&D, Fate...) salvas neste navegador quando a nuvem está desligada. */
+function FichasOutrosSistemas({ aventureiroId }: { aventureiroId: string }) {
+  const [lista, setLista] = useState<{ id: string; sistema: string; nome: string }[]>([])
+  useEffect(() => {
+    try {
+      const raw: unknown = JSON.parse(localStorage.getItem('prg-fichas-gen-lista-' + aventureiroId) || '[]')
+      setLista((Array.isArray(raw) ? raw : []).filter(f => f && validId(f.id) && localStorage.getItem('prg-ficha-gen-' + f.id)).map(f => {
+        let nome = ''
+        try { nome = JSON.parse(localStorage.getItem('prg-ficha-gen-' + f.id) || '{}').nome || '' } catch {}
+        return { id: f.id, sistema: sistemaPorId(String(f.sistema))?.nome ?? String(f.sistema), nome }
+      }))
+    } catch { setLista([]) }
+  }, [aventureiroId])
+  if (!lista.length) return null
+  return <div className="mt-5 grid gap-3 sm:grid-cols-2">{lista.map(f => <Link key={f.id} href={'/ficha?local=' + f.id} className="rounded-xl border border-[#594871] bg-[#171325] p-4 hover:border-[#b79aff]">
+    <p className="font-semibold">{f.nome || 'Personagem sem nome'}</p><p className="mt-1 text-xs text-[#b5a5c8]">{f.sistema}</p></Link>)}</div>
 }

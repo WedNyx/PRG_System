@@ -107,7 +107,9 @@ export function validarFichaDados(dados: unknown): Ok<{ dados: Record<string, un
   if (tamanho > FICHA_MAX_BYTES) return { ok: false, erro: 'Ficha muito grande (retrato ou textos longos demais).' }
   const d = dados as Record<string, unknown>
   const fields = d.fields && typeof d.fields === 'object' ? d.fields as Record<string, unknown> : {}
-  const nome = typeof fields.name === 'string' ? fields.name.trim().slice(0, 90) : ''
+  // Ficha V8 guarda o nome em fields.name; os modelos genéricos, em nome.
+  const bruto = typeof fields.name === 'string' ? fields.name : typeof d.nome === 'string' ? d.nome : ''
+  const nome = bruto.trim().slice(0, 90)
   return { ok: true, valor: { dados: d, nome } }
 }
 

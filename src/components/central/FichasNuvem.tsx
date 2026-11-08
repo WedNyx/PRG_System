@@ -4,8 +4,11 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight, Cloud, Loader2, Plus, ScrollText, Trash2, Upload } from 'lucide-react'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
+import { sistemaPorId, SISTEMA_V8 } from '@/lib/sistemas/catalogo'
 
-type Ficha = { id: string; nome: string; status: string; campanha_id: string | null; atualizada_em: string; campanha: { nome: string } | null }
+const linkFicha = (f: { id: string; sistema: string }) => (f.sistema === SISTEMA_V8 ? '/ficha-v8?nuvem=' : '/ficha?nuvem=') + f.id
+
+type Ficha = { id: string; nome: string; sistema: string; status: string; campanha_id: string | null; atualizada_em: string; campanha: { nome: string } | null }
 const LISTA_LOCAL = 'prg-fichas-independentes-v1-'
 const CHAVE_V8 = 'lunethernnyis-ficha-v8-'
 const IMPORTADAS = 'prg-fichas-importadas-v1-'
@@ -73,9 +76,9 @@ export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: st
   const cartao = (f: Ficha) => <div key={f.id} className={'rounded-xl border border-[#594871] bg-[#171325] p-4 ' + (f.status === 'arquivada' ? 'opacity-60' : '')}>
     <div className="flex items-start gap-3"><ScrollText className="shrink-0 text-[#c3a4f5]" size={25} /><div className="min-w-0 flex-1">
       <h3 className="break-words font-semibold">{f.nome || 'Personagem sem nome'}</h3>
-      <p className="mt-1 text-xs text-[#b5a5c8]">{f.status === 'arquivada' ? 'Arquivada · ' : ''}Atualizada {new Date(f.atualizada_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</p></div></div>
+      <p className="mt-1 text-xs text-[#b5a5c8]">{f.sistema === SISTEMA_V8 ? 'Lunethernnyis · Ficha V8' : sistemaPorId(f.sistema)?.nome ?? f.sistema}<br />{f.status === 'arquivada' ? 'Arquivada · ' : ''}Atualizada {new Date(f.atualizada_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</p></div></div>
     <div className="mt-4 flex items-center justify-between gap-3">
-      <Link href={'/ficha-v8?nuvem=' + f.id} className="inline-flex items-center gap-1 rounded-lg bg-[#3b2b57] px-3 py-2 text-sm font-semibold text-[#e4d3ff] hover:bg-[#533b78]">Abrir ficha <ChevronRight size={16} /></Link>
+      <Link href={linkFicha(f)} className="inline-flex items-center gap-1 rounded-lg bg-[#3b2b57] px-3 py-2 text-sm font-semibold text-[#e4d3ff] hover:bg-[#533b78]">Abrir ficha <ChevronRight size={16} /></Link>
       {tipo === 'independentes' && <button type="button" disabled={ocupado} onClick={() => excluir(f)} aria-label={'Excluir ficha ' + f.nome} className="rounded-lg p-2 text-[#f2a9c3] hover:bg-[#4b253a]"><Trash2 size={18} /></button>}
     </div>
   </div>

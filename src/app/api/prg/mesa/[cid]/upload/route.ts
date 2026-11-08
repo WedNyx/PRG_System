@@ -1,17 +1,17 @@
 import { ator, checarOrigem, ok, papelNaCampanha, rota, ErroApi } from '@/lib/nuvem/servidor'
-import { isUuid, podeAdministrar } from '@/lib/nuvem/validacao'
+import { isUuid } from '@/lib/nuvem/validacao'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ cid: string }> }
 const TIPOS: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }
 const MAX = 5 * 1024 * 1024
 
-/** Envia imagem de mapa/token para o Storage do Supabase (bucket público prg-mesa). Só mestre. */
+/** Envia imagem de mapa/token para o Storage do Supabase (bucket público prg-mesa). Qualquer participante. */
 export const POST = rota<Ctx>(async (req, { params }) => {
   const { cid } = await params
   checarOrigem(req)
   const eu = await ator(req)
-  if (!isUuid(cid) || !podeAdministrar(await papelNaCampanha(cid, eu))) throw new ErroApi(403, 'Apenas o mestre envia imagens.')
+  if (!isUuid(cid) || !(await papelNaCampanha(cid, eu))) throw new ErroApi(403, 'Você não participa desta campanha.')
   const tipo = req.headers.get('content-type') ?? ''
   const ext = TIPOS[tipo]
   if (!ext) throw new ErroApi(415, 'Envie uma imagem PNG, JPG ou WEBP.')

@@ -3,92 +3,110 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowLeft, ChevronLeft, ChevronRight, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Lock, MapPin, MessageSquare, Pencil, Plus, Ruler, Send, Settings2, Swords, Trash2, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, BookOpen, ChevronLeft, ChevronRight, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
-import { api, ErroNuvem } from '@/lib/nuvem/cliente'
+import { api } from '@/lib/nuvem/cliente'
 import { condicoesDisponiveis, emojiCondicao } from '@/lib/condicoes'
-import type { Campanha, Personagem } from '@/types/database'
-import MapaGrid, { type CursorRemoto, type ModoMapa, type Ping } from './MapaGrid'
+import type { Camada } from '@/lib/nuvem/mesa'
+import { podeMoverToken } from '@/lib/nuvem/mesa'
+import MapaMesa, { type CursorRemoto, type ModoMesa, type Ping, type TokenMapa } from './MapaMesa'
 import Dados3D, { type Dados3DHandle } from './Dados3D'
+import PainelCampanha from './PainelCampanha'
+import { btn, input, msg } from './estilos'
 
-type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean }
-type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; dono_id: string | null; ficha_id: string | null }
-type Evento = { id: number; tipo: 'chat' | 'rolagem' | 'sistema'; visibilidade: 'publica' | 'mestre' | 'privada'; autor_id: string | null; destinatario_id: string | null; personagem: string | null; texto: string | null; expressao: string | null; resultados: number[] | null; total: number | null; criado_em: string; autor: { apelido: string } | null }
+type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean }
+type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; dono_id: string | null; ficha_id: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number }
+export type Evento = { id: number; tipo: 'chat' | 'rolagem' | 'sistema'; visibilidade: 'publica' | 'mestre' | 'privada'; autor_id: string | null; destinatario_id: string | null; personagem: string | null; texto: string | null; expressao: string | null; resultados: number[] | null; total: number | null; criado_em: string; autor: { apelido: string } | null }
 type Iniciativa = { id: string; nome: string; valor: number; tokenId?: string | null }
-type Estado = {
+export type Estado = {
   campanha: { id: string; nome: string; meuPapel: string }; mesa: { iniciativa: Iniciativa[]; turno: number; rodada: number }
   cenas: Cena[]; cenaAtiva: Cena | null; tokens: Token[]; desenhos: { id: string; cor: string; pontos: number[] }[]; eventos: Evento[]
   membros: { aventureiro_id: string; papel: string; aventureiro: { apelido: string } | null }[]; fichas: { id: string; nome: string; dono_id: string; npc: boolean }[]; eu: string
 }
+export type Acao = (b: Record<string, unknown>) => Promise<Record<string, unknown>>
 
 const CORES = ['#fbbf24', '#38bdf8', '#4ade80', '#f87171', '#c084fc', '#f1f5f9']
 const DADOS = ['1d4', '1d6', '1d8', '1d10', '1d12', '1d20', '1d100']
-const btn = 'inline-flex items-center gap-1 rounded-lg border border-[#5e4b78] px-2.5 py-1.5 text-xs hover:bg-[#34294f] disabled:opacity-50'
-const input = 'w-full rounded-lg border border-[#5e4b78] bg-[#100f20] p-2 text-sm text-white'
-const msg = (e: unknown) => e instanceof ErroNuvem ? e.message : 'Falha de conexão.'
+const MOVIMENTO = { dono: 'O dono move', todos: 'Todos movem', mestre: 'Só o mestre move' }
 const hora = (d: string) => new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
+/** Envia uma imagem do aparelho e devolve o link público + proporção (altura/largura). */
+async function enviarImagem(campanhaId: string, eu: string, arq: File): Promise<{ url: string; ar: number }> {
+  if (arq.size > 5 * 1024 * 1024) throw new Error('Imagem maior que 5 MB.')
+  const ar = await new Promise<number>(res => { const img = new Image(); img.onload = () => res(img.naturalHeight / img.naturalWidth || 1); img.onerror = () => res(1); img.src = URL.createObjectURL(arq) })
+  const r = await fetch('/api/prg/mesa/' + campanhaId + '/upload', { method: 'POST', body: arq, headers: { 'Content-Type': arq.type, 'x-prg-aventureiro': eu } })
+  const d = await r.json().catch(() => ({}))
+  if (!r.ok) throw new Error(d.erro || 'Falha no envio')
+  return { url: d.url, ar }
+}
 
 export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [e, setE] = useState<Estado | null>(null)
   const [erro, setErro] = useState('')
-  const [modo, setModo] = useState<ModoMapa>('mover')
+  const [modo, setModo] = useState<ModoMesa>('mover')
   const [cor, setCor] = useState(CORES[0])
-  const [aba, setAba] = useState<'chat' | 'iniciativa' | 'mestre'>('chat')
+  const [pincel, setPincel] = useState(1)
+  const [aba, setAba] = useState<'chat' | 'tokens' | 'iniciativa' | 'campanha' | 'mestre'>('chat')
   const [painel, setPainel] = useState(true)
   const [pings, setPings] = useState<Ping[]>([])
   const [cursores, setCursores] = useState<CursorRemoto[]>([])
   const [online, setOnline] = useState<string[]>([])
   const [tempoReal, setTempoReal] = useState(false)
   const [tokenAberto, setTokenAberto] = useState<string | null>(null)
+  const [camadaSel, setCamadaSel] = useState<string | null>(null)
   const [som, setSom] = useState(true)
   const [historico, setHistorico] = useState(false)
+  const [destaque, setDestaque] = useState<Evento | null>(null)
   const canal = useRef<RealtimeChannel | null>(null)
   const dados = useRef<Dados3DHandle>(null)
   const ultimoEvento = useRef(0)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const timerDestaque = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  /** Mostra a rolagem: dados 3D + painel grande com cada número que caiu. */
+  const destacar = useCallback((ev: Evento) => {
+    if (ev.expressao && ev.resultados) dados.current?.animar(ev.expressao, ev.resultados)
+    if (timerDestaque.current) clearTimeout(timerDestaque.current)
+    setDestaque(null)
+    timerDestaque.current = setTimeout(() => { setDestaque(ev); timerDestaque.current = setTimeout(() => setDestaque(null), 5000) }, 1500)
+  }, [])
 
   const carregar = useCallback(async () => {
     try {
       const novo = await api<Estado>('mesa/' + campanhaId)
-      // Anima rolagens novas de outras pessoas (as minhas já animaram ao rolar).
+      const novos = novo.eventos.filter(x => x.id > ultimoEvento.current)
       const ult = novo.eventos.at(-1)
-      if (ultimoEvento.current && ult && ult.id > ultimoEvento.current && ult.tipo === 'rolagem' && ult.autor_id !== novo.eu && ult.expressao && ult.resultados) dados.current?.animar(ult.expressao, ult.resultados)
-      if (ult) ultimoEvento.current = ult.id
-      setE(novo)
-      setErro('')
+      // Destaca rolagens novas de outras pessoas (as minhas já foram destacadas ao rolar).
+      const rol = [...novos].reverse().find(x => x.tipo === 'rolagem' && x.autor_id !== novo.eu)
+      if (ultimoEvento.current && rol) destacar(rol)
+      if (ult) ultimoEvento.current = Math.max(ultimoEvento.current, ult.id)
+      setE(novo); setErro('')
     } catch (er) { setErro(msg(er)) }
-  }, [campanhaId])
+  }, [campanhaId, destacar])
   const recarregarEmBreve = useCallback(() => { if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(() => void carregar(), 150) }, [carregar])
 
   useEffect(() => { void carregar() }, [carregar])
-  // Atualização: tempo real (Supabase Realtime, só como aviso) + consulta periódica de segurança.
-  useEffect(() => {
-    const t = setInterval(() => void carregar(), tempoReal ? 30000 : 4000)
-    return () => clearInterval(t)
-  }, [carregar, tempoReal])
+  useEffect(() => { const t = setInterval(() => void carregar(), tempoReal ? 30000 : 4000); return () => clearInterval(t) }, [carregar, tempoReal])
   useEffect(() => {
     if (!e?.eu || canal.current) return
     let supa: ReturnType<typeof createClient>
     try { supa = createClient() } catch { return }
     const ch = supa.channel('prg-mesa-' + campanhaId, { config: { broadcast: { self: false }, presence: { key: e.eu } } })
     ch.on('broadcast', { event: 'mudou' }, () => recarregarEmBreve())
-      .on('broadcast', { event: 'ping' }, ({ payload }) => {
-        const p = payload as Ping; setPings(x => [...x, p]); setTimeout(() => setPings(x => x.filter(y => y.id !== p.id)), 2500)
-      })
-      .on('broadcast', { event: 'cursor' }, ({ payload }) => {
-        const c = payload as CursorRemoto; setCursores(x => [...x.filter(y => y.id !== c.id), c])
-      })
+      .on('broadcast', { event: 'ping' }, ({ payload }) => { const p = payload as Ping; setPings(x => [...x, p]); setTimeout(() => setPings(x => x.filter(y => y.id !== p.id)), 2500) })
+      .on('broadcast', { event: 'cursor' }, ({ payload }) => { const c = payload as CursorRemoto; setCursores(x => [...x.filter(y => y.id !== c.id), c]) })
       .on('presence', { event: 'sync' }, () => setOnline(Object.keys(ch.presenceState())))
       .subscribe(status => { setTempoReal(status === 'SUBSCRIBED'); if (status === 'SUBSCRIBED') void ch.track({ em: Date.now() }) })
     canal.current = ch
     return () => { void supa.removeChannel(ch); canal.current = null }
   }, [e?.eu, campanhaId, recarregarEmBreve])
 
-  const avisar = () => void canal.current?.send({ type: 'broadcast', event: 'mudou', payload: {} })
-  const acao = useCallback(async (body: Record<string, unknown>, silencioso = false) => {
-    try { const r = await api<Record<string, unknown>>('mesa/' + campanhaId, { method: 'POST', body }); avisar(); await carregar(); return r }
-    catch (er) { if (!silencioso) toast.error(msg(er)); throw er }
+  const acao: Acao = useCallback(async (body) => {
+    try {
+      const r = await api<Record<string, unknown>>('mesa/' + campanhaId, { method: 'POST', body })
+      void canal.current?.send({ type: 'broadcast', event: 'mudou', payload: {} }); await carregar(); return r
+    } catch (er) { toast.error(msg(er)); throw er }
   }, [campanhaId, carregar])
 
   const nomes = useMemo(() => Object.fromEntries((e?.membros ?? []).map(m => [m.aventureiro_id, m.aventureiro?.apelido ?? '?'])), [e?.membros])
@@ -96,20 +114,23 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
 
   const admin = e.campanha.meuPapel !== 'jogador'
   const cena = e.cenaAtiva
-  const campanhaAdapt = cena ? { fog_ativo: cena.fog_ativo, fog_revelado: cena.fog_revelado, grid_cols: cena.grid_cols, grid_rows: cena.grid_rows, mapa_url: cena.mapa_url } as unknown as Campanha : null
-  const personagensAdapt = e.tokens.map(t => ({ id: t.id, nome: t.nome, cor: t.cor, token_url: t.imagem_url, pos_x: t.x, pos_y: t.y, hp_atual: t.hp_atual ?? 0, hp_max: t.hp_max ?? 0, condicoes: t.condicoes, is_npc: t.npc || !t.visivel, player_id: t.dono_id ?? '', visivel: t.visivel }) as unknown as Personagem)
+  const travada = !!cena?.tokens_travados
+  const tokensMapa: TokenMapa[] = e.tokens.map(t => ({ ...t, tamanho: t.tamanho ?? 1, meu: t.dono_id === e.eu, podeMover: podeMoverToken({ movimento: t.movimento ?? 'dono', dono_id: t.dono_id }, e.eu, admin, travada) }))
   const token = e.tokens.find(t => t.id === tokenAberto)
   const vez = e.mesa?.iniciativa?.[e.mesa.turno]
+  const salvarCamadas = (camadas: Camada[]) => cena && acao({ acao: 'cena_editar', cenaId: cena.id, camadas }).catch(() => {})
 
   async function moverToken(id: string, x: number, y: number) {
     setE(s => s && { ...s, tokens: s.tokens.map(t => t.id === id ? { ...t, x, y } : t) })
     await acao({ acao: 'token_mover', tokenId: id, x, y }).catch(() => {})
   }
-
-  const ferramentas: { id: ModoMapa; icone: typeof Hand; nome: string; so?: boolean }[] = [
-    { id: 'mover', icone: Hand, nome: 'Mover' }, { id: 'regua', icone: Ruler, nome: 'Régua' }, { id: 'ping', icone: MapPin, nome: 'Marcar' },
-    { id: 'desenhar', icone: Pencil, nome: 'Desenhar' }, { id: 'revelar', icone: Eye, nome: 'Revelar', so: true }, { id: 'esconder', icone: CloudFog, nome: 'Esconder', so: true },
+  const ferramentas: { id: ModoMesa; icone: typeof Hand; nome: string; so?: boolean; fog?: boolean }[] = [
+    { id: 'mover', icone: Hand, nome: 'Mover / arrastar' }, { id: 'regua', icone: Ruler, nome: 'Régua' }, { id: 'ping', icone: MapPin, nome: 'Marcar' }, { id: 'desenhar', icone: Pencil, nome: 'Desenhar' },
+    { id: 'revelar', icone: Eye, nome: 'Revelar com pincel', so: true, fog: true }, { id: 'esconder', icone: CloudFog, nome: 'Esconder com pincel', so: true, fog: true },
+    { id: 'area-revelar', icone: Square, nome: 'Revelar área (arraste um retângulo)', so: true, fog: true }, { id: 'area-esconder', icone: EyeOff, nome: 'Esconder área', so: true, fog: true },
+    { id: 'editar-mapa', icone: Layers, nome: 'Montar mapa (mover/redimensionar imagens)', so: true },
   ]
+  const abas = [['chat', MessageSquare, 'Chat'], ['tokens', UserRound, 'Tokens'], ['iniciativa', Swords, 'Iniciativa'], ['campanha', BookOpen, 'Diário'], ...(admin ? [['mestre', Settings2, 'Mestre']] : [])] as [typeof aba, typeof Hand, string][]
 
   return <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#0d0c19] text-[#f4f0ff]">
     <Dados3D ref={dados} somAtivo={som} />
@@ -117,6 +138,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       <Link href="/central" className="inline-flex items-center gap-1 text-sm text-[#b99bff] hover:underline"><ArrowLeft size={16} /> Início</Link>
       <h1 className="min-w-0 flex-1 truncate font-bold">🗺️ {e.campanha.nome}{cena ? ' · ' + cena.nome : ''}</h1>
       {vez && <span className="hidden rounded-full bg-[#34294f] px-3 py-1 text-xs sm:inline">⚔️ Vez de <strong>{vez.nome}</strong> · rodada {e.mesa.rodada}</span>}
+      {travada && <span className="rounded-full bg-[#4b253a] px-2 py-1 text-xs" title="O mestre travou os tokens">🔒 Tokens travados</span>}
       <span title={tempoReal ? 'Tempo real ligado' : 'Atualizando a cada 4 s'} className={'h-2.5 w-2.5 rounded-full ' + (tempoReal ? 'bg-emerald-400' : 'bg-amber-400')} />
       <span className="text-xs text-[#b4aeca]">{online.length || 1} online</span>
       <button type="button" onClick={() => setSom(!som)} aria-label={som ? 'Desligar som' : 'Ligar som'} className="rounded-lg p-1.5 hover:bg-[#34294f]">{som ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
@@ -125,42 +147,206 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
 
     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       <section className="relative min-h-[45vh] flex-1 overflow-hidden">
-        <div className="absolute bottom-2 left-2 z-20 flex max-w-[calc(100%-1rem)] flex-wrap gap-1 rounded-xl border border-[#373251] bg-[#19172c]/95 p-1">
-          {ferramentas.filter(f => !f.so || (admin && cena?.fog_ativo)).map(f => <button key={f.id} type="button" title={f.nome} aria-label={f.nome} aria-pressed={modo === f.id} onClick={() => setModo(f.id)}
+        <div className="absolute bottom-2 left-2 z-20 flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-1 rounded-xl border border-[#373251] bg-[#19172c]/95 p-1">
+          {ferramentas.filter(f => !f.so || admin).filter(f => !f.fog || cena?.fog_ativo).map(f => <button key={f.id} type="button" title={f.nome} aria-label={f.nome} aria-pressed={modo === f.id} onClick={() => setModo(f.id)}
             className={'rounded-lg p-2 ' + (modo === f.id ? 'bg-[#7654bb]' : 'hover:bg-[#34294f]')}><f.icone size={18} /></button>)}
+          {(modo === 'revelar' || modo === 'esconder') && [1, 3, 5].map(n => <button key={n} type="button" onClick={() => setPincel(n)} aria-label={'Pincel ' + n + '×' + n} className={'rounded-lg px-2 py-1.5 text-xs ' + (pincel === n ? 'bg-[#7654bb]' : 'hover:bg-[#34294f]')}>{n}×{n}</button>)}
           {modo === 'desenhar' && <>{CORES.map(c => <button key={c} type="button" aria-label={'Cor ' + c} onClick={() => setCor(c)} className={'h-8 w-8 rounded-lg border-2 ' + (cor === c ? 'border-white' : 'border-transparent')} style={{ background: c }} />)}
             {admin && cena && <button type="button" title="Apagar desenhos" aria-label="Apagar desenhos" onClick={() => acao({ acao: 'desenhos_limpar', cenaId: cena.id })} className="rounded-lg p-2 hover:bg-[#34294f]"><Eraser size={18} /></button>}</>}
+          {modo === 'editar-mapa' && camadaSel && cena && <>
+            <button type="button" className={btn} onClick={() => { const l = cena.camadas; const i = l.findIndex(c => c.id === camadaSel); if (i < l.length - 1) { const n = [...l]; [n[i], n[i + 1]] = [n[i + 1], n[i]]; void salvarCamadas(n) } }}><ArrowUp size={14} /> Frente</button>
+            <button type="button" className={btn} onClick={() => { const l = cena.camadas; const i = l.findIndex(c => c.id === camadaSel); if (i > 0) { const n = [...l]; [n[i], n[i - 1]] = [n[i - 1], n[i]]; void salvarCamadas(n) } }}><ArrowDown size={14} /> Trás</button>
+            <button type="button" className={btn} onClick={() => { void salvarCamadas(cena.camadas.filter(c => c.id !== camadaSel)); setCamadaSel(null) }}><Trash2 size={14} /> Remover</button></>}
         </div>
-        {cena && campanhaAdapt ? <MapaGrid campanha={campanhaAdapt} personagens={personagensAdapt} desenhos={e.desenhos.map(d => ({ ...d }) as never)} cursores={cursores} souMestre={admin} meuId={e.eu}
-          modo={modo} corDesenho={cor} pings={pings}
+        {modo === 'editar-mapa' && <p className="absolute left-2 top-2 z-20 rounded-lg bg-[#19172c]/95 px-3 py-1.5 text-xs">Arraste as imagens para montar o mapa. Toque numa imagem e puxe a bolinha para mudar o tamanho.</p>}
+        {cena ? <MapaMesa cols={cena.grid_cols} rows={cena.grid_rows} fundo={cena.mapa_url} camadas={cena.camadas ?? []} fogAtivo={cena.fog_ativo} fogRevelado={cena.fog_revelado}
+          tokens={tokensMapa} desenhos={e.desenhos} cursores={cursores} pings={pings} admin={admin} modo={modo} cor={cor} pincel={pincel}
+          camadaSel={camadaSel} onSelecionarCamada={setCamadaSel}
+          onAlterarCamada={c => { setE(s => s && s.cenaAtiva ? { ...s, cenaAtiva: { ...s.cenaAtiva, camadas: s.cenaAtiva.camadas.map(x => x.id === c.id ? c : x) } } : s); void salvarCamadas(cena.camadas.map(x => x.id === c.id ? c : x)) }}
           onMoverToken={moverToken}
-          onPintarFog={(celulas, revelar) => void acao({ acao: 'nevoa', cenaId: cena.id, celulas, revelar })}
+          onNevoa={(celulas, revelar) => void acao({ acao: 'nevoa', cenaId: cena.id, celulas, revelar }).catch(() => {})}
           onPing={(x, y) => { const p = { id: crypto.randomUUID(), x, y, autor: nomes[e.eu] ?? '' }; setPings(s => [...s, p]); setTimeout(() => setPings(s => s.filter(q => q.id !== p.id)), 2500); void canal.current?.send({ type: 'broadcast', event: 'ping', payload: p }) }}
-          onTokenClick={p => setTokenAberto(p.id)}
-          onDesenhar={pontos => void acao({ acao: 'desenho', cenaId: cena.id, cor, pontos })}
+          onTokenClick={setTokenAberto}
+          onDesenhar={pontos => void acao({ acao: 'desenho', cenaId: cena.id, cor, pontos }).catch(() => {})}
           onCursor={(x, y) => void canal.current?.send({ type: 'broadcast', event: 'cursor', payload: { id: e.eu, nome: nomes[e.eu] ?? '', x, y } })} />
           : <div className="flex h-full items-center justify-center p-6 text-center text-[#b4aeca]">{admin ? 'Crie uma cena na aba "Mestre" para começar.' : 'O mestre ainda não abriu nenhuma cena.'}</div>}
+
+        {destaque && <div role="status" aria-live="polite" className="pointer-events-none absolute left-1/2 top-4 z-30 w-[min(92%,420px)] -translate-x-1/2 rounded-2xl border-2 border-[#b99bff] bg-[#19172c]/95 p-4 text-center shadow-2xl">
+          <p className="text-sm text-[#c4b6d4]">{destaque.personagem || destaque.autor?.apelido} rolou <strong className="text-[#e4d3ff]">{destaque.expressao}</strong>{destaque.visibilidade !== 'publica' && ' 🔒'}</p>
+          <div className="mt-2 flex flex-wrap justify-center gap-2">{destaque.resultados?.map((n, i) => <span key={i} className="flex h-12 min-w-12 items-center justify-center rounded-xl border border-[#62527e] bg-[#2b2140] px-2 text-2xl font-black tabular-nums">{n}</span>)}</div>
+          <p className="mt-2 text-4xl font-black text-[#ed9cd8]">{destaque.total}</p>
+          {destaque.expressao?.includes('d20') && destaque.resultados?.[0] === 20 && <p className="font-bold text-amber-300">✨ 20 natural!</p>}
+          {destaque.expressao?.includes('d20') && destaque.resultados?.[0] === 1 && <p className="font-bold text-red-300">💀 1 natural</p>}
+        </div>}
       </section>
 
-      {painel && <aside className="flex max-h-[55vh] min-h-0 w-full flex-col border-t border-[#373251] bg-[#14121f] lg:max-h-none lg:w-[380px] lg:border-l lg:border-t-0">
-        <nav className="flex shrink-0 border-b border-[#373251]" aria-label="Painel da mesa">
-          {([['chat', MessageSquare, 'Chat e dados'], ['iniciativa', Swords, 'Iniciativa'], ...(admin ? [['mestre', Settings2, 'Mestre']] : [])] as [typeof aba, typeof Hand, string][]).map(([id, I, n]) =>
-            <button key={id} type="button" onClick={() => setAba(id)} aria-current={aba === id ? 'page' : undefined} className={'flex flex-1 items-center justify-center gap-1 px-2 py-2.5 text-sm ' + (aba === id ? 'border-b-2 border-[#b99bff] text-white' : 'text-[#b4aeca]')}><I size={16} /> {n}</button>)}
+      {painel && <aside className="flex max-h-[55vh] min-h-0 w-full flex-col border-t border-[#373251] bg-[#14121f] lg:max-h-none lg:w-[390px] lg:border-l lg:border-t-0">
+        <nav className="flex shrink-0 overflow-x-auto border-b border-[#373251]" aria-label="Painel da mesa">
+          {abas.map(([id, I, n]) => <button key={id} type="button" onClick={() => setAba(id)} aria-current={aba === id ? 'page' : undefined} className={'flex flex-1 items-center justify-center gap-1 whitespace-nowrap px-2 py-2.5 text-xs sm:text-sm ' + (aba === id ? 'border-b-2 border-[#b99bff] text-white' : 'text-[#b4aeca]')}><I size={15} /> {n}</button>)}
         </nav>
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
-          {aba === 'chat' && <Chat e={e} nomes={nomes} admin={admin} acao={acao} dados={dados} abrirHistorico={() => setHistorico(true)} />}
+          {aba === 'chat' && <Chat e={e} nomes={nomes} admin={admin} acao={acao} destacar={destacar} abrirHistorico={() => setHistorico(true)} />}
+          {aba === 'tokens' && <PainelTokens e={e} admin={admin} acao={acao} campanhaId={campanhaId} abrir={setTokenAberto} />}
           {aba === 'iniciativa' && <PainelIniciativa e={e} admin={admin} acao={acao} />}
-          {aba === 'mestre' && admin && <PainelMestre e={e} acao={acao} campanhaId={campanhaId} />}
+          {aba === 'campanha' && <PainelCampanha campanhaId={campanhaId} e={e} admin={admin} />}
+          {aba === 'mestre' && admin && <PainelMestre e={e} acao={acao} campanhaId={campanhaId} setModo={setModo} />}
         </div>
       </aside>}
     </div>
 
-    {token && <TokenModal t={token} admin={admin} eu={e.eu} acao={acao} fechar={() => setTokenAberto(null)} />}
+    {token && <TokenModal t={token} admin={admin} eu={e.eu} acao={acao} campanhaId={campanhaId} fechar={() => setTokenAberto(null)} />}
     {historico && <Historico campanhaId={campanhaId} membros={e.membros} fechar={() => setHistorico(false)} />}
   </div>
 }
 
-function Chat({ e, nomes, admin, acao, dados, abrirHistorico }: { e: Estado; nomes: Record<string, string>; admin: boolean; acao: (b: Record<string, unknown>) => Promise<Record<string, unknown>>; dados: React.RefObject<Dados3DHandle | null>; abrirHistorico: () => void }) {
+function PainelMestre({ e, acao, campanhaId, setModo }: { e: Estado; acao: Acao; campanhaId: string; setModo: (m: ModoMesa) => void }) {
+  const [nova, setNova] = useState({ nome: '', mapa_url: '', grid_cols: 20, grid_rows: 15 })
+  const [enviando, setEnviando] = useState('')
+  const cena = e.cenaAtiva
+  async function fundoNovaCena(arq: File) {
+    setEnviando('nova')
+    try { const { url, ar } = await enviarImagem(campanhaId, e.eu, arq); setNova(n => ({ ...n, mapa_url: url, grid_rows: Math.max(5, Math.min(100, Math.round(n.grid_cols * ar))) })); toast.success('Mapa enviado! A grade já foi ajustada ao formato da imagem.') }
+    catch (er) { toast.error(msg(er)) } finally { setEnviando('') }
+  }
+  async function adicionarCamadas(arqs: FileList) {
+    if (!cena) return
+    setEnviando('camada')
+    try {
+      const novas: Camada[] = []
+      for (const arq of [...arqs].slice(0, 10)) {
+        const { url, ar } = await enviarImagem(campanhaId, e.eu, arq)
+        const w = Math.min(cena.grid_cols, 10), h = Math.max(1, Math.round(w * ar))
+        novas.push({ id: crypto.randomUUID(), url, x: 0, y: 0, w, h })
+      }
+      await acao({ acao: 'cena_editar', cenaId: cena.id, camadas: [...(cena.camadas ?? []), ...novas] })
+      setModo('editar-mapa'); toast.success(`${novas.length} imagem(ns) adicionada(s). Arraste para montar o mapa.`)
+    } catch (er) { toast.error(msg(er)) } finally { setEnviando('') }
+  }
+  return <div className="space-y-5 text-sm">
+    {cena && <section className="space-y-2">
+      <h3 className="font-semibold">Mapa da cena “{cena.nome}”</h3>
+      <label className={btn + ' cursor-pointer'}><ImageIcon size={14} /> {enviando === 'camada' ? 'Enviando…' : 'Adicionar imagens ao mapa (várias)'}
+        <input type="file" multiple accept="image/png,image/jpeg,image/webp" className="hidden" onChange={x => { if (x.target.files?.length) void adicionarCamadas(x.target.files); x.target.value = '' }} /></label>
+      <p className="text-xs text-[#b4aeca]">Junte vários pedaços de mapa (baixados da internet ou do celular) e monte com a ferramenta <Layers size={12} className="inline" /> “Montar mapa”. {cena.camadas?.length ? `${cena.camadas.length} imagem(ns) nesta cena.` : ''}</p>
+      <div className="flex items-center gap-2"><span>Grade</span>
+        <input aria-label="Colunas da cena" type="number" min={5} max={100} defaultValue={cena.grid_cols} onBlur={x => { const v = Number(x.target.value); if (v !== cena.grid_cols) void acao({ acao: 'cena_editar', cenaId: cena.id, grid_cols: v }).catch(() => {}) }} className={input + ' w-20'} />×
+        <input aria-label="Linhas da cena" type="number" min={5} max={100} defaultValue={cena.grid_rows} onBlur={x => { const v = Number(x.target.value); if (v !== cena.grid_rows) void acao({ acao: 'cena_editar', cenaId: cena.id, grid_rows: v }).catch(() => {}) }} className={input + ' w-20'} /></div>
+    </section>}
+    {cena && <section className="space-y-2">
+      <h3 className="font-semibold">O que os jogadores veem</h3>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, fog_ativo: !cena.fog_ativo })}><CloudFog size={14} /> {cena.fog_ativo ? 'Desligar névoa' : 'Ligar névoa'}</button>
+        {cena.fog_ativo && <>
+          <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, nevoa_tudo: true })}><Eye size={14} /> Revelar tudo</button>
+          <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, fog_limpar: true })}><EyeOff size={14} /> Esconder tudo</button></>}
+      </div>
+      {cena.fog_ativo && <p className="text-xs text-[#b4aeca]">Use as ferramentas no canto do mapa: <Eye size={12} className="inline" /> pincel (1×1, 3×3, 5×5) ou <Square size={12} className="inline" /> arraste um retângulo para revelar uma área inteira.</p>}
+      <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, tokens_travados: !cena.tokens_travados })}>{cena.tokens_travados ? <><LockOpen size={14} /> Destravar tokens dos jogadores</> : <><Lock size={14} /> Travar tokens dos jogadores</>}</button>
+    </section>}
+    <section className="space-y-2">
+      <h3 className="font-semibold">Cenas</h3>
+      <ul className="space-y-1">{e.cenas.map(c => <li key={c.id} className={'flex flex-wrap items-center gap-2 rounded-lg p-2 ' + (c.ativa ? 'bg-[#5b4380]' : 'bg-[#1e1a30]')}>
+        <span className="flex-1 truncate">{c.nome}{c.ativa && ' · na mesa'}</span>
+        {!c.ativa && <button type="button" className={btn} onClick={() => acao({ acao: 'cena_ativar', cenaId: c.id })}>Mostrar</button>}
+        <button type="button" aria-label={'Excluir ' + c.nome} className={btn} onClick={() => { if (window.confirm(`Excluir a cena "${c.nome}" e seus tokens?`)) void acao({ acao: 'cena_excluir', cenaId: c.id }) }}><Trash2 size={14} /></button>
+      </li>)}</ul>
+      <form className="space-y-2 rounded-lg border border-[#373251] p-2" onSubmit={x => { x.preventDefault(); void acao({ acao: 'cena_criar', ...nova }).then(() => setNova({ nome: '', mapa_url: '', grid_cols: 20, grid_rows: 15 })).catch(() => {}) }}>
+        <input required aria-label="Nome da cena" value={nova.nome} onChange={x => setNova({ ...nova, nome: x.target.value })} placeholder="Nova cena (ex.: Saloon)" className={input} />
+        <label className={btn + ' cursor-pointer'}><ImageIcon size={14} /> {enviando === 'nova' ? 'Enviando…' : nova.mapa_url ? 'Mapa escolhido ✓ (trocar)' : 'Mapa do aparelho (opcional)'}
+          <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={x => { const f = x.target.files?.[0]; if (f) void fundoNovaCena(f); x.target.value = '' }} /></label>
+        <input aria-label="Link da imagem do mapa" value={nova.mapa_url} onChange={x => setNova({ ...nova, mapa_url: x.target.value })} placeholder="ou cole um link https://…" className={input} />
+        <div className="flex items-center gap-2"><span>Grade</span><input aria-label="Colunas" type="number" min={5} max={100} value={nova.grid_cols} onChange={x => setNova({ ...nova, grid_cols: Number(x.target.value) })} className={input + ' w-20'} />×
+          <input aria-label="Linhas" type="number" min={5} max={100} value={nova.grid_rows} onChange={x => setNova({ ...nova, grid_rows: Number(x.target.value) })} className={input + ' w-20'} /></div>
+        <button type="submit" className={btn}><Plus size={14} /> Criar cena</button>
+      </form>
+    </section>
+  </div>
+}
+
+function PainelTokens({ e, admin, acao, campanhaId, abrir }: { e: Estado; admin: boolean; acao: Acao; campanhaId: string; abrir: (id: string) => void }) {
+  const cena = e.cenaAtiva
+  const [tk, setTk] = useState({ fichaId: '', nome: '', hp_max: '', cor: '#a78bfa', visivel: true, movimento: 'dono', tamanho: 1, imagem_url: '' })
+  const [enviando, setEnviando] = useState(false)
+  if (!cena) return <p className="text-sm text-[#b4aeca]">Nenhuma cena aberta ainda.</p>
+  const meus = e.tokens.filter(t => t.dono_id === e.eu)
+  const lista = admin ? e.tokens : e.tokens.filter(t => t.visivel)
+  const minhasFichas = e.fichas.filter(f => admin || f.dono_id === e.eu)
+  async function foto(arq: File) {
+    setEnviando(true)
+    try { const { url } = await enviarImagem(campanhaId, e.eu, arq); setTk(t => ({ ...t, imagem_url: url })); toast.success('Imagem pronta!') } catch (er) { toast.error(msg(er)) } finally { setEnviando(false) }
+  }
+  return <div className="space-y-4 text-sm">
+    <ul className="space-y-1">{lista.map(t => <li key={t.id}>
+      <button type="button" onClick={() => abrir(t.id)} className="flex w-full items-center gap-2 rounded-lg bg-[#1e1a30] p-2 text-left hover:bg-[#2b2140]">
+        <span className="h-6 w-6 shrink-0 rounded-full bg-cover bg-center" style={{ background: t.imagem_url ? `center/cover url(${t.imagem_url})` : t.cor }} />
+        <span className="flex-1 truncate">{t.nome}{t.dono_id === e.eu && ' (meu)'}</span>
+        <span className="text-[11px] text-[#b4aeca]">{t.movimento === 'mestre' ? '🔒' : t.movimento === 'todos' ? '👥' : ''}{!t.visivel && ' 🙈'}{t.hp_max ? ` ${t.hp_atual}/${t.hp_max}` : ''}</span>
+      </button></li>)}</ul>
+    {lista.length === 0 && <p className="text-[#b4aeca]">Nenhum token nesta cena.</p>}
+    <form className="space-y-2 rounded-lg border border-[#373251] p-2" onSubmit={x => {
+      x.preventDefault()
+      const ficha = e.fichas.find(f => f.id === tk.fichaId)
+      void acao({ acao: 'token_criar', cenaId: cena.id, fichaId: tk.fichaId || undefined, nome: tk.nome || ficha?.nome || (admin ? '' : e.membros.find(m => m.aventureiro_id === e.eu)?.aventureiro?.apelido), hp_max: tk.hp_max, cor: tk.cor,
+        visivel: tk.visivel, npc: admin && (!tk.fichaId || !!ficha?.npc), movimento: tk.movimento, tamanho: tk.tamanho, imagem_url: tk.imagem_url || undefined })
+        .then(() => setTk({ ...tk, fichaId: '', nome: '', hp_max: '', imagem_url: '' })).catch(() => {})
+    }}>
+      <p className="font-semibold">{admin ? 'Colocar token na mesa' : meus.length ? 'Adicionar outro token meu' : 'Colocar meu personagem na mesa'}</p>
+      {minhasFichas.length > 0 && <select aria-label="Ficha" value={tk.fichaId} onChange={x => setTk({ ...tk, fichaId: x.target.value })} className={input}>
+        <option value="">{admin ? 'Token avulso (monstro, objeto…)' : 'Sem ficha (só o token)'}</option>
+        {minhasFichas.map(f => <option key={f.id} value={f.id}>{f.npc ? 'NPC: ' : ''}{f.nome || 'sem nome'}</option>)}</select>}
+      <input aria-label="Nome do token" value={tk.nome} onChange={x => setTk({ ...tk, nome: x.target.value })} placeholder={tk.fichaId ? 'Nome (usa o da ficha)' : 'Nome'} className={input} />
+      <div className="flex flex-wrap items-center gap-2">
+        <input aria-label="PV máximo" value={tk.hp_max} onChange={x => setTk({ ...tk, hp_max: x.target.value })} inputMode="numeric" placeholder="PV" className={input + ' w-20'} />
+        <input aria-label="Cor" type="color" value={tk.cor} onChange={x => setTk({ ...tk, cor: x.target.value })} className="h-9 w-12 rounded" />
+        <label className={btn + ' cursor-pointer'}><ImageIcon size={14} /> {enviando ? 'Enviando…' : tk.imagem_url ? 'Imagem ✓' : 'Imagem'}<input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={x => { const f = x.target.files?.[0]; if (f) void foto(f); x.target.value = '' }} /></label>
+      </div>
+      {admin && <div className="grid grid-cols-2 gap-2">
+        <select aria-label="Quem move" value={tk.movimento} onChange={x => setTk({ ...tk, movimento: x.target.value })} className={input}>{Object.entries(MOVIMENTO).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
+        <select aria-label="Tamanho" value={tk.tamanho} onChange={x => setTk({ ...tk, tamanho: Number(x.target.value) })} className={input}><option value={1}>Tamanho 1×1</option><option value={2}>Grande 2×2</option><option value={3}>Enorme 3×3</option><option value={4}>Colossal 4×4</option></select>
+        <label className="col-span-2 flex items-center gap-2 text-xs"><input type="checkbox" checked={!tk.visivel} onChange={x => setTk({ ...tk, visivel: !x.target.checked })} /> Escondido dos jogadores</label>
+      </div>}
+      <button type="submit" className={btn}><Plus size={14} /> Colocar na mesa</button>
+      {!admin && <p className="text-xs text-[#b4aeca]">Até 3 tokens seus por cena. O mestre pode travar o movimento.</p>}
+    </form>
+  </div>
+}
+
+function TokenModal({ t, admin, eu, acao, campanhaId, fechar }: { t: Token; admin: boolean; eu: string; acao: Acao; campanhaId: string; fechar: () => void }) {
+  const pode = admin || t.dono_id === eu
+  const [dano, setDano] = useState('')
+  const hp = t.hp_atual ?? 0
+  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label={'Token ' + t.nome} onClick={fechar}>
+    <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-[#62527e] bg-[#19172c] p-4" onClick={x => x.stopPropagation()}>
+      <div className="flex items-center gap-2"><span className="h-8 w-8 rounded-full" style={{ background: t.imagem_url ? `center/cover url(${t.imagem_url})` : t.cor }} /><h2 className="flex-1 font-bold">{t.nome}</h2>
+        <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-[#34294f]"><X size={18} /></button></div>
+      {t.hp_max ? <div className="mt-3"><p className="text-sm">PV <strong>{hp} / {t.hp_max}</strong></p>
+        <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#2b2140]"><div className="h-full bg-[#b06ad8]" style={{ width: Math.max(0, Math.min(100, hp / t.hp_max * 100)) + '%' }} /></div>
+        {pode && <div className="mt-2 flex gap-2"><input aria-label="Quantidade" value={dano} onChange={x => setDano(x.target.value)} inputMode="numeric" placeholder="Qtd." className={input + ' w-20'} />
+          <button type="button" className={btn} onClick={() => { void acao({ acao: 'token_editar', tokenId: t.id, hp_atual: hp - (Number(dano) || 0) }).catch(() => {}); setDano('') }}>− Dano</button>
+          <button type="button" className={btn} onClick={() => { void acao({ acao: 'token_editar', tokenId: t.id, hp_atual: Math.min(t.hp_max ?? hp, hp + (Number(dano) || 0)) }).catch(() => {}); setDano('') }}>+ Cura</button></div>}
+      </div> : null}
+      <p className="mt-3 text-sm font-semibold">Condições</p>
+      <div className="mt-1 flex flex-wrap gap-1">{condicoesDisponiveis.map(c => { const ativa = t.condicoes.includes(c.id)
+        return <button key={c.id} type="button" disabled={!pode} onClick={() => acao({ acao: 'token_editar', tokenId: t.id, condicoes: ativa ? t.condicoes.filter(x => x !== c.id) : [...t.condicoes, c.id] }).catch(() => {})}
+          className={'rounded-full border px-2 py-1 text-xs ' + (ativa ? 'border-[#b99bff] bg-[#5b4380]' : 'border-[#5e4b78]')}>{c.emoji} {c.nome}</button> })}</div>
+      {pode && <label className={btn + ' mt-3 cursor-pointer'}><ImageIcon size={14} /> Trocar imagem do token<input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={async x => {
+        const f = x.target.files?.[0]; x.target.value = ''; if (!f) return
+        try { const { url } = await enviarImagem(campanhaId, eu, f); await acao({ acao: 'token_editar', tokenId: t.id, imagem_url: url }) } catch (er) { toast.error(msg(er)) }
+      }} /></label>}
+      {admin && <div className="mt-3 space-y-2 border-t border-[#373251] pt-3">
+        <p className="text-sm font-semibold">Controle do mestre</p>
+        <select aria-label="Quem move este token" value={t.movimento ?? 'dono'} onChange={x => acao({ acao: 'token_editar', tokenId: t.id, movimento: x.target.value }).catch(() => {})} className={input}>{Object.entries(MOVIMENTO).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
+        <select aria-label="Tamanho do token" value={t.tamanho ?? 1} onChange={x => acao({ acao: 'token_editar', tokenId: t.id, tamanho: Number(x.target.value) }).catch(() => {})} className={input}><option value={1}>Tamanho 1×1</option><option value={2}>Grande 2×2</option><option value={3}>Enorme 3×3</option><option value={4}>Colossal 4×4</option></select>
+        <div className="flex gap-2"><button type="button" className={btn} onClick={() => acao({ acao: 'token_editar', tokenId: t.id, visivel: !t.visivel }).catch(() => {})}>{t.visivel ? <><EyeOff size={14} /> Esconder</> : <><Eye size={14} /> Mostrar</>}</button>
+          <button type="button" className={btn} onClick={() => { void acao({ acao: 'token_excluir', tokenId: t.id }).catch(() => {}); fechar() }}><Trash2 size={14} /> Remover</button></div>
+      </div>}
+      {!pode && <p className="mt-3 flex items-center gap-1 text-xs text-[#b4aeca]"><Lock size={12} /> Só o mestre ou o dono deste token altera.</p>}
+      {t.condicoes.length > 0 && <p className="mt-2 text-xs">{t.condicoes.map(c => emojiCondicao[c]).join(' ')}</p>}
+    </div>
+  </div>
+}
+
+function Chat({ e, nomes, admin, acao, destacar, abrirHistorico }: { e: Estado; nomes: Record<string, string>; admin: boolean; acao: Acao; destacar: (ev: Evento) => void; abrirHistorico: () => void }) {
   const [texto, setTexto] = useState('')
   const [expr, setExpr] = useState('1d20')
   const [vis, setVis] = useState<'publica' | 'mestre' | 'privada'>('publica')
@@ -172,7 +358,7 @@ function Chat({ e, nomes, admin, acao, dados, abrirHistorico }: { e: Estado; nom
   async function rolar(x: string) {
     const r = await acao({ acao: 'evento', tipo: 'rolagem', expressao: x, visibilidade: vis, destinatarioId: dest, personagem: pers }).catch(() => null)
     const ev = r?.evento as Evento | undefined
-    if (ev?.expressao && ev.resultados) dados.current?.animar(ev.expressao, ev.resultados)
+    if (ev?.expressao && ev.resultados) destacar(ev)
   }
   async function enviar() {
     if (!texto.trim()) return
@@ -211,7 +397,7 @@ function Chat({ e, nomes, admin, acao, dados, abrirHistorico }: { e: Estado; nom
   </div>
 }
 
-function PainelIniciativa({ e, admin, acao }: { e: Estado; admin: boolean; acao: (b: Record<string, unknown>) => Promise<Record<string, unknown>> }) {
+function PainelIniciativa({ e, admin, acao }: { e: Estado; admin: boolean; acao: Acao }) {
   const lista = e.mesa?.iniciativa ?? [], turno = e.mesa?.turno ?? 0, rodada = e.mesa?.rodada ?? 1
   const [nome, setNome] = useState(''), [valor, setValor] = useState('')
   const salvar = (iniciativa: Iniciativa[], t = turno, r = rodada) => acao({ acao: 'iniciativa', iniciativa, turno: t, rodada: r }).catch(() => {})
@@ -235,85 +421,6 @@ function PainelIniciativa({ e, admin, acao }: { e: Estado; admin: boolean; acao:
         <Dices size={14} /> Adicionar todos os tokens (rola 1d20)</button>
       <p className="text-xs text-[#b4aeca]">Some o bônus de iniciativa de cada um e ajuste o valor se precisar.</p>
     </>}
-  </div>
-}
-
-function PainelMestre({ e, acao, campanhaId }: { e: Estado; acao: (b: Record<string, unknown>) => Promise<Record<string, unknown>>; campanhaId: string }) {
-  const [nova, setNova] = useState({ nome: '', mapa_url: '', grid_cols: 20, grid_rows: 15 })
-  const [enviando, setEnviando] = useState(false)
-  const [tk, setTk] = useState({ fichaId: '', nome: '', hp_max: '', cor: '#a78bfa', visivel: true })
-  const cena = e.cenaAtiva
-  async function upload(arq: File) {
-    setEnviando(true)
-    try {
-      const r = await fetch('/api/prg/mesa/' + campanhaId + '/upload', { method: 'POST', body: arq, headers: { 'Content-Type': arq.type, 'x-prg-aventureiro': e.eu } })
-      const d = await r.json(); if (!r.ok) throw new Error(d.erro || 'Falha no envio')
-      setNova(n => ({ ...n, mapa_url: d.url })); toast.success('Imagem enviada!')
-    } catch (er) { toast.error(er instanceof Error ? er.message : 'Falha no envio') } finally { setEnviando(false) }
-  }
-  return <div className="space-y-5 text-sm">
-    <section className="space-y-2">
-      <h3 className="font-semibold">Cenas</h3>
-      <ul className="space-y-1">{e.cenas.map(c => <li key={c.id} className={'flex flex-wrap items-center gap-2 rounded-lg p-2 ' + (c.ativa ? 'bg-[#5b4380]' : 'bg-[#1e1a30]')}>
-        <span className="flex-1 truncate">{c.nome}{c.ativa && ' · na mesa'}</span>
-        {!c.ativa && <button type="button" className={btn} onClick={() => acao({ acao: 'cena_ativar', cenaId: c.id })}>Mostrar</button>}
-        <button type="button" aria-label={'Excluir ' + c.nome} className={btn} onClick={() => { if (window.confirm(`Excluir a cena "${c.nome}" e seus tokens?`)) void acao({ acao: 'cena_excluir', cenaId: c.id }) }}><Trash2 size={14} /></button>
-      </li>)}</ul>
-      {cena && <div className="flex flex-wrap gap-2">
-        <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, fog_ativo: !cena.fog_ativo })}><CloudFog size={14} /> {cena.fog_ativo ? 'Desligar névoa' : 'Ligar névoa'}</button>
-        {cena.fog_ativo && <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, fog_limpar: true })}>Cobrir tudo de novo</button>}
-      </div>}
-      <form className="space-y-2 rounded-lg border border-[#373251] p-2" onSubmit={x => { x.preventDefault(); void acao({ acao: 'cena_criar', ...nova }).then(() => setNova({ nome: '', mapa_url: '', grid_cols: 20, grid_rows: 15 })) }}>
-        <input required aria-label="Nome da cena" value={nova.nome} onChange={x => setNova({ ...nova, nome: x.target.value })} placeholder="Nova cena (ex.: Saloon)" className={input} />
-        <input aria-label="Link da imagem do mapa" value={nova.mapa_url} onChange={x => setNova({ ...nova, mapa_url: x.target.value })} placeholder="https://… (imagem do mapa)" className={input} />
-        <label className={btn + ' cursor-pointer'}><ImageIcon size={14} /> {enviando ? 'Enviando…' : 'Enviar imagem do aparelho'}<input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={x => { const f = x.target.files?.[0]; if (f) void upload(f) }} /></label>
-        <div className="flex items-center gap-2"><span>Grade</span><input aria-label="Colunas" type="number" min={5} max={100} value={nova.grid_cols} onChange={x => setNova({ ...nova, grid_cols: Number(x.target.value) })} className={input + ' w-20'} />×
-          <input aria-label="Linhas" type="number" min={5} max={100} value={nova.grid_rows} onChange={x => setNova({ ...nova, grid_rows: Number(x.target.value) })} className={input + ' w-20'} /></div>
-        <button type="submit" className={btn}><Plus size={14} /> Criar cena</button>
-      </form>
-    </section>
-    {cena && <section className="space-y-2">
-      <h3 className="font-semibold">Tokens nesta cena</h3>
-      <ul className="space-y-1">{e.tokens.map(t => <li key={t.id} className="flex items-center gap-2 rounded-lg bg-[#1e1a30] p-2">
-        <span className="h-4 w-4 shrink-0 rounded-full" style={{ background: t.cor }} /><span className="flex-1 truncate">{t.nome}</span>
-        <button type="button" aria-label={t.visivel ? 'Ocultar' : 'Revelar'} className={btn} onClick={() => acao({ acao: 'token_editar', tokenId: t.id, visivel: !t.visivel })}>{t.visivel ? <Eye size={14} /> : <EyeOff size={14} />}</button>
-        <button type="button" aria-label={'Remover ' + t.nome} className={btn} onClick={() => acao({ acao: 'token_excluir', tokenId: t.id })}><Trash2 size={14} /></button>
-      </li>)}</ul>
-      <form className="space-y-2 rounded-lg border border-[#373251] p-2" onSubmit={x => { x.preventDefault(); void acao({ acao: 'token_criar', cenaId: cena.id, fichaId: tk.fichaId || undefined, nome: tk.nome || e.fichas.find(f => f.id === tk.fichaId)?.nome, hp_max: tk.hp_max, cor: tk.cor, visivel: tk.visivel, npc: !tk.fichaId || !!e.fichas.find(f => f.id === tk.fichaId)?.npc }).then(() => setTk({ ...tk, fichaId: '', nome: '', hp_max: '' })) }}>
-        <select aria-label="Ficha" value={tk.fichaId} onChange={x => setTk({ ...tk, fichaId: x.target.value })} className={input}><option value="">Token avulso (monstro, objeto…)</option>
-          {e.fichas.map(f => <option key={f.id} value={f.id}>{f.npc ? 'NPC: ' : ''}{f.nome || 'sem nome'}</option>)}</select>
-        <input aria-label="Nome do token" value={tk.nome} onChange={x => setTk({ ...tk, nome: x.target.value })} placeholder={tk.fichaId ? 'Nome (usa o da ficha)' : 'Nome'} className={input} />
-        <div className="flex items-center gap-2"><input aria-label="PV máximo" value={tk.hp_max} onChange={x => setTk({ ...tk, hp_max: x.target.value })} inputMode="numeric" placeholder="PV" className={input + ' w-20'} />
-          <input aria-label="Cor" type="color" value={tk.cor} onChange={x => setTk({ ...tk, cor: x.target.value })} className="h-9 w-12 rounded" />
-          <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={!tk.visivel} onChange={x => setTk({ ...tk, visivel: !x.target.checked })} /> Escondido</label></div>
-        <button type="submit" className={btn}><Plus size={14} /> Colocar na mesa</button>
-      </form>
-      <p className="text-xs text-[#b4aeca]">Tokens ligados à ficha de um jogador podem ser movidos por ele.</p>
-    </section>}
-  </div>
-}
-
-function TokenModal({ t, admin, eu, acao, fechar }: { t: Token; admin: boolean; eu: string; acao: (b: Record<string, unknown>) => Promise<Record<string, unknown>>; fechar: () => void }) {
-  const pode = admin || t.dono_id === eu
-  const [dano, setDano] = useState('')
-  const hp = t.hp_atual ?? 0
-  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label={'Token ' + t.nome} onClick={fechar}>
-    <div className="w-full max-w-sm rounded-2xl border border-[#62527e] bg-[#19172c] p-4" onClick={x => x.stopPropagation()}>
-      <div className="flex items-center gap-2"><span className="h-5 w-5 rounded-full" style={{ background: t.cor }} /><h2 className="flex-1 font-bold">{t.nome}</h2>
-        <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-[#34294f]"><X size={18} /></button></div>
-      {t.hp_max ? <div className="mt-3"><p className="text-sm">PV <strong>{hp} / {t.hp_max}</strong></p>
-        <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#2b2140]"><div className="h-full bg-[#b06ad8]" style={{ width: Math.max(0, Math.min(100, hp / t.hp_max * 100)) + '%' }} /></div>
-        {pode && <div className="mt-2 flex gap-2"><input aria-label="Quantidade" value={dano} onChange={x => setDano(x.target.value)} inputMode="numeric" placeholder="Qtd." className={input + ' w-20'} />
-          <button type="button" className={btn} onClick={() => { void acao({ acao: 'token_editar', tokenId: t.id, hp_atual: hp - (Number(dano) || 0) }); setDano('') }}>− Dano</button>
-          <button type="button" className={btn} onClick={() => { void acao({ acao: 'token_editar', tokenId: t.id, hp_atual: Math.min(t.hp_max ?? hp, hp + (Number(dano) || 0)) }); setDano('') }}>+ Cura</button></div>}
-      </div> : null}
-      <p className="mt-3 text-sm font-semibold">Condições</p>
-      <div className="mt-1 flex flex-wrap gap-1">{condicoesDisponiveis.map(c => { const ativa = t.condicoes.includes(c.id)
-        return <button key={c.id} type="button" disabled={!pode} onClick={() => acao({ acao: 'token_editar', tokenId: t.id, condicoes: ativa ? t.condicoes.filter(x => x !== c.id) : [...t.condicoes, c.id] })}
-          className={'rounded-full border px-2 py-1 text-xs ' + (ativa ? 'border-[#b99bff] bg-[#5b4380]' : 'border-[#5e4b78]')}>{c.emoji} {c.nome}</button> })}</div>
-      {!pode && <p className="mt-3 flex items-center gap-1 text-xs text-[#b4aeca]"><Lock size={12} /> Só o mestre ou o dono deste token altera.</p>}
-      {t.condicoes.length > 0 && <p className="mt-2 text-xs">{t.condicoes.map(c => emojiCondicao[c]).join(' ')}</p>}
-    </div>
   </div>
 }
 

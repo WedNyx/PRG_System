@@ -12,24 +12,29 @@ const input = 'w-full rounded-lg border border-[#5e4b78] bg-[#151123] p-2 text-w
 const sinal = (n: number | null | undefined) => n === null || n === undefined ? '—' : n >= 0 ? '+' + n : String(n)
 
 /** Ficha que se monta sozinha a partir do modelo do sistema. */
-export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false }: {
+export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, rolarNaCampanha }: {
   sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean
+  /** Se a ficha é de campanha: rola no servidor e publica no chat da mesa. */
+  rolarNaCampanha?: (expressao: string, rotulo: string) => Promise<{ resultados: number[]; total: number } | null>
 }) {
   const c = useMemo(() => calcular(s, d), [s, d])
   const d20 = s.dados.startsWith('d20')
   const set = <K extends keyof DadosFicha>(k: K, v: DadosFicha[K]) => onChange({ ...d, [k]: v })
 
-  function rolar(nome: string, bonus: number | null) {
+  async function rolar(nome: string, bonus: number | null) {
+    const b = bonus ?? 0
     if (s.id === 'brp') {
-      const r = rolarExpressao('1d100'); if (!r) return
       const alvo = bonus ?? 0
+      const r = rolarNaCampanha ? await rolarNaCampanha('1d100', nome + ' (' + alvo + '%)') : rolarExpressao('1d100')
+      if (!r) return
       toast(`${nome}: ${r.total} / ${alvo}%`, { description: r.total <= Math.floor(alvo / 5) ? 'Sucesso especial!' : r.total <= alvo ? 'Sucesso' : 'Falha' })
       return
     }
-    const b = bonus ?? 0
-    const r = rolarExpressao('1d20' + (b >= 0 ? '+' + b : String(b))); if (!r) return
+    const expr = '1d20' + (b >= 0 ? '+' + b : String(b))
+    const r = rolarNaCampanha ? await rolarNaCampanha(expr, nome) : rolarExpressao(expr)
+    if (!r) return
     const nat = r.resultados[0]
-    toast(`${nome}: ${r.total}`, { description: `d20 = ${nat} ${sinal(b)}${nat === 20 ? ' · 20 natural!' : nat === 1 ? ' · 1 natural' : ''}` })
+    toast(`${nome}: ${r.total}`, { description: `d20 = ${nat} ${sinal(b)}${nat === 20 ? ' · 20 natural!' : nat === 1 ? ' · 1 natural' : ''}${rolarNaCampanha ? ' · no chat da mesa' : ''}` })
   }
   const podeRolar = d20 || s.id === 'brp'
 

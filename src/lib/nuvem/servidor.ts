@@ -87,7 +87,7 @@ export const ok = (dados: unknown, status = 200) => NextResponse.json(dados, { s
 // ---- Fase 2: histórico e regras da campanha ----
 export type EntradaHistorico = {
   ficha_id?: string | null; campanha_id?: string | null; autor_id: string
-  tipo: 'edicao' | 'pedido' | 'decisao' | 'envio' | 'aprovacao' | 'bloqueio' | 'npc' | 'administracao'
+  tipo: 'edicao' | 'pedido' | 'decisao' | 'envio' | 'aprovacao' | 'bloqueio' | 'npc' | 'administracao' | 'recompensa'
   categoria?: string | null; descricao?: string; antes?: unknown; depois?: unknown
 }
 /** Registra no histórico. Falhar aqui não deve impedir a ação principal. */

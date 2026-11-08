@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Dados3D, { type Dados3DHandle } from '@/components/mesa/Dados3D'
 import { rolarExpressao, type ResultadoRolagem } from '@/lib/dice'
 import { useFichaNuvem, type EstadoSync } from '@/components/fichas/useFichaNuvem'
+import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 
 const TIPOS = [4, 6, 8, 10, 12, 20, 100] as const
 type TipoDado = typeof TIPOS[number]
@@ -35,6 +36,7 @@ function FichaV8Conteudo() {
   const [rolando, setRolando] = useState(false)
   const [resultado, setResultado] = useState<ResultadoRolagem | null>(null)
   const [erro, setErro] = useState('')
+  const [secreta, setSecreta] = useState(false)
 
   const totalDados = TIPOS.reduce((s, tipo) => s + quantidades[tipo], 0)
   const expressao = TIPOS.filter(tipo => quantidades[tipo] > 0)
@@ -50,18 +52,27 @@ function FichaV8Conteudo() {
     setErro('')
   }
 
-  function rolar() {
+  async function rolar() {
     if (rolando || totalDados < 1) return
-    const r = rolarExpressao(expressao)
+    let r = rolarExpressao(expressao)
     if (!r) { setErro('Não foi possível interpretar essa combinação.'); return }
+    // Ficha de campanha: o servidor rola e a rolagem aparece no chat da mesa para todos.
+    if (sync.campanhaId) {
+      try {
+        const nome = (() => { try { return JSON.parse(localStorage.getItem('lunethernnyis-ficha-v8-' + personagem) || '{}')?.fields?.name || '' } catch { return '' } })()
+        const resp = await api<{ evento: { expressao: string; resultados: number[]; total: number } }>('mesa/' + sync.campanhaId, { method: 'POST', body: { acao: 'evento', tipo: 'rolagem', expressao, personagem: nome, visibilidade: secreta ? 'mestre' : 'publica' } })
+        r = { ...r, expressao: resp.evento.expressao, resultados: resp.evento.resultados, total: resp.evento.total, detalhes: resp.evento.resultados.join(' + ') + (modificador ? (modificador > 0 ? ' + ' : ' − ') + Math.abs(modificador) : '') }
+      } catch (e) { setErro(e instanceof ErroNuvem ? e.message : 'Falha ao rolar na campanha.'); return }
+    }
+    const final = r
     setErro('')
     setResultado(null)
     setRolando(true)
-    if (animacao) dadosRef.current?.animar(r.expressao, r.resultados)
+    if (animacao) dadosRef.current?.animar(final.expressao, final.resultados)
     if (resultadoTimer.current) clearTimeout(resultadoTimer.current)
     // Mostra os valores já sorteados depois da animação, nunca um segundo sorteio.
     resultadoTimer.current = setTimeout(() => {
-      setResultado(r)
+      setResultado(final)
       setRolando(false)
     }, animacao ? 1900 : 0)
   }
@@ -131,6 +142,9 @@ function FichaV8Conteudo() {
           <label className="mt-4 flex items-center gap-2 text-sm text-[#b4aeca]">
             <input type="checkbox" checked={animacao} disabled={rolando} onChange={e => setAnimacao(e.target.checked)} /> Animação 3D
           </label>
+          {sync.campanhaId && <label className="mt-2 flex items-center gap-2 text-sm text-[#b4aeca]">
+            <input type="checkbox" checked={secreta} disabled={rolando} onChange={e => setSecreta(e.target.checked)} /> Rolagem secreta (só o mestre vê)
+          </label>}
           <div className="mt-4 rounded-lg bg-[#100f20] p-3 text-center text-sm text-[#b99bff]">
             {totalDados ? expressao : 'Selecione pelo menos um dado'} · {totalDados}/{MAX_DADOS} dados
           </div>
@@ -149,7 +163,7 @@ function FichaV8Conteudo() {
               <span className="block text-xs text-[#b4aeca]">Total da rolagem</span>
             </output>
           )}
-          <p className="mt-4 text-xs text-[#b4aeca]">Rolagens locais. Faça backup da ficha pela opção “Salvar minha ficha” na V8.</p>
+          <p className="mt-4 text-xs text-[#b4aeca]">{sync.campanhaId ? 'Ficha de campanha: as rolagens aparecem no chat da mesa.' : 'Rolagens locais. Faça backup da ficha pela opção “Salvar minha ficha” na V8.'}</p>
         </aside>
       )}
     </div>

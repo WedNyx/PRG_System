@@ -14,7 +14,7 @@ const INICIAL: Quantidades = { 4: 0, 6: 0, 8: 0, 10: 0, 12: 0, 20: 1, 100: 0 }
 const MAX_DADOS = 20
 const ROTULO_SYNC: Record<EstadoSync, string> = {
   carregando: 'Carregando da nuvem...', pronto: '☁️ Sincronizada', salvando: '☁️ Salvando...', salvo: '☁️ Salvo na nuvem',
-  offline: '⚠️ Sem conexão · salvo neste aparelho', conflito: '⚠️ Conflito de versões', erro: '⚠️ Erro ao sincronizar', leitura: '👁️ Somente leitura (mestre)',
+  offline: '⚠️ Sem conexão · salvo neste aparelho', conflito: '⚠️ Conflito de versões', erro: '⚠️ Erro ao sincronizar', leitura: '👁️ Somente leitura',
 }
 const NUVEM_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -80,6 +80,10 @@ function FichaV8Conteudo() {
           <button type="button" onClick={() => sync.resolver('nuvem')} className="rounded-lg border border-[#b99bff] px-3 py-1">Usar a versão da nuvem</button>
           <button type="button" onClick={() => { if (window.confirm('Substituir a versão da nuvem pela deste aparelho?')) sync.resolver('aparelho') }} className="rounded-lg border border-[#62527e] px-3 py-1">Manter a deste aparelho</button>
         </>}
+      </div>}
+      {nuvemId && sync.aviso && <div role="status" className="flex shrink-0 flex-wrap items-center gap-3 border-b border-[#62527e] bg-[#1f2a40] px-4 py-2 text-sm">
+        <span className="flex-1">{sync.aviso.texto}</span>
+        {sync.aviso.desfazer && <button type="button" onClick={() => sync.resolver('nuvem')} className="rounded-lg border border-[#b99bff] px-3 py-1">Desfazer (voltar ao salvo)</button>}
       </div>}
       {nuvemId && !sync.pronta ? <div className="flex flex-1 items-center justify-center text-[#b4aeca]">{sync.estado === 'erro' ? 'Não foi possível abrir a ficha.' : 'Carregando ficha da nuvem...'}</div> : <iframe title="Ficha de personagem V8" src={src} className="block w-full min-h-0 flex-1 border-0"
         sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" />}

@@ -8,6 +8,9 @@ import { sistemaPorId } from '@/lib/sistemas/catalogo'
 import { normalizarFicha } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
+import { CAMPOS } from '@/lib/campanhas/permissoes'
+
+const AREAS: Record<string, string> = Object.fromEntries(CAMPOS.map(c => [c.id, c.titulo]))
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const LOCAL = 'prg-ficha-gen-'
@@ -15,7 +18,7 @@ type Estado = 'carregando' | 'salvo' | 'salvando' | 'pendente' | 'offline' | 'co
 const ROTULO: Record<Estado, string> = {
   carregando: 'Carregando...', salvo: '☁️ Salvo na nuvem', salvando: '☁️ Salvando...', pendente: '✏️ Alterações não salvas',
   offline: '⚠️ Sem conexão · tentando de novo', conflito: '⚠️ Alterada em outro lugar', erro: '⚠️ Erro ao salvar',
-  leitura: '👁️ Somente leitura (mestre)', local: '💾 Salvo neste navegador',
+  leitura: '👁️ Somente leitura', local: '💾 Salvo neste navegador',
 }
 
 function Conteudo() {
@@ -30,13 +33,17 @@ function Conteudo() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const ultimo = useRef<DadosFicha | null>(null)
   const salvando = useRef(false)
+  const [aviso, setAviso] = useState<{ texto: string; desfazer: boolean } | null>(null)
 
   useEffect(() => {
     let ativo = true
     ;(async () => {
       try {
         if (nuvem) {
-          const r = await api<{ ficha: { sistema: string; dados: DadosFicha; versao: number }; podeEditar: boolean }>('fichas/' + nuvem)
+          const r = await api<{ ficha: { sistema: string; dados: DadosFicha; versao: number; status?: string; bloqueada?: boolean; observacao_mestre?: string }; podeEditar: boolean; pendentes?: string[] }>('fichas/' + nuvem)
+          if (r.pendentes?.length) setAviso({ texto: 'Aguardando o mestre aprovar: ' + r.pendentes.map(a => AREAS[a] ?? a).join(', ') + '.', desfazer: false })
+          if (r.ficha.observacao_mestre) setErro('Mestre: ' + r.ficha.observacao_mestre)
+          else if (!r.podeEditar && r.ficha.bloqueada) setErro('O mestre travou esta ficha neste momento.')
           const s = sistemaPorId(r.ficha.sistema)
           if (!s) throw new ErroNuvem(400, 'Sistema desta ficha não é suportado aqui.')
           if (!ativo) return
@@ -58,12 +65,17 @@ function Conteudo() {
     const d = ultimo.current
     salvando.current = true; setEstado('salvando')
     try {
-      const r = await api<{ versao: number }>('fichas/' + nuvem, { method: 'PUT', body: { versao: versao.current, dados: d } })
+      const r = await api<{ versao: number; pendentes?: string[]; ignoradas?: string[] }>('fichas/' + nuvem, { method: 'PUT', body: { versao: versao.current, dados: d } })
       versao.current = r.versao
+      const nomes = (l: string[]) => l.map(a => AREAS[a] ?? a).join(', ')
+      if (r.ignoradas?.length) setAviso({ texto: `Somente o mestre pode alterar: ${nomes(r.ignoradas)}. Essas mudanças NÃO foram salvas.`, desfazer: true })
+      else if (r.pendentes?.length) setAviso({ texto: `Enviado para aprovação do mestre: ${nomes(r.pendentes)}. O resto foi salvo.`, desfazer: false })
+      else setAviso(null)
       if (ultimo.current === d) { ultimo.current = null; setEstado('salvo') } else setEstado('pendente')
       setErro('')
     } catch (e) {
-      if (e instanceof ErroNuvem && e.status === 409) { setEstado('conflito'); setErro('Esta ficha foi alterada em outro aparelho. Recarregue para ver a versão mais nova (suas últimas mudanças serão perdidas).') }
+      if (e instanceof ErroNuvem && e.status === 423) { setEstado('leitura'); setErro(e.message + ' Suas últimas mudanças não foram salvas.') }
+      else if (e instanceof ErroNuvem && e.status === 409) { setEstado('conflito'); setErro('Esta ficha foi alterada em outro aparelho. Recarregue para ver a versão mais nova (suas últimas mudanças serão perdidas).') }
       else if (e instanceof ErroNuvem && e.status < 500 && e.status !== 429) { setEstado('erro'); setErro(e.message) }
       else { setEstado('offline'); setErro('') }
     } finally {
@@ -98,6 +110,8 @@ function Conteudo() {
     <div className="mx-auto max-w-5xl px-3 py-5 sm:px-6">
       {erro && <p role="alert" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#62527e] bg-[#2b2140] p-3 text-sm">
         <span className="flex-1">{erro}</span>{estado === 'conflito' && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-[#b99bff] px-3 py-1">Recarregar</button>}</p>}
+      {aviso && <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#62527e] bg-[#1f2a40] p-3 text-sm">
+        <span className="flex-1">{aviso.texto}</span>{aviso.desfazer && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-[#b99bff] px-3 py-1">Desfazer (voltar ao salvo)</button>}</p>}
       {sistema && dados ? <FichaGenerica sistema={sistema} dados={dados} onChange={mudar} somenteLeitura={estado === 'leitura'} />
         : estado === 'carregando' && <p className="text-center text-[#b4aeca]">Carregando ficha...</p>}
     </div>

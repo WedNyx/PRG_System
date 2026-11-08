@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import { marcarEspelho } from '@/lib/nuvem/locais'
+import { CAMPOS } from '@/lib/campanhas/permissoes'
+
+const AREAS: Record<string, string> = Object.fromEntries(CAMPOS.map(c => [c.id, c.titulo]))
 
 /**
  * Ponte entre a Ficha V8 (iframe que salva no localStorage) e a nuvem.
@@ -23,6 +26,7 @@ export function useFichaNuvem(id: string | null) {
   const [estado, setEstado] = useState<EstadoSync>('carregando')
   const [erro, setErro] = useState('')
   const [pronta, setPronta] = useState(false)
+  const [aviso, setAviso] = useState<{ texto: string; desfazer: boolean } | null>(null)
   const versao = useRef(0)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const enviando = useRef(false)
@@ -39,13 +43,18 @@ export function useFichaNuvem(id: string | null) {
     enviando.current = true
     setEstado('salvando')
     try {
-      const r = await api<{ versao: number }>('fichas/' + id, { method: 'PUT', body: { versao: versao.current, dados: JSON.parse(raw) } })
+      const r = await api<{ versao: number; pendentes?: string[]; ignoradas?: string[] }>('fichas/' + id, { method: 'PUT', body: { versao: versao.current, dados: JSON.parse(raw) } })
       versao.current = r.versao
+      const nomes = (l: string[]) => l.map(a => AREAS[a] ?? a).join(', ')
+      if (r.ignoradas?.length) setAviso({ texto: `Somente o mestre pode alterar: ${nomes(r.ignoradas)}. Essas mudanças NÃO foram salvas.`, desfazer: true })
+      else if (r.pendentes?.length) setAviso({ texto: `Enviado para aprovação do mestre: ${nomes(r.pendentes)}. O resto foi salvo.`, desfazer: false })
+      else setAviso(null)
       if (localStorage.getItem(CHAVE_V8 + id) === raw) localStorage.removeItem(PENDENTE + id)
       else localStorage.setItem(PENDENTE + id, JSON.stringify({ versao: r.versao }))
       setEstado('salvo'); setErro('')
     } catch (e) {
       if (e instanceof ErroNuvem && e.status === 409) { setEstado('conflito'); setErro(e.message) }
+      else if (e instanceof ErroNuvem && e.status === 423) { setEstado('leitura'); setErro(e.message + ' Suas últimas mudanças não foram salvas.') }
       else if (e instanceof ErroNuvem && e.status < 500 && e.status !== 429) { setEstado('erro'); setErro(e.message) }
       else { setEstado('offline'); setErro('Sem conexão: as mudanças estão guardadas neste aparelho e serão enviadas depois.') }
     } finally {
@@ -62,12 +71,16 @@ export function useFichaNuvem(id: string | null) {
     let ativo = true
     ;(async () => {
       try {
-        const r = await api<{ ficha: { dados: unknown; versao: number }; podeEditar: boolean }>('fichas/' + id)
+        const r = await api<{ ficha: { dados: unknown; versao: number; status?: string; bloqueada?: boolean; observacao_mestre?: string }; podeEditar: boolean; pendentes?: string[] }>('fichas/' + id)
         if (!ativo) return
         versao.current = r.ficha.versao
         const pend = lerPendente(id)
+        if (r.pendentes?.length) setAviso({ texto: 'Aguardando o mestre aprovar: ' + r.pendentes.map(a => AREAS[a] ?? a).join(', ') + '.', desfazer: false })
+        if (r.ficha.observacao_mestre) setErro('Mestre: ' + r.ficha.observacao_mestre)
         if (!r.podeEditar) {
           localStorage.setItem(CHAVE_V8 + id, JSON.stringify(r.ficha.dados)); setEstado('leitura')
+          if (r.ficha.bloqueada) setErro('O mestre travou esta ficha neste momento.')
+          else if (r.ficha.status === 'recusada') setErro('Ficha recusada pelo mestre.' + (r.ficha.observacao_mestre ? ' Motivo: ' + r.ficha.observacao_mestre : ''))
         } else if (pend && pend.versao === r.ficha.versao && localStorage.getItem(CHAVE_V8 + id)) {
           setEstado('pronto'); void enviar() // alterações feitas offline neste aparelho
         } else if (pend && localStorage.getItem(CHAVE_V8 + id)) {
@@ -121,5 +134,5 @@ export function useFichaNuvem(id: string | null) {
     } catch (e) { setErro(e instanceof ErroNuvem ? e.message : 'Falha de conexão.') }
   }, [id, enviar])
 
-  return { estado, erro, pronta, resolver }
+  return { estado, erro, pronta, resolver, aviso }
 }

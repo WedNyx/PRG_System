@@ -50,3 +50,19 @@ Isso **não prova identidade**: alguém que saiba o ID de um perfil consegue agi
 - Créditos exigidos pelas licenças aparecem no fim de cada ficha.
 - Página `/ficha?nuvem=<id>` (ou `?local=<id>` sem nuvem): salva automaticamente, detecta conflito de versão, rolagem 1d20 ao tocar na perícia.
 - O mesmo formato será usado pelo construtor de sistemas autorais.
+
+# Fase 2 — Fichas em campanhas e permissões do mestre
+- Migração `006` (APLICADA no Supabase em 08/11/2026): colunas de NPC/trava na ficha, `prg_alteracoes` (pedidos) e `prg_historico`.
+- **Enviar ficha ao mestre**: cria uma CÓPIA ligada à campanha (`origem_id`); a original fica intacta. Mestre aprova, recusa ou pede ajuste (com motivo).
+- **Evolução por campanha**: cada cópia evolui separada da original e das outras campanhas.
+- **Permissões aplicadas no servidor** (`PUT /api/prg/fichas/:id`): cada parte da ficha é classificada numa área (identidade, PV, atributos, perícias, habilidades, equipamentos, nível, anotações).
+  - Livre → salva.
+  - Com aprovação → vira pedido de alteração.
+  - Somente mestre ou área travada → ignorada e avisada.
+  - Valem as exceções por jogador e as travas por ficha ou por área.
+- **Pedidos de alteração**: o mestre vê antes → depois e aceita (aplica sobre a versão atual), recusa ou pede ajuste.
+- **Histórico** por ficha (`/historico?ficha=`) e **registro de decisões** da campanha.
+- **NPCs**: só mestre/co-mestre veem e editam; criar, duplicar, ocultar e excluir.
+- **Criar ficha com o jogador**: o mestre cria a ficha já aprovada, pertencendo ao jogador.
+- **Notificações ao mestre**: contador de pendências na lista de campanhas.
+- Testes: `src/lib/nuvem/categorias.test.ts` + `scripts/e2e/` (40 + 46 cenários contra banco real).

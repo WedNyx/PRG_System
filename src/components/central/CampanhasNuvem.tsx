@@ -5,11 +5,13 @@ import { BookOpen, Castle, Check, Copy, Crown, DoorOpen, Link2, Loader2, Pencil,
 import { CAMPOS, REGRAS, permissoesPadrao, type Modelo, type Permissoes, type Regra } from '@/lib/campanhas/permissoes'
 import { ESTADOS, ESTADO_TITULO, type EstadoCampanha } from '@/lib/nuvem/validacao'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
+import PainelFichasCampanha from './PainelFichasCampanha'
+import { SISTEMAS, SISTEMA_V8 } from '@/lib/sistemas/catalogo'
 import { campanhasLocais, marcarImportado, type CampanhaLocal } from '@/lib/nuvem/locais'
 
 type Campanha = {
   id: string; nome: string; descricao: string; sistema: string; modelo_padrao: Modelo
-  permissoes: Permissoes; estado: EstadoCampanha; mestre_id: string; meuPapel: 'mestre' | 'comestre' | 'jogador'
+  permissoes: Permissoes; estado: EstadoCampanha; mestre_id: string; meuPapel: 'mestre' | 'comestre' | 'jogador'; pendencias?: number
 }
 type Membro = { aventureiro_id: string; papel: string; excecoes?: Partial<Permissoes>; aventureiro: { apelido: string; avatar: string | null } | null }
 type Convite = { codigo: string; expira_em: string; usos: number; max_usos: number; situacao: string }
@@ -83,6 +85,7 @@ export default function CampanhasNuvem({ aventureiroId }: { aventureiroId: strin
       <div className="flex items-start gap-3"><BookOpen className="shrink-0 text-[#c5a7ff]" /><div className="min-w-0 flex-1">
         <h2 className="break-words text-lg font-semibold">{c.nome}</h2><p className="mt-1 text-sm text-[#c4b6d4]">{c.sistema}</p></div>
         <span className={'shrink-0 rounded-full px-2 py-1 text-xs ' + corEstado[c.estado]}>{ESTADO_TITULO[c.estado]}</span></div>
+      {!!c.pendencias && <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-[#7652ac] px-3 py-1 text-xs font-semibold">🔔 {c.pendencias} pendência(s) para você</p>}
       {c.descricao && <p className="mt-3 line-clamp-3 whitespace-pre-wrap break-words text-sm text-[#d1c4df]">{c.descricao}</p>}
       <p className="mt-3 flex items-center gap-1 text-sm text-[#d4baff]">{c.meuPapel === 'jogador' ? <><Shield size={15} /> Você joga</> : <><Crown size={15} /> Você {c.meuPapel === 'mestre' ? 'é o mestre' : 'é co-mestre'}</>}</p>
       <button type="button" onClick={() => setTela({ tipo: 'gerenciar', id: c.id })} className={btn + ' mt-4'}><Settings size={16} /> Abrir</button>
@@ -137,8 +140,9 @@ function Gerenciar({ aventureiroId, id, onVoltar, onEditar }: { aventureiroId: s
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [copiado, setCopiado] = useState('')
+  const [tick, setTick] = useState(0)
   const carregar = useCallback(async () => {
-    try { setD(await api<Detalhe>('campanhas/' + id, { aventureiro: aventureiroId })); setErro('') } catch (e) { setErro(msg(e)) }
+    try { setD(await api<Detalhe>('campanhas/' + id, { aventureiro: aventureiroId })); setErro(''); setTick(t => t + 1) } catch (e) { setErro(msg(e)) }
   }, [id, aventureiroId])
   useEffect(() => { carregar() }, [carregar])
   async function acao(fn: () => Promise<unknown>, confirmar?: string) {
@@ -203,6 +207,8 @@ function Gerenciar({ aventureiroId, id, onVoltar, onEditar }: { aventureiroId: s
       })}</ul>
     </section>
 
+    <PainelFichasCampanha key={tick} aventureiroId={aventureiroId} campanhaId={id} admin={admin} membros={d.membros} sistemaPadrao={sistemaDaCampanha(c.sistema)} />
+
     {admin && <section className="rounded-2xl border border-[#55456e] bg-[#201a32] p-5">
       <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">Convites</h3>
         <button type="button" disabled={ocupado || c.estado === 'encerrada'} onClick={() => acao(() => call(`campanhas/${id}/convites`, 'POST', { dias: 7, maxUsos: 20 }))} className={btn}><Link2 size={16} /> Gerar convite (7 dias)</button></div>
@@ -235,4 +241,11 @@ function Excecoes({ campanha, membro, ocupado, salvar }: { campanha: Campanha; m
     <div className="flex gap-2"><button type="button" disabled={ocupado} onClick={() => { salvar(ex); setAberto(false) }} className={btn}><Save size={16} /> Salvar exceções</button>
       <button type="button" onClick={() => setAberto(false)} className={btn}>Cancelar</button></div>
   </div>
+}
+
+/** O sistema da campanha é texto livre; tenta achar o modelo correspondente. */
+function sistemaDaCampanha(nome: string) {
+  const n = nome.toLowerCase()
+  if (n.includes('lunethernnyis') || n.includes('opositores')) return SISTEMA_V8
+  return SISTEMAS.find(s => n.includes(s.nome.toLowerCase().split(' ')[0]))?.id ?? SISTEMA_V8
 }

@@ -5,6 +5,7 @@ import { BookOpen, Castle, Check, Copy, Crown, DoorOpen, Link2, Loader2, Pencil,
 import { CAMPOS, REGRAS, permissoesPadrao, type Modelo, type Permissoes, type Regra } from '@/lib/campanhas/permissoes'
 import { ESTADOS, ESTADO_TITULO, type EstadoCampanha } from '@/lib/nuvem/validacao'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
+import { campanhasLocais, marcarImportado, type CampanhaLocal } from '@/lib/nuvem/locais'
 
 type Campanha = {
   id: string; nome: string; descricao: string; sistema: string; modelo_padrao: Modelo
@@ -24,7 +25,6 @@ const corEstado: Record<EstadoCampanha, string> = {
   planejada: 'bg-[#3a3352] text-[#d6c8f0]', ativa: 'bg-[#1f4a35] text-[#a9f0c8]',
   pausada: 'bg-[#4d3f1d] text-[#f3dc9a]', encerrada: 'bg-[#3d2530] text-[#e6aebf]',
 }
-const LOCAL_PREFIX = 'prg-campanhas-rascunho-v1-'
 const btn = 'inline-flex items-center gap-2 rounded-lg border border-[#70588c] px-3 py-2 text-sm hover:bg-[#38294d] disabled:opacity-50'
 const btnPrim = 'inline-flex items-center gap-2 rounded-xl bg-[#7652ac] px-4 py-3 font-semibold hover:bg-[#8b68c4] disabled:opacity-50'
 const msg = (e: unknown) => e instanceof ErroNuvem ? e.message : 'Falha de conexão. Tente novamente.'
@@ -34,7 +34,7 @@ export default function CampanhasNuvem({ aventureiroId }: { aventureiroId: strin
   const [tela, setTela] = useState<{ tipo: 'lista' } | { tipo: 'form'; campanha?: Campanha } | { tipo: 'gerenciar'; id: string }>({ tipo: 'lista' })
   const [erro, setErro] = useState('')
   const [codigo, setCodigo] = useState('')
-  const [locais, setLocais] = useState<Record<string, unknown>[]>([])
+  const [locais, setLocais] = useState<CampanhaLocal[]>([])
   const [ocupado, setOcupado] = useState(false)
 
   const carregar = useCallback(async () => {
@@ -43,28 +43,16 @@ export default function CampanhasNuvem({ aventureiroId }: { aventureiroId: strin
   }, [aventureiroId])
   useEffect(() => {
     carregar()
-    try {
-      const raw: unknown = JSON.parse(localStorage.getItem(LOCAL_PREFIX + aventureiroId) || '[]')
-      setLocais(Array.isArray(raw) ? raw.filter(c => c && typeof c === 'object' && !(c as { importada?: boolean }).importada) : [])
-    } catch { setLocais([]) }
+    setLocais(campanhasLocais())
   }, [aventureiroId, carregar])
 
-  async function importarLocais() {
-    if (!window.confirm(`Enviar ${locais.length} rascunho(s) deste navegador para a nuvem? Os rascunhos locais continuam guardados como cópia.`)) return
+  async function importarLocal(c: CampanhaLocal) {
     setOcupado(true); setErro('')
-    const enviadas = new Set<unknown>()
-    for (const c of locais) {
-      try {
-        await api('campanhas', { method: 'POST', aventureiro: aventureiroId, body: { nome: c.nome, descricao: c.descricao, sistema: c.sistema, modeloPadrao: c.modeloPadrao, permissoes: c.permissoes } })
-        enviadas.add(c.id)
-      } catch (e) { setErro(`Parou no rascunho "${String(c.nome)}": ${msg(e)}`); break }
-    }
     try {
-      const todos: Record<string, unknown>[] = JSON.parse(localStorage.getItem(LOCAL_PREFIX + aventureiroId) || '[]')
-      localStorage.setItem(LOCAL_PREFIX + aventureiroId, JSON.stringify(todos.map(c => enviadas.has(c.id) ? { ...c, importada: true } : c)))
-    } catch {}
-    setLocais(locais.filter(c => !enviadas.has(c.id))); setOcupado(false)
-    if (enviadas.size) await carregar()
+      const d = c.dados
+      await api('campanhas', { method: 'POST', aventureiro: aventureiroId, body: { nome: d.nome, descricao: d.descricao, sistema: d.sistema, modeloPadrao: d.modeloPadrao, permissoes: d.permissoes } })
+      marcarImportado(c.chave); setLocais(campanhasLocais()); await carregar()
+    } catch (e) { setErro(`Não foi possível enviar "${c.nome}": ${msg(e)}`) } finally { setOcupado(false) }
   }
 
   if (tela.tipo === 'form') return <FormCampanha aventureiroId={aventureiroId} campanha={tela.campanha}
@@ -81,9 +69,12 @@ export default function CampanhasNuvem({ aventureiroId }: { aventureiroId: strin
         <button type="submit" className={btn}><DoorOpen size={16} /> Entrar</button>
       </form>
     </div>
-    {locais.length > 0 && <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#67517f] bg-[#2b2140] p-4 text-sm">
-      <span>Você tem {locais.length} rascunho(s) salvos só neste navegador.</span>
-      <button type="button" onClick={importarLocais} disabled={ocupado} className={btn}><Upload size={16} /> Enviar para a nuvem</button>
+    {locais.length > 0 && <div className="rounded-xl border border-[#67517f] bg-[#2b2140] p-4 text-sm">
+      <p className="font-semibold">Rascunhos salvos só neste navegador</p>
+      <ul className="mt-3 space-y-2">{locais.map(c => <li key={c.chave} className="flex flex-wrap items-center gap-2 rounded-lg bg-[#171325] p-2">
+        <span className="min-w-0 flex-1"><span className="font-semibold">{c.nome}</span>{c.perfil && <span className="block text-xs text-[#b5a5c8]">perfil local “{c.perfil}”</span>}</span>
+        <button type="button" disabled={ocupado} onClick={() => importarLocal(c)} className={btn}><Upload size={16} /> Enviar para a nuvem</button>
+      </li>)}</ul>
     </div>}
     {erro && <p role="alert" className="text-sm text-red-200">{erro}</p>}
     {campanhas === null && <p className="flex items-center gap-2 text-[#cbb9dc]"><Loader2 className="animate-spin" size={18} /> Carregando campanhas...</p>}

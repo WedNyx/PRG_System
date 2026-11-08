@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
+import { marcarEspelho } from '@/lib/nuvem/locais'
 
 /**
  * Ponte entre a Ficha V8 (iframe que salva no localStorage) e a nuvem.
@@ -57,6 +58,7 @@ export function useFichaNuvem(id: string | null) {
   // Carrega da nuvem antes de abrir a V8.
   useEffect(() => {
     if (!id) return
+    marcarEspelho(id)
     let ativo = true
     ;(async () => {
       try {

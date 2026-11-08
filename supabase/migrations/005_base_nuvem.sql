@@ -123,3 +123,7 @@ revoke all on public.prg_campanhas, public.prg_campanha_membros, public.prg_conv
   public.prg_solicitacoes, public.prg_fichas from anon, authenticated;
 revoke all on function public.prg_salvar_ficha(uuid, uuid, int, text, jsonb) from public, anon, authenticated;
 revoke all on function public.prg_usar_convite(text) from public, anon, authenticated;
+grant execute on function public.prg_salvar_ficha(uuid, uuid, int, text, jsonb) to service_role;
+grant execute on function public.prg_usar_convite(text) to service_role;
+grant all on public.prg_public_adventurers, public.prg_campanhas, public.prg_campanha_membros,
+  public.prg_convites, public.prg_solicitacoes, public.prg_fichas to service_role;

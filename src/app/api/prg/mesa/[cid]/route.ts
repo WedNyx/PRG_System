@@ -106,8 +106,11 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       if (!urlValida(b.mapa_url ?? null)) throw new ErroApi(400, 'Link do mapa inválido (use https://).')
       const existentes = await rest<{ id: string }[]>(`prg_cenas?select=id&campanha_id=eq.${q(cid)}&limit=60`)
       if (existentes.length >= 50) throw new ErroApi(429, 'Limite de 50 cenas por campanha.')
+      const gc = inteiro(b.grid_cols, 5, 100) ?? 20, gr = inteiro(b.grid_rows, 5, 100) ?? 15
+      const camadas = b.camadas === undefined ? [] : normalizarCamadas(b.camadas, gc, gr)
+      if (!camadas) throw new ErroApi(400, 'Imagens do mapa inválidas.')
       const [c] = await rest<Cena[]>('prg_cenas', { method: 'POST', prefer: 'return=representation', body: JSON.stringify({
-        campanha_id: cid, nome, mapa_url: b.mapa_url || null, grid_cols: inteiro(b.grid_cols, 5, 100) ?? 20, grid_rows: inteiro(b.grid_rows, 5, 100) ?? 15,
+        campanha_id: cid, nome, mapa_url: b.mapa_url || null, grid_cols: gc, grid_rows: gr, camadas,
         fog_ativo: b.fog_ativo === true, ativa: existentes.length === 0,
       }) })
       return ok({ cena: c }, 201)

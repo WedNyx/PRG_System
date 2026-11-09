@@ -11,6 +11,10 @@ r=await mesa(M,{acao:'cena_criar',nome:'Vila',grid_cols:20,grid_rows:12}); const
 r=await mesa(M,{acao:'cena_editar',cenaId:c,camadas:[{url:'https://x/a.png',x:0,y:0,w:10,h:6},{url:'https://x/b.png',x:10,y:0,w:10,h:6}]}); check('mestre monta mapa com 2 imagens', r.s===200, r)
 r=await call(J,'GET','mesa/'+cid); check('jogador vê as camadas', r.d.cenaAtiva.camadas.length===2, r.d.cenaAtiva)
 r=await mesa(J,{acao:'cena_editar',cenaId:c,camadas:[]}); check('jogador não mexe no mapa', r.s===403, r)
+r=await mesa(M,{acao:'cena_editar',cenaId:c,camadas:[{id:'r1',url:'https://x/a.png',x:0,y:0,w:20,h:12,cx:0.25,cy:0.1,cw:0.5,ch:0.6}]}); r=await call(J,'GET','mesa/'+cid); check('recorte da imagem é salvo (v0.6.1)', r.d.cenaAtiva.camadas[0].cw===0.5 && r.d.cenaAtiva.camadas[0].cx===0.25, r.d.cenaAtiva.camadas)
+r=await mesa(M,{acao:'cena_editar',cenaId:c,grid_cols:30,grid_rows:20}); r=await call(J,'GET','mesa/'+cid); check('mestre muda o tamanho do mapa', r.d.cenaAtiva.grid_cols===30 && r.d.cenaAtiva.grid_rows===20, r.d.cenaAtiva)
+await mesa(M,{acao:'cena_editar',cenaId:c,grid_cols:20,grid_rows:12})
+r=await mesa(M,{acao:'cena_criar',nome:'Com imagem',grid_cols:10,grid_rows:6,camadas:[{url:'https://x/m.png',x:0,y:0,w:10,h:6}]}); check('cena nova já com imagem recortável', r.s===201 && r.d.cena.camadas.length===1, r)
 r=await mesa(M,{acao:'cena_editar',cenaId:c,camadas:[{url:'javascript:alert(1)'}]}); check('camada com link perigoso recusada', r.s===400, r)
 // névoa tudo
 await mesa(M,{acao:'cena_editar',cenaId:c,fog_ativo:true})

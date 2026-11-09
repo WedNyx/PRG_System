@@ -6,6 +6,15 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.6.1', data: '2026-11-09', titulo: 'Tamanho do mapa e recorte de imagens',
+    itens: [
+      'O mestre escolhe o tamanho do mapa (Pequeno, Médio, Grande, Enorme ou personalizado), vendo quantos metros ele tem.',
+      '✂️ Recortar: escolha qual parte da imagem entra no mapa, arrastando o quadro e puxando os cantos.',
+      '⛶ Esticar uma imagem para ocupar o mapa inteiro, e lista das imagens do mapa com miniaturas.',
+      'Mapas enviados ao criar a cena já podem ser recortados; cenas antigas podem virar editáveis.',
+    ],
+  },
+  {
     versao: '0.6.0', data: '2026-11-09', titulo: 'Mapas montados, tokens controlados e diário do mestre',
     itens: [
       'Monte o mapa juntando várias imagens enviadas do aparelho: arraste e mude o tamanho de cada pedaço.',

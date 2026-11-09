@@ -55,7 +55,8 @@ export function normalizarPontos(v: unknown): number[] | null {
 }
 
 // ---- v0.6.0: mapa em camadas, pincéis de névoa e permissão de mover tokens ----
-export type Camada = { id: string; url: string; x: number; y: number; w: number; h: number }
+/** Recorte (cx, cy, cw, ch) em frações da imagem original (0 a 1): qual parte da imagem aparece. */
+export type Camada = { id: string; url: string; x: number; y: number; w: number; h: number; cx?: number; cy?: number; cw?: number; ch?: number }
 /** Imagens que compõem o mapa (posição e tamanho em células). */
 export function normalizarCamadas(v: unknown, cols: number, rows: number): Camada[] | null {
   if (!Array.isArray(v) || v.length > 30) return null
@@ -65,8 +66,11 @@ export function normalizarCamadas(v: unknown, cols: number, rows: number): Camad
     const o = c as Record<string, unknown>
     if (typeof o.url !== 'string' || !/^https:\/\//.test(o.url) || o.url.length > 1000) return null
     const n = (k: string, min: number, max: number) => Math.max(min, Math.min(max, Math.round(Number(o[k]) || 0)))
-    out.push({ id: typeof o.id === 'string' && o.id.length <= 60 ? o.id : crypto.randomUUID(), url: o.url,
-      x: n('x', -100, cols), y: n('y', -100, rows), w: n('w', 1, 200), h: n('h', 1, 200) })
+    const camada: Camada = { id: typeof o.id === 'string' && o.id.length <= 60 ? o.id : crypto.randomUUID(), url: o.url,
+      x: n('x', -100, cols), y: n('y', -100, rows), w: n('w', 1, 200), h: n('h', 1, 200) }
+    const r = normalizarRecorte(o)
+    if (r) Object.assign(camada, r)
+    out.push(camada)
   }
   return out
 }
@@ -90,4 +94,16 @@ export function podeMoverToken(t: { movimento: Movimento; dono_id: string | null
   if (admin) return true
   if (cenaTravada || t.movimento === 'mestre') return false
   return t.movimento === 'todos' || t.dono_id === eu
+}
+
+const fr = (v: unknown) => { const n = Number(v); return Number.isFinite(n) ? Math.round(Math.max(0, Math.min(1, n)) * 10000) / 10000 : null }
+/** Recorte válido (mínimo 2% da imagem, sem passar da borda) ou null para "imagem inteira". */
+export function normalizarRecorte(o: Record<string, unknown>): { cx: number; cy: number; cw: number; ch: number } | null {
+  if (o.cw === undefined && o.ch === undefined) return null
+  let cx = fr(o.cx) ?? 0, cy = fr(o.cy) ?? 0
+  let cw = fr(o.cw) ?? 1, ch = fr(o.ch) ?? 1
+  cw = Math.max(0.02, cw); ch = Math.max(0.02, ch)
+  cx = Math.min(cx, 1 - cw); cy = Math.min(cy, 1 - ch)
+  if (cx === 0 && cy === 0 && cw === 1 && ch === 1) return null
+  return { cx, cy, cw, ch }
 }

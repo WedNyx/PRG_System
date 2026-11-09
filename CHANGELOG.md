@@ -2,6 +2,12 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.6.1 — Tamanho do mapa e recorte de imagens (2026-11-09)
+- O mestre escolhe o tamanho do mapa (Pequeno, Médio, Grande, Enorme ou personalizado), vendo quantos metros ele tem.
+- ✂️ Recortar: escolha qual parte da imagem entra no mapa, arrastando o quadro e puxando os cantos.
+- ⛶ Esticar uma imagem para ocupar o mapa inteiro, e lista das imagens do mapa com miniaturas.
+- Mapas enviados ao criar a cena já podem ser recortados; cenas antigas podem virar editáveis.
+
 ## v0.6.0 — Mapas montados, tokens controlados e diário do mestre (2026-11-09)
 - Monte o mapa juntando várias imagens enviadas do aparelho: arraste e mude o tamanho de cada pedaço.
 - Névoa com pincel (1×1, 3×3, 5×5), revelar/esconder uma área inteira de uma vez e botões “Revelar tudo” e “Esconder tudo”.

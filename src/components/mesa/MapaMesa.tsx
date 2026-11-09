@@ -140,8 +140,13 @@ export default function MapaMesa(p: Props) {
           {camadas.map(c => <div key={c.id} className={'absolute ' + (editandoMapa ? 'cursor-move' : 'pointer-events-none')}
             style={{ left: c.x * CELULA, top: c.y * CELULA, width: c.w * CELULA, height: c.h * CELULA, zIndex: 1, outline: editandoMapa && p.camadaSel === c.id ? '2px solid #b99bff' : editandoMapa ? '1px dashed #6d5690' : undefined }}
             onPointerDown={e => camadaDown(e, c, 'mover')}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={c.url} alt="" draggable={false} className="h-full w-full object-fill" />
+            <div className="absolute inset-0 overflow-hidden">
+              {/* Recorte: mostra só a parte escolhida da imagem, esticada para caber no espaço da camada. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={c.url} alt="" draggable={false} className="absolute max-w-none" style={{
+                width: 100 / (c.cw ?? 1) + '%', height: 100 / (c.ch ?? 1) + '%',
+                left: -((c.cx ?? 0) / (c.cw ?? 1)) * 100 + '%', top: -((c.cy ?? 0) / (c.ch ?? 1)) * 100 + '%' }} />
+            </div>
             {editandoMapa && p.camadaSel === c.id && <div role="button" aria-label="Redimensionar imagem" onPointerDown={e => camadaDown(e, c, 'tamanho')}
               className="absolute -bottom-2 -right-2 h-6 w-6 cursor-nwse-resize rounded-full border-2 border-white bg-[#7654bb]" />}
           </div>)}

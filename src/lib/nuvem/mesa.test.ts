@@ -60,3 +60,17 @@ describe('v0.6.0 — mapa e tokens', () => {
     expect(podeMoverToken({ ...t, movimento: 'mestre' }, 'm', true, true)).toBe(true)
   })
 })
+
+import { normalizarRecorte } from './mesa'
+describe('recorte de imagem do mapa', () => {
+  it('guarda o recorte e corrige bordas', () => {
+    expect(normalizarRecorte({ cx: 0.25, cy: 0.1, cw: 0.5, ch: 0.5 })).toEqual({ cx: 0.25, cy: 0.1, cw: 0.5, ch: 0.5 })
+    expect(normalizarRecorte({ cx: 0.9, cy: 0, cw: 0.5, ch: 1 })).toEqual({ cx: 0.5, cy: 0, cw: 0.5, ch: 1 })
+    expect(normalizarRecorte({ cx: 0, cy: 0, cw: 1, ch: 1 })).toBeNull()
+    expect(normalizarRecorte({})).toBeNull()
+    expect(normalizarRecorte({ cw: 0, ch: 0.001 })).toMatchObject({ cw: 0.02, ch: 0.02 })
+  })
+  it('camada leva o recorte junto', () => {
+    expect(normalizarCamadas([{ url: 'https://a/b.png', w: 5, h: 5, cx: 0.5, cy: 0.5, cw: 0.5, ch: 0.5 }], 20, 15)?.[0]).toMatchObject({ cx: 0.5, cw: 0.5 })
+  })
+})

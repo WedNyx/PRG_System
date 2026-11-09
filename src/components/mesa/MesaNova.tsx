@@ -13,6 +13,7 @@ import { podeMoverToken } from '@/lib/nuvem/mesa'
 import MapaMesa, { type CursorRemoto, type ModoMesa, type Ping, type TokenMapa } from './MapaMesa'
 import Dados3D, { type Dados3DHandle } from './Dados3D'
 import PainelCampanha from './PainelCampanha'
+import RecorteImagem from './RecorteImagem'
 import { btn, input, msg } from './estilos'
 
 type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean }
@@ -200,12 +201,18 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
 }
 
 function PainelMestre({ e, acao, campanhaId, setModo }: { e: Estado; acao: Acao; campanhaId: string; setModo: (m: ModoMesa) => void }) {
-  const [nova, setNova] = useState({ nome: '', mapa_url: '', grid_cols: 20, grid_rows: 15 })
+  const [nova, setNova] = useState({ nome: '', mapa_url: '', grid_cols: 20, grid_rows: 15, enviado: false })
   const [enviando, setEnviando] = useState('')
   const cena = e.cenaAtiva
+  const [tam, setTam] = useState({ c: cena?.grid_cols ?? 20, r: cena?.grid_rows ?? 15 })
+  const [recortar, setRecortar] = useState<Camada | null>(null)
+  useEffect(() => { if (cena) setTam({ c: cena.grid_cols, r: cena.grid_rows }) }, [cena?.id, cena?.grid_cols, cena?.grid_rows])
+  const camadas = cena?.camadas ?? []
+  const salvar = (novas: Camada[]) => cena ? acao({ acao: 'cena_editar', cenaId: cena.id, camadas: novas }).catch(() => ({})) : Promise.resolve({})
+
   async function fundoNovaCena(arq: File) {
     setEnviando('nova')
-    try { const { url, ar } = await enviarImagem(campanhaId, e.eu, arq); setNova(n => ({ ...n, mapa_url: url, grid_rows: Math.max(5, Math.min(100, Math.round(n.grid_cols * ar))) })); toast.success('Mapa enviado! A grade já foi ajustada ao formato da imagem.') }
+    try { const { url, ar } = await enviarImagem(campanhaId, e.eu, arq); setNova(n => ({ ...n, mapa_url: url, enviado: true, grid_rows: Math.max(5, Math.min(100, Math.round(n.grid_cols * ar))) })); toast.success('Mapa enviado! Depois de criar a cena, use ✂️ Recortar para escolher a parte da imagem.') }
     catch (er) { toast.error(msg(er)) } finally { setEnviando('') }
   }
   async function adicionarCamadas(arqs: FileList) {
@@ -218,48 +225,88 @@ function PainelMestre({ e, acao, campanhaId, setModo }: { e: Estado; acao: Acao;
         const w = Math.min(cena.grid_cols, 10), h = Math.max(1, Math.round(w * ar))
         novas.push({ id: crypto.randomUUID(), url, x: 0, y: 0, w, h })
       }
-      await acao({ acao: 'cena_editar', cenaId: cena.id, camadas: [...(cena.camadas ?? []), ...novas] })
+      await salvar([...camadas, ...novas])
       setModo('editar-mapa'); toast.success(`${novas.length} imagem(ns) adicionada(s). Arraste para montar o mapa.`)
     } catch (er) { toast.error(msg(er)) } finally { setEnviando('') }
   }
+  function criarCena(x: React.FormEvent) {
+    x.preventDefault()
+    // Imagem enviada vira uma camada que ocupa o mapa todo (assim dá para recortar depois).
+    const corpo = nova.enviado
+      ? { acao: 'cena_criar', nome: nova.nome, grid_cols: nova.grid_cols, grid_rows: nova.grid_rows, camadas: [{ id: crypto.randomUUID(), url: nova.mapa_url, x: 0, y: 0, w: nova.grid_cols, h: nova.grid_rows }] }
+      : { acao: 'cena_criar', nome: nova.nome, grid_cols: nova.grid_cols, grid_rows: nova.grid_rows, mapa_url: nova.mapa_url }
+    void acao(corpo).then(() => setNova({ nome: '', mapa_url: '', grid_cols: 20, grid_rows: 15, enviado: false })).catch(() => {})
+  }
+  const PRESETS: [string, number, number][] = [['Pequeno', 15, 10], ['Médio', 25, 18], ['Grande', 40, 28], ['Enorme', 60, 40]]
+
   return <div className="space-y-5 text-sm">
     {cena && <section className="space-y-2">
-      <h3 className="font-semibold">Mapa da cena “{cena.nome}”</h3>
-      <label className={btn + ' cursor-pointer'}><ImageIcon size={14} /> {enviando === 'camada' ? 'Enviando…' : 'Adicionar imagens ao mapa (várias)'}
-        <input type="file" multiple accept="image/png,image/jpeg,image/webp" className="hidden" onChange={x => { if (x.target.files?.length) void adicionarCamadas(x.target.files); x.target.value = '' }} /></label>
-      <p className="text-xs text-[#b4aeca]">Junte vários pedaços de mapa (baixados da internet ou do celular) e monte com a ferramenta <Layers size={12} className="inline" /> “Montar mapa”. {cena.camadas?.length ? `${cena.camadas.length} imagem(ns) nesta cena.` : ''}</p>
-      <div className="flex items-center gap-2"><span>Grade</span>
-        <input aria-label="Colunas da cena" type="number" min={5} max={100} defaultValue={cena.grid_cols} onBlur={x => { const v = Number(x.target.value); if (v !== cena.grid_cols) void acao({ acao: 'cena_editar', cenaId: cena.id, grid_cols: v }).catch(() => {}) }} className={input + ' w-20'} />×
-        <input aria-label="Linhas da cena" type="number" min={5} max={100} defaultValue={cena.grid_rows} onBlur={x => { const v = Number(x.target.value); if (v !== cena.grid_rows) void acao({ acao: 'cena_editar', cenaId: cena.id, grid_rows: v }).catch(() => {}) }} className={input + ' w-20'} /></div>
+      <h3 className="font-semibold">📐 Tamanho do mapa</h3>
+      <div className="flex flex-wrap gap-1">{PRESETS.map(([n, c, r]) => <button key={n} type="button" onClick={() => setTam({ c, r })} className={btn + (tam.c === c && tam.r === r ? ' bg-[#5b4380]' : '')}>{n} {c}×{r}</button>)}</div>
+      <div className="flex flex-wrap items-center gap-2">
+        <input aria-label="Colunas do mapa" type="number" min={5} max={100} value={tam.c} onChange={x => setTam({ ...tam, c: Number(x.target.value) })} className={input + ' w-20'} />×
+        <input aria-label="Linhas do mapa" type="number" min={5} max={100} value={tam.r} onChange={x => setTam({ ...tam, r: Number(x.target.value) })} className={input + ' w-20'} />
+        <span className="text-xs text-[#b4aeca]">≈ {Math.round(tam.c * 1.5)} × {Math.round(tam.r * 1.5)} m</span>
+        <button type="button" className={btn} disabled={tam.c === cena.grid_cols && tam.r === cena.grid_rows} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, grid_cols: tam.c, grid_rows: tam.r }).catch(() => {})}>Aplicar</button>
+      </div>
+      <p className="text-xs text-[#b4aeca]">Cada quadrado vale 1,5 m. Diminuir o mapa não apaga tokens; eles ficam na borda.</p>
     </section>}
+
     {cena && <section className="space-y-2">
-      <h3 className="font-semibold">O que os jogadores veem</h3>
+      <h3 className="font-semibold">🖼️ Imagens do mapa</h3>
+      {cena.mapa_url && <div className="rounded-lg border border-[#5e4b78] p-2 text-xs">Esta cena usa um fundo antigo (não recortável).
+        <button type="button" className={btn + ' ml-2'} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, mapa_url: null, camadas: [{ id: crypto.randomUUID(), url: cena.mapa_url, x: 0, y: 0, w: cena.grid_cols, h: cena.grid_rows }, ...camadas] }).catch(() => {})}>Tornar editável</button></div>}
+      <ul className="space-y-1">{camadas.map((c, i) => <li key={c.id} className="flex items-center gap-2 rounded-lg bg-[#1e1a30] p-2">
+        <span className="relative h-10 w-14 shrink-0 overflow-hidden rounded bg-[#100f20]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={c.url} alt="" className="absolute max-w-none" style={{ width: 100 / (c.cw ?? 1) + '%', height: 100 / (c.ch ?? 1) + '%', left: -((c.cx ?? 0) / (c.cw ?? 1)) * 100 + '%', top: -((c.cy ?? 0) / (c.ch ?? 1)) * 100 + '%' }} /></span>
+        <span className="flex-1 text-xs text-[#c4b6d4]">Imagem {i + 1} · {c.w}×{c.h}{c.cw ? ' · recortada' : ''}</span>
+        <button type="button" className={btn} onClick={() => setRecortar(c)} title="Escolher a parte da imagem">✂️</button>
+        <button type="button" className={btn} title="Ocupar o mapa inteiro" onClick={() => salvar(camadas.map(x => x.id === c.id ? { ...x, x: 0, y: 0, w: cena.grid_cols, h: cena.grid_rows } : x))}>⛶</button>
+        <button type="button" className={btn} aria-label="Remover imagem" onClick={() => salvar(camadas.filter(x => x.id !== c.id))}><Trash2 size={14} /></button>
+      </li>)}</ul>
+      <label className={btn + ' cursor-pointer'}><ImageIcon size={14} /> {enviando === 'camada' ? 'Enviando…' : 'Adicionar imagens (várias)'}
+        <input type="file" multiple accept="image/png,image/jpeg,image/webp" className="hidden" onChange={x => { if (x.target.files?.length) void adicionarCamadas(x.target.files); x.target.value = '' }} /></label>
+      <p className="text-xs text-[#b4aeca]">✂️ escolhe a parte da imagem · ⛶ estica a imagem no mapa todo · <Layers size={12} className="inline" /> “Montar mapa” (no canto do mapa) arrasta e redimensiona.</p>
+    </section>}
+
+    {cena && <section className="space-y-2">
+      <h3 className="font-semibold">👁️ O que os jogadores veem</h3>
       <div className="flex flex-wrap gap-2">
         <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, fog_ativo: !cena.fog_ativo })}><CloudFog size={14} /> {cena.fog_ativo ? 'Desligar névoa' : 'Ligar névoa'}</button>
         {cena.fog_ativo && <>
           <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, nevoa_tudo: true })}><Eye size={14} /> Revelar tudo</button>
           <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, fog_limpar: true })}><EyeOff size={14} /> Esconder tudo</button></>}
       </div>
-      {cena.fog_ativo && <p className="text-xs text-[#b4aeca]">Use as ferramentas no canto do mapa: <Eye size={12} className="inline" /> pincel (1×1, 3×3, 5×5) ou <Square size={12} className="inline" /> arraste um retângulo para revelar uma área inteira.</p>}
+      {cena.fog_ativo && <p className="text-xs text-[#b4aeca]">No canto do mapa: <Eye size={12} className="inline" /> pincel (1×1, 3×3, 5×5) ou <Square size={12} className="inline" /> arraste um retângulo para revelar uma área inteira.</p>}
       <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, tokens_travados: !cena.tokens_travados })}>{cena.tokens_travados ? <><LockOpen size={14} /> Destravar tokens dos jogadores</> : <><Lock size={14} /> Travar tokens dos jogadores</>}</button>
     </section>}
+
     <section className="space-y-2">
-      <h3 className="font-semibold">Cenas</h3>
+      <h3 className="font-semibold">🎬 Cenas</h3>
       <ul className="space-y-1">{e.cenas.map(c => <li key={c.id} className={'flex flex-wrap items-center gap-2 rounded-lg p-2 ' + (c.ativa ? 'bg-[#5b4380]' : 'bg-[#1e1a30]')}>
         <span className="flex-1 truncate">{c.nome}{c.ativa && ' · na mesa'}</span>
         {!c.ativa && <button type="button" className={btn} onClick={() => acao({ acao: 'cena_ativar', cenaId: c.id })}>Mostrar</button>}
         <button type="button" aria-label={'Excluir ' + c.nome} className={btn} onClick={() => { if (window.confirm(`Excluir a cena "${c.nome}" e seus tokens?`)) void acao({ acao: 'cena_excluir', cenaId: c.id }) }}><Trash2 size={14} /></button>
       </li>)}</ul>
-      <form className="space-y-2 rounded-lg border border-[#373251] p-2" onSubmit={x => { x.preventDefault(); void acao({ acao: 'cena_criar', ...nova }).then(() => setNova({ nome: '', mapa_url: '', grid_cols: 20, grid_rows: 15 })).catch(() => {}) }}>
+      <form className="space-y-2 rounded-lg border border-[#373251] p-2" onSubmit={criarCena}>
         <input required aria-label="Nome da cena" value={nova.nome} onChange={x => setNova({ ...nova, nome: x.target.value })} placeholder="Nova cena (ex.: Saloon)" className={input} />
-        <label className={btn + ' cursor-pointer'}><ImageIcon size={14} /> {enviando === 'nova' ? 'Enviando…' : nova.mapa_url ? 'Mapa escolhido ✓ (trocar)' : 'Mapa do aparelho (opcional)'}
+        <label className={btn + ' cursor-pointer'}><ImageIcon size={14} /> {enviando === 'nova' ? 'Enviando…' : nova.enviado ? 'Mapa escolhido ✓ (trocar)' : 'Mapa do aparelho (opcional)'}
           <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={x => { const f = x.target.files?.[0]; if (f) void fundoNovaCena(f); x.target.value = '' }} /></label>
-        <input aria-label="Link da imagem do mapa" value={nova.mapa_url} onChange={x => setNova({ ...nova, mapa_url: x.target.value })} placeholder="ou cole um link https://…" className={input} />
-        <div className="flex items-center gap-2"><span>Grade</span><input aria-label="Colunas" type="number" min={5} max={100} value={nova.grid_cols} onChange={x => setNova({ ...nova, grid_cols: Number(x.target.value) })} className={input + ' w-20'} />×
+        {!nova.enviado && <input aria-label="Link da imagem do mapa" value={nova.mapa_url} onChange={x => setNova({ ...nova, mapa_url: x.target.value })} placeholder="ou cole um link https://…" className={input} />}
+        <div className="flex items-center gap-2"><span>Tamanho</span><input aria-label="Colunas" type="number" min={5} max={100} value={nova.grid_cols} onChange={x => setNova({ ...nova, grid_cols: Number(x.target.value) })} className={input + ' w-20'} />×
           <input aria-label="Linhas" type="number" min={5} max={100} value={nova.grid_rows} onChange={x => setNova({ ...nova, grid_rows: Number(x.target.value) })} className={input + ' w-20'} /></div>
         <button type="submit" className={btn}><Plus size={14} /> Criar cena</button>
       </form>
     </section>
+
+    {recortar && cena && <RecorteImagem url={recortar.url} inicial={recortar} onCancelar={() => setRecortar(null)} onSalvar={(r, arImg) => {
+      // Mantém a largura no mapa e ajusta a altura à proporção da parte escolhida.
+      const h = Math.max(1, Math.round(recortar.w * (r.ch * arImg) / r.cw))
+      const inteira = r.cx === 0 && r.cy === 0 && r.cw === 1 && r.ch === 1
+      void salvar(camadas.map(x => x.id === recortar.id ? { id: x.id, url: x.url, x: x.x, y: x.y, w: x.w, h, ...(inteira ? {} : r) } : x))
+      setRecortar(null)
+    }} />}
   </div>
 }
 

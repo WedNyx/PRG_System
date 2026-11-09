@@ -260,7 +260,7 @@ export default function PortalAventureiros() {
           </button>
         </section>
         <div className="flex flex-wrap items-center justify-center gap-3 pb-3 text-xs text-[#b4aeca]">
-          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.6.0'}</Link>
+          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.6.1'}</Link>
           {versao?.revision && <span title="Identificador da implantação">Build {versao.revision}</span>}
           <button type="button" onClick={() => window.location.reload()}
             className="rounded-md border border-[#62527e] px-2 py-1 text-[#b99bff] hover:bg-[#34294f]">

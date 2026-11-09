@@ -15,6 +15,7 @@ import MapaMesa, { type CursorRemoto, type ModoMesa, type Ping, type TokenMapa }
 import Dados3D, { type Dados3DHandle } from './Dados3D'
 import PainelCampanha from './PainelCampanha'
 import PainelMusica from './PainelMusica'
+import Sino from '@/components/Sino'
 import TocadorMesa from './TocadorMesa'
 import type { EstadoMusica } from '@/lib/nuvem/musica'
 import RecorteImagem from './RecorteImagem'
@@ -173,6 +174,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       {espectador && <span className="rounded-full bg-[#1f3a2c] px-2 py-1 text-xs text-emerald-200" title="Você está assistindo">👁️ Espectador</span>}
       {admin && <button type="button" onClick={() => void alternarSessao()} className={'rounded-full px-3 py-1 text-xs font-semibold ' + (sessaoAberta ? 'bg-[#4b253a] text-red-100 hover:bg-[#5e2d48]' : 'bg-emerald-700 text-white hover:bg-emerald-600')}>
         {sessaoAberta ? '⏹ Encerrar sessão' : '▶ Abrir sessão'}</button>}
+      <Sino />
       <span title={tempoReal ? 'Tempo real ligado' : 'Atualizando a cada 4 s'} className={'h-2.5 w-2.5 rounded-full ' + (tempoReal ? 'bg-emerald-400' : 'bg-amber-400')} />
       <span className="text-xs text-[#b4aeca]">{online.length || 1} online</span>
       <button type="button" onClick={() => setSom(!som)} aria-label={som ? 'Desligar som' : 'Ligar som'} className="rounded-lg p-1.5 hover:bg-[#34294f]">{som ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>

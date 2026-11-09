@@ -36,8 +36,8 @@ const valid = (c: unknown): c is Campanha => {
     !!v.excecoes && typeof v.excecoes === 'object' && !Array.isArray(v.excecoes)
 }
 /** Com a nuvem ativa, usa campanhas no servidor; sem ela, mantém os rascunhos locais. */
-export default function Campanhas({ aventureiroId }: { aventureiroId: string }) {
-  return NUVEM_ATIVA ? <CampanhasNuvem aventureiroId={aventureiroId} /> : <CampanhasLocais aventureiroId={aventureiroId} />
+export default function Campanhas({ aventureiroId, abrirCampanha }: { aventureiroId: string; abrirCampanha?: string | null }) {
+  return NUVEM_ATIVA ? <CampanhasNuvem aventureiroId={aventureiroId} abrirCampanha={abrirCampanha} /> : <CampanhasLocais aventureiroId={aventureiroId} />
 }
 
 function CampanhasLocais({ aventureiroId }: { aventureiroId: string }) {

@@ -2,6 +2,13 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.11.0 — Avisos (notificações) (2026-11-09)
+- Avisos dentro da plataforma (🔔 no topo da Central e da mesa), sem nada por e-mail: número de não lidos, balão quando chega algo novo e toque para ir direto ao lugar certo.
+- Jogadores são avisados de: entrada aceita ou recusada, ficha aprovada/recusada/ajustes, ficha travada, recompensas, sessão começando, mudança de papel, anotações compartilhadas e resumos novos no diário.
+- O mestre é avisado de: pedidos para entrar, fichas e playlists enviadas e pedidos de alteração de ficha.
+- “Ler todos” e “Apagar os já lidos”; avisos com mais de 60 dias somem sozinhos.
+- Links diretos para uma campanha na Central (usados pelos avisos).
+
 ## v0.10.0 — Sessões, espectadores e música do mestre (2026-11-09)
 - Sessão aberta/fechada: só o mestre abre a mesa (“▶ Abrir sessão”). Com a sessão fechada, ninguém além do mestre entra; quem estiver esperando entra sozinho quando ela abrir.
 - “⏹ Encerrar sessão” tira todo mundo da mesa e para a música (o histórico continua disponível).

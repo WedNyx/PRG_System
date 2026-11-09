@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { ator, buscarFicha, checarOrigem, lerJson, ok, papelNaCampanha, q, regrasDoJogador, registrar, rest, rpc, rota, ErroApi, type FichaRow } from '@/lib/nuvem/servidor'
+import { apelidoDe, ator, buscarFicha, linkCampanha, mestresDe, notificar, participantes, checarOrigem, lerJson, ok, papelNaCampanha, q, regrasDoJogador, registrar, rest, rpc, rota, ErroApi, type FichaRow } from '@/lib/nuvem/servidor'
 import { isUuid, normalizarPermissoes, normalizarExcecoes, podeAdministrar, validarFichaDados, isModelo } from '@/lib/nuvem/validacao'
 import { diferencas, aplicar, separarPorRegra, resumoMudanca, type Mudanca } from '@/lib/nuvem/categorias'
 import type { Campo } from '@/lib/campanhas/permissoes'
@@ -113,6 +113,8 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
         method: 'POST',
         body: JSON.stringify({ ficha_id: f.id, campanha_id: f.campanha_id, autor_id: eu, mudancas: pendentes, categorias: [...new Set(pendentes.map(m => m.categoria))] }),
       })
+      const [quem, ps] = await Promise.all([apelidoDe(eu), participantes(f.campanha_id)])
+      await notificar(mestresDe(ps).map(m => ({ destinatario_id: m, campanha_id: f.campanha_id, tipo: 'pedido_alteracao', titulo: `✋ ${quem} pediu para alterar “${f.nome || 'uma ficha'}”`, texto: 'Áreas: ' + [...new Set(pendentes.map(x => x.categoria))].join(', '), link: linkCampanha(f.campanha_id!) })), eu)
     }
     await registrar([
       ...resumoHistorico(salvas).map(h => ({ ficha_id: f.id, campanha_id: f.campanha_id, autor_id: eu, tipo: 'edicao' as const, categoria: h.categoria, descricao: admin && !dono ? 'Editado pelo mestre' : 'Editado pelo jogador', antes: h.antes, depois: h.depois })),

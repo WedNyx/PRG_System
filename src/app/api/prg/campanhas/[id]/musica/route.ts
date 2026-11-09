@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { ator, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
+import { apelidoDe, ator, lerJson, mestresDe, notificar, ok, papelNaCampanha, participantes, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar } from '@/lib/nuvem/validacao'
 import { continuar, fonteDaMusica, pausar, pular, vizinha, type EstadoMusica } from '@/lib/nuvem/musica'
 
@@ -101,6 +101,10 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       if (b.nome !== undefined) { const n = nomeValido(b.nome, 80); if (!n) throw new ErroApi(400, 'Nome inválido.'); mud.nome = n }
       if (typeof b.enviada === 'boolean') mud.enviada = b.enviada
       await rest(`prg_playlists?id=eq.${q(p.id)}`, { method: 'PATCH', body: JSON.stringify(mud) })
+      if (b.enviada === true && !p.enviada) {
+        const [quem, ps] = await Promise.all([apelidoDe(eu), participantes(cid)])
+        await notificar(mestresDe(ps).map(m => ({ destinatario_id: m, campanha_id: cid, tipo: 'playlist_enviada', titulo: `🎵 ${quem} enviou a playlist “${p.nome}”`, texto: 'Ela aparece em Música → Recebidas, na mesa.', link: `/mesa?campanha=${cid}` })), eu)
+      }
       return ok({ ok: true })
     }
     case 'playlist_excluir': {

@@ -1,4 +1,4 @@
-import { ator, buscarFicha, lerJson, ok, papelNaCampanha, q, registrar, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
+import { ator, linkFichaNuvem, notificar, buscarFicha, lerJson, ok, papelNaCampanha, q, registrar, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar, validarFichaDados } from '@/lib/nuvem/validacao'
 import { aplicarRecompensa, descreverRecompensa, entradaDaBiblioteca, validarRecompensa, type EntradaBiblioteca } from '@/lib/nuvem/recompensas'
 
@@ -23,6 +23,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
   const ids = (Array.isArray(b.fichaIds) ? b.fichaIds : []).filter(isUuid).slice(0, 30)
   if (!ids.length) throw new ErroApi(400, 'Escolha quem recebe.')
   const nomes: string[] = []
+  const avisos: Parameters<typeof notificar>[0] = []
   for (const fid of ids) {
     for (let tentativa = 0; tentativa < 3; tentativa++) {
       const f = await buscarFicha(fid)
@@ -33,12 +34,14 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         body: JSON.stringify({ dados, nome: v.ok ? v.valor.nome : f.nome, versao: f.versao + 1, atualizada_em: new Date().toISOString() }) })
       if (ok2.length) {
         nomes.push(f.nome || 'Personagem')
+        avisos.push({ destinatario_id: f.dono_id, campanha_id: id, tipo: 'recompensa', titulo: `🎁 ${f.nome || 'Seu personagem'} recebeu uma recompensa`, texto: descreverRecompensa(r), link: linkFichaNuvem(f) })
         await registrar([{ ficha_id: f.id, campanha_id: id, autor_id: eu, tipo: 'recompensa', descricao: 'Recompensa: ' + descreverRecompensa(r) + (typeof b.motivo === 'string' && b.motivo.trim() ? ` — ${b.motivo.trim().slice(0, 200)}` : '') }])
         break
       }
     }
   }
   if (!nomes.length) throw new ErroApi(400, 'Nenhuma ficha aprovada encontrada.')
+  await notificar(avisos, eu)
   if (b.anunciar !== false) {
     await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: id, autor_id: eu, tipo: 'sistema', visibilidade: 'publica',
       texto: `🎁 Recompensa para ${nomes.join(', ')}: ${descreverRecompensa(r)}` }) }).catch(() => {})

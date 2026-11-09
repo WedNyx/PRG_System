@@ -21,6 +21,11 @@ export const GUIA: TopicoGuia[] = [
     passos: ['No menu, toque em “Editar perfil” (ou na sua foto, no canto de cima).', 'Toque em “📷 Trocar foto”, ajuste o recorte e toque em “Usar esta foto”.', 'Mude o nome se quiser e toque em “Salvar”. Todo mundo verá a mudança.'],
   },
   {
+    id: 'avisos', icone: '🔔', titulo: 'Avisos (sininho)', foto: 'avisos.jpg', legenda: 'Lista de avisos',
+    resumo: 'O sininho no topo mostra o que aconteceu enquanto você não estava olhando. Tudo fica dentro da plataforma: nada vai por e-mail.',
+    passos: ['O número vermelho no 🔔 mostra quantos avisos você ainda não leu. Avisos novos também aparecem num balão rápido.', 'Toque num aviso para ir direto ao lugar certo (a ficha, a campanha ou a mesa).', 'Jogadores recebem: entrada aceita, ficha aprovada/recusada/ajustes, recompensas, sessão começando, papel novo, anotações e resumos do diário.', 'O mestre recebe: pedidos para entrar, fichas e playlists enviadas e pedidos de alteração de ficha.', 'Use “Ler todos” e “Apagar os já lidos” para organizar. Avisos com mais de 60 dias somem sozinhos.'],
+  },
+  {
     id: 'tema', icone: '🎨', titulo: 'Tema da plataforma',
     resumo: 'O tema principal é o Céu estrelado. Também existe a Noite clássica, mais lisa.',
     passos: ['No menu, toque em “Tema” para alternar entre Céu estrelado e Noite clássica.', 'A escolha vale para este aparelho.'],

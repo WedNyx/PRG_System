@@ -1,4 +1,4 @@
-import { ator, lerJson, ok, papelNaCampanha, q, rest, rpc, rota, ErroApi } from '@/lib/nuvem/servidor'
+import { apelidoDe, linkCampanha, mestresDe, nomeDaCampanha, notificar, participantes, ator, lerJson, ok, papelNaCampanha, q, rest, rpc, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { normalizarCodigo, situacaoConvite, type ConviteRow } from '@/lib/nuvem/validacao'
 
 export const dynamic = 'force-dynamic'
@@ -45,5 +45,8 @@ export const POST = rota<Ctx>(async (req, { params }) => {
     method: 'POST',
     body: JSON.stringify({ campanha_id: c.campanha_id, aventureiro_id: eu, convite_codigo: c.codigo, mensagem }),
   })
+  const [quem, nomeC, ps] = await Promise.all([apelidoDe(eu), nomeDaCampanha(c.campanha_id), participantes(c.campanha_id)])
+  await notificar(mestresDe(ps).map(m => ({ destinatario_id: m, campanha_id: c.campanha_id, tipo: 'pedido_entrada',
+    titulo: `${quem} quer entrar em ${nomeC}`, texto: mensagem || 'Aceite ou recuse em “Pedidos para entrar”.', link: linkCampanha(c.campanha_id) })), eu)
   return ok({ ok: true }, 201)
 })

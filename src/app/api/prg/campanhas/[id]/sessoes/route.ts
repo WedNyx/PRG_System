@@ -1,4 +1,4 @@
-import { ator, checarOrigem, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
+import { ator, nomeDaCampanha, notificar, participantes, checarOrigem, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar } from '@/lib/nuvem/validacao'
 
 export const dynamic = 'force-dynamic'
@@ -30,12 +30,20 @@ export const POST = rota<Ctx>(async (req, { params }) => {
     resumo: typeof b.resumo === 'string' ? b.resumo.slice(0, 20000) : '',
     publicada: b.publicada === true, atualizada_em: new Date().toISOString(),
   }
+  /** Avisa o grupo quando o resumo de uma sessão é publicado (só na primeira vez). */
+  const avisarPublicacao = async () => {
+    const [nomeC, ps] = await Promise.all([nomeDaCampanha(id), participantes(id)])
+    await notificar(ps.map(p => ({ destinatario_id: p.aventureiro_id, campanha_id: id, tipo: 'diario', titulo: `📖 Novo resumo no diário de ${nomeC}`, texto: `Sessão ${linha.numero}: ${titulo}`, link: `/mesa?campanha=${id}` })), eu)
+  }
   if (isUuid(b.id)) {
+    const [antes] = await rest<{ publicada: boolean }[]>(`prg_sessoes?select=publicada&id=eq.${q(b.id)}&campanha_id=eq.${q(id)}`)
     const r = await rest<unknown[]>(`prg_sessoes?id=eq.${q(b.id)}&campanha_id=eq.${q(id)}`, { method: 'PATCH', prefer: 'return=representation', body: JSON.stringify(linha) })
     if (!r.length) throw new ErroApi(404, 'Sessão não encontrada.')
+    if (linha.publicada && antes && !antes.publicada) await avisarPublicacao()
     return ok({ sessao: r[0] })
   }
   const [s] = await rest<unknown[]>('prg_sessoes', { method: 'POST', prefer: 'return=representation', body: JSON.stringify({ ...linha, campanha_id: id }) })
+  if (linha.publicada) await avisarPublicacao()
   return ok({ sessao: s }, 201)
 })
 

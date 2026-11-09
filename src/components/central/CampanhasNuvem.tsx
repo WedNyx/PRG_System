@@ -33,9 +33,9 @@ const btn = 'inline-flex items-center gap-2 rounded-lg border border-[#70588c] p
 const btnPrim = 'inline-flex items-center gap-2 rounded-xl bg-[#7652ac] px-4 py-3 font-semibold hover:bg-[#8b68c4] disabled:opacity-50'
 const msg = (e: unknown) => e instanceof ErroNuvem ? e.message : 'Falha de conexão. Tente novamente.'
 
-export default function CampanhasNuvem({ aventureiroId }: { aventureiroId: string }) {
+export default function CampanhasNuvem({ aventureiroId, abrirCampanha }: { aventureiroId: string; abrirCampanha?: string | null }) {
   const [campanhas, setCampanhas] = useState<Campanha[] | null>(null)
-  const [tela, setTela] = useState<{ tipo: 'lista' } | { tipo: 'form'; campanha?: Campanha } | { tipo: 'gerenciar'; id: string }>({ tipo: 'lista' })
+  const [tela, setTela] = useState<{ tipo: 'lista' } | { tipo: 'form'; campanha?: Campanha } | { tipo: 'gerenciar'; id: string }>(() => abrirCampanha && /^[0-9a-f-]{36}$/i.test(abrirCampanha) ? { tipo: 'gerenciar', id: abrirCampanha } : { tipo: 'lista' })
   const [erro, setErro] = useState('')
   const [codigo, setCodigo] = useState('')
   const [locais, setLocais] = useState<CampanhaLocal[]>([])

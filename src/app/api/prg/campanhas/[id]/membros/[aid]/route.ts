@@ -1,4 +1,4 @@
-import { ator, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi, checarOrigem } from '@/lib/nuvem/servidor'
+import { ator, linkCampanha, nomeDaCampanha, notificar, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi, checarOrigem } from '@/lib/nuvem/servidor'
 import { isUuid, normalizarExcecoes, podeAdministrar } from '@/lib/nuvem/validacao'
 
 export const dynamic = 'force-dynamic'
@@ -22,6 +22,10 @@ export const PATCH = rota<Ctx>(async (req, { params }) => {
   if (body.excecoes !== undefined) mudanca.excecoes = normalizarExcecoes(body.excecoes)
   if (!Object.keys(mudanca).length) throw new ErroApi(400, 'Nada para alterar.')
   await rest(`prg_campanha_membros?campanha_id=eq.${q(id)}&aventureiro_id=eq.${q(aid)}`, { method: 'PATCH', body: JSON.stringify(mudanca) })
+  if (mudanca.papel && mudanca.papel !== alvo) {
+    const nomeP: Record<string, string> = { jogador: '⚔️ jogador', espectador: '👁️ espectador', comestre: '👑 co-mestre' }
+    await notificar([{ destinatario_id: aid, campanha_id: id, tipo: 'papel', titulo: `Agora você é ${nomeP[mudanca.papel as string]} em ${await nomeDaCampanha(id)}`, link: linkCampanha(id) }], eu)
+  }
   return ok({ ok: true })
 })
 

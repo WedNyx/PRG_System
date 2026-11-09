@@ -6,6 +6,16 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.11.0', data: '2026-11-09', titulo: 'Avisos (notificações)',
+    itens: [
+      'Avisos dentro da plataforma (🔔 no topo da Central e da mesa), sem nada por e-mail: número de não lidos, balão quando chega algo novo e toque para ir direto ao lugar certo.',
+      'Jogadores são avisados de: entrada aceita ou recusada, ficha aprovada/recusada/ajustes, ficha travada, recompensas, sessão começando, mudança de papel, anotações compartilhadas e resumos novos no diário.',
+      'O mestre é avisado de: pedidos para entrar, fichas e playlists enviadas e pedidos de alteração de ficha.',
+      '“Ler todos” e “Apagar os já lidos”; avisos com mais de 60 dias somem sozinhos.',
+      'Links diretos para uma campanha na Central (usados pelos avisos).',
+    ],
+  },
+  {
     versao: '0.10.0', data: '2026-11-09', titulo: 'Sessões, espectadores e música do mestre',
     itens: [
       'Sessão aberta/fechada: só o mestre abre a mesa (“▶ Abrir sessão”). Com a sessão fechada, ninguém além do mestre entra; quem estiver esperando entra sozinho quando ela abrir.',

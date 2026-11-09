@@ -67,3 +67,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .prg-faisca, .prg-pulso, .prg-entrada { animation: none; }
 }
+
+/* ---- Sininho de avisos ---- */
+@keyframes prg-sino {
+  0%, 70%, 100% { transform: rotate(0); }
+  75% { transform: rotate(14deg); } 80% { transform: rotate(-12deg); } 85% { transform: rotate(8deg); } 90% { transform: rotate(-5deg); }
+}
+.prg-sino { animation: prg-sino 4s ease-in-out infinite; transform-origin: 50% 10%; }
+@media (prefers-reduced-motion: reduce) { .prg-sino { animation: none; } }

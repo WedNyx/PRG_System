@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { ator, buscarFicha, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
+import { ator, buscarFicha, nomeDaCampanha, notificar, participantes, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar, type Papel } from '@/lib/nuvem/validacao'
 import { aplicarNevoa, corValida, filtroVisibilidade, normalizarCamadas, normalizarCondicoes, normalizarIniciativa, normalizarPontos, podeMoverToken, todasCelulas, urlValida, type Movimento, type Visibilidade } from '@/lib/nuvem/mesa'
 import { rolarExpressao } from '@/lib/dice'
@@ -97,6 +97,11 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       }
       await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify(mud) })
       await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica', texto: aberta ? '🟢 O mestre abriu a sessão.' : '🔴 O mestre encerrou a sessão.' }) }).catch(() => {})
+      if (aberta) {
+        const [nomeC, ps] = await Promise.all([nomeDaCampanha(cid), participantes(cid)])
+        await notificar(ps.map(p => ({ destinatario_id: p.aventureiro_id, campanha_id: cid, tipo: 'sessao_aberta',
+          titulo: `🟢 A sessão de ${nomeC} começou!`, texto: 'Toque para entrar na mesa.', link: `/mesa?campanha=${cid}` })), eu)
+      }
       return ok({ aberta })
     }
     case 'evento': {

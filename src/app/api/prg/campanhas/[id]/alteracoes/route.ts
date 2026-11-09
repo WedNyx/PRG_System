@@ -1,4 +1,4 @@
-import { ator, buscarFicha, lerJson, ok, papelNaCampanha, q, registrar, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
+import { ator, buscarFicha, linkFichaNuvem, notificar, lerJson, ok, papelNaCampanha, q, registrar, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar, validarFichaDados } from '@/lib/nuvem/validacao'
 import { aplicar, resumoMudanca, type Mudanca } from '@/lib/nuvem/categorias'
 
@@ -56,5 +56,9 @@ export const POST = rota<Ctx>(async (req, { params }) => {
     descricao: `Pedido de alteração (${p.categorias.join(', ')}) ${estado === 'aceita' ? 'aceito' : estado === 'recusada' ? 'recusado' : 'devolvido para ajuste'}${just ? ` — "${just}"` : ''}`,
     antes: estado === 'aceita' ? p.mudancas.slice(0, 20).map(m => ({ campo: m.caminho, valor: resumoMudanca(m.antes, m.depois)[0] })) : null,
     depois: estado === 'aceita' ? p.mudancas.slice(0, 20).map(m => ({ campo: m.caminho, valor: resumoMudanca(m.antes, m.depois)[1] })) : null }])
+  const f = await buscarFicha(p.ficha_id)
+  await notificar([{ destinatario_id: p.autor_id, campanha_id: id, tipo: 'alteracao_' + estado,
+    titulo: estado === 'aceita' ? `✅ Alteração aceita em “${f?.nome || 'sua ficha'}”` : estado === 'recusada' ? `❌ Alteração recusada em “${f?.nome || 'sua ficha'}”` : `✏️ O mestre pediu ajustes na alteração de “${f?.nome || 'sua ficha'}”`,
+    texto: just, link: f ? linkFichaNuvem(f) : null }], eu)
   return ok({ ok: true })
 })

@@ -6,6 +6,13 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.8.2', data: '2026-11-09', titulo: 'Entrada animada nos perfis',
+    itens: [
+      'Animação ao escolher um perfil: a foto voa para o centro com um brilho e estrelas, mostra “Bem-vindo de volta” e mergulha na Central (toque para pular).',
+      'A Central aparece suavemente depois da animação. Quem ativou “reduzir movimento” no aparelho entra direto, sem animação.',
+    ],
+  },
+  {
     versao: '0.8.1', data: '2026-11-09', titulo: 'Sistemas publicados e autorais',
     itens: [
       'Sistemas de RPG separados em duas abas: “Sistemas publicados” (RPGs já existentes) e “Sistemas autorais” (criados por jogadores).',

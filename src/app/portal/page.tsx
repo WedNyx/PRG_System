@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import Link from 'next/link'
 import { validarApelidoAventureiro } from '@/lib/auth/aventureiro'
+import { useRouter } from 'next/navigation'
+import TransicaoPerfil from '@/components/perfil/TransicaoPerfil'
 
 type Perfil = { id: string; apelido: string; avatar?: string }
 const KEY = 'prg-aventureiros-demo-v1'
@@ -42,6 +44,8 @@ export default function PortalAventureiros() {
   const [modal, setModal] = useState<'criar' | 'editar' | null>(null)
   const [gerenciando, setGerenciando] = useState(false)
   const [senhaAdmin, setSenhaAdmin] = useState('')
+  const [entrando, setEntrando] = useState<{ perfil: Perfil; origem: DOMRect; destino: string } | null>(null)
+  const router = useRouter()
   const [pedindoSenha, setPedindoSenha] = useState(false)
   const [senhaDigitada, setSenhaDigitada] = useState('')
   const [erroSenha, setErroSenha] = useState('')
@@ -277,7 +281,11 @@ export default function PortalAventureiros() {
                     try { localStorage.setItem(SELECTED_KEY, perfil.id) } catch {}
                     // Volta para um convite aberto antes de escolher o perfil (somente caminhos internos).
                     const depois = new URLSearchParams(window.location.search).get('depois')
-                    window.location.assign(depois && /^\/convite\/[A-Za-z0-9-]{1,20}$/.test(depois) ? depois : '/central?personagem=' + encodeURIComponent(perfil.id))
+                    const destino = depois && /^\/convite\/[A-Za-z0-9-]{1,20}$/.test(depois) ? depois : '/central?personagem=' + encodeURIComponent(perfil.id)
+                    if (entrando) return
+                    router.prefetch(destino)
+                    const caixa = event.currentTarget.querySelector('div')?.getBoundingClientRect() ?? event.currentTarget.getBoundingClientRect()
+                    setEntrando({ perfil, origem: caixa, destino })
                   }}
                   className="flex w-full flex-col items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b99bff]">
                   <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border-2 border-[#51466a] bg-[#28233e] text-5xl font-bold text-[#b99bff] shadow-xl transition-all duration-200 group-hover:scale-105 group-hover:border-[#b99bff] group-hover:shadow-[0_0_24px_#7654bb66]">
@@ -302,7 +310,7 @@ export default function PortalAventureiros() {
           {CLOUD_ENABLED && <p className="mt-2 text-center text-xs text-[#8f86a8]">Para mudar seu nome ou foto, entre no seu perfil e use “Editar perfil” no menu.</p>}
         </section>
         <div className="flex flex-wrap items-center justify-center gap-3 pb-3 text-xs text-[#b4aeca]">
-          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.8.1'}</Link>
+          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.8.2'}</Link>
           {versao?.revision && <span title="Identificador da implantação">Build {versao.revision}</span>}
           <button type="button" onClick={() => window.location.reload()}
             className="rounded-md border border-[#62527e] px-2 py-1 text-[#b99bff] hover:bg-[#34294f]">
@@ -313,6 +321,8 @@ export default function PortalAventureiros() {
           {CLOUD_ENABLED ? 'Perfis e fichas ficam na nuvem e abrem em qualquer aparelho.' : 'Versão de testes: os perfis, fotos e fichas ficam apenas neste navegador; guarde backups.'}
         </p>
       </div>
+
+      {entrando && <TransicaoPerfil perfil={entrando.perfil} origem={entrando.origem} aoTerminar={() => router.push(entrando.destino)} />}
 
       {pedindoSenha && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4" onMouseDown={event => { if (event.target === event.currentTarget) setPedindoSenha(false) }}>

@@ -10,6 +10,7 @@ import FichasNuvem from '@/components/central/FichasNuvem'
 import SistemasGaleria from '@/components/central/SistemasGaleria'
 import { BookOpen, Castle, ChevronRight, CircleHelp, Dice5, House, Menu, MoonStar, Palette, Pencil, ScrollText, Sparkles, UserRound, X } from 'lucide-react'
 import EditarPerfil from '@/components/perfil/EditarPerfil'
+import { CHAVE_ENTRADA } from '@/components/perfil/TransicaoPerfil'
 import { aplicarTema, temaAtual, TEMAS, type Tema } from '@/lib/tema'
 import { VERSOES } from '@/lib/versoes'
 
@@ -36,6 +37,8 @@ function CentralContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [editando, setEditando] = useState(false)
+  // Veio da animação do portal? Então a Central “aparece” suavemente.
+  const [entrada] = useState(() => { try { const v = sessionStorage.getItem(CHAVE_ENTRADA) === '1'; sessionStorage.removeItem(CHAVE_ENTRADA); return v } catch { return false } })
   const [tema, setTema] = useState<Tema>('ceu')
   useEffect(() => { setTema(temaAtual()) }, []) // eslint-disable-line react-hooks/set-state-in-effect
   const trocarTema = () => { const t: Tema = tema === 'ceu' ? 'classico' : 'ceu'; aplicarTema(t); setTema(t) }
@@ -71,7 +74,7 @@ function CentralContent() {
   if (!perfil) return <main className="flex min-h-screen flex-col items-center justify-center gap-4 fundo-tema px-5 text-center text-[#e8dff7]"><MoonStar size={48} className="text-[#bda0f5]" /><h1 className="text-2xl font-bold">Aventureiro não encontrado</h1><p className="text-[#bdb1ce]">{error || 'Selecione um perfil no portal para continuar.'}</p><Link href="/portal" className="rounded-xl bg-[#7853b4] px-5 py-3 font-semibold">Voltar aos perfis</Link></main>
 
   return (
-    <main className="min-h-screen fundo-tema text-[#f2ebff]">
+    <main className={'min-h-screen fundo-tema text-[#f2ebff]' + (entrada ? ' prg-entrada' : '')}>
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#4b3b62] bg-[#151123]/95 px-4 backdrop-blur lg:px-8">
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg p-2 hover:bg-[#342749] lg:hidden" aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuOpen}>{menuOpen ? <X /> : <Menu />}</button>

@@ -2,6 +2,10 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.8.2 — Entrada animada nos perfis (2026-11-09)
+- Animação ao escolher um perfil: a foto voa para o centro com um brilho e estrelas, mostra “Bem-vindo de volta” e mergulha na Central (toque para pular).
+- A Central aparece suavemente depois da animação. Quem ativou “reduzir movimento” no aparelho entra direto, sem animação.
+
 ## v0.8.1 — Sistemas publicados e autorais (2026-11-09)
 - Sistemas de RPG separados em duas abas: “Sistemas publicados” (RPGs já existentes) e “Sistemas autorais” (criados por jogadores).
 - Lunethernnyis deixou de ser o destaque: agora fica junto dos outros autorais, e as listas de escolha mostram primeiro os sistemas publicados.

@@ -28,7 +28,7 @@ export const SISTEMAS: Sistema[] = [
   {
     id: 'lunethernnyis',
     nome: 'Lunethernnyis — Opositores (ficha automática)',
-    resumo: 'Seu sistema autoral, com as regras APROVADAS automatizadas: pontos de atributo, limites por nível, perícias, PV, Defesa e XP.',
+    resumo: 'Versão automática do sistema autoral, com as regras aprovadas calculadas: pontos de atributo, limites por nível, perícias, PV, Defesa e XP.',
     tipo: 'autoral', licenca: 'Sistema autoral do PRG System', dados: 'd20',
     campos: [
       { id: 'jogador', nome: 'Jogador', tipo: 'texto' },

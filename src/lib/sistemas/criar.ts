@@ -3,10 +3,16 @@ import { api, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 import { SISTEMAS, SISTEMA_V8 } from './catalogo'
 import { fichaVazia } from './calculo'
 
-/** Opções de sistema para escolher (a Ficha V8 original de Lunethernnyis vem primeiro). */
-export const OPCOES_SISTEMA = [
-  { id: SISTEMA_V8, nome: 'Lunethernnyis — Opositores (Ficha V8)' },
-  ...SISTEMAS.map(s => ({ id: s.id, nome: s.nome })),
+export type GrupoSistema = 'publicado' | 'autoral'
+export const GRUPOS_SISTEMA: { id: GrupoSistema; nome: string; descricao: string }[] = [
+  { id: 'publicado', nome: '📚 Sistemas publicados', descricao: 'RPGs já existentes, com licença aberta ou como estrutura de ficha.' },
+  { id: 'autoral', nome: '✍️ Sistemas autorais', descricao: 'Sistemas criados por jogadores da plataforma.' },
+]
+/** Opções de sistema para escolher: primeiro os publicados, depois os autorais. */
+export const OPCOES_SISTEMA: { id: string; nome: string; grupo: GrupoSistema }[] = [
+  ...SISTEMAS.filter(s => s.tipo !== 'autoral').map(s => ({ id: s.id, nome: s.nome, grupo: 'publicado' as const })),
+  { id: SISTEMA_V8, nome: 'Lunethernnyis — Opositores (Ficha V8)', grupo: 'autoral' },
+  ...SISTEMAS.filter(s => s.tipo === 'autoral').map(s => ({ id: s.id, nome: s.nome, grupo: 'autoral' as const })),
 ]
 export const nomeDoSistema = (id: string) => OPCOES_SISTEMA.find(o => o.id === id)?.nome ?? id
 

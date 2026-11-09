@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { Check, ChevronRight, Copy, Eye, EyeOff, History, Lock, LockOpen, MessageSquareWarning, Plus, ScrollText, Trash2, UserPlus, X } from 'lucide-react'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import { CAMPOS } from '@/lib/campanhas/permissoes'
-import { SISTEMAS, SISTEMA_V8, sistemaPorId } from '@/lib/sistemas/catalogo'
+import { SISTEMA_V8, sistemaPorId } from '@/lib/sistemas/catalogo'
+import { GRUPOS_SISTEMA, OPCOES_SISTEMA } from '@/lib/sistemas/criar'
 
 type Ficha = {
   id: string; nome: string; sistema: string; status: string; npc: boolean; oculta: boolean; bloqueada: boolean
@@ -159,7 +160,7 @@ export default function PainelFichasCampanha({ aventureiroId, campanhaId, admin,
         {nova.tipo === 'jogador' && <label className="text-sm">Jogador<select value={nova.jogadorId} onChange={e => setNova({ ...nova, jogadorId: e.target.value })} className="mt-1 w-full rounded-lg border border-[#70588c] bg-[#151123] p-2 text-white">
           <option value="">Escolha…</option>{membros.filter(m => m.papel !== 'mestre').map(m => <option key={m.aventureiro_id} value={m.aventureiro_id}>{m.aventureiro?.apelido}</option>)}</select></label>}
         <label className="text-sm">Sistema<select value={nova.sistema} onChange={e => setNova({ ...nova, sistema: e.target.value })} className="mt-1 w-full rounded-lg border border-[#70588c] bg-[#151123] p-2 text-white">
-          <option value={SISTEMA_V8}>Lunethernnyis · Ficha V8</option>{SISTEMAS.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}</select></label>
+          {GRUPOS_SISTEMA.map(g => <optgroup key={g.id} label={g.nome.replace(/^\S+ /, '')}>{OPCOES_SISTEMA.filter(o => o.grupo === g.id).map(o => <option key={o.id} value={o.id}>{o.id === SISTEMA_V8 ? 'Lunethernnyis · Ficha V8' : o.nome}</option>)}</optgroup>)}</select></label>
         <label className="text-sm">Nome<input value={nova.nome} maxLength={90} onChange={e => setNova({ ...nova, nome: e.target.value })} className="mt-1 w-full rounded-lg border border-[#70588c] bg-[#151123] p-2 text-white" /></label>
       </div>
       {nova.tipo === 'jogador' && <p className="mt-2 text-xs text-[#ab9bbc]">A ficha pertence ao jogador, já aprovada nesta campanha. Os dois editam conforme as permissões.</p>}

@@ -2,6 +2,11 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.8.1 — Sistemas publicados e autorais (2026-11-09)
+- Sistemas de RPG separados em duas abas: “Sistemas publicados” (RPGs já existentes) e “Sistemas autorais” (criados por jogadores).
+- Lunethernnyis deixou de ser o destaque: agora fica junto dos outros autorais, e as listas de escolha mostram primeiro os sistemas publicados.
+- Campanhas novas não vêm mais com um sistema escolhido: o mestre escolhe na lista.
+
 ## v0.8.0 — Céu estrelado, perfis e guias (2026-11-09)
 - Novo tema principal “Céu estrelado” (céu roxo com nuvens, estrelas e lua). A “Noite clássica” continua disponível no menu “Tema”.
 - Editar perfil: cada pessoa muda o próprio nome e foto pelo menu da Central (ou tocando na própria foto).

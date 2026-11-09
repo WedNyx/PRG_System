@@ -46,7 +46,7 @@ function CampanhasLocais({ aventureiroId }: { aventureiroId: string }) {
   const [editing, setEditing] = useState<string | null>(null)
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
-  const [sistema, setSistema] = useState('Lunethernnyis — Opositores')
+  const [sistema, setSistema] = useState('D&D 5ª edição (SRD 5.2)')
   const [modelo, setModelo] = useState<Modelo>('C')
   const [regras, setRegras] = useState<Permissoes>(permissoesPadrao('C'))
   const [erro, setErro] = useState('')
@@ -62,7 +62,7 @@ function CampanhasLocais({ aventureiroId }: { aventureiroId: string }) {
   }, [aventureiroId])
 
   function startCreate() {
-    setEditing(null); setNome(''); setDescricao(''); setSistema('Lunethernnyis — Opositores'); setModelo('C'); setRegras(permissoesPadrao('C')); setErro(''); setMode('criar')
+    setEditing(null); setNome(''); setDescricao(''); setSistema('D&D 5ª edição (SRD 5.2)'); setModelo('C'); setRegras(permissoesPadrao('C')); setErro(''); setMode('criar')
   }
   function startEdit(c: Campanha) {
     setEditing(c.id); setNome(c.nome); setDescricao(c.descricao); setSistema(c.sistema); setModelo(c.modeloPadrao); setRegras(c.permissoes || permissoesPadrao(c.modeloPadrao)); setErro(''); setMode('editar')

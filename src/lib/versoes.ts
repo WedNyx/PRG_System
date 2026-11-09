@@ -6,6 +6,14 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.8.1', data: '2026-11-09', titulo: 'Sistemas publicados e autorais',
+    itens: [
+      'Sistemas de RPG separados em duas abas: “Sistemas publicados” (RPGs já existentes) e “Sistemas autorais” (criados por jogadores).',
+      'Lunethernnyis deixou de ser o destaque: agora fica junto dos outros autorais, e as listas de escolha mostram primeiro os sistemas publicados.',
+      'Campanhas novas não vêm mais com um sistema escolhido: o mestre escolhe na lista.',
+    ],
+  },
+  {
     versao: '0.8.0', data: '2026-11-09', titulo: 'Céu estrelado, perfis e guias',
     itens: [
       'Novo tema principal “Céu estrelado” (céu roxo com nuvens, estrelas e lua). A “Noite clássica” continua disponível no menu “Tema”.',

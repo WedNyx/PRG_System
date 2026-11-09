@@ -99,7 +99,7 @@ export default function CampanhasNuvem({ aventureiroId }: { aventureiroId: strin
 function FormCampanha({ aventureiroId, campanha, onFechar }: { aventureiroId: string; campanha?: Campanha; onFechar: (salvou: boolean) => void }) {
   const [nome, setNome] = useState(campanha?.nome ?? '')
   const [descricao, setDescricao] = useState(campanha?.descricao ?? '')
-  const [sistema, setSistema] = useState(campanha?.sistema ?? 'Lunethernnyis — Opositores')
+  const [sistema, setSistema] = useState(campanha?.sistema ?? '')
   const [modelo, setModelo] = useState<Modelo>(campanha?.modelo_padrao ?? 'C')
   const [regras, setRegras] = useState<Permissoes>(campanha?.permissoes ?? permissoesPadrao('C'))
   const [erro, setErro] = useState('')
@@ -255,5 +255,5 @@ function sistemaDaCampanha(nome: string) {
   if (n.includes('lunethernnyis') || n.includes('opositores')) return SISTEMA_V8
   const exato = SISTEMAS.find(s => s.nome.toLowerCase() === n)
   if (exato) return exato.id
-  return SISTEMAS.find(s => n.includes(s.nome.toLowerCase().split(' ')[0]))?.id ?? SISTEMA_V8
+  return SISTEMAS.find(s => s.id === n || n.includes(s.nome.toLowerCase().split(' ')[0]))?.id ?? 'livre'
 }

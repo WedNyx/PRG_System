@@ -28,7 +28,7 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'sistemas', icone: '📚', titulo: 'Sistemas de RPG e guia do mestre', foto: 'sistemas.jpg', legenda: 'Sistemas com o guia do mestre aberto',
     resumo: 'A plataforma tem fichas prontas para vários sistemas, que calculam as regras sozinhas.',
-    passos: ['Abra “Sistemas de RPG” no menu.', 'Toque em “📖 Guia do mestre” para ver como criar a ficha naquele sistema e o que a ficha calcula sozinha.', 'Toque em “Criar ficha” para começar um personagem.'],
+    passos: ['Abra “Sistemas de RPG” no menu. Escolha entre “Sistemas publicados” (RPGs já existentes) e “Sistemas autorais” (criados por jogadores).', 'Toque em “📖 Guia do mestre” para ver como criar a ficha naquele sistema e o que a ficha calcula sozinha.', 'Toque em “Criar ficha” para começar um personagem.'],
     dica: 'Sistemas com selo “Estrutura de ficha” são comerciais: a ficha organiza os campos e as regras ficam com o seu livro.',
   },
   {

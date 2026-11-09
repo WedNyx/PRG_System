@@ -3,6 +3,7 @@
 import { useRef, useState, useCallback } from 'react'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { emojiCondicao } from '@/lib/condicoes'
+import { MolduraRing } from '@/components/ui/MolduraAvatar'
 import type { Campanha, Desenho, Personagem } from '@/types/database'
 
 export const CELULA = 44 // pixels por célula do grid
@@ -316,6 +317,7 @@ export default function MapaGrid({
                   >
                     {morto ? '💀' : !p.token_url && p.nome[0]?.toUpperCase()}
                   </div>
+                  {!morto && <MolduraRing moldura={p.moldura} />}
 
                   {p.condicoes.length > 0 && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex gap-px text-[9px] bg-slate-950/70 px-1 rounded-full whitespace-nowrap pointer-events-none">

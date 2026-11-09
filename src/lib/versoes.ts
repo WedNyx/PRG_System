@@ -6,6 +6,16 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.7.0', data: '2026-11-09', titulo: 'Música na mesa',
+    itens: [
+      'Nova aba 🎵 Música na mesa: cada pessoa cria e organiza as próprias playlists (links do YouTube, links de áudio ou arquivos de até 15 MB).',
+      'Jogadores enviam playlists ao mestre (e podem cancelar o envio). O mestre vê as recebidas separadas pelo nome de quem enviou.',
+      'O mestre escolhe a música e ela toca para todo mundo da sessão, no mesmo ponto da música, com botões de 🔁 Loop e ⏹ Parar.',
+      'Mini player no canto do mapa com volume e “mudo” só para você, e botão “🔊 Ouvir a música da mesa” quando o navegador bloquear o som.',
+      'Busca de músicas no YouTube direto na aba (quando a chave da API do YouTube estiver configurada).',
+    ],
+  },
+  {
     versao: '0.6.1', data: '2026-11-09', titulo: 'Tamanho do mapa e recorte de imagens',
     itens: [
       'O mestre escolhe o tamanho do mapa (Pequeno, Médio, Grande, Enorme ou personalizado), vendo quantos metros ele tem.',

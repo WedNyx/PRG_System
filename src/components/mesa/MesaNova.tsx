@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowDown, ArrowLeft, ArrowUp, BookOpen, ChevronLeft, ChevronRight, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, BookOpen, ChevronLeft, ChevronRight, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/nuvem/cliente'
@@ -13,6 +13,9 @@ import { podeMoverToken } from '@/lib/nuvem/mesa'
 import MapaMesa, { type CursorRemoto, type ModoMesa, type Ping, type TokenMapa } from './MapaMesa'
 import Dados3D, { type Dados3DHandle } from './Dados3D'
 import PainelCampanha from './PainelCampanha'
+import PainelMusica from './PainelMusica'
+import TocadorMesa from './TocadorMesa'
+import type { EstadoMusica } from '@/lib/nuvem/musica'
 import RecorteImagem from './RecorteImagem'
 import { btn, input, msg } from './estilos'
 
@@ -24,6 +27,7 @@ export type Estado = {
   campanha: { id: string; nome: string; meuPapel: string }; mesa: { iniciativa: Iniciativa[]; turno: number; rodada: number }
   cenas: Cena[]; cenaAtiva: Cena | null; tokens: Token[]; desenhos: { id: string; cor: string; pontos: number[] }[]; eventos: Evento[]
   membros: { aventureiro_id: string; papel: string; aventureiro: { apelido: string } | null }[]; fichas: { id: string; nome: string; dono_id: string; npc: boolean }[]; eu: string
+  musica?: EstadoMusica; agora?: string
 }
 export type Acao = (b: Record<string, unknown>) => Promise<Record<string, unknown>>
 
@@ -48,7 +52,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [modo, setModo] = useState<ModoMesa>('mover')
   const [cor, setCor] = useState(CORES[0])
   const [pincel, setPincel] = useState(1)
-  const [aba, setAba] = useState<'chat' | 'tokens' | 'iniciativa' | 'campanha' | 'mestre'>('chat')
+  const [aba, setAba] = useState<'chat' | 'tokens' | 'iniciativa' | 'musica' | 'campanha' | 'mestre'>('chat')
   const [painel, setPainel] = useState(true)
   const [pings, setPings] = useState<Ping[]>([])
   const [cursores, setCursores] = useState<CursorRemoto[]>([])
@@ -59,6 +63,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [som, setSom] = useState(true)
   const [historico, setHistorico] = useState(false)
   const [destaque, setDestaque] = useState<Evento | null>(null)
+  const [desvio, setDesvio] = useState(0)
   const canal = useRef<RealtimeChannel | null>(null)
   const dados = useRef<Dados3DHandle>(null)
   const ultimoEvento = useRef(0)
@@ -82,6 +87,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       const rol = [...novos].reverse().find(x => x.tipo === 'rolagem' && x.autor_id !== novo.eu)
       if (ultimoEvento.current && rol) destacar(rol)
       if (ult) ultimoEvento.current = Math.max(ultimoEvento.current, ult.id)
+      if (novo.agora) setDesvio(Date.parse(novo.agora) - Date.now())
       setE(novo); setErro('')
     } catch (er) { setErro(msg(er)) }
   }, [campanhaId, destacar])
@@ -110,6 +116,9 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     } catch (er) { toast.error(msg(er)); throw er }
   }, [campanhaId, carregar])
 
+  /** Avisa os outros que algo mudou (ex.: música) e recarrega. */
+  const avisarMudanca = useCallback(() => { void canal.current?.send({ type: 'broadcast', event: 'mudou', payload: {} }); void carregar() }, [carregar])
+
   const nomes = useMemo(() => Object.fromEntries((e?.membros ?? []).map(m => [m.aventureiro_id, m.aventureiro?.apelido ?? '?'])), [e?.membros])
   if (!e) return <main className="flex min-h-screen items-center justify-center bg-[#0d0c19] text-[#d6c8e8]">{erro || 'Abrindo a mesa...'}{erro && <Link href="/central" className="ml-3 underline">Voltar</Link>}</main>
 
@@ -131,7 +140,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     { id: 'area-revelar', icone: Square, nome: 'Revelar área (arraste um retângulo)', so: true, fog: true }, { id: 'area-esconder', icone: EyeOff, nome: 'Esconder área', so: true, fog: true },
     { id: 'editar-mapa', icone: Layers, nome: 'Montar mapa (mover/redimensionar imagens)', so: true },
   ]
-  const abas = [['chat', MessageSquare, 'Chat'], ['tokens', UserRound, 'Tokens'], ['iniciativa', Swords, 'Iniciativa'], ['campanha', BookOpen, 'Diário'], ...(admin ? [['mestre', Settings2, 'Mestre']] : [])] as [typeof aba, typeof Hand, string][]
+  const abas = [['chat', MessageSquare, 'Chat'], ['tokens', UserRound, 'Tokens'], ['iniciativa', Swords, 'Iniciativa'], ['musica', Music2, 'Música'], ['campanha', BookOpen, 'Diário'], ...(admin ? [['mestre', Settings2, 'Mestre']] : [])] as [typeof aba, typeof Hand, string][]
 
   return <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#0d0c19] text-[#f4f0ff]">
     <Dados3D ref={dados} somAtivo={som} />
@@ -172,6 +181,8 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           onCursor={(x, y) => void canal.current?.send({ type: 'broadcast', event: 'cursor', payload: { id: e.eu, nome: nomes[e.eu] ?? '', x, y } })} />
           : <div className="flex h-full items-center justify-center p-6 text-center text-[#b4aeca]">{admin ? 'Crie uma cena na aba "Mestre" para começar.' : 'O mestre ainda não abriu nenhuma cena.'}</div>}
 
+        <TocadorMesa estado={e.musica} desvio={desvio} />
+
         {destaque && <div role="status" aria-live="polite" className="pointer-events-none absolute left-1/2 top-4 z-30 w-[min(92%,420px)] -translate-x-1/2 rounded-2xl border-2 border-[#b99bff] bg-[#19172c]/95 p-4 text-center shadow-2xl">
           <p className="text-sm text-[#c4b6d4]">{destaque.personagem || destaque.autor?.apelido} rolou <strong className="text-[#e4d3ff]">{destaque.expressao}</strong>{destaque.visibilidade !== 'publica' && ' 🔒'}</p>
           <div className="mt-2 flex flex-wrap justify-center gap-2">{destaque.resultados?.map((n, i) => <span key={i} className="flex h-12 min-w-12 items-center justify-center rounded-xl border border-[#62527e] bg-[#2b2140] px-2 text-2xl font-black tabular-nums">{n}</span>)}</div>
@@ -189,6 +200,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           {aba === 'chat' && <Chat e={e} nomes={nomes} admin={admin} acao={acao} destacar={destacar} abrirHistorico={() => setHistorico(true)} />}
           {aba === 'tokens' && <PainelTokens e={e} admin={admin} acao={acao} campanhaId={campanhaId} abrir={setTokenAberto} />}
           {aba === 'iniciativa' && <PainelIniciativa e={e} admin={admin} acao={acao} />}
+          {aba === 'musica' && <PainelMusica campanhaId={campanhaId} eu={e.eu} admin={admin} tocando={e.musica} aoMudar={avisarMudanca} />}
           {aba === 'campanha' && <PainelCampanha campanhaId={campanhaId} e={e} admin={admin} />}
           {aba === 'mestre' && admin && <PainelMestre e={e} acao={acao} campanhaId={campanhaId} setModo={setModo} />}
         </div>

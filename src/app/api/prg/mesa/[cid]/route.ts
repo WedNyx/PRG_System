@@ -52,7 +52,7 @@ export const GET = rota<Ctx>(async (req, { params }) => {
     return ok({ eventos })
   }
 
-  const [camp] = await rest<{ id: string; nome: string; sistema: string; mesa: Record<string, unknown> }[]>(`prg_campanhas?select=id,nome,sistema,mesa&id=eq.${q(cid)}`)
+  const [camp] = await rest<{ id: string; nome: string; sistema: string; mesa: Record<string, unknown>; musica: unknown }[]>(`prg_campanhas?select=id,nome,sistema,mesa,musica&id=eq.${q(cid)}`)
   const cenas = await rest<Cena[]>(`prg_cenas?select=*&campanha_id=eq.${q(cid)}${admin ? '' : '&ativa=eq.true'}&order=criada_em.asc`)
   const ativa = cenas.find(c => c.ativa) ?? null
   const [tokens, desenhos, eventos, membros, fichas] = await Promise.all([
@@ -65,7 +65,7 @@ export const GET = rota<Ctx>(async (req, { params }) => {
   return ok({
     campanha: { id: camp.id, nome: camp.nome, sistema: camp.sistema, meuPapel: papel as Papel },
     mesa: camp.mesa, cenas: admin ? cenas : ativa ? [ativa] : [], cenaAtiva: ativa, tokens, desenhos,
-    eventos: eventos.reverse(), membros, fichas, eu,
+    eventos: eventos.reverse(), membros, fichas, eu, musica: camp.musica ?? { tocando: false }, agora: new Date().toISOString(),
   })
 })
 

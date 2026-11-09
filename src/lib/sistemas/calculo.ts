@@ -1,5 +1,6 @@
 import { avaliarSeguro, type Variaveis } from './formula'
 import type { DadosFicha, Sistema } from './tipos'
+import { bonusEquipados, lerItens, lerPoderes, lerUso, pesoTotal } from './inventario'
 
 export type Calculo = {
   vars: Variaveis
@@ -8,6 +9,9 @@ export type Calculo = {
   pericias: Record<string, number | null>
   recursosMax: Record<string, number | null>
   limites: { nome: string; uso: number; max: number; excedido: boolean }[]
+  /** Bônus somados pelos itens equipados, por alvo (ex.: 'derivado:ca'). */
+  bonus: Record<string, number>
+  carga: { total: number; max: number | null; unidade: string }
 }
 
 const num = (v: unknown, padrao = 0) => { const n = Number(v); return Number.isFinite(n) ? n : padrao }
@@ -34,17 +38,22 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     pericias: { ...base.pericias, ...(d.pericias ?? {}) },
     recursos: { ...base.recursos, ...(d.recursos ?? {}) },
     listas: { ...base.listas, ...(d.listas ?? {}) },
+    // Inventário só entra quando existe (fichas antigas continuam iguais) e sempre limpo/validado.
+    ...(d.itens !== undefined ? { itens: lerItens(d.itens) } : {}), ...(d.poderes !== undefined ? { poderes: lerPoderes(d.poderes) } : {}), ...(d.uso !== undefined ? { uso: lerUso(d.uso) } : {}),
   }
 }
 
 export function calcular(s: Sistema, d: DadosFicha): Calculo {
   const vars: Variaveis = {}
+  const itens = lerItens(d.itens), uso = lerUso(d.uso)
+  const bonus = bonusEquipados(itens, uso)
+  const b = (alvo: string) => bonus[alvo] ?? 0
   for (const c of s.campos) if (c.tipo === 'numero') vars[c.id] = num(d.campos[c.id])
   const mods: Record<string, number> = {}
   let soma = 0, zeros = 0, maior = -Infinity
   for (const a of s.atributos) {
-    const v = Math.max(a.min, Math.min(a.max, num(d.atributos[a.id], a.padrao)))
-    vars[a.id] = v; soma += v; if (v === 0) zeros++; if (v > maior) maior = v
+    const base = Math.max(a.min, Math.min(a.max, num(d.atributos[a.id], a.padrao))), v = base + b('atributo:' + a.id)
+    vars[a.id] = v; soma += base; if (base === 0) zeros++; if (base > maior) maior = base // limites de criação usam o valor sem itens
     mods[a.id] = s.formulaModificador ? (avaliarSeguro(s.formulaModificador, { X: v }) ?? v) : v
     vars['mod_' + a.id] = mods[a.id]
   }
@@ -64,7 +73,7 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
 
   // Derivados podem depender uns dos outros (ex.: nível → limite); avalia em ordem, duas passadas.
   const derivados: Record<string, number | null> = {}
-  const calcDerivados = () => { for (const x of s.derivados) { derivados[x.id] = avaliarSeguro(x.formula, vars); vars[x.id] = derivados[x.id] ?? 0 } }
+  const calcDerivados = () => { for (const x of s.derivados) { const val = avaliarSeguro(x.formula, vars); derivados[x.id] = val === null ? null : val + b('derivado:' + x.id); vars[x.id] = derivados[x.id] ?? 0 } }
   calcDerivados()
 
   const pericias: Record<string, number | null> = {}
@@ -85,7 +94,8 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
       const melhor = opcoes.reduce<string | null>((m, a) => m === null || (mods[a] ?? -99) > (mods[m] ?? -99) ? a : m, null)
       const atr = melhor ? vars[melhor] ?? 0 : 0
       const mod = melhor ? mods[melhor] ?? 0 : 0
-      pericias[p.id] = avaliarSeguro(s.pericias.total, { ...vars, ATR: atr, MOD: mod, TREINO: treino, VALOR: valor })
+      const tot = avaliarSeguro(s.pericias.total, { ...vars, ATR: atr, MOD: mod, TREINO: treino, VALOR: valor })
+      pericias[p.id] = tot === null ? null : tot + b('pericia:' + p.id)
       vars['per_' + p.id] = s.pericias.modo === 'valor' ? valor : treino
       vars['tot_' + p.id] = pericias[p.id] ?? 0
     }
@@ -97,11 +107,14 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
   const recursosMax: Record<string, number | null> = {}
   for (const r of s.recursos) {
     const manual = d.recursos[r.id]?.max
-    recursosMax[r.id] = r.formula ? avaliarSeguro(r.formula, vars) : r.maxFixo ?? (manual === undefined ? null : num(manual))
+    const m = r.formula ? avaliarSeguro(r.formula, vars) : r.maxFixo ?? (manual === undefined ? null : num(manual))
+    recursosMax[r.id] = m === null ? null : m + b('recurso:' + r.id)
   }
+  vars.carga_total = pesoTotal(itens, uso)
+  const carga = { total: vars.carga_total, max: s.carga?.formula ? avaliarSeguro(s.carga.formula, vars) : null, unidade: s.carga?.unidade ?? 'kg' }
   const limites = (s.limites ?? []).map(l => {
     const uso = avaliarSeguro(l.uso, vars) ?? 0, max = avaliarSeguro(l.max, vars) ?? 0
     return { nome: l.nome, uso, max, excedido: uso > max }
   })
-  return { vars, mods, derivados, pericias, recursosMax, limites }
+  return { vars, mods, derivados, pericias, recursosMax, limites, bonus, carga }
 }

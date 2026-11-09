@@ -119,6 +119,7 @@ export const SISTEMAS: Sistema[] = [
     },
     recursos: [{ id: 'pv', nome: 'Pontos de Vida' }, { id: 'pv_temp', nome: 'PV temporários' }, { id: 'dados_vida', nome: 'Dados de Vida', formula: 'max(1, nivel)' }],
     limites: [{ nome: 'Atributos acima de 20 (só com magia/itens)', uso: 'maior_atributo', max: '20' }],
+    carga: { formula: 'FOR * 7.5', unidade: 'kg', dica: 'Capacidade = Força × 7,5 kg (15 lb)' },
     listas: [{ id: 'ataques', nome: 'Ataques e magias' }, { id: 'tracos', nome: 'Traços e talentos' }, ...LISTAS_PADRAO.slice(1)],
   },
   {
@@ -157,6 +158,7 @@ export const SISTEMAS: Sistema[] = [
       ]),
     },
     recursos: [{ id: 'pv', nome: 'Pontos de Vida', formula: 'pv_max' }, { id: 'heroismo', nome: 'Pontos de Heroísmo', maxFixo: 3 }],
+    carga: { formula: '5 + FOR', unidade: 'Volume', dica: 'Acima de 5 + FOR fica Sobrecarregado; máximo 10 + FOR' },
     listas: [{ id: 'ataques', nome: 'Ataques' }, { id: 'talentos', nome: 'Talentos e habilidades' }, { id: 'magias', nome: 'Magias' }, ...LISTAS_PADRAO.slice(1)],
   },
   {
@@ -225,6 +227,7 @@ export const SISTEMAS: Sistema[] = [
       { nome: 'Pontos de ação na criação (3 da cartilha + 4 livres)', uso: 'custo_pericias', max: '7' },
       { nome: 'Ações com 3 ou mais pontos na criação', uso: 'qtd_d3 + qtd_d4', max: '0' },
     ],
+    carga: { formula: '6', unidade: 'carga', dica: 'Leve 3 · Normal 5 · Pesada 6' },
     listas: [{ id: 'dano', nome: 'Dano (nível 1 / 2 / 3)' }, { id: 'habilidades', nome: 'Habilidades especiais' }, { id: 'equipamento', nome: 'Equipamento e carga' }, { id: 'anotacoes', nome: 'Amigos, rivais e anotações' }],
   },
   {
@@ -391,6 +394,7 @@ export const SISTEMAS: Sistema[] = [
         ['Nobreza', 'INT'], ['Ofício', 'INT'], ['Percepção', 'SAB'], ['Pilotagem', 'DES'], ['Pontaria', 'DES'], ['Reflexos', 'DES'], ['Religião', 'SAB'], ['Sobrevivência', 'SAB'], ['Vontade', 'SAB']]),
     },
     recursos: [{ id: 'pv', nome: 'PV' }, { id: 'pm', nome: 'PM' }],
+    carga: { formula: '10 + 2 * FOR', unidade: 'espaços', dica: '10 espaços + 2 por ponto de Força' },
     listas: [{ id: 'ataques', nome: 'Ataques' }, { id: 'poderes', nome: 'Poderes e habilidades' }, { id: 'magias', nome: 'Magias' }, { id: 'inventario', nome: 'Inventário' }, { id: 'anotacoes', nome: 'Anotações' }],
   },
   {
@@ -406,6 +410,14 @@ export const SISTEMAS: Sistema[] = [
 ]
 
 export const sistemaPorId = (id: string) => SISTEMAS.find(s => s.id === id)
+/** O sistema da campanha é texto livre (nome); acha o modelo correspondente. Desconhecido → ficha livre. */
+export function sistemaDaCampanha(nome: string): string {
+  const n = (nome ?? '').toLowerCase()
+  if (n.includes('lunethernnyis') || n.includes('opositores')) return 'lunethernnyis-v8'
+  const exato = SISTEMAS.find(s => s.nome.toLowerCase() === n || s.id === n)
+  if (exato) return exato.id
+  return SISTEMAS.find(s => n && n.includes(s.nome.toLowerCase().split(' ')[0]))?.id ?? 'livre'
+}
 /** O sistema Lunethernnyis original continua usando a Ficha V8. */
 export const SISTEMA_V8 = 'lunethernnyis-v8'
 export const sistemaValido = (id: unknown): id is string => typeof id === 'string' && (id === SISTEMA_V8 || SISTEMAS.some(s => s.id === id))

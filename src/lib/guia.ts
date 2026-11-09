@@ -38,6 +38,12 @@ export const GUIA: TopicoGuia[] = [
     dica: 'A seção “📖 Guia de criação”, dentro da ficha, mostra o passo a passo daquele sistema.',
   },
   {
+    id: 'inventario', icone: '🎒', titulo: 'Inventário e poderes', foto: 'inventario.jpg', legenda: 'Inventário com carga e itens equipados',
+    resumo: 'Itens e poderes organizados, que somam sozinhos na ficha.',
+    passos: ['Na ficha, abra “🎒 Inventário” e toque em “Novo item”: escolha o tipo, o peso, a rolagem de dano e os bônus quando equipado (ex.: escudo → CA +2).', 'Toque em “Equipar” para o bônus entrar na ficha. Use + e − para a quantidade; consumíveis têm o botão “Usar”.', 'A barra de carga mostra o peso total e o limite do sistema. Anote as moedas na carteira.', 'Em “🌌 Poderes e habilidades”, crie magias e técnicas com custo (ex.: 3 PM), usos até descansar e rolagem. “Usar” desconta o recurso e rola; “Descansar” recupera os usos.'],
+    dica: 'O mestre monta itens e poderes na “Biblioteca” (aba Diário da mesa) e entrega em “Recompensas”: eles chegam prontos na ficha.',
+  },
+  {
     id: 'campanhas', icone: '🏰', titulo: 'Criar campanha e convidar o grupo', foto: 'campanha.jpg', legenda: 'Painel da campanha do mestre', quem: 'mestre',
     resumo: 'O mestre cria a campanha, gera um convite e aprova quem entra.',
     passos: ['Em “Campanhas”, toque em “Criar campanha”, dê um nome e escolha o sistema.', 'Abra a campanha e toque em “Gerar convite (7 dias)”. Envie o link ou o código para o grupo.', 'Quem usar o convite aparece em pedidos: toque em “Aceitar”.', 'Em “Permissões por área da ficha”, escolha o que os jogadores podem mudar sozinhos e o que precisa da sua aprovação.'],

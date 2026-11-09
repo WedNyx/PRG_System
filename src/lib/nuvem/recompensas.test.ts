@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { aplicarRecompensa, descreverRecompensa, validarRecompensa } from './recompensas'
+import { aplicarRecompensa, descreverRecompensa, entradaDaBiblioteca, validarRecompensa, type EntradaBiblioteca } from './recompensas'
+import { lerItens, lerPoderes, lerUso } from '../sistemas/inventario'
 
 describe('recompensas', () => {
   it('Ficha V8: soma XP e anota itens no inventário', () => {
@@ -11,9 +12,22 @@ describe('recompensas', () => {
     const d = aplicarRecompensa('lunethernnyis', { campos: { xp: 0 }, listas: {} }, { xp: 300, item: '', moedas: '' }) as { campos: Record<string, number> }
     expect(d.campos.xp).toBe(300)
   })
-  it('D&D (sem campo de XP): anota no inventário', () => {
-    const d = aplicarRecompensa('dnd5e-srd', { campos: {}, listas: { inventario: '' } }, { xp: 50, item: 'Poção', moedas: '' }) as { listas: Record<string, string> }
-    expect(d.listas.inventario).toBe('⭐ +50 XP\n• Poção')
+  it('D&D: XP anotado, item vira item de verdade no inventário e moedas na carteira', () => {
+    const d = aplicarRecompensa('dnd5e-srd', { campos: {}, listas: { anotacoes: '' } }, { xp: 50, item: 'Poção', moedas: '20 PO' })
+    expect((d.listas as Record<string, string>).anotacoes).toBe('⭐ +50 XP')
+    const itens = lerItens(d.itens), uso = lerUso(d.uso)
+    expect(itens.map(i => i.nome)).toEqual(['Poção']); expect(uso.itens[itens[0].id].qtd).toBe(1); expect(uso.carteira).toBe('+20 PO')
+  })
+  it('itens e poderes da biblioteca do mestre', () => {
+    const espada = entradaDaBiblioteca({ id: '11111111-2222-3333-4444-555555555555', tipo: 'item', nome: 'Espada longa +1', dados: { categoria: 'arma', peso: 1.5, dano: '1d8+1', bonus: [] } })!
+    const raio = entradaDaBiblioteca({ id: '99999999-2222-3333-4444-555555555555', tipo: 'poder', nome: 'Raio de gelo', dados: { tipo: 'magia', expressao: '1d10' } })!
+    const bib: EntradaBiblioteca[] = [espada, raio]
+    let d = aplicarRecompensa('dnd5e-srd', { campos: {}, listas: {} }, { xp: 0, item: '', moedas: '', biblioteca: bib })
+    d = aplicarRecompensa('dnd5e-srd', d, { xp: 0, item: '', moedas: '', biblioteca: [espada] })
+    const itens = lerItens(d.itens)
+    expect(itens).toHaveLength(1); expect(itens[0].dano).toBe('1d8+1'); expect(lerUso(d.uso).itens[itens[0].id].qtd).toBe(2)
+    expect(lerPoderes(d.poderes).map(p => p.nome)).toEqual(['Raio de gelo'])
+    expect(entradaDaBiblioteca({ id: 'x', tipo: 'outro', nome: 'a', dados: {} })).toBeNull()
   })
   it('validação e descrição', () => {
     expect(validarRecompensa({})).toBeNull()

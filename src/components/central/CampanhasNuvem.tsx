@@ -8,7 +8,7 @@ import { ESTADOS, ESTADO_TITULO, type EstadoCampanha } from '@/lib/nuvem/validac
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import PainelFichasCampanha from './PainelFichasCampanha'
 import SeletorSistemaCampanha from './SeletorSistemaCampanha'
-import { SISTEMAS, SISTEMA_V8 } from '@/lib/sistemas/catalogo'
+import { SISTEMAS, sistemaDaCampanha } from '@/lib/sistemas/catalogo'
 import { campanhasLocais, marcarImportado, type CampanhaLocal } from '@/lib/nuvem/locais'
 
 type Campanha = {
@@ -249,11 +249,3 @@ function Excecoes({ campanha, membro, ocupado, salvar }: { campanha: Campanha; m
 /** Campanhas antigas podem guardar o id do sistema; mostra o nome bonito. */
 const nomeSistema = (v: string) => SISTEMAS.find(x => x.id === v)?.nome ?? v
 
-/** O sistema da campanha é texto livre; tenta achar o modelo correspondente. */
-function sistemaDaCampanha(nome: string) {
-  const n = nome.toLowerCase()
-  if (n.includes('lunethernnyis') || n.includes('opositores')) return SISTEMA_V8
-  const exato = SISTEMAS.find(s => s.nome.toLowerCase() === n)
-  if (exato) return exato.id
-  return SISTEMAS.find(s => s.id === n || n.includes(s.nome.toLowerCase().split(' ')[0]))?.id ?? 'livre'
-}

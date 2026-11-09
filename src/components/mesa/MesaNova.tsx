@@ -24,7 +24,7 @@ type Token = { id: string; nome: string; cor: string; imagem_url: string | null;
 export type Evento = { id: number; tipo: 'chat' | 'rolagem' | 'sistema'; visibilidade: 'publica' | 'mestre' | 'privada'; autor_id: string | null; destinatario_id: string | null; personagem: string | null; texto: string | null; expressao: string | null; resultados: number[] | null; total: number | null; criado_em: string; autor: { apelido: string } | null }
 type Iniciativa = { id: string; nome: string; valor: number; tokenId?: string | null }
 export type Estado = {
-  campanha: { id: string; nome: string; meuPapel: string }; mesa: { iniciativa: Iniciativa[]; turno: number; rodada: number }
+  campanha: { id: string; nome: string; sistema?: string; meuPapel: string }; mesa: { iniciativa: Iniciativa[]; turno: number; rodada: number }
   cenas: Cena[]; cenaAtiva: Cena | null; tokens: Token[]; desenhos: { id: string; cor: string; pontos: number[] }[]; eventos: Evento[]
   membros: { aventureiro_id: string; papel: string; aventureiro: { apelido: string } | null }[]; fichas: { id: string; nome: string; dono_id: string; npc: boolean }[]; eu: string
   musica?: EstadoMusica; agora?: string

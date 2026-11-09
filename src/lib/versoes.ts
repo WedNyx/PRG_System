@@ -6,6 +6,16 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.9.0', data: '2026-11-09', titulo: 'Inventário, poderes e biblioteca do mestre',
+    itens: [
+      'Inventário de verdade nas fichas: itens com tipo, quantidade, peso, dano e bônus. Item equipado soma sozinho na ficha (ex.: escudo +2 na CA, anel +1 numa resistência).',
+      'Barra de carga com o limite de cada sistema (D&D, Pathfinder, Tormenta20 e Blades) e carteira para moedas.',
+      'Poderes e magias com custo em recurso (PM, PE…), usos até descansar e rolagem: “Usar” desconta e rola; em campanha, a rolagem vai para o chat da mesa.',
+      'Biblioteca do mestre (aba Diário da mesa): monte itens e poderes uma vez e entregue em Recompensas; eles chegam prontos na ficha.',
+      'Recompensas de item e moedas agora entram no inventário e na carteira em vez de virar texto (na Ficha V8 continuam anotadas).',
+    ],
+  },
+  {
     versao: '0.8.2', data: '2026-11-09', titulo: 'Entrada animada nos perfis',
     itens: [
       'Animação ao escolher um perfil: a foto voa para o centro com um brilho e estrelas, mostra “Bem-vindo de volta” e mergulha na Central (toque para pular).',

@@ -42,6 +42,8 @@ export type Sistema = {
   limites?: LimiteDef[]
   listas: { id: string; nome: string }[]
   observacoes?: string[]
+  /** Capacidade de carga (fórmula) e a unidade do peso dos itens. */
+  carga?: { formula?: string; unidade: string; dica?: string }
 }
 
 export type DadosFicha = {
@@ -52,4 +54,8 @@ export type DadosFicha = {
   pericias: Record<string, string | number>
   recursos: Record<string, { atual: number; max?: number }>
   listas: Record<string, string>
+  /** Inventário e poderes estruturados (ver inventario.ts). */
+  itens?: unknown[]
+  poderes?: unknown[]
+  uso?: unknown
 }

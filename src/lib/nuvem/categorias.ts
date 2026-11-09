@@ -37,6 +37,11 @@ function categoriaGenerica(caminho: string): Campo {
   if (caminho === 'atributos') return 'atributos'
   if (caminho === 'pericias') return 'pericias'
   if (caminho === 'recursos') return 'pv'
+  // Inventário estruturado: os itens/poderes em si seguem as regras do mestre;
+  // quantidade, equipado, usos gastos e carteira mudam no jogo (área de PV e recursos).
+  if (caminho === 'itens') return 'equipamentos'
+  if (caminho === 'poderes') return 'habilidades'
+  if (caminho === 'uso') return 'pv'
   if (caminho.startsWith('campos.')) {
     const k = caminho.slice(7)
     if (/^(nivel|xp)$|^nivel_|nex/.test(k)) return 'nivel'

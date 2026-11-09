@@ -8,12 +8,12 @@ import { ESTADOS, ESTADO_TITULO, type EstadoCampanha } from '@/lib/nuvem/validac
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import PainelFichasCampanha from './PainelFichasCampanha'
 import SeletorSistemaCampanha from './SeletorSistemaCampanha'
-import { SISTEMAS, SISTEMA_V8 } from '@/lib/sistemas/catalogo'
+import { SISTEMAS, sistemaDaCampanha } from '@/lib/sistemas/catalogo'
 import { campanhasLocais, marcarImportado, type CampanhaLocal } from '@/lib/nuvem/locais'
 
 type Campanha = {
   id: string; nome: string; descricao: string; sistema: string; modelo_padrao: Modelo
-  permissoes: Permissoes; estado: EstadoCampanha; mestre_id: string; meuPapel: 'mestre' | 'comestre' | 'jogador'; pendencias?: number
+  permissoes: Permissoes; estado: EstadoCampanha; mestre_id: string; meuPapel: 'mestre' | 'comestre' | 'jogador' | 'espectador'; pendencias?: number; sessao_aberta?: boolean
 }
 type Membro = { aventureiro_id: string; papel: string; excecoes?: Partial<Permissoes>; aventureiro: { apelido: string; avatar: string | null } | null }
 type Convite = { codigo: string; expira_em: string; usos: number; max_usos: number; situacao: string }
@@ -89,7 +89,8 @@ export default function CampanhasNuvem({ aventureiroId }: { aventureiroId: strin
         <span className={'shrink-0 rounded-full px-2 py-1 text-xs ' + corEstado[c.estado]}>{ESTADO_TITULO[c.estado]}</span></div>
       {!!c.pendencias && <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-[#7652ac] px-3 py-1 text-xs font-semibold">🔔 {c.pendencias} pendência(s) para você</p>}
       {c.descricao && <p className="mt-3 line-clamp-3 whitespace-pre-wrap break-words text-sm text-[#d1c4df]">{c.descricao}</p>}
-      <p className="mt-3 flex items-center gap-1 text-sm text-[#d4baff]">{c.meuPapel === 'jogador' ? <><Shield size={15} /> Você joga</> : <><Crown size={15} /> Você {c.meuPapel === 'mestre' ? 'é o mestre' : 'é co-mestre'}</>}</p>
+      <p className="mt-3 flex items-center gap-1 text-sm text-[#d4baff]">{c.meuPapel === 'jogador' ? <><Shield size={15} /> Você joga</> : c.meuPapel === 'espectador' ? <>👁️ Você assiste</> : <><Crown size={15} /> Você {c.meuPapel === 'mestre' ? 'é o mestre' : 'é co-mestre'}</>}</p>
+      {c.sessao_aberta && <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-800/70 px-3 py-1 text-xs font-semibold text-emerald-100">🟢 Sessão acontecendo agora</p>}
       <button type="button" onClick={() => setTela({ tipo: 'gerenciar', id: c.id })} className={btn + ' mt-4'}><Settings size={16} /> Abrir</button>
     </article>)}</div>
     <p className="text-xs text-[#ab9bbc]">Campanhas sincronizadas: aparecem em qualquer dispositivo ao escolher seu aventureiro.</p>
@@ -99,7 +100,7 @@ export default function CampanhasNuvem({ aventureiroId }: { aventureiroId: strin
 function FormCampanha({ aventureiroId, campanha, onFechar }: { aventureiroId: string; campanha?: Campanha; onFechar: (salvou: boolean) => void }) {
   const [nome, setNome] = useState(campanha?.nome ?? '')
   const [descricao, setDescricao] = useState(campanha?.descricao ?? '')
-  const [sistema, setSistema] = useState(campanha?.sistema ?? 'Lunethernnyis — Opositores')
+  const [sistema, setSistema] = useState(campanha?.sistema ?? '')
   const [modelo, setModelo] = useState<Modelo>(campanha?.modelo_padrao ?? 'C')
   const [regras, setRegras] = useState<Permissoes>(campanha?.permissoes ?? permissoesPadrao('C'))
   const [erro, setErro] = useState('')
@@ -160,7 +161,7 @@ function Gerenciar({ aventureiroId, id, onVoltar, onEditar }: { aventureiroId: s
 
   if (!d) return <div className="mt-6">{erro ? <><p role="alert" className="text-red-200">{erro}</p><button type="button" onClick={onVoltar} className={btn + ' mt-3'}>Voltar</button></> : <p className="flex items-center gap-2 text-[#cbb9dc]"><Loader2 className="animate-spin" size={18} /> Carregando...</p>}</div>
   const c = d.campanha
-  const admin = c.meuPapel !== 'jogador'
+  const admin = c.meuPapel === 'mestre' || c.meuPapel === 'comestre'
   const mestre = c.meuPapel === 'mestre'
   return <div className="mt-6 space-y-5">
     <button type="button" onClick={onVoltar} className="text-sm text-[#c7a8ff] hover:underline">← Todas as campanhas</button>
@@ -170,7 +171,14 @@ function Gerenciar({ aventureiroId, id, onVoltar, onEditar }: { aventureiroId: s
         <span className={'rounded-full px-3 py-1 text-sm ' + corEstado[c.estado]}>{ESTADO_TITULO[c.estado]}</span>
       </div>
       {c.descricao && <p className="mt-3 whitespace-pre-wrap break-words text-sm text-[#d1c4df]">{c.descricao}</p>}
-      <Link href={'/mesa?campanha=' + c.id} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#7652ac] px-4 py-2.5 font-semibold hover:bg-[#8b68c4]">🗺️ Abrir mesa virtual</Link>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <span className={'rounded-full px-3 py-1 text-xs font-semibold ' + (c.sessao_aberta ? 'bg-emerald-800/70 text-emerald-100' : 'bg-[#2b2140] text-[#c4b6d4]')}>{c.sessao_aberta ? '🟢 Sessão aberta' : '🌙 Sessão fechada'}</span>
+        {admin && <button type="button" disabled={ocupado} onClick={() => acao(() => call('mesa/' + c.id, 'POST', { acao: 'sessao', aberta: !c.sessao_aberta }), c.sessao_aberta ? 'Encerrar a sessão? Jogadores e espectadores saem da mesa e a música para.' : undefined)}
+          className={'rounded-xl px-3 py-2 text-sm font-semibold ' + (c.sessao_aberta ? 'border border-[#8a4a62] text-red-100 hover:bg-[#4b253a]' : 'bg-emerald-700 text-white hover:bg-emerald-600')}>{c.sessao_aberta ? '⏹ Encerrar sessão' : '▶ Abrir sessão'}</button>}
+      </div>
+      {admin || c.sessao_aberta
+        ? <Link href={'/mesa?campanha=' + c.id} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[#7652ac] px-4 py-2.5 font-semibold hover:bg-[#8b68c4]">🗺️ {admin ? 'Abrir mesa virtual' : 'Entrar na sessão'}</Link>
+        : <p className="mt-3 text-sm text-[#cfc0df]">A mesa abre quando o mestre começar a sessão.</p>}
       {admin && <div className="mt-4 flex flex-wrap items-center gap-2">
         <button type="button" onClick={() => onEditar(c)} className={btn}><Pencil size={16} /> Editar</button>
         <label className="flex items-center gap-2 text-sm">Estado
@@ -196,10 +204,10 @@ function Gerenciar({ aventureiroId, id, onVoltar, onEditar }: { aventureiroId: s
         return <li key={m.aventureiro_id} className="flex flex-wrap items-center gap-3 rounded-xl bg-[#171325] p-3">
           <Avatar a={m.aventureiro} />
           <div className="min-w-0 flex-1"><p className="font-semibold">{m.aventureiro?.apelido}{souEu && ' (você)'}</p>
-            <p className="text-xs text-[#b5a5c8]">{m.papel === 'mestre' ? 'Mestre' : m.papel === 'comestre' ? 'Co-mestre' : 'Jogador'}{m.excecoes && Object.keys(m.excecoes).length ? ' · com exceções de permissão' : ''}</p></div>
+            <p className="text-xs text-[#b5a5c8]">{m.papel === 'mestre' ? '👑 Mestre' : m.papel === 'comestre' ? '👑 Co-mestre' : m.papel === 'espectador' ? '👁️ Espectador (só assiste)' : '⚔️ Jogador'}{m.excecoes && Object.keys(m.excecoes).length ? ' · com exceções de permissão' : ''}</p></div>
           {mestre && m.papel !== 'mestre' && <select aria-label={'Papel de ' + m.aventureiro?.apelido} value={m.papel} disabled={ocupado}
             onChange={e => acao(() => call(`campanhas/${id}/membros/${m.aventureiro_id}`, 'PATCH', { papel: e.target.value }))}
-            className="rounded-lg border border-[#70588c] bg-[#151123] p-2 text-sm text-white"><option value="jogador">Jogador</option><option value="comestre">Co-mestre</option></select>}
+            className="rounded-lg border border-[#70588c] bg-[#151123] p-2 text-sm text-white"><option value="jogador">Jogador</option><option value="espectador">Espectador</option><option value="comestre">Co-mestre</option></select>}
           {mestre && m.papel !== 'mestre' && <Excecoes campanha={c} membro={m} ocupado={ocupado} salvar={ex => acao(() => call(`campanhas/${id}/membros/${m.aventureiro_id}`, 'PATCH', { excecoes: ex }))} />}
           {m.papel !== 'mestre' && (souEu || (admin && !(c.meuPapel === 'comestre' && m.papel === 'comestre'))) &&
             <button type="button" disabled={ocupado} title={souEu ? 'Sair da campanha' : 'Remover'} aria-label={souEu ? 'Sair da campanha' : 'Remover ' + m.aventureiro?.apelido}
@@ -249,11 +257,3 @@ function Excecoes({ campanha, membro, ocupado, salvar }: { campanha: Campanha; m
 /** Campanhas antigas podem guardar o id do sistema; mostra o nome bonito. */
 const nomeSistema = (v: string) => SISTEMAS.find(x => x.id === v)?.nome ?? v
 
-/** O sistema da campanha é texto livre; tenta achar o modelo correspondente. */
-function sistemaDaCampanha(nome: string) {
-  const n = nome.toLowerCase()
-  if (n.includes('lunethernnyis') || n.includes('opositores')) return SISTEMA_V8
-  const exato = SISTEMAS.find(s => s.nome.toLowerCase() === n)
-  if (exato) return exato.id
-  return SISTEMAS.find(s => n.includes(s.nome.toLowerCase().split(' ')[0]))?.id ?? SISTEMA_V8
-}

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { ator, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar } from '@/lib/nuvem/validacao'
-import { fonteDaMusica, type EstadoMusica } from '@/lib/nuvem/musica'
+import { continuar, fonteDaMusica, pausar, pular, vizinha, type EstadoMusica } from '@/lib/nuvem/musica'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
@@ -15,7 +15,7 @@ async function contexto(req: NextRequest, cid: string) {
   const eu = await ator(req)
   const papel = await papelNaCampanha(cid, eu)
   if (!papel) throw new ErroApi(404, 'Campanha não encontrada.')
-  return { eu, admin: podeAdministrar(papel) }
+  return { eu, admin: podeAdministrar(papel), espectador: papel === 'espectador' }
 }
 async function minhaPlaylist(cid: string, eu: string, id: unknown): Promise<Playlist> {
   if (!isUuid(id)) throw new ErroApi(400, 'Playlist inválida.')
@@ -77,9 +77,15 @@ export const GET = rota<Ctx>(async (req, { params }) => {
 
 export const POST = rota<Ctx>(async (req, { params }) => {
   const { id: cid } = await params
-  const { eu, admin } = await contexto(req, cid)
+  const { eu, admin, espectador } = await contexto(req, cid)
+  if (espectador) throw new ErroApi(403, 'Espectadores só ouvem a música da mesa.')
   const b = await lerJson(req, 10_000) as Record<string, unknown>
   const agora = new Date().toISOString()
+  const salvarEstado = async (estado: EstadoMusica) => { await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify({ musica: estado }) }); return ok({ tocando: estado, agora }) }
+  const estadoAtual = async () => (await rest<{ musica: EstadoMusica }[]>(`prg_campanhas?select=musica&id=eq.${q(cid)}`))[0]?.musica ?? { tocando: false }
+  /** Músicas que o mestre pode tocar: as dele e as das playlists enviadas, na ordem da playlist. */
+  const tocarMusica = async (m: Musica & { playlist: Playlist }, loop: boolean) =>
+    salvarEstado({ tocando: true, loop, iniciada_em: agora, musica_id: m.id, playlist_id: m.playlist_id, titulo: m.titulo, url: m.url, tipo: m.tipo, video_id: m.video_id, por: eu })
 
   switch (b.acao) {
     case 'playlist_criar': {
@@ -133,20 +139,36 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       if (!admin) throw new ErroApi(403, 'Apenas o mestre escolhe a música da mesa.')
       const m = await musicaComPlaylist(cid, b.musicaId)
       if (m.playlist.dono_id !== eu && !m.playlist.enviada) throw new ErroApi(403, 'Essa playlist não foi enviada ao mestre.')
-      const [camp] = await rest<{ musica: EstadoMusica }[]>(`prg_campanhas?select=musica&id=eq.${q(cid)}`)
-      const estado: EstadoMusica = { tocando: true, loop: typeof b.loop === 'boolean' ? b.loop : !!camp?.musica?.loop, iniciada_em: agora,
-        musica_id: m.id, titulo: m.titulo, url: m.url, tipo: m.tipo, video_id: m.video_id, por: eu }
-      await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify({ musica: estado }) })
-      return ok({ tocando: estado, agora })
+      const atual = await estadoAtual()
+      return tocarMusica(m, typeof b.loop === 'boolean' ? b.loop : !!atual.loop)
+    }
+    case 'proxima':
+    case 'anterior': {
+      if (!admin) throw new ErroApi(403, 'Apenas o mestre controla a música da mesa.')
+      const atual = await estadoAtual()
+      if (!atual.playlist_id) throw new ErroApi(400, 'Nenhuma playlist tocando.')
+      const lista = await rest<(Musica & { playlist: Playlist })[]>(`prg_musicas?select=*,playlist:prg_playlists!inner(*)&playlist_id=eq.${q(atual.playlist_id)}&playlist.campanha_id=eq.${q(cid)}&order=ordem.asc,criada_em.asc`)
+      // Avanço automático (a música acabou): no fim da playlist, para em vez de recomeçar.
+      if (b.auto === true && (!lista.length || lista.findIndex(x => x.id === atual.musica_id) === lista.length - 1))
+        return salvarEstado({ ...atual, tocando: false, pausado: false })
+      const m = vizinha(lista, atual.musica_id, b.acao === 'proxima' ? 1 : -1)
+      if (!m) throw new ErroApi(404, 'A playlist está vazia.')
+      if (m.playlist.dono_id !== eu && !m.playlist.enviada) throw new ErroApi(403, 'Essa playlist não está mais enviada ao mestre.')
+      return tocarMusica(m, !!atual.loop)
     }
     case 'parar':
-    case 'loop': {
+    case 'loop':
+    case 'pausar':
+    case 'continuar':
+    case 'pular': {
       if (!admin) throw new ErroApi(403, 'Apenas o mestre controla a música da mesa.')
-      const [camp] = await rest<{ musica: EstadoMusica }[]>(`prg_campanhas?select=musica&id=eq.${q(cid)}`)
-      const atual = camp?.musica ?? { tocando: false }
-      const estado: EstadoMusica = b.acao === 'parar' ? { ...atual, tocando: false } : { ...atual, loop: !!b.ativo }
-      await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify({ musica: estado }) })
-      return ok({ tocando: estado, agora })
+      const atual = await estadoAtual(), t = Date.now()
+      const estado: EstadoMusica = b.acao === 'parar' ? { ...atual, tocando: false, pausado: false }
+        : b.acao === 'loop' ? { ...atual, loop: !!b.ativo }
+        : b.acao === 'pausar' ? pausar(atual, t)
+        : b.acao === 'continuar' ? continuar(atual, t)
+        : pular(atual, t, Math.max(-600, Math.min(600, Number(b.segundos) || 0)))
+      return salvarEstado(estado)
     }
     default: throw new ErroApi(400, 'Ação desconhecida.')
   }

@@ -29,8 +29,10 @@ export const POST = rota<Ctx>(async (req, { params }) => {
   const nome = typeof b.nome === 'string' ? b.nome.trim().slice(0, 90) : ''
   let dono = eu, npc = true
   if (b.tipo === 'jogador') {
-    if (!isUuid(b.jogadorId) || !(await papelNaCampanha(id, b.jogadorId))) throw new ErroApi(400, 'Escolha um participante da campanha.')
-    dono = b.jogadorId; npc = false
+    const papelAlvo = isUuid(b.jogadorId) ? await papelNaCampanha(id, b.jogadorId) : null
+    if (!papelAlvo) throw new ErroApi(400, 'Escolha um participante da campanha.')
+    if (papelAlvo === 'espectador') throw new ErroApi(400, 'Espectadores não têm ficha na campanha.')
+    dono = b.jogadorId as string; npc = false
   }
   const s = sistemaPorId(sistema)
   const dados = s ? { ...fichaVazia(s), nome } : { version: 2, fields: { name: nome } }

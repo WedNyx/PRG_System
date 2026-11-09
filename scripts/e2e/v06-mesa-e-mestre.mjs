@@ -4,6 +4,8 @@ const BASE=process.env.PRG_BASE || 'http://localhost:3000'; let falhas=0
 async function call(quem, metodo, caminho, body){ const r=await fetch(BASE+'/api/prg/'+caminho,{method:metodo,headers:{'content-type':'application/json','x-prg-aventureiro':quem,origin:BASE},body:body===undefined?undefined:JSON.stringify(body)}); let d={}; try{d=await r.json()}catch{}; return {s:r.status,d} }
 function check(n,c,e){ console.log((c?'✔':'✘')+' '+n+(c?'':'  '+JSON.stringify(e).slice(0,300))); if(!c) falhas++ }
 let r=await call(M,'POST','campanhas',{nome:'V06',sistema:'Lunethernnyis — Opositores',modeloPadrao:'C'}); const cid=r.d.campanha.id
+// v0.10.0: a mesa só abre com a sessão aberta pelo mestre.
+await call(M,'POST','mesa/'+cid,{acao:'sessao',aberta:true})
 const mesa=(q,b)=>call(q,'POST','mesa/'+cid,b)
 r=await call(M,'POST',`campanhas/${cid}/convites`,{}); await call(J,'POST','convites/'+r.d.convite.codigo,{}); r=await call(M,'GET','campanhas/'+cid); await call(M,'POST',`campanhas/${cid}/solicitacoes/${r.d.solicitacoes[0].id}`,{decisao:'aceitar'})
 r=await mesa(M,{acao:'cena_criar',nome:'Vila',grid_cols:20,grid_rows:12}); const c=r.d.cena.id
@@ -58,7 +60,7 @@ r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sist
 r=await call(J,'POST',`campanhas/${cid}/recompensas`,{fichaIds:[f1],xp:100}); check('jogador não dá recompensa', r.s===403, r)
 r=await call(M,'POST',`campanhas/${cid}/recompensas`,{fichaIds:[f1,f2],xp:300,item:'Revólver',motivo:'Salvaram a vila'}); check('mestre recompensa 2 fichas', r.d.recompensados?.length===2, r)
 r=await call(J,'GET','fichas/'+f1); check('V8: XP somado e item no inventário', r.d.ficha.dados.fields.xp==='300' && r.d.ficha.dados.fields.inventory.includes('Revólver'), r.d.ficha.dados)
-r=await call(J,'GET','fichas/'+f2); check('D&D: XP e item anotados no inventário', r.d.ficha.dados.listas.inventario.includes('+300 XP') && r.d.ficha.dados.listas.inventario.includes('Revólver'), r.d.ficha.dados.listas)
+r=await call(J,'GET','fichas/'+f2); check('D&D: XP anotado e item no inventário estruturado (v0.9.0)', r.d.ficha.dados.listas.anotacoes.includes('+300 XP') && r.d.ficha.dados.itens.some(i=>i.nome.includes('Revólver')), r.d.ficha.dados)
 r=await call(J,'GET','mesa/'+cid); check('recompensa anunciada no chat', r.d.eventos.some(e=>e.tipo==='sistema' && e.texto.includes('Revólver')), r.d.eventos.map(e=>e.texto))
 r=await call(J,'GET',`fichas/${f1}/historico`); check('recompensa no histórico da ficha', r.d.historico.some(h=>h.tipo==='recompensa' && h.descricao.includes('Salvaram')), r.d.historico)
 console.log(falhas?`\n${falhas} FALHA(S)`:'\nTODOS OS TESTES PASSARAM')

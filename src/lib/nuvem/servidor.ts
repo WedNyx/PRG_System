@@ -48,6 +48,14 @@ export async function ator(req: NextRequest): Promise<string> {
   return id
 }
 
+/** Membro que pode mexer (não espectador). Erro amigável para espectadores. */
+export async function exigirParticipante(campanhaId: string, aventureiroId: string): Promise<Papel> {
+  const p = await papelNaCampanha(campanhaId, aventureiroId)
+  if (!p) throw new ErroApi(404, 'Campanha não encontrada.')
+  if (p === 'espectador') throw new ErroApi(403, 'Espectadores só assistem e conversam no chat.')
+  return p
+}
+
 export async function papelNaCampanha(campanhaId: string, aventureiroId: string): Promise<Papel | null> {
   if (!isUuid(campanhaId)) return null
   const rows = await rest<{ papel: string }[]>(

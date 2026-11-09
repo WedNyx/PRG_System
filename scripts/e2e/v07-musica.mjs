@@ -4,6 +4,8 @@ const BASE=process.env.PRG_BASE || 'http://localhost:3000'; let falhas=0
 async function call(quem, metodo, caminho, body){ const r=await fetch(BASE+'/api/prg/'+caminho,{method:metodo,headers:{'content-type':'application/json','x-prg-aventureiro':quem,origin:BASE},body:body===undefined?undefined:JSON.stringify(body)}); let d={}; try{d=await r.json()}catch{}; return {s:r.status,d} }
 function check(n,c,e){ console.log((c?'✔':'✘')+' '+n+(c?'':'  '+JSON.stringify(e).slice(0,300))); if(!c) falhas++ }
 let r=await call(M,'POST','campanhas',{nome:'V07',sistema:'Lunethernnyis — Opositores',modeloPadrao:'C'}); const cid=r.d.campanha.id
+// v0.10.0: a mesa só abre com a sessão aberta pelo mestre.
+await call(M,'POST','mesa/'+cid,{acao:'sessao',aberta:true})
 r=await call(M,'POST',`campanhas/${cid}/convites`,{}); await call(J,'POST','convites/'+r.d.convite.codigo,{}); r=await call(M,'GET','campanhas/'+cid); await call(M,'POST',`campanhas/${cid}/solicitacoes/${r.d.solicitacoes[0].id}`,{decisao:'aceitar'})
 const mus=(q,b)=>call(q,'POST',`campanhas/${cid}/musica`,b)
 

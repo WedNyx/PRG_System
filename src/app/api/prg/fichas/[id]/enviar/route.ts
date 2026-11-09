@@ -13,7 +13,9 @@ export const POST = rota<Ctx>(async (req, { params }) => {
   if (!f || f.dono_id !== eu) throw new ErroApi(404, 'Ficha não encontrada.')
   if (f.campanha_id) throw new ErroApi(400, 'Envie uma ficha independente (esta já pertence a uma campanha).')
   if (!isUuid(body.campanhaId)) throw new ErroApi(400, 'Escolha a campanha.')
-  if (!(await papelNaCampanha(body.campanhaId, eu))) throw new ErroApi(403, 'Você não participa desta campanha.')
+  const papel = await papelNaCampanha(body.campanhaId, eu)
+  if (!papel) throw new ErroApi(403, 'Você não participa desta campanha.')
+  if (papel === 'espectador') throw new ErroApi(403, 'Espectadores só assistem: peça ao mestre para virar jogador.')
   const [c] = await rest<{ estado: string }[]>(`prg_campanhas?select=estado&id=eq.${q(body.campanhaId)}`)
   if (c?.estado === 'encerrada') throw new ErroApi(409, 'Esta campanha foi encerrada.')
   const mensagem = typeof body.mensagem === 'string' ? body.mensagem.trim().slice(0, 300) : ''

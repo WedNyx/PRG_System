@@ -1,18 +1,25 @@
 import { ator, buscarFicha, lerJson, ok, papelNaCampanha, q, registrar, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar, validarFichaDados } from '@/lib/nuvem/validacao'
-import { aplicarRecompensa, descreverRecompensa, validarRecompensa } from '@/lib/nuvem/recompensas'
+import { aplicarRecompensa, descreverRecompensa, entradaDaBiblioteca, validarRecompensa, type EntradaBiblioteca } from '@/lib/nuvem/recompensas'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
 
-/** Mestre distribui XP, item e/ou moedas para uma ou mais fichas aprovadas da campanha. */
+/** Mestre distribui XP, itens/poderes (texto ou da biblioteca) e/ou moedas para fichas aprovadas da campanha. */
 export const POST = rota<Ctx>(async (req, { params }) => {
   const { id } = await params
   const eu = await ator(req)
   if (!podeAdministrar(await papelNaCampanha(id, eu))) throw new ErroApi(403, 'Apenas o mestre distribui recompensas.')
   const b = await lerJson(req) as Record<string, unknown>
-  const r = validarRecompensa(b)
-  if (!r) throw new ErroApi(400, 'Informe XP, um item ou moedas.')
+  const bibIds = (Array.isArray(b.bibliotecaIds) ? b.bibliotecaIds : []).filter(isUuid).slice(0, 20)
+  let biblioteca: EntradaBiblioteca[] = []
+  if (bibIds.length) {
+    const linhas = await rest<{ id: string; tipo: string; nome: string; dados: unknown }[]>(`prg_biblioteca?select=id,tipo,nome,dados&campanha_id=eq.${q(id)}&id=in.(${bibIds.map(q).join(',')})`)
+    // Mantém a ordem e as repetições escolhidas pelo mestre.
+    biblioteca = bibIds.flatMap(x => { const l = linhas.find(y => y.id === x); const e = l && entradaDaBiblioteca(l); return e ? [e] : [] })
+  }
+  const r = validarRecompensa(b, biblioteca)
+  if (!r) throw new ErroApi(400, 'Informe XP, um item, um poder ou moedas.')
   const ids = (Array.isArray(b.fichaIds) ? b.fichaIds : []).filter(isUuid).slice(0, 30)
   if (!ids.length) throw new ErroApi(400, 'Escolha quem recebe.')
   const nomes: string[] = []

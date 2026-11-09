@@ -46,3 +46,24 @@ body {
 @media (prefers-reduced-transparency: reduce) {
   .fundo-tema { background-image: none; }
 }
+
+/* ---- Transição ao escolher um perfil ---- */
+@keyframes prg-faisca {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--fx)), calc(-50% + var(--fy))) scale(1) rotate(90deg); opacity: 0; }
+}
+.prg-faisca { animation: prg-faisca 900ms cubic-bezier(.2,.8,.2,1) both; text-shadow: 0 0 8px #ffd36b; }
+@keyframes prg-pulso {
+  0% { box-shadow: 0 0 0 0 #c9a6f0aa, 0 0 40px #9b7bff88; }
+  100% { box-shadow: 0 0 0 26px #c9a6f000, 0 0 90px #9b7bffcc; }
+}
+.prg-pulso { animation: prg-pulso 900ms ease-out 2; }
+@keyframes prg-entrada {
+  from { opacity: 0; transform: scale(1.04); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+.prg-entrada { animation: prg-entrada 600ms cubic-bezier(.2,.8,.2,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .prg-faisca, .prg-pulso, .prg-entrada { animation: none; }
+}

@@ -28,7 +28,7 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'sistemas', icone: '📚', titulo: 'Sistemas de RPG e guia do mestre', foto: 'sistemas.jpg', legenda: 'Sistemas com o guia do mestre aberto',
     resumo: 'A plataforma tem fichas prontas para vários sistemas, que calculam as regras sozinhas.',
-    passos: ['Abra “Sistemas de RPG” no menu.', 'Toque em “📖 Guia do mestre” para ver como criar a ficha naquele sistema e o que a ficha calcula sozinha.', 'Toque em “Criar ficha” para começar um personagem.'],
+    passos: ['Abra “Sistemas de RPG” no menu. Escolha entre “Sistemas publicados” (RPGs já existentes) e “Sistemas autorais” (criados por jogadores).', 'Toque em “📖 Guia do mestre” para ver como criar a ficha naquele sistema e o que a ficha calcula sozinha.', 'Toque em “Criar ficha” para começar um personagem.'],
     dica: 'Sistemas com selo “Estrutura de ficha” são comerciais: a ficha organiza os campos e as regras ficam com o seu livro.',
   },
   {
@@ -38,9 +38,21 @@ export const GUIA: TopicoGuia[] = [
     dica: 'A seção “📖 Guia de criação”, dentro da ficha, mostra o passo a passo daquele sistema.',
   },
   {
+    id: 'inventario', icone: '🎒', titulo: 'Inventário e poderes', foto: 'inventario.jpg', legenda: 'Inventário com carga e itens equipados',
+    resumo: 'Itens e poderes organizados, que somam sozinhos na ficha.',
+    passos: ['Na ficha, abra “🎒 Inventário” e toque em “Novo item”: escolha o tipo, o peso, a rolagem de dano e os bônus quando equipado (ex.: escudo → CA +2).', 'Toque em “Equipar” para o bônus entrar na ficha. Use + e − para a quantidade; consumíveis têm o botão “Usar”.', 'A barra de carga mostra o peso total e o limite do sistema. Anote as moedas na carteira.', 'Em “🌌 Poderes e habilidades”, crie magias e técnicas com custo (ex.: 3 PM), usos até descansar e rolagem. “Usar” desconta o recurso e rola; “Descansar” recupera os usos.'],
+    dica: 'O mestre monta itens e poderes na “Biblioteca” (aba Diário da mesa) e entrega em “Recompensas”: eles chegam prontos na ficha.',
+  },
+  {
     id: 'campanhas', icone: '🏰', titulo: 'Criar campanha e convidar o grupo', foto: 'campanha.jpg', legenda: 'Painel da campanha do mestre', quem: 'mestre',
     resumo: 'O mestre cria a campanha, gera um convite e aprova quem entra.',
     passos: ['Em “Campanhas”, toque em “Criar campanha”, dê um nome e escolha o sistema.', 'Abra a campanha e toque em “Gerar convite (7 dias)”. Envie o link ou o código para o grupo.', 'Quem usar o convite aparece em pedidos: toque em “Aceitar”.', 'Em “Permissões por área da ficha”, escolha o que os jogadores podem mudar sozinhos e o que precisa da sua aprovação.'],
+  },
+  {
+    id: 'sessao', icone: '🎬', titulo: 'Abrir a sessão, jogadores e espectadores', quem: 'mestre',
+    resumo: 'A mesa só abre quando o mestre começa a sessão. Cada participante é jogador ou espectador.',
+    passos: ['Na campanha (ou no topo da mesa), toque em “▶ Abrir sessão”. Só então jogadores e espectadores conseguem entrar.', 'Ao terminar, toque em “⏹ Encerrar sessão”: todo mundo sai da mesa e a música para. O histórico continua disponível.', 'Em “Participantes”, escolha o papel de cada pessoa: Jogador, Espectador ou Co-mestre.', 'Espectadores assistem ao mapa, ouvem a música e conversam no chat, mas não rolam dados nem mexem em tokens, fichas ou playlists.', 'No chat, cada papel tem uma cor: 👑 mestre em dourado, ⚔️ jogadores em azul e 👁️ espectadores em verde.'],
+    dica: 'Quem estiver com a mesa aberta enquanto a sessão está fechada entra sozinho assim que o mestre abrir.',
   },
   {
     id: 'mesa', icone: '🗺️', titulo: 'Mesa virtual: mapa e tokens', foto: 'mesa.jpg', legenda: 'Mesa com mapa, tokens e ferramentas',
@@ -55,7 +67,7 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'musica', icone: '🎵', titulo: 'Música na mesa', foto: 'mesa-musica.jpg', legenda: 'Aba Música com playlists',
     resumo: 'Cada pessoa monta playlists; o mestre escolhe o que toca para todo mundo.',
-    passos: ['Na aba “Música”, crie uma playlist e adicione músicas por link do YouTube, link de áudio ou arquivo do aparelho.', 'Jogadores: toque em “Enviar ao mestre”.', 'Mestre: em “Recebidas”, as playlists aparecem com o nome de quem enviou. Toque em ▶ para tocar para a mesa, e use 🔁 Loop e ⏹ Parar.', 'O volume no mini player do mapa é só seu. Se o navegador bloquear o som, toque em “🔊 Ouvir a música da mesa”.'],
+    passos: ['Na aba “Música”, crie uma playlist e adicione músicas por link do YouTube, link de áudio ou arquivo do aparelho.', 'Jogadores: toque em “Enviar ao mestre”.', 'Mestre: em “Recebidas”, as playlists aparecem com o nome de quem enviou. Toque em ▶ para tocar para a mesa.', 'Só o mestre controla a música: ⏮ anterior, ⏪ −10 s, ⏸ pausar/continuar, ⏩ +10 s, ⏭ próxima, 🔁 loop e ⏹ parar. Sem loop, a próxima da playlist começa sozinha.', 'O volume no mini player do mapa é só seu (cada pessoa ajusta o próprio). Se o navegador bloquear o som, toque em “🔊 Ouvir a música da mesa”.'],
   },
   {
     id: 'diario', icone: '📖', titulo: 'Diário: sessões, anotações e recompensas', foto: 'mesa-diario.jpg', legenda: 'Aba Diário',

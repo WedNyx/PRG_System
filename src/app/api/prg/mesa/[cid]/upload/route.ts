@@ -12,7 +12,9 @@ export const POST = rota<Ctx>(async (req, { params }) => {
   const { cid } = await params
   checarOrigem(req)
   const eu = await ator(req)
-  if (!isUuid(cid) || !(await papelNaCampanha(cid, eu))) throw new ErroApi(403, 'Você não participa desta campanha.')
+  const papel = isUuid(cid) ? await papelNaCampanha(cid, eu) : null
+  if (!papel) throw new ErroApi(403, 'Você não participa desta campanha.')
+  if (papel === 'espectador') throw new ErroApi(403, 'Espectadores só assistem e conversam no chat.')
   const tipo = req.headers.get('content-type') ?? ''
   const audio = tipo in AUDIO
   const ext = TIPOS[tipo] ?? AUDIO[tipo]

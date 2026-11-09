@@ -1,4 +1,4 @@
-import { ator, checarOrigem, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
+import { ator, checarOrigem, exigirParticipante, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar } from '@/lib/nuvem/validacao'
 
 export const dynamic = 'force-dynamic'
@@ -23,7 +23,7 @@ export const GET = rota<Ctx>(async (req, { params }) => {
 export const POST = rota<Ctx>(async (req, { params }) => {
   const { id } = await params
   const eu = await ator(req)
-  if (!(await papelNaCampanha(id, eu))) throw new ErroApi(404, 'Campanha não encontrada.')
+  await exigirParticipante(id, eu)
   const b = await lerJson(req, 60_000) as Record<string, unknown>
   const titulo = typeof b.titulo === 'string' ? b.titulo.trim().slice(0, 120) : ''
   if (!titulo) throw new ErroApi(400, 'Dê um título à anotação.')

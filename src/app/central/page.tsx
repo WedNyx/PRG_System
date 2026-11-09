@@ -10,6 +10,7 @@ import FichasNuvem from '@/components/central/FichasNuvem'
 import SistemasGaleria from '@/components/central/SistemasGaleria'
 import { BookOpen, Castle, ChevronRight, CircleHelp, Dice5, House, Menu, MoonStar, Palette, Pencil, ScrollText, Sparkles, UserRound, X } from 'lucide-react'
 import EditarPerfil from '@/components/perfil/EditarPerfil'
+import { CHAVE_ENTRADA } from '@/components/perfil/TransicaoPerfil'
 import { aplicarTema, temaAtual, TEMAS, type Tema } from '@/lib/tema'
 import { VERSOES } from '@/lib/versoes'
 
@@ -36,6 +37,8 @@ function CentralContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [editando, setEditando] = useState(false)
+  // Veio da animação do portal? Então a Central “aparece” suavemente.
+  const [entrada] = useState(() => { try { const v = sessionStorage.getItem(CHAVE_ENTRADA) === '1'; sessionStorage.removeItem(CHAVE_ENTRADA); return v } catch { return false } })
   const [tema, setTema] = useState<Tema>('ceu')
   useEffect(() => { setTema(temaAtual()) }, []) // eslint-disable-line react-hooks/set-state-in-effect
   const trocarTema = () => { const t: Tema = tema === 'ceu' ? 'classico' : 'ceu'; aplicarTema(t); setTema(t) }
@@ -66,13 +69,12 @@ function CentralContent() {
 
   const choose = (next: Section) => { setSection(next); setMenuOpen(false) }
   const cardClass = 'group rounded-2xl border border-[#55456e] bg-[#201a32]/90 p-5 text-left transition hover:-translate-y-0.5 hover:border-[#b79aff] hover:bg-[#2b2143] focus-visible:outline-2 focus-visible:outline-[#c5a7ff]'
-  const sheetUrl = '/ficha-v8?personagem=' + encodeURIComponent(perfil?.id || '')
 
   if (loading) return <main className="flex min-h-screen items-center justify-center fundo-tema text-[#e8dff7]">Carregando sua jornada...</main>
   if (!perfil) return <main className="flex min-h-screen flex-col items-center justify-center gap-4 fundo-tema px-5 text-center text-[#e8dff7]"><MoonStar size={48} className="text-[#bda0f5]" /><h1 className="text-2xl font-bold">Aventureiro não encontrado</h1><p className="text-[#bdb1ce]">{error || 'Selecione um perfil no portal para continuar.'}</p><Link href="/portal" className="rounded-xl bg-[#7853b4] px-5 py-3 font-semibold">Voltar aos perfis</Link></main>
 
   return (
-    <main className="min-h-screen fundo-tema text-[#f2ebff]">
+    <main className={'min-h-screen fundo-tema text-[#f2ebff]' + (entrada ? ' prg-entrada' : '')}>
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#4b3b62] bg-[#151123]/95 px-4 backdrop-blur lg:px-8">
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg p-2 hover:bg-[#342749] lg:hidden" aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuOpen}>{menuOpen ? <X /> : <Menu />}</button>
@@ -116,7 +118,7 @@ function CentralContent() {
                 <item.icon className="mb-5 text-[#c3a4f5]" size={30} aria-hidden="true" />
                 <div className="flex items-center justify-between gap-2"><h3 className="font-semibold">{item.label}</h3><ChevronRight size={18} className="text-[#b69ad4]" /></div>
                 <p className="mt-2 text-sm text-[#bfb2cf]">{item.id === 'fichas' ? 'Independentes e de campanhas' : item.id === 'campanhas' ? 'Entre ou crie uma aventura' : item.id === 'sistemas' ? 'D&D, Pathfinder, Fate, Tormenta20 e mais' : 'Consulte suas rolagens'}</p>
-                <p className="mt-4 text-xs text-[#a99bbb]">{item.id === 'fichas' ? 'Ficha V8 e fichas de todos os sistemas' : item.id === 'campanhas' ? 'Convites, mesa virtual e música' : item.id === 'sistemas' ? 'Com guia do mestre' : 'Rolagens no histórico de cada mesa'}</p>
+                <p className="mt-4 text-xs text-[#a99bbb]">{item.id === 'fichas' ? 'Personagens de todos os sistemas' : item.id === 'campanhas' ? 'Convites, mesa virtual e música' : item.id === 'sistemas' ? 'Com guia do mestre' : 'Rolagens no histórico de cada mesa'}</p>
               </button>)}
             </div>
           </>}
@@ -131,8 +133,8 @@ function CentralContent() {
             <h1 className="text-3xl font-bold">Campanhas</h1><p className="mt-2 text-[#bfb2cf]">Prepare suas aventuras e defina as regras de edição das fichas.</p>
             <Campanhas aventureiroId={perfil.id} />
           </>}
-          {section === 'sistemas' && <><h1 className="text-3xl font-bold">Sistemas de RPG</h1><p className="mt-2 text-[#bfb2cf]">Escolha um sistema e crie uma ficha que calcula as regras sozinha.</p><SistemasGaleria aventureiroId={perfil.id} fichaV8Url={sheetUrl} /></>}
-          {section === 'historico' && <><h1 className="text-3xl font-bold">Histórico de rolagens</h1><p className="mt-2 text-[#bfb2cf]">Onde encontrar suas rolagens.</p><div className="mt-6 rounded-2xl border border-[#55456e] bg-[#201a32] p-6 text-sm text-[#c4b6d4]">As rolagens das campanhas ficam salvas no histórico da mesa: abra a campanha, entre na mesa e toque em “Histórico” no chat (dá para filtrar por pessoa, personagem e tipo). As rolagens feitas fora de campanha continuam na própria Ficha V8.</div><Link href={sheetUrl} className="mt-4 inline-flex items-center text-[#c7a8ff] underline underline-offset-4">Abrir Ficha V8 <ChevronRight size={16} /></Link></>}
+          {section === 'sistemas' && <><h1 className="text-3xl font-bold">Sistemas de RPG</h1><p className="mt-2 text-[#bfb2cf]">Escolha um sistema e crie uma ficha que calcula as regras sozinha.</p><SistemasGaleria aventureiroId={perfil.id} /></>}
+          {section === 'historico' && <><h1 className="text-3xl font-bold">Histórico de rolagens</h1><p className="mt-2 text-[#bfb2cf]">Onde encontrar suas rolagens.</p><div className="mt-6 rounded-2xl border border-[#55456e] bg-[#201a32] p-6 text-sm text-[#c4b6d4]">As rolagens das campanhas ficam salvas no histórico da mesa: abra a campanha, entre na mesa e toque em “Histórico” no chat (dá para filtrar por pessoa, personagem e tipo). Rolagens feitas em fichas fora de campanha não entram nesse histórico.</div></>}
         </div>
       </div>
       {editando && <EditarPerfil perfil={perfil} fechar={() => setEditando(false)} salvo={p => setPerfil({ id: p.id, apelido: p.apelido, avatar: p.avatar ?? undefined })} />}

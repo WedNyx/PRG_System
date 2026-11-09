@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Inbox, ListMusic, Music2, Pencil, Play, Plus, Repeat, Search, Send, Square, Trash2, Upload, Undo2 } from 'lucide-react'
+import { FastForward, Pause, Rewind, SkipBack, SkipForward, ArrowDown, ArrowUp, ChevronDown, ChevronRight, Inbox, ListMusic, Music2, Pencil, Play, Plus, Repeat, Search, Send, Square, Trash2, Upload, Undo2 } from 'lucide-react'
 import { api } from '@/lib/nuvem/cliente'
 import type { EstadoMusica } from '@/lib/nuvem/musica'
 import { btn, input, msg } from './estilos'
@@ -16,7 +16,7 @@ type Resultado = { video_id: string; url: string; titulo: string; canal: string;
  * Aba “Música”. Todo mundo organiza as próprias playlists; jogadores enviam ao mestre.
  * O mestre vê as playlists recebidas (com o nome de quem enviou) e escolhe o que toca para a mesa.
  */
-export default function PainelMusica({ campanhaId, eu, admin, tocando, aoMudar }: { campanhaId: string; eu: string; admin: boolean; tocando?: EstadoMusica; aoMudar: () => void }) {
+export default function PainelMusica({ campanhaId, eu, admin, espectador = false, tocando, aoMudar }: { campanhaId: string; eu: string; admin: boolean; espectador?: boolean; tocando?: EstadoMusica; aoMudar: () => void }) {
   const [d, setD] = useState<Dados | null>(null)
   const [aba, setAba] = useState<'minhas' | 'recebidas'>('minhas')
   const [aberta, setAberta] = useState<string | null>(null)
@@ -43,19 +43,30 @@ export default function PainelMusica({ campanhaId, eu, admin, tocando, aoMudar }
       <p className="text-xs uppercase tracking-wide text-[#9d93b8]">Tocando na mesa</p>
       {t.tocando ? <p className="mt-1 flex items-center gap-2 font-semibold"><Music2 size={16} className="shrink-0 text-[#b99bff]" /><span className="truncate">{t.titulo}</span></p>
         : <p className="mt-1 text-[#b4aeca]">Nenhuma música tocando.</p>}
+      {admin && t.tocando && <div className="mt-3 flex items-center justify-center gap-1" role="group" aria-label="Controles da música">
+        <button type="button" className={btn} onClick={() => void fazer({ acao: 'anterior' }, undefined, true)} aria-label="Música anterior" title="Anterior"><SkipBack size={16} /></button>
+        <button type="button" className={btn} onClick={() => void fazer({ acao: 'pular', segundos: -10 }, undefined, true)} aria-label="Voltar 10 segundos" title="−10 s"><Rewind size={16} /></button>
+        <button type="button" className="inline-flex items-center gap-1 rounded-full bg-[#7654bb] px-4 py-2 text-sm font-semibold hover:bg-[#8a67ce]" onClick={() => void fazer({ acao: t.pausado ? 'continuar' : 'pausar' }, undefined, true)} aria-label={t.pausado ? 'Continuar' : 'Pausar'}>
+          {t.pausado ? <><Play size={16} /> Continuar</> : <><Pause size={16} /> Pausar</>}</button>
+        <button type="button" className={btn} onClick={() => void fazer({ acao: 'pular', segundos: 10 }, undefined, true)} aria-label="Avançar 10 segundos" title="+10 s"><FastForward size={16} /></button>
+        <button type="button" className={btn} onClick={() => void fazer({ acao: 'proxima' }, undefined, true)} aria-label="Próxima música" title="Próxima"><SkipForward size={16} /></button>
+      </div>}
       {admin && <div className="mt-2 flex flex-wrap gap-2">
         <button type="button" className={btn + (t.loop ? ' bg-[#5b4380]' : '')} aria-pressed={!!t.loop} onClick={() => void fazer({ acao: 'loop', ativo: !t.loop }, t.loop ? 'Loop desligado' : 'Loop ligado', true)}><Repeat size={14} /> Loop {t.loop ? 'ligado' : 'desligado'}</button>
         <button type="button" className={btn} disabled={!t.tocando} onClick={() => void fazer({ acao: 'parar' }, 'Música parada', true)}><Square size={14} /> Parar</button>
       </div>}
-      {!admin && <p className="mt-1 text-xs text-[#9d93b8]">Só o mestre escolhe o que toca. O volume é só seu, no mini player do mapa.</p>}
+      {!admin && t.pausado && <p className="mt-1 text-xs text-amber-200">⏸ Pausada pelo mestre.</p>}
+      {!admin && <p className="mt-1 text-xs text-[#9d93b8]">Só o mestre toca, pausa e avança. O volume é só seu, no mini player do mapa.</p>}
+      {admin && <p className="mt-2 text-[11px] text-[#9d93b8]">Quando uma música acaba (sem loop), a próxima da mesma playlist começa sozinha.</p>}
     </section>
+    {espectador && <p className="text-sm text-[#b4aeca]">👁️ Como espectador, você ouve a música da mesa. Playlists são dos jogadores e do mestre.</p>}
 
     {admin && <div className="flex gap-1">
       {([['minhas', ListMusic, 'Minhas playlists'], ['recebidas', Inbox, `Recebidas (${d.recebidas.length})`]] as const).map(([id, I, n]) =>
         <button key={id} type="button" onClick={() => setAba(id)} className={'flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-xs ' + (aba === id ? 'bg-[#5b4380]' : 'bg-[#1e1a30]')}><I size={14} /> {n}</button>)}
     </div>}
 
-    {(aba === 'minhas' || !admin) && <>
+    {!espectador && (aba === 'minhas' || !admin) && <>
       <form className="flex gap-2" onSubmit={async ev => { ev.preventDefault(); if (!novaNome.trim()) return; const r = await fazer({ acao: 'playlist_criar', nome: novaNome }, 'Playlist criada!'); if (r) { setNovaNome(''); setAberta((r.playlist as Playlist).id) } }}>
         <input value={novaNome} onChange={x => setNovaNome(x.target.value)} maxLength={80} placeholder="Nova playlist (ex.: Combate, Taverna)" className={input} aria-label="Nome da nova playlist" />
         <button type="submit" className={btn}><Plus size={14} /> Criar</button>

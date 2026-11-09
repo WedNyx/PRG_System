@@ -2,6 +2,29 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.10.0 — Sessões, espectadores e música do mestre (2026-11-09)
+- Sessão aberta/fechada: só o mestre abre a mesa (“▶ Abrir sessão”). Com a sessão fechada, ninguém além do mestre entra; quem estiver esperando entra sozinho quando ela abrir.
+- “⏹ Encerrar sessão” tira todo mundo da mesa e para a música (o histórico continua disponível).
+- Espectadores: o mestre escolhe em “Participantes” quem é jogador e quem é espectador. Espectadores assistem, ouvem a música e conversam no chat, sem mexer em nada.
+- Cores no chat: 👑 mestre em dourado, ⚔️ jogadores em azul e 👁️ espectadores em verde.
+- Música: só o mestre pausa, continua, volta/avança 10 s e passa para a anterior/próxima. Sem loop, a próxima da playlist começa sozinha. O vídeo do YouTube não aceita mais cliques; o volume continua individual.
+
+## v0.9.0 — Inventário, poderes e biblioteca do mestre (2026-11-09)
+- Inventário de verdade nas fichas: itens com tipo, quantidade, peso, dano e bônus. Item equipado soma sozinho na ficha (ex.: escudo +2 na CA, anel +1 numa resistência).
+- Barra de carga com o limite de cada sistema (D&D, Pathfinder, Tormenta20 e Blades) e carteira para moedas.
+- Poderes e magias com custo em recurso (PM, PE…), usos até descansar e rolagem: “Usar” desconta e rola; em campanha, a rolagem vai para o chat da mesa.
+- Biblioteca do mestre (aba Diário da mesa): monte itens e poderes uma vez e entregue em Recompensas; eles chegam prontos na ficha.
+- Recompensas de item e moedas agora entram no inventário e na carteira em vez de virar texto (na Ficha V8 continuam anotadas).
+
+## v0.8.2 — Entrada animada nos perfis (2026-11-09)
+- Animação ao escolher um perfil: a foto voa para o centro com um brilho e estrelas, mostra “Bem-vindo de volta” e mergulha na Central (toque para pular).
+- A Central aparece suavemente depois da animação. Quem ativou “reduzir movimento” no aparelho entra direto, sem animação.
+
+## v0.8.1 — Sistemas publicados e autorais (2026-11-09)
+- Sistemas de RPG separados em duas abas: “Sistemas publicados” (RPGs já existentes) e “Sistemas autorais” (criados por jogadores).
+- Lunethernnyis deixou de ser o destaque: agora fica junto dos outros autorais, e as listas de escolha mostram primeiro os sistemas publicados.
+- Campanhas novas não vêm mais com um sistema escolhido: o mestre escolhe na lista.
+
 ## v0.8.0 — Céu estrelado, perfis e guias (2026-11-09)
 - Novo tema principal “Céu estrelado” (céu roxo com nuvens, estrelas e lua). A “Noite clássica” continua disponível no menu “Tema”.
 - Editar perfil: cada pessoa muda o próprio nome e foto pelo menu da Central (ou tocando na própria foto).

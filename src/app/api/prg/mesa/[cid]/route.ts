@@ -15,7 +15,13 @@ async function contexto(req: NextRequest, cid: string) {
   const eu = await ator(req)
   const papel = await papelNaCampanha(cid, eu)
   if (!papel) throw new ErroApi(404, 'Campanha não encontrada.')
-  return { eu, papel, admin: podeAdministrar(papel) }
+  return { eu, papel, admin: podeAdministrar(papel), espectador: papel === 'espectador' }
+}
+/** Com a sessão fechada, só o mestre (e co-mestre) entra na mesa. */
+async function exigirSessaoAberta(cid: string, admin: boolean) {
+  if (admin) return
+  const [c] = await rest<{ sessao_aberta: boolean }[]>(`prg_campanhas?select=sessao_aberta&id=eq.${q(cid)}`)
+  if (!c?.sessao_aberta) throw new ErroApi(423, 'A sessão está fechada. Aguarde o mestre abrir a mesa.')
 }
 const exigirAdmin = (admin: boolean) => { if (!admin) throw new ErroApi(403, 'Apenas o mestre pode fazer isso.') }
 async function cenaDaCampanha(cid: string, cenaId: unknown): Promise<Cena> {
@@ -52,7 +58,8 @@ export const GET = rota<Ctx>(async (req, { params }) => {
     return ok({ eventos })
   }
 
-  const [camp] = await rest<{ id: string; nome: string; sistema: string; mesa: Record<string, unknown>; musica: unknown }[]>(`prg_campanhas?select=id,nome,sistema,mesa,musica&id=eq.${q(cid)}`)
+  const [camp] = await rest<{ id: string; nome: string; sistema: string; mesa: Record<string, unknown>; musica: unknown; sessao_aberta: boolean; sessao_aberta_em: string | null }[]>(`prg_campanhas?select=id,nome,sistema,mesa,musica,sessao_aberta,sessao_aberta_em&id=eq.${q(cid)}`)
+  if (!admin && !camp.sessao_aberta) throw new ErroApi(423, 'A sessão está fechada. Aguarde o mestre abrir a mesa.')
   const cenas = await rest<Cena[]>(`prg_cenas?select=*&campanha_id=eq.${q(cid)}${admin ? '' : '&ativa=eq.true'}&order=criada_em.asc`)
   const ativa = cenas.find(c => c.ativa) ?? null
   const [tokens, desenhos, eventos, membros, fichas] = await Promise.all([
@@ -66,15 +73,32 @@ export const GET = rota<Ctx>(async (req, { params }) => {
     campanha: { id: camp.id, nome: camp.nome, sistema: camp.sistema, meuPapel: papel as Papel },
     mesa: camp.mesa, cenas: admin ? cenas : ativa ? [ativa] : [], cenaAtiva: ativa, tokens, desenhos,
     eventos: eventos.reverse(), membros, fichas, eu, musica: camp.musica ?? { tocando: false }, agora: new Date().toISOString(),
+    sessao: { aberta: !!camp.sessao_aberta, aberta_em: camp.sessao_aberta_em },
   })
 })
 
 export const POST = rota<Ctx>(async (req, { params }) => {
   const { cid } = await params
-  const { eu, admin } = await contexto(req, cid)
+  const { eu, admin, espectador } = await contexto(req, cid)
   const b = await lerJson(req, 80_000) as Record<string, unknown>
+  await exigirSessaoAberta(cid, admin)
+  // Espectador: só conversa no chat (sem rolagens, tokens, desenhos...).
+  if (espectador && !(b.acao === 'evento' && b.tipo !== 'rolagem')) throw new ErroApi(403, 'Espectadores só assistem e conversam no chat.')
 
   switch (b.acao) {
+    case 'sessao': {
+      exigirAdmin(admin)
+      const aberta = b.aberta === true
+      const mud: Record<string, unknown> = { sessao_aberta: aberta, sessao_aberta_em: aberta ? new Date().toISOString() : null }
+      if (!aberta) {
+        // Ao encerrar, a música para para todo mundo.
+        const [c] = await rest<{ musica: Record<string, unknown> }[]>(`prg_campanhas?select=musica&id=eq.${q(cid)}`)
+        mud.musica = { ...(c?.musica ?? {}), tocando: false, pausado: false }
+      }
+      await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify(mud) })
+      await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica', texto: aberta ? '🟢 O mestre abriu a sessão.' : '🔴 O mestre encerrou a sessão.' }) }).catch(() => {})
+      return ok({ aberta })
+    }
     case 'evento': {
       const tipo = b.tipo === 'rolagem' ? 'rolagem' : 'chat'
       const visibilidade: Visibilidade = b.visibilidade === 'mestre' ? 'mestre' : b.visibilidade === 'privada' ? 'privada' : 'publica'

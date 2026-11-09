@@ -7,6 +7,7 @@ import { calcular } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { rolarExpressao } from '@/lib/dice'
 import GuiaSistema from '@/components/sistemas/GuiaSistema'
+import { InventarioFicha, PoderesFicha } from './Inventario'
 import { GUIAS } from '@/lib/sistemas/guias'
 
 const card = 'rounded-2xl border border-[#55456e] bg-[#201a32] p-4 sm:p-5'
@@ -39,6 +40,13 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     toast(`${nome}: ${r.total}`, { description: `d20 = ${nat} ${sinal(b)}${nat === 20 ? ' · 20 natural!' : nat === 1 ? ' · 1 natural' : ''}${rolarNaCampanha ? ' · no chat da mesa' : ''}` })
   }
   const podeRolar = d20 || s.id === 'brp'
+  /** Rolagem livre (dano, poder, item). Em campanha, vai para o chat da mesa. */
+  async function rolarExpr(expressao: string, rotulo: string) {
+    const r = rolarNaCampanha ? await rolarNaCampanha(expressao, rotulo) : rolarExpressao(expressao)
+    if (!r) { if (!rolarNaCampanha) toast.error('Rolagem inválida: ' + expressao); return }
+    toast(`${rotulo}: ${r.total}`, { description: `${expressao} → [${r.resultados.join(', ')}]${rolarNaCampanha ? ' · no chat da mesa' : ''}` })
+  }
+  const propsInv = { s, d, c, onChange, somenteLeitura, rolar: rolarExpr }
 
   const grupos = new Map<string, NonNullable<Sistema['pericias']>['lista']>()
   for (const p of s.pericias?.lista ?? []) grupos.set(p.grupo ?? '', [...(grupos.get(p.grupo ?? '') ?? []), p])
@@ -49,8 +57,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
   const SECOES = ([
     { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade e recursos', ok: true },
     { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? 'Atributos e perícias' : s.pericias.titulo ?? 'Perícias') : 'Atributos', sub: 'Testes e rolagens', ok: s.atributos.length > 0 || !!s.pericias },
-    { id: 'habilidades', icone: '🌌', nome: 'Habilidades e poderes', sub: 'Técnicas, talentos, magias', ok: listasDe('habilidades').length > 0 },
-    { id: 'equipamentos', icone: '⚔️', nome: 'Armas e equipamentos', sub: 'Inventário e itens', ok: listasDe('equipamentos').length > 0 },
+    { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ok: true },
+    { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ok: true },
     { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ok: true },
     { id: 'guia', icone: '📖', nome: 'Guia de criação', sub: 'Passo a passo deste sistema', ok: !!GUIAS[s.id] },
   ] as const).filter(x => x.ok)
@@ -166,6 +174,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     </section>}
         </>}
         {secao === 'habilidades' && <>
+    <PoderesFicha {...propsInv} />
+    {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-[#d3adf0]">Anotações livres</h3>}
     <section className="grid gap-4">
       {listasDe('habilidades').map(l => <label key={l.id} className={card + ' block'}>
         <span className="font-bold text-[#ed9cd8]">{l.nome}</span>
@@ -174,6 +184,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     </section>
         </>}
         {secao === 'equipamentos' && <>
+    <InventarioFicha {...propsInv} />
+    {listasDe('equipamentos').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-[#d3adf0]">Anotações livres</h3>}
     <section className="grid gap-4">
       {listasDe('equipamentos').map(l => <label key={l.id} className={card + ' block'}>
         <span className="font-bold text-[#ed9cd8]">{l.nome}</span>

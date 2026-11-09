@@ -10,7 +10,7 @@ import { CAMPOS } from '@/lib/campanhas/permissoes'
 type Item = { id: number; tipo: string; categoria: string | null; descricao: string; criado_em: string; autor: { apelido: string } | null
   antes: { campo: string; valor: string }[] | null; depois: { campo: string; valor: string }[] | null }
 const AREA: Record<string, string> = Object.fromEntries(CAMPOS.map(c => [c.id, c.titulo]))
-const TIPO: Record<string, string> = { edicao: '✏️ Edição', pedido: '📨 Pedido', decisao: '⚖️ Decisão', envio: '📤 Envio', aprovacao: '✅ Avaliação', bloqueio: '🔒 Trava', npc: '🎭 NPC', administracao: '🛠️ Administração' }
+const TIPO: Record<string, string> = { edicao: '✏️ Edição', pedido: '📨 Pedido', decisao: '⚖️ Decisão', envio: '📤 Envio', aprovacao: '✅ Avaliação', bloqueio: '🔒 Trava', npc: '🎭 NPC', administracao: '🛠️ Administração', recompensa: '🎁 Recompensa' }
 
 function Conteudo() {
   const id = useSearchParams().get('ficha') ?? ''

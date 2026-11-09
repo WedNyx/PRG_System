@@ -91,3 +91,17 @@ Isso **não prova identidade**: alguém que saiba o ID de um perfil consegue agi
 - "Nova ficha" pergunta o sistema antes de criar.
 - A Ficha V8 volta para o início (`/central`).
 - As fichas dos outros sistemas ganharam menu lateral por seções (Principal, Atributos e perícias, Habilidades, Equipamentos, Anotações) e uma barra fixa com PV e Defesa.
+
+# v0.6.0 — Mapas montados, tokens controlados e diário do mestre
+- Migração `008` (APLICADA): `prg_cenas.camadas` e `tokens_travados`; `prg_tokens.movimento` (dono/todos/mestre) e `tamanho`; tabelas `prg_sessoes` e `prg_notas`; histórico com tipo `recompensa`.
+- Novo `MapaMesa`:
+  - imagens em camadas, que o mestre arrasta, redimensiona e ordena;
+  - névoa com pincel 1×1, 3×3 e 5×5, ou por área (retângulo);
+  - tokens com tamanho de 1 a 4 células e indicação 🔒 quando estão travados.
+- Movimento de tokens decidido no servidor (`podeMoverToken`): o mestre sempre pode; os jogadores seguem a regra do token e a trava da cena.
+- O jogador pode criar até 3 tokens próprios por cena, mesmo sem ficha, e trocar a imagem deles. O upload de imagem foi liberado para todos os participantes.
+- As rolagens aparecem num painel grande com cada dado e o total. As rolagens das fichas de campanha (Ficha V8 e genéricas) vão para o chat da mesa, com opção de rolagem secreta.
+- Aba "Diário" na mesa:
+  - sessões com preparação secreta e resumo publicado;
+  - anotações privadas, só para o mestre, para a campanha ou para uma pessoa;
+  - recompensas (XP, item, moedas) aplicadas direto nas fichas, com registro no histórico e aviso no chat.

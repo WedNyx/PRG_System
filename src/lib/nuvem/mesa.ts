@@ -53,3 +53,57 @@ export function normalizarPontos(v: unknown): number[] | null {
   const n = v.map(Number)
   return n.every(Number.isFinite) ? n.map(x => Math.round(x * 10) / 10) : null
 }
+
+// ---- v0.6.0: mapa em camadas, pincéis de névoa e permissão de mover tokens ----
+/** Recorte (cx, cy, cw, ch) em frações da imagem original (0 a 1): qual parte da imagem aparece. */
+export type Camada = { id: string; url: string; x: number; y: number; w: number; h: number; cx?: number; cy?: number; cw?: number; ch?: number }
+/** Imagens que compõem o mapa (posição e tamanho em células). */
+export function normalizarCamadas(v: unknown, cols: number, rows: number): Camada[] | null {
+  if (!Array.isArray(v) || v.length > 30) return null
+  const out: Camada[] = []
+  for (const c of v) {
+    if (!c || typeof c !== 'object') return null
+    const o = c as Record<string, unknown>
+    if (typeof o.url !== 'string' || !/^https:\/\//.test(o.url) || o.url.length > 1000) return null
+    const n = (k: string, min: number, max: number) => Math.max(min, Math.min(max, Math.round(Number(o[k]) || 0)))
+    const camada: Camada = { id: typeof o.id === 'string' && o.id.length <= 60 ? o.id : crypto.randomUUID(), url: o.url,
+      x: n('x', -100, cols), y: n('y', -100, rows), w: n('w', 1, 200), h: n('h', 1, 200) }
+    const r = normalizarRecorte(o)
+    if (r) Object.assign(camada, r)
+    out.push(camada)
+  }
+  return out
+}
+
+/** Células de um retângulo (para revelar/esconder uma área de uma vez). */
+export function celulasRetangulo(x1: number, y1: number, x2: number, y2: number): string[] {
+  const out: string[] = []
+  for (let y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) for (let x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) out.push(`${x},${y}`)
+  return out.slice(0, 5000)
+}
+/** Células cobertas por um pincel quadrado de tamanho n centrado na célula. */
+export function celulasPincel(x: number, y: number, n: number): string[] {
+  const r = Math.floor(Math.max(1, n) / 2)
+  return celulasRetangulo(Math.max(0, x - r), Math.max(0, y - r), x + r, y + r)
+}
+export const todasCelulas = (cols: number, rows: number) => celulasRetangulo(0, 0, cols - 1, rows - 1)
+
+export type Movimento = 'dono' | 'todos' | 'mestre'
+/** Quem pode arrastar um token: mestre sempre; jogadores conforme a regra do token e a trava da cena. */
+export function podeMoverToken(t: { movimento: Movimento; dono_id: string | null }, eu: string, admin: boolean, cenaTravada: boolean): boolean {
+  if (admin) return true
+  if (cenaTravada || t.movimento === 'mestre') return false
+  return t.movimento === 'todos' || t.dono_id === eu
+}
+
+const fr = (v: unknown) => { const n = Number(v); return Number.isFinite(n) ? Math.round(Math.max(0, Math.min(1, n)) * 10000) / 10000 : null }
+/** Recorte válido (mínimo 2% da imagem, sem passar da borda) ou null para "imagem inteira". */
+export function normalizarRecorte(o: Record<string, unknown>): { cx: number; cy: number; cw: number; ch: number } | null {
+  if (o.cw === undefined && o.ch === undefined) return null
+  let cx = fr(o.cx) ?? 0, cy = fr(o.cy) ?? 0
+  let cw = fr(o.cw) ?? 1, ch = fr(o.ch) ?? 1
+  cw = Math.max(0.02, cw); ch = Math.max(0.02, ch)
+  cx = Math.min(cx, 1 - cw); cy = Math.min(cy, 1 - ch)
+  if (cx === 0 && cy === 0 && cw === 1 && ch === 1) return null
+  return { cx, cy, cw, ch }
+}

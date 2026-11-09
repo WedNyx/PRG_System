@@ -27,6 +27,7 @@ export function useFichaNuvem(id: string | null) {
   const [erro, setErro] = useState('')
   const [pronta, setPronta] = useState(false)
   const [aviso, setAviso] = useState<{ texto: string; desfazer: boolean } | null>(null)
+  const [campanhaId, setCampanhaId] = useState<string | null>(null)
   const versao = useRef(0)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const enviando = useRef(false)
@@ -71,9 +72,10 @@ export function useFichaNuvem(id: string | null) {
     let ativo = true
     ;(async () => {
       try {
-        const r = await api<{ ficha: { dados: unknown; versao: number; status?: string; bloqueada?: boolean; observacao_mestre?: string }; podeEditar: boolean; pendentes?: string[] }>('fichas/' + id)
+        const r = await api<{ ficha: { dados: unknown; versao: number; status?: string; bloqueada?: boolean; observacao_mestre?: string; campanha_id?: string | null }; podeEditar: boolean; pendentes?: string[] }>('fichas/' + id)
         if (!ativo) return
         versao.current = r.ficha.versao
+        setCampanhaId(r.ficha.campanha_id ?? null)
         const pend = lerPendente(id)
         if (r.pendentes?.length) setAviso({ texto: 'Aguardando o mestre aprovar: ' + r.pendentes.map(a => AREAS[a] ?? a).join(', ') + '.', desfazer: false })
         if (r.ficha.observacao_mestre) setErro('Mestre: ' + r.ficha.observacao_mestre)
@@ -134,5 +136,5 @@ export function useFichaNuvem(id: string | null) {
     } catch (e) { setErro(e instanceof ErroNuvem ? e.message : 'Falha de conexão.') }
   }, [id, enviar])
 
-  return { estado, erro, pronta, resolver, aviso }
+  return { estado, erro, pronta, resolver, aviso, campanhaId }
 }

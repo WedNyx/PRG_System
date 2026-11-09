@@ -34,13 +34,14 @@ function Conteudo() {
   const ultimo = useRef<DadosFicha | null>(null)
   const salvando = useRef(false)
   const [aviso, setAviso] = useState<{ texto: string; desfazer: boolean } | null>(null)
+  const [campanhaId, setCampanhaId] = useState<string | null>(null)
 
   useEffect(() => {
     let ativo = true
     ;(async () => {
       try {
         if (nuvem) {
-          const r = await api<{ ficha: { sistema: string; dados: DadosFicha; versao: number; status?: string; bloqueada?: boolean; observacao_mestre?: string }; podeEditar: boolean; pendentes?: string[] }>('fichas/' + nuvem)
+          const r = await api<{ ficha: { sistema: string; dados: DadosFicha; versao: number; status?: string; bloqueada?: boolean; observacao_mestre?: string; campanha_id?: string | null }; podeEditar: boolean; pendentes?: string[] }>('fichas/' + nuvem)
           if (r.pendentes?.length) setAviso({ texto: 'Aguardando o mestre aprovar: ' + r.pendentes.map(a => AREAS[a] ?? a).join(', ') + '.', desfazer: false })
           if (r.ficha.observacao_mestre) setErro('Mestre: ' + r.ficha.observacao_mestre)
           else if (!r.podeEditar && r.ficha.bloqueada) setErro('O mestre travou esta ficha neste momento.')
@@ -48,6 +49,7 @@ function Conteudo() {
           if (!s) throw new ErroNuvem(400, 'Sistema desta ficha não é suportado aqui.')
           if (!ativo) return
           versao.current = r.ficha.versao
+          setCampanhaId(r.ficha.campanha_id ?? null)
           setSistema(s); setDados(normalizarFicha(s, r.ficha.dados)); setEstado(r.podeEditar ? 'salvo' : 'leitura')
         } else if (local) {
           const salvo = JSON.parse(localStorage.getItem(LOCAL + local) || 'null')
@@ -112,7 +114,11 @@ function Conteudo() {
         <span className="flex-1">{erro}</span>{estado === 'conflito' && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-[#b99bff] px-3 py-1">Recarregar</button>}</p>}
       {aviso && <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#62527e] bg-[#1f2a40] p-3 text-sm">
         <span className="flex-1">{aviso.texto}</span>{aviso.desfazer && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-[#b99bff] px-3 py-1">Desfazer (voltar ao salvo)</button>}</p>}
-      {sistema && dados ? <FichaGenerica sistema={sistema} dados={dados} onChange={mudar} somenteLeitura={estado === 'leitura'} />
+      {sistema && dados ? <FichaGenerica sistema={sistema} dados={dados} onChange={mudar} somenteLeitura={estado === 'leitura'}
+        rolarNaCampanha={campanhaId ? async (expressao, rotulo) => {
+          try { const r = await api<{ evento: { resultados: number[]; total: number } }>('mesa/' + campanhaId, { method: 'POST', body: { acao: 'evento', tipo: 'rolagem', expressao, personagem: dados.nome, texto: rotulo } }); return r.evento }
+          catch (e) { setErro(e instanceof ErroNuvem ? e.message : 'Falha ao rolar.'); return null }
+        } : undefined} />
         : estado === 'carregando' && <p className="text-center text-[#b4aeca]">Carregando ficha...</p>}
     </div>
   </main>

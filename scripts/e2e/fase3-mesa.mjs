@@ -16,14 +16,14 @@ r=await call(J,'GET','mesa/'+cid); check('jogador só vê a cena ativa', r.d.cen
 // ficha do jogador aprovada na campanha
 r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sistema:'faroeste-arcano',nome:'Calamity'}); const fj=r.d.ficha.id
 r=await mesa(J,{acao:'token_criar',cenaId:c1,fichaId:fj,nome:'Calamity',hp_max:20}); check('jogador coloca o próprio personagem', r.s===201, r); const tj=r.d.token.id
-r=await mesa(J,{acao:'token_criar',cenaId:c1,nome:'Monstro'}); check('jogador não cria token avulso', r.s===403, r)
+r=await mesa(J,{acao:'token_criar',cenaId:c1,nome:'Montaria'}); check('jogador cria token próprio extra (v0.6.0)', r.s===201 && r.d.token.dono_id===J, r)
 r=await mesa(M,{acao:'token_criar',cenaId:c1,nome:'Bandido',hp_max:11,visivel:false,npc:true,cor:'#ff0000'}); check('mestre cria token escondido', r.s===201, r); const tm=r.d.token.id
-r=await call(J,'GET','mesa/'+cid); check('jogador não vê token escondido', r.d.tokens.length===1 && r.d.tokens[0].id===tj, r.d.tokens)
-r=await call(M,'GET','mesa/'+cid); check('mestre vê todos os tokens', r.d.tokens.length===2, r.d.tokens)
+r=await call(J,'GET','mesa/'+cid); check('jogador não vê token escondido', r.d.tokens.length===2 && !r.d.tokens.some(t=>t.id===tm), r.d.tokens)
+r=await call(M,'GET','mesa/'+cid); check('mestre vê todos os tokens', r.d.tokens.length===3, r.d.tokens)
 r=await mesa(J,{acao:'token_mover',tokenId:tj,x:3,y:4}); check('jogador move o seu token', r.s===200, r)
 r=await mesa(J,{acao:'token_mover',tokenId:tm,x:1,y:1}); check('jogador não move token do mestre', r.s===403, r)
 r=await mesa(M,{acao:'token_mover',tokenId:tm,x:999,y:-5}); r=await call(M,'GET','mesa/'+cid); const b=r.d.tokens.find(t=>t.id===tm); check('posição limitada à grade', b.x===11 && b.y===0, b)
-r=await mesa(J,{acao:'token_editar',tokenId:tj,hp_atual:15,condicoes:['caido','hack'],nome:'Hack'}); r=await call(J,'GET','mesa/'+cid); const tt=r.d.tokens[0]; check('dono muda PV/condições, não o nome', tt.hp_atual===15 && tt.condicoes.join()==='caido' && tt.nome==='Calamity', tt)
+r=await mesa(J,{acao:'token_editar',tokenId:tj,hp_atual:15,condicoes:['caido','hack'],nome:'Hack'}); r=await call(J,'GET','mesa/'+cid); const tt=r.d.tokens.find(t=>t.id===tj); check('dono muda PV/condições, não o nome', tt.hp_atual===15 && tt.condicoes.join()==='caido' && tt.nome==='Calamity', tt)
 r=await mesa(J,{acao:'token_editar',tokenId:tm,hp_atual:1}); check('jogador não edita token do mestre', r.s===403, r)
 r=await mesa(M,{acao:'nevoa',cenaId:c1,celulas:['1,1','2,2','50,50'],revelar:true}); r=await call(J,'GET','mesa/'+cid); check('névoa revelada (só células válidas)', r.d.cenaAtiva.fog_revelado.sort().join()==='1,1,2,2', r.d.cenaAtiva)
 r=await mesa(J,{acao:'nevoa',cenaId:c1,celulas:['3,3'],revelar:true}); check('jogador não mexe na névoa', r.s===403, r)

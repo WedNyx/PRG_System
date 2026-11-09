@@ -29,3 +29,21 @@ describe('sincronia', () => {
     expect(posicaoAtual({ tocando: true, loop: false, iniciada_em: inicio }, t + 130_000, 60)).toBeNull()
   })
 })
+
+describe('controles do mestre', () => {
+  const inicio = '2026-11-09T12:00:00.000Z', t = Date.parse(inicio)
+  it('pausar segura a posição para todos; continuar segue dali', async () => {
+    const { pausar, continuar } = await import('./musica')
+    const p = pausar({ tocando: true, iniciada_em: inicio }, t + 40_000)
+    expect(p.pausado).toBe(true); expect(posicaoAtual(p, t + 999_000)).toBe(40)
+    const c = continuar(p, t + 100_000)
+    expect(c.pausado).toBe(false); expect(posicaoAtual(c, t + 105_000)).toBe(45)
+  })
+  it('avançar/voltar e próxima/anterior', async () => {
+    const { pular, vizinha } = await import('./musica')
+    expect(posicaoAtual(pular({ tocando: true, iniciada_em: inicio }, t + 30_000, 10), t + 30_000)).toBe(40)
+    expect(posicaoAtual(pular({ tocando: true, iniciada_em: inicio }, t + 5_000, -10), t + 5_000)).toBe(0)
+    const l = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+    expect(vizinha(l, 'c', 1)?.id).toBe('a'); expect(vizinha(l, 'a', -1)?.id).toBe('c'); expect(vizinha(l, 'x', 1)?.id).toBe('a')
+  })
+})

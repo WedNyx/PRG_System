@@ -49,6 +49,12 @@ export const GUIA: TopicoGuia[] = [
     passos: ['Em “Campanhas”, toque em “Criar campanha”, dê um nome e escolha o sistema.', 'Abra a campanha e toque em “Gerar convite (7 dias)”. Envie o link ou o código para o grupo.', 'Quem usar o convite aparece em pedidos: toque em “Aceitar”.', 'Em “Permissões por área da ficha”, escolha o que os jogadores podem mudar sozinhos e o que precisa da sua aprovação.'],
   },
   {
+    id: 'sessao', icone: '🎬', titulo: 'Abrir a sessão, jogadores e espectadores', quem: 'mestre',
+    resumo: 'A mesa só abre quando o mestre começa a sessão. Cada participante é jogador ou espectador.',
+    passos: ['Na campanha (ou no topo da mesa), toque em “▶ Abrir sessão”. Só então jogadores e espectadores conseguem entrar.', 'Ao terminar, toque em “⏹ Encerrar sessão”: todo mundo sai da mesa e a música para. O histórico continua disponível.', 'Em “Participantes”, escolha o papel de cada pessoa: Jogador, Espectador ou Co-mestre.', 'Espectadores assistem ao mapa, ouvem a música e conversam no chat, mas não rolam dados nem mexem em tokens, fichas ou playlists.', 'No chat, cada papel tem uma cor: 👑 mestre em dourado, ⚔️ jogadores em azul e 👁️ espectadores em verde.'],
+    dica: 'Quem estiver com a mesa aberta enquanto a sessão está fechada entra sozinho assim que o mestre abrir.',
+  },
+  {
     id: 'mesa', icone: '🗺️', titulo: 'Mesa virtual: mapa e tokens', foto: 'mesa.jpg', legenda: 'Mesa com mapa, tokens e ferramentas',
     resumo: 'A mesa mostra o mapa da cena, os tokens e as ferramentas, tudo ao vivo para o grupo.',
     passos: ['Na campanha, toque em “🗺️ Abrir mesa virtual”.', 'As ferramentas ficam no canto de baixo: mover, régua, marcar ponto e desenhar.', 'Arraste o seu token para movê-lo. O mestre decide quem pode mexer em cada token.', 'Toque em “Só o mapa” para esconder o painel e ver o mapa maior.'],
@@ -61,7 +67,7 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'musica', icone: '🎵', titulo: 'Música na mesa', foto: 'mesa-musica.jpg', legenda: 'Aba Música com playlists',
     resumo: 'Cada pessoa monta playlists; o mestre escolhe o que toca para todo mundo.',
-    passos: ['Na aba “Música”, crie uma playlist e adicione músicas por link do YouTube, link de áudio ou arquivo do aparelho.', 'Jogadores: toque em “Enviar ao mestre”.', 'Mestre: em “Recebidas”, as playlists aparecem com o nome de quem enviou. Toque em ▶ para tocar para a mesa, e use 🔁 Loop e ⏹ Parar.', 'O volume no mini player do mapa é só seu. Se o navegador bloquear o som, toque em “🔊 Ouvir a música da mesa”.'],
+    passos: ['Na aba “Música”, crie uma playlist e adicione músicas por link do YouTube, link de áudio ou arquivo do aparelho.', 'Jogadores: toque em “Enviar ao mestre”.', 'Mestre: em “Recebidas”, as playlists aparecem com o nome de quem enviou. Toque em ▶ para tocar para a mesa.', 'Só o mestre controla a música: ⏮ anterior, ⏪ −10 s, ⏸ pausar/continuar, ⏩ +10 s, ⏭ próxima, 🔁 loop e ⏹ parar. Sem loop, a próxima da playlist começa sozinha.', 'O volume no mini player do mapa é só seu (cada pessoa ajusta o próprio). Se o navegador bloquear o som, toque em “🔊 Ouvir a música da mesa”.'],
   },
   {
     id: 'diario', icone: '📖', titulo: 'Diário: sessões, anotações e recompensas', foto: 'mesa-diario.jpg', legenda: 'Aba Diário',

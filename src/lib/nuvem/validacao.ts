@@ -6,7 +6,7 @@ export type EstadoCampanha = typeof ESTADOS[number]
 export const ESTADO_TITULO: Record<EstadoCampanha, string> = {
   planejada: 'Planejada', ativa: 'Ativa', pausada: 'Pausada', encerrada: 'Encerrada',
 }
-export const PAPEIS = ['mestre', 'comestre', 'jogador'] as const
+export const PAPEIS = ['mestre', 'comestre', 'jogador', 'espectador'] as const
 export type Papel = typeof PAPEIS[number]
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -115,3 +115,5 @@ export function validarFichaDados(dados: unknown): Ok<{ dados: Record<string, un
 
 /** Quem pode administrar a campanha. */
 export const podeAdministrar = (papel: Papel | null) => papel === 'mestre' || papel === 'comestre'
+/** Espectador só assiste (mesa, música) e conversa no chat; não mexe em nada. */
+export const ehEspectador = (papel: Papel | null) => papel === 'espectador'

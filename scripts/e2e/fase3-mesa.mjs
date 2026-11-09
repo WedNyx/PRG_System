@@ -5,6 +5,8 @@ async function call(quem, metodo, caminho, body){ const r=await fetch(BASE+'/api
 const mesa=(q,b)=>call(q,'POST','mesa/'+cid,b)
 function check(n,c,e){ console.log((c?'✔':'✘')+' '+n+(c?'':'  '+JSON.stringify(e).slice(0,300))); if(!c) falhas++ }
 let r=await call(M,'POST','campanhas',{nome:'Mesa Teste',sistema:'Faroeste Arcano',modeloPadrao:'C'}); const cid=r.d.campanha.id
+// v0.10.0: a mesa só abre com a sessão aberta pelo mestre.
+await call(M,'POST','mesa/'+cid,{acao:'sessao',aberta:true})
 r=await call(M,'POST',`campanhas/${cid}/convites`,{}); await call(J,'POST','convites/'+r.d.convite.codigo,{}); r=await call(M,'GET','campanhas/'+cid); await call(M,'POST',`campanhas/${cid}/solicitacoes/${r.d.solicitacoes[0].id}`,{decisao:'aceitar'})
 r=await call(X,'GET','mesa/'+cid); check('quem não participa não abre a mesa', r.s===404, r)
 r=await call(J,'GET','mesa/'+cid); check('jogador abre mesa vazia', r.s===200 && r.d.cenaAtiva===null, r)
@@ -34,9 +36,9 @@ await mesa(J,{acao:'evento',tipo:'rolagem',expressao:'1d20',visibilidade:'mestre
 await mesa(M,{acao:'evento',tipo:'chat',texto:'Psiu, só pra você',visibilidade:'privada',destinatarioId:J})
 await mesa(M,{acao:'evento',tipo:'chat',texto:'Segredo do mestre',visibilidade:'mestre'})
 r=await mesa(J,{acao:'evento',tipo:'chat',texto:'oi',visibilidade:'privada',destinatarioId:X}); check('privado só para participantes', r.s===400, r)
-r=await call(J,'GET','mesa/'+cid); const ej=r.d.eventos
+r=await call(J,'GET','mesa/'+cid); const ej=r.d.eventos.filter(e=>e.tipo!=='sistema')
 check('jogador vê: a própria secreta, a privada para ele, não o segredo do mestre', ej.length===3 && ej.some(e=>e.visibilidade==='mestre'&&e.autor_id===J) && ej.some(e=>e.visibilidade==='privada') && !ej.some(e=>e.texto==='Segredo do mestre'), ej.map(e=>[e.visibilidade,e.texto]))
-r=await call(M,'GET','mesa/'+cid); check('mestre vê todos os 4', r.d.eventos.length===4, r.d.eventos.length)
+r=await call(M,'GET','mesa/'+cid); check('mestre vê todos os 4', r.d.eventos.filter(e=>e.tipo!=='sistema').length===4, r.d.eventos.length)
 // histórico com filtros
 r=await call(M,'GET',`mesa/${cid}?historico=1&tipo=rolagem&autor=${J}`); check('histórico filtrado por jogador e tipo', r.d.eventos.length===2, r)
 r=await call(M,'GET',`mesa/${cid}?historico=1&personagem=calam`); check('histórico por personagem', r.d.eventos.length===1, r)

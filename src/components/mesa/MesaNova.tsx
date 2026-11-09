@@ -6,7 +6,8 @@ import { toast } from 'sonner'
 import { ArrowDown, ArrowLeft, ArrowUp, BookOpen, ChevronLeft, ChevronRight, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
-import { api } from '@/lib/nuvem/cliente'
+import { api, ErroNuvem } from '@/lib/nuvem/cliente'
+import { estiloPapel, PAPEL_ESTILO } from './papeis'
 import { condicoesDisponiveis, emojiCondicao } from '@/lib/condicoes'
 import type { Camada } from '@/lib/nuvem/mesa'
 import { podeMoverToken } from '@/lib/nuvem/mesa'
@@ -27,7 +28,7 @@ export type Estado = {
   campanha: { id: string; nome: string; sistema?: string; meuPapel: string }; mesa: { iniciativa: Iniciativa[]; turno: number; rodada: number }
   cenas: Cena[]; cenaAtiva: Cena | null; tokens: Token[]; desenhos: { id: string; cor: string; pontos: number[] }[]; eventos: Evento[]
   membros: { aventureiro_id: string; papel: string; aventureiro: { apelido: string } | null }[]; fichas: { id: string; nome: string; dono_id: string; npc: boolean }[]; eu: string
-  musica?: EstadoMusica; agora?: string
+  musica?: EstadoMusica; agora?: string; sessao?: { aberta: boolean; aberta_em: string | null }
 }
 export type Acao = (b: Record<string, unknown>) => Promise<Record<string, unknown>>
 
@@ -64,6 +65,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [historico, setHistorico] = useState(false)
   const [destaque, setDestaque] = useState<Evento | null>(null)
   const [desvio, setDesvio] = useState(0)
+  const [fechada, setFechada] = useState(false)
   const canal = useRef<RealtimeChannel | null>(null)
   const dados = useRef<Dados3DHandle>(null)
   const ultimoEvento = useRef(0)
@@ -88,8 +90,12 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       if (ultimoEvento.current && rol) destacar(rol)
       if (ult) ultimoEvento.current = Math.max(ultimoEvento.current, ult.id)
       if (novo.agora) setDesvio(Date.parse(novo.agora) - Date.now())
-      setE(novo); setErro('')
-    } catch (er) { setErro(msg(er)) }
+      setE(novo); setErro(''); setFechada(false)
+    } catch (er) {
+      // Sessão fechada pelo mestre: ninguém (além do mestre) fica na mesa.
+      if (er instanceof ErroNuvem && er.status === 423) { setFechada(true); setE(null); ultimoEvento.current = 0; return }
+      setErro(msg(er))
+    }
   }, [campanhaId, destacar])
   const recarregarEmBreve = useCallback(() => { if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(() => void carregar(), 150) }, [carregar])
 
@@ -120,12 +126,21 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const avisarMudanca = useCallback(() => { void canal.current?.send({ type: 'broadcast', event: 'mudou', payload: {} }); void carregar() }, [carregar])
 
   const nomes = useMemo(() => Object.fromEntries((e?.membros ?? []).map(m => [m.aventureiro_id, m.aventureiro?.apelido ?? '?'])), [e?.membros])
+  if (!e && fechada) return <main className="fundo-tema flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center text-[#e8dff7]">
+    <p className="text-5xl" aria-hidden="true">🌙</p>
+    <h1 className="text-2xl font-bold">A sessão está fechada</h1>
+    <p className="max-w-sm text-[#cfc0df]">Só o mestre pode abrir a mesa. Deixe esta página aberta: assim que a sessão começar, você entra sozinho.</p>
+    <Link href="/central" className="rounded-xl border border-[#8d70b6] px-4 py-2 text-[#e4d3ff]">← Voltar ao início</Link>
+  </main>
   if (!e) return <main className="flex min-h-screen items-center justify-center bg-[#0d0c19] text-[#d6c8e8]">{erro || 'Abrindo a mesa...'}{erro && <Link href="/central" className="ml-3 underline">Voltar</Link>}</main>
 
-  const admin = e.campanha.meuPapel !== 'jogador'
+  const admin = e.campanha.meuPapel === 'mestre' || e.campanha.meuPapel === 'comestre'
+  const espectador = e.campanha.meuPapel === 'espectador'
+  const papelDe: Record<string, string> = Object.fromEntries(e.membros.map(m => [m.aventureiro_id, m.papel]))
+  const sessaoAberta = !!e.sessao?.aberta
   const cena = e.cenaAtiva
   const travada = !!cena?.tokens_travados
-  const tokensMapa: TokenMapa[] = e.tokens.map(t => ({ ...t, tamanho: t.tamanho ?? 1, meu: t.dono_id === e.eu, podeMover: podeMoverToken({ movimento: t.movimento ?? 'dono', dono_id: t.dono_id }, e.eu, admin, travada) }))
+  const tokensMapa: TokenMapa[] = e.tokens.map(t => ({ ...t, tamanho: t.tamanho ?? 1, meu: t.dono_id === e.eu, podeMover: !espectador && podeMoverToken({ movimento: t.movimento ?? 'dono', dono_id: t.dono_id }, e.eu, admin, travada) }))
   const token = e.tokens.find(t => t.id === tokenAberto)
   const vez = e.mesa?.iniciativa?.[e.mesa.turno]
   const salvarCamadas = (camadas: Camada[]) => cena && acao({ acao: 'cena_editar', cenaId: cena.id, camadas }).catch(() => {})
@@ -140,7 +155,13 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     { id: 'area-revelar', icone: Square, nome: 'Revelar área (arraste um retângulo)', so: true, fog: true }, { id: 'area-esconder', icone: EyeOff, nome: 'Esconder área', so: true, fog: true },
     { id: 'editar-mapa', icone: Layers, nome: 'Montar mapa (mover/redimensionar imagens)', so: true },
   ]
-  const abas = [['chat', MessageSquare, 'Chat'], ['tokens', UserRound, 'Tokens'], ['iniciativa', Swords, 'Iniciativa'], ['musica', Music2, 'Música'], ['campanha', BookOpen, 'Diário'], ...(admin ? [['mestre', Settings2, 'Mestre']] : [])] as [typeof aba, typeof Hand, string][]
+  const abas = (espectador ? [['chat', MessageSquare, 'Chat'], ['iniciativa', Swords, 'Iniciativa'], ['musica', Music2, 'Música']]
+    : [['chat', MessageSquare, 'Chat'], ['tokens', UserRound, 'Tokens'], ['iniciativa', Swords, 'Iniciativa'], ['musica', Music2, 'Música'], ['campanha', BookOpen, 'Diário'], ...(admin ? [['mestre', Settings2, 'Mestre']] : [])]) as [typeof aba, typeof Hand, string][]
+  async function alternarSessao() {
+    if (sessaoAberta && !confirm('Encerrar a sessão? Os jogadores e espectadores saem da mesa e a música para.')) return
+    await acao({ acao: 'sessao', aberta: !sessaoAberta }).catch(() => {})
+    toast.success(sessaoAberta ? 'Sessão encerrada.' : 'Sessão aberta! O grupo já pode entrar.')
+  }
 
   return <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#0d0c19] text-[#f4f0ff]">
     <Dados3D ref={dados} somAtivo={som} />
@@ -149,6 +170,9 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       <h1 className="min-w-0 flex-1 truncate font-bold">🗺️ {e.campanha.nome}{cena ? ' · ' + cena.nome : ''}</h1>
       {vez && <span className="hidden rounded-full bg-[#34294f] px-3 py-1 text-xs sm:inline">⚔️ Vez de <strong>{vez.nome}</strong> · rodada {e.mesa.rodada}</span>}
       {travada && <span className="rounded-full bg-[#4b253a] px-2 py-1 text-xs" title="O mestre travou os tokens">🔒 Tokens travados</span>}
+      {espectador && <span className="rounded-full bg-[#1f3a2c] px-2 py-1 text-xs text-emerald-200" title="Você está assistindo">👁️ Espectador</span>}
+      {admin && <button type="button" onClick={() => void alternarSessao()} className={'rounded-full px-3 py-1 text-xs font-semibold ' + (sessaoAberta ? 'bg-[#4b253a] text-red-100 hover:bg-[#5e2d48]' : 'bg-emerald-700 text-white hover:bg-emerald-600')}>
+        {sessaoAberta ? '⏹ Encerrar sessão' : '▶ Abrir sessão'}</button>}
       <span title={tempoReal ? 'Tempo real ligado' : 'Atualizando a cada 4 s'} className={'h-2.5 w-2.5 rounded-full ' + (tempoReal ? 'bg-emerald-400' : 'bg-amber-400')} />
       <span className="text-xs text-[#b4aeca]">{online.length || 1} online</span>
       <button type="button" onClick={() => setSom(!som)} aria-label={som ? 'Desligar som' : 'Ligar som'} className="rounded-lg p-1.5 hover:bg-[#34294f]">{som ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
@@ -157,7 +181,8 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
 
     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       <section className="relative min-h-[45vh] flex-1 overflow-hidden">
-        <div className="absolute bottom-2 left-2 z-20 flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-1 rounded-xl border border-[#373251] bg-[#19172c]/95 p-1">
+        {admin && !sessaoAberta && <p role="status" className="absolute inset-x-2 top-2 z-30 mx-auto max-w-md rounded-xl border border-amber-500/50 bg-[#2b2310]/95 p-2 text-center text-xs text-amber-100">🌙 Sessão fechada: só você vê a mesa. Toque em “▶ Abrir sessão” quando o grupo for jogar.</p>}
+        {!espectador && <div className="absolute bottom-2 left-2 z-20 flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-1 rounded-xl border border-[#373251] bg-[#19172c]/95 p-1">
           {ferramentas.filter(f => !f.so || admin).filter(f => !f.fog || cena?.fog_ativo).map(f => <button key={f.id} type="button" title={f.nome} aria-label={f.nome} aria-pressed={modo === f.id} onClick={() => setModo(f.id)}
             className={'rounded-lg p-2 ' + (modo === f.id ? 'bg-[#7654bb]' : 'hover:bg-[#34294f]')}><f.icone size={18} /></button>)}
           {(modo === 'revelar' || modo === 'esconder') && [1, 3, 5].map(n => <button key={n} type="button" onClick={() => setPincel(n)} aria-label={'Pincel ' + n + '×' + n} className={'rounded-lg px-2 py-1.5 text-xs ' + (pincel === n ? 'bg-[#7654bb]' : 'hover:bg-[#34294f]')}>{n}×{n}</button>)}
@@ -167,7 +192,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
             <button type="button" className={btn} onClick={() => { const l = cena.camadas; const i = l.findIndex(c => c.id === camadaSel); if (i < l.length - 1) { const n = [...l]; [n[i], n[i + 1]] = [n[i + 1], n[i]]; void salvarCamadas(n) } }}><ArrowUp size={14} /> Frente</button>
             <button type="button" className={btn} onClick={() => { const l = cena.camadas; const i = l.findIndex(c => c.id === camadaSel); if (i > 0) { const n = [...l]; [n[i], n[i - 1]] = [n[i - 1], n[i]]; void salvarCamadas(n) } }}><ArrowDown size={14} /> Trás</button>
             <button type="button" className={btn} onClick={() => { void salvarCamadas(cena.camadas.filter(c => c.id !== camadaSel)); setCamadaSel(null) }}><Trash2 size={14} /> Remover</button></>}
-        </div>
+        </div>}
         {modo === 'editar-mapa' && <p className="absolute left-2 top-2 z-20 rounded-lg bg-[#19172c]/95 px-3 py-1.5 text-xs">Arraste as imagens para montar o mapa. Toque numa imagem e puxe a bolinha para mudar o tamanho.</p>}
         {cena ? <MapaMesa cols={cena.grid_cols} rows={cena.grid_rows} fundo={cena.mapa_url} camadas={cena.camadas ?? []} fogAtivo={cena.fog_ativo} fogRevelado={cena.fog_revelado}
           tokens={tokensMapa} desenhos={e.desenhos} cursores={cursores} pings={pings} admin={admin} modo={modo} cor={cor} pincel={pincel}
@@ -176,12 +201,12 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           onMoverToken={moverToken}
           onNevoa={(celulas, revelar) => void acao({ acao: 'nevoa', cenaId: cena.id, celulas, revelar }).catch(() => {})}
           onPing={(x, y) => { const p = { id: crypto.randomUUID(), x, y, autor: nomes[e.eu] ?? '' }; setPings(s => [...s, p]); setTimeout(() => setPings(s => s.filter(q => q.id !== p.id)), 2500); void canal.current?.send({ type: 'broadcast', event: 'ping', payload: p }) }}
-          onTokenClick={setTokenAberto}
+          onTokenClick={espectador ? () => {} : setTokenAberto}
           onDesenhar={pontos => void acao({ acao: 'desenho', cenaId: cena.id, cor, pontos }).catch(() => {})}
           onCursor={(x, y) => void canal.current?.send({ type: 'broadcast', event: 'cursor', payload: { id: e.eu, nome: nomes[e.eu] ?? '', x, y } })} />
           : <div className="flex h-full items-center justify-center p-6 text-center text-[#b4aeca]">{admin ? 'Crie uma cena na aba "Mestre" para começar.' : 'O mestre ainda não abriu nenhuma cena.'}</div>}
 
-        <TocadorMesa estado={e.musica} desvio={desvio} />
+        <TocadorMesa estado={e.musica} desvio={desvio} aoTerminar={admin && e.musica?.por === e.eu ? () => { void api(`campanhas/${campanhaId}/musica`, { method: 'POST', body: { acao: 'proxima', auto: true } }).then(avisarMudanca).catch(() => {}) } : undefined} />
 
         {destaque && <div role="status" aria-live="polite" className="pointer-events-none absolute left-1/2 top-4 z-30 w-[min(92%,420px)] -translate-x-1/2 rounded-2xl border-2 border-[#b99bff] bg-[#19172c]/95 p-4 text-center shadow-2xl">
           <p className="text-sm text-[#c4b6d4]">{destaque.personagem || destaque.autor?.apelido} rolou <strong className="text-[#e4d3ff]">{destaque.expressao}</strong>{destaque.visibilidade !== 'publica' && ' 🔒'}</p>
@@ -197,10 +222,10 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           {abas.map(([id, I, n]) => <button key={id} type="button" onClick={() => setAba(id)} aria-current={aba === id ? 'page' : undefined} className={'flex flex-1 items-center justify-center gap-1 whitespace-nowrap px-2 py-2.5 text-xs sm:text-sm ' + (aba === id ? 'border-b-2 border-[#b99bff] text-white' : 'text-[#b4aeca]')}><I size={15} /> {n}</button>)}
         </nav>
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
-          {aba === 'chat' && <Chat e={e} nomes={nomes} admin={admin} acao={acao} destacar={destacar} abrirHistorico={() => setHistorico(true)} />}
+          {aba === 'chat' && <Chat e={e} nomes={nomes} papelDe={papelDe} admin={admin} espectador={espectador} acao={acao} destacar={destacar} abrirHistorico={() => setHistorico(true)} />}
           {aba === 'tokens' && <PainelTokens e={e} admin={admin} acao={acao} campanhaId={campanhaId} abrir={setTokenAberto} />}
           {aba === 'iniciativa' && <PainelIniciativa e={e} admin={admin} acao={acao} />}
-          {aba === 'musica' && <PainelMusica campanhaId={campanhaId} eu={e.eu} admin={admin} tocando={e.musica} aoMudar={avisarMudanca} />}
+          {aba === 'musica' && <PainelMusica campanhaId={campanhaId} eu={e.eu} admin={admin} espectador={espectador} tocando={e.musica} aoMudar={avisarMudanca} />}
           {aba === 'campanha' && <PainelCampanha campanhaId={campanhaId} e={e} admin={admin} />}
           {aba === 'mestre' && admin && <PainelMestre e={e} acao={acao} campanhaId={campanhaId} setModo={setModo} />}
         </div>
@@ -405,7 +430,7 @@ function TokenModal({ t, admin, eu, acao, campanhaId, fechar }: { t: Token; admi
   </div>
 }
 
-function Chat({ e, nomes, admin, acao, destacar, abrirHistorico }: { e: Estado; nomes: Record<string, string>; admin: boolean; acao: Acao; destacar: (ev: Evento) => void; abrirHistorico: () => void }) {
+function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHistorico }: { e: Estado; nomes: Record<string, string>; papelDe: Record<string, string>; admin: boolean; espectador: boolean; acao: Acao; destacar: (ev: Evento) => void; abrirHistorico: () => void }) {
   const [texto, setTexto] = useState('')
   const [expr, setExpr] = useState('1d20')
   const [vis, setVis] = useState<'publica' | 'mestre' | 'privada'>('publica')
@@ -425,10 +450,11 @@ function Chat({ e, nomes, admin, acao, destacar, abrirHistorico }: { e: Estado; 
     await acao({ acao: 'evento', tipo: 'chat', texto, visibilidade: vis, destinatarioId: dest, personagem: pers }).then(() => setTexto('')).catch(() => {})
   }
   return <div className="flex min-h-full flex-col gap-3">
-    <div className="flex items-center justify-between"><p className="text-xs text-[#b4aeca]">Os dados são rolados no servidor.</p>
+    <p className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]" aria-label="Legenda das cores">{(['mestre', 'jogador', 'espectador'] as const).map(p => <span key={p} className={PAPEL_ESTILO[p].cor}>{PAPEL_ESTILO[p].icone} {PAPEL_ESTILO[p].nome}</span>)}</p>
+    <div className="flex items-center justify-between"><p className="text-xs text-[#b4aeca]">{espectador ? 'Você está assistindo: pode conversar no chat.' : 'Os dados são rolados no servidor.'}</p>
       <button type="button" onClick={abrirHistorico} className={btn}><History size={14} /> Histórico</button></div>
     <ul className="space-y-2 text-sm">{e.eventos.map(ev => <li key={ev.id} className={'rounded-lg p-2 ' + (ev.visibilidade === 'publica' ? 'bg-[#1e1a30]' : 'border border-[#7a5a9a] bg-[#261c38]')}>
-      <p className="text-[11px] text-[#b4aeca]">{hora(ev.criado_em)} · <strong className="text-[#e4d3ff]">{ev.personagem || ev.autor?.apelido || '?'}</strong>{ev.personagem && ev.autor ? ` (${ev.autor.apelido})` : ''}
+      <p className="text-[11px] text-[#b4aeca]">{hora(ev.criado_em)} · {ev.tipo === 'sistema' ? <strong className="text-[#e4d3ff]">Mesa</strong> : (() => { const st = estiloPapel(papelDe[ev.autor_id ?? '']); return <strong className={st.cor} title={st.nome}>{st.icone} {ev.personagem || ev.autor?.apelido || '?'}</strong> })()}{ev.personagem && ev.autor ? ` (${ev.autor.apelido})` : ''}
         {ev.visibilidade === 'mestre' && ' · 🔒 só o mestre'}{ev.visibilidade === 'privada' && ` · 🔒 privado para ${nomes[ev.destinatario_id ?? ''] ?? '?'}`}</p>
       {ev.tipo === 'rolagem' ? <p><span className="text-[#b99bff]">🎲 {ev.expressao}</span> → [{ev.resultados?.join(', ')}] = <strong className="text-lg text-[#ed9cd8]">{ev.total}</strong>
         {ev.expressao?.includes('d20') && ev.resultados?.[0] === 20 && ' ✨ 20 natural!'}{ev.expressao?.includes('d20') && ev.resultados?.[0] === 1 && ' 💀 1 natural'}{ev.texto && <span className="block text-xs text-[#c4b6d4]">{ev.texto}</span>}</p>
@@ -440,16 +466,16 @@ function Chat({ e, nomes, admin, acao, destacar, abrirHistorico }: { e: Estado; 
         <select aria-label="Quem vê" value={vis} onChange={x => setVis(x.target.value as typeof vis)} className={input}>
           <option value="publica">👀 Todos veem</option><option value="mestre">🔒 Só o mestre</option><option value="privada">✉️ Privado para…</option></select>
         {vis === 'privada' ? <select aria-label="Destinatário" value={dest} onChange={x => setDest(x.target.value)} className={input}><option value="">Escolha…</option>
-          {e.membros.filter(m => m.aventureiro_id !== e.eu).map(m => <option key={m.aventureiro_id} value={m.aventureiro_id}>{m.aventureiro?.apelido}{m.papel !== 'jogador' ? ' (mestre)' : ''}</option>)}</select>
+          {e.membros.filter(m => m.aventureiro_id !== e.eu).map(m => <option key={m.aventureiro_id} value={m.aventureiro_id}>{m.aventureiro?.apelido}{m.papel === 'mestre' || m.papel === 'comestre' ? ' (mestre)' : m.papel === 'espectador' ? ' (espectador)' : ''}</option>)}</select>
           : <select aria-label="Personagem" value={pers} onChange={x => setPers(x.target.value)} className={input}><option value="">Como eu mesmo</option>{meus.map(f => <option key={f.id} value={f.nome || 'Personagem'}>{f.nome || 'Personagem sem nome'}</option>)}</select>}
       </div>
-      <div className="flex flex-wrap gap-1">{DADOS.map(d => <button key={d} type="button" onClick={() => rolar(d)} className={btn}>{d.slice(1)}</button>)}</div>
+      {!espectador && <><div className="flex flex-wrap gap-1">{DADOS.map(d => <button key={d} type="button" onClick={() => rolar(d)} className={btn}>{d.slice(1)}</button>)}</div>
       <form onSubmit={x => { x.preventDefault(); void rolar(expr) }} className="flex gap-2">
         <input aria-label="Expressão de dados" value={expr} onChange={x => setExpr(x.target.value)} maxLength={80} placeholder="2d6+3, 4d6kh3, 2d20kh1" className={input} />
         <button type="submit" className="rounded-lg bg-[#7654bb] px-3 text-sm font-semibold"><Dices size={18} /></button>
-      </form>
+      </form></>}
       <form onSubmit={x => { x.preventDefault(); void enviar() }} className="flex gap-2">
-        <input aria-label="Mensagem" value={texto} onChange={x => setTexto(x.target.value)} maxLength={1000} placeholder="Mensagem (ou /r 1d20+2)" className={input} />
+        <input aria-label="Mensagem" value={texto} onChange={x => setTexto(x.target.value)} maxLength={1000} placeholder={espectador ? 'Mensagem' : 'Mensagem (ou /r 1d20+2)'} className={input} />
         <button type="submit" aria-label="Enviar" className="rounded-lg bg-[#7654bb] px-3"><Send size={18} /></button>
       </form>
     </div>

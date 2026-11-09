@@ -6,6 +6,16 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.10.0', data: '2026-11-09', titulo: 'Sessões, espectadores e música do mestre',
+    itens: [
+      'Sessão aberta/fechada: só o mestre abre a mesa (“▶ Abrir sessão”). Com a sessão fechada, ninguém além do mestre entra; quem estiver esperando entra sozinho quando ela abrir.',
+      '“⏹ Encerrar sessão” tira todo mundo da mesa e para a música (o histórico continua disponível).',
+      'Espectadores: o mestre escolhe em “Participantes” quem é jogador e quem é espectador. Espectadores assistem, ouvem a música e conversam no chat, sem mexer em nada.',
+      'Cores no chat: 👑 mestre em dourado, ⚔️ jogadores em azul e 👁️ espectadores em verde.',
+      'Música: só o mestre pausa, continua, volta/avança 10 s e passa para a anterior/próxima. Sem loop, a próxima da playlist começa sozinha. O vídeo do YouTube não aceita mais cliques; o volume continua individual.',
+    ],
+  },
+  {
     versao: '0.9.0', data: '2026-11-09', titulo: 'Inventário, poderes e biblioteca do mestre',
     itens: [
       'Inventário de verdade nas fichas: itens com tipo, quantidade, peso, dano e bônus. Item equipado soma sozinho na ficha (ex.: escudo +2 na CA, anel +1 numa resistência).',

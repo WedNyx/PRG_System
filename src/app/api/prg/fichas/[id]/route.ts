@@ -16,8 +16,9 @@ async function carregar(req: NextRequest, id: string) {
   const f = await buscarFicha(id)
   if (!f) throw new ErroApi(404, 'Ficha não encontrada.')
   const dono = f.dono_id === eu
-  const admin = !!f.campanha_id && podeAdministrar(await papelNaCampanha(f.campanha_id, eu))
-  return { f, eu, dono, admin }
+  const papel = f.campanha_id ? await papelNaCampanha(f.campanha_id, eu) : null
+  const admin = !!f.campanha_id && podeAdministrar(papel)
+  return { f, eu, dono, admin, espectador: papel === 'espectador' }
 }
 
 /** Regras efetivas do jogador nesta ficha de campanha (para a interface mostrar). */
@@ -59,7 +60,8 @@ function resumoHistorico(mudancas: Mudanca[]) {
  * áreas livres salvam, áreas "com aprovação" viram pedido, áreas do mestre são ignoradas.
  */
 export const PUT = rota<Ctx>(async (req, { params }) => {
-  const { f, eu, dono, admin } = await carregar(req, (await params).id)
+  const { f, eu, dono, admin, espectador } = await carregar(req, (await params).id)
+  if (espectador) throw new ErroApi(403, 'Espectadores não editam fichas da campanha.')
   const body = await lerJson(req, 600_000) as { versao?: unknown; dados?: unknown }
   if (!Number.isInteger(body.versao)) throw new ErroApi(400, 'Versão ausente.')
   const v = validarFichaDados(body.dados)

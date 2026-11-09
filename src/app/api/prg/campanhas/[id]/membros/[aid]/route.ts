@@ -4,7 +4,7 @@ import { isUuid, normalizarExcecoes, podeAdministrar } from '@/lib/nuvem/validac
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string; aid: string }> }
 
-/** Mestre muda papel (jogador/co-mestre) e exceções de permissão de um participante. */
+/** Mestre muda papel (jogador/co-mestre/espectador) e exceções de permissão de um participante. */
 export const PATCH = rota<Ctx>(async (req, { params }) => {
   const { id, aid } = await params
   const eu = await ator(req)
@@ -16,7 +16,7 @@ export const PATCH = rota<Ctx>(async (req, { params }) => {
   const body = await lerJson(req) as Record<string, unknown>
   const mudanca: Record<string, unknown> = {}
   if (body.papel !== undefined) {
-    if (body.papel !== 'jogador' && body.papel !== 'comestre') throw new ErroApi(400, 'Papel inválido.')
+    if (body.papel !== 'jogador' && body.papel !== 'comestre' && body.papel !== 'espectador') throw new ErroApi(400, 'Papel inválido.')
     mudanca.papel = body.papel
   }
   if (body.excecoes !== undefined) mudanca.excecoes = normalizarExcecoes(body.excecoes)

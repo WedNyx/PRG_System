@@ -17,7 +17,7 @@ function Conteudo() {
   const [dados, setDados] = useState<{ ficha: { nome: string }; historico: Item[] } | null>(null)
   const [erro, setErro] = useState('')
   useEffect(() => { api<{ ficha: { nome: string }; historico: Item[] }>(`fichas/${encodeURIComponent(id)}/historico`).then(setDados).catch(e => setErro(e instanceof ErroNuvem ? e.message : 'Falha de conexão.')) }, [id])
-  return <main className="min-h-screen bg-[#100d1c] px-4 py-6 text-[#f2ebff]">
+  return <main className="min-h-screen fundo-tema px-4 py-6 text-[#f2ebff]">
     <div className="mx-auto max-w-3xl">
       <Link href="/central" className="text-sm text-[#b99bff] hover:underline">← Início</Link>
       <h1 className="mt-3 flex items-center gap-2 text-2xl font-bold"><History /> Histórico{dados ? ' — ' + (dados.ficha.nome || 'sem nome') : ''}</h1>

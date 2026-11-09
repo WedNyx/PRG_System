@@ -25,9 +25,14 @@ export default function RootLayout({
 }>) {
   return (
     <html
+      suppressHydrationWarning
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        {/* Aplica o tema salvo antes de desenhar a página (evita piscar). */}
+        <script dangerouslySetInnerHTML={{ __html: "try{var t=localStorage.getItem('prg-tema');if(t==='classico')document.documentElement.dataset.tema=t}catch(e){}" }} />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         <Toaster theme="dark" richColors position="top-center" />

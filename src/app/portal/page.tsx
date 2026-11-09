@@ -41,6 +41,10 @@ export default function PortalAventureiros() {
   const [versao, setVersao] = useState<{ version: string; revision: string | null } | null>(null)
   const [modal, setModal] = useState<'criar' | 'editar' | null>(null)
   const [gerenciando, setGerenciando] = useState(false)
+  const [senhaAdmin, setSenhaAdmin] = useState('')
+  const [pedindoSenha, setPedindoSenha] = useState(false)
+  const [senhaDigitada, setSenhaDigitada] = useState('')
+  const [erroSenha, setErroSenha] = useState('')
   const [editandoId, setEditandoId] = useState<string | null>(null)
   const [apelido, setApelido] = useState('')
   const [avatar, setAvatar] = useState<string | undefined>()
@@ -210,8 +214,39 @@ export default function PortalAventureiros() {
     }
   }
 
+  async function alternarGerenciar() {
+    if (gerenciando) { setGerenciando(false); setSenhaAdmin(''); return }
+    if (!CLOUD_ENABLED) { setGerenciando(true); return }
+    setSenhaDigitada(''); setErroSenha(''); setPedindoSenha(true)
+  }
+
+  async function conferirSenha(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setProcessando(true); setErroSenha('')
+    try {
+      const response = await fetch('/api/aventureiros/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha: senhaDigitada }) })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.erro || 'Senha incorreta.')
+      setSenhaAdmin(senhaDigitada); setSenhaDigitada(''); setPedindoSenha(false); setGerenciando(true)
+    } catch (error) { setErroSenha(error instanceof Error ? error.message : 'Falha ao conferir a senha.') }
+    finally { setProcessando(false) }
+  }
+
+  async function removerDaNuvem(perfil: Perfil) {
+    if (!window.confirm(`Remover o perfil "${perfil.apelido}" da plataforma?\n\nAs fichas, playlists e participações dele serão apagadas. Isso não pode ser desfeito.`)) return
+    setProcessando(true); setErro('')
+    try {
+      const response = await fetch('/api/aventureiros/' + perfil.id, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ senha: senhaAdmin }) })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.erro || 'Não foi possível remover.')
+      setPerfis(atual => atual.filter(p => p.id !== perfil.id))
+      try { if (localStorage.getItem(SELECTED_KEY) === perfil.id) localStorage.removeItem(SELECTED_KEY) } catch {}
+    } catch (error) { setErro(error instanceof Error ? error.message : 'Falha ao remover.') }
+    finally { setProcessando(false) }
+  }
+
   return (
-    <main className="min-h-screen bg-[#0d0c19] text-[#f4f0ff] px-4 py-5 sm:py-8" style={{ backgroundImage: 'radial-gradient(circle at 80% 0%, #292047 0%, transparent 38%)' }}>
+    <main className="min-h-screen fundo-tema text-[#f4f0ff] px-4 py-5 sm:py-8">
       <div className="mx-auto max-w-6xl">
         <header className="flex items-center justify-between gap-3">
           <Link href="/portal" className="font-bold tracking-wide text-lg sm:text-xl"><span className="text-[#b99bff]">☾</span> PRG System</Link>
@@ -231,6 +266,10 @@ export default function PortalAventureiros() {
                 {gerenciando && !CLOUD_ENABLED && (
                   <button onClick={() => abrirEdicao(perfil)} aria-label={'Editar perfil ' + perfil.apelido}
                     className="absolute -right-1 -top-2 z-10 rounded-full border border-[#b99bff] bg-[#34294f] px-2 py-1 text-sm shadow-lg">✎</button>
+                )}
+                {gerenciando && CLOUD_ENABLED && senhaAdmin && (
+                  <button onClick={() => removerDaNuvem(perfil)} disabled={processando} aria-label={'Remover perfil ' + perfil.apelido}
+                    className="absolute -right-1 -top-2 z-10 rounded-full border border-[#ff9eb5] bg-[#4b253a] px-2 py-1 text-sm shadow-lg disabled:opacity-50">🗑</button>
                 )}
                 <Link href={'/central?personagem=' + encodeURIComponent(perfil.id)}
                   onClick={event => {
@@ -254,13 +293,16 @@ export default function PortalAventureiros() {
               </div>
             )}
           </div>
-          <button onClick={() => setGerenciando(!gerenciando)}
-            className="mt-10 rounded-lg border border-[#62527e] px-5 py-2 text-sm text-[#b99bff] hover:bg-[#34294f]">
-            {gerenciando ? '✓ Concluir edição' : '✎ Gerenciar perfis'}
+          {erro && !modal && <p role="alert" className="mt-6 max-w-md rounded-lg border border-red-500/40 p-3 text-center text-sm text-red-200">{erro}</p>}
+          {gerenciando && CLOUD_ENABLED && <p className="mt-6 text-center text-sm text-[#ed9cd8]">Modo administrador: toque na 🗑 para remover um perfil.</p>}
+          <button onClick={alternarGerenciar}
+            className="mt-6 rounded-lg border border-[#62527e] px-5 py-2 text-sm text-[#b99bff] hover:bg-[#34294f]">
+            {gerenciando ? '✓ Concluir' : '🔒 Gerenciar perfis'}
           </button>
+          {CLOUD_ENABLED && <p className="mt-2 text-center text-xs text-[#8f86a8]">Para mudar seu nome ou foto, entre no seu perfil e use “Editar perfil” no menu.</p>}
         </section>
         <div className="flex flex-wrap items-center justify-center gap-3 pb-3 text-xs text-[#b4aeca]">
-          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.7.0'}</Link>
+          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.8.0'}</Link>
           {versao?.revision && <span title="Identificador da implantação">Build {versao.revision}</span>}
           <button type="button" onClick={() => window.location.reload()}
             className="rounded-md border border-[#62527e] px-2 py-1 text-[#b99bff] hover:bg-[#34294f]">
@@ -268,10 +310,26 @@ export default function PortalAventureiros() {
           </button>
         </div>
         <p className="mx-auto max-w-2xl pb-6 text-center text-xs text-[#b4aeca]">
-          {CLOUD_ENABLED ? 'Perfis compartilhados em teste: os perfis locais não são importados automaticamente.' : 'Versão de testes: os perfis e fotos ficam apenas neste navegador.'}
-          Não há sincronização entre dispositivos; guarde backups das suas fichas.
+          {CLOUD_ENABLED ? 'Perfis e fichas ficam na nuvem e abrem em qualquer aparelho.' : 'Versão de testes: os perfis, fotos e fichas ficam apenas neste navegador; guarde backups.'}
         </p>
       </div>
+
+      {pedindoSenha && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4" onMouseDown={event => { if (event.target === event.currentTarget) setPedindoSenha(false) }}>
+          <form onSubmit={conferirSenha} role="dialog" aria-modal="true" aria-labelledby="senha-titulo" onKeyDown={event => { if (event.key === 'Escape') setPedindoSenha(false) }}
+            className="w-full max-w-sm rounded-2xl border border-[#62527e] bg-[#19172c] p-5 shadow-2xl">
+            <h2 id="senha-titulo" className="text-lg font-bold">🔒 Área do administrador</h2>
+            <p className="mt-1 text-sm text-[#b4aeca]">Digite a senha para remover perfis da plataforma.</p>
+            <input type="password" autoFocus autoComplete="current-password" value={senhaDigitada} onChange={e => setSenhaDigitada(e.target.value)} maxLength={200} aria-label="Senha do administrador"
+              className="mt-4 w-full rounded-lg border border-[#4a4267] bg-[#100f20] p-3 text-white outline-none focus:border-[#b99bff]" />
+            {erroSenha && <p role="alert" className="mt-3 text-sm text-red-200">{erroSenha}</p>}
+            <div className="mt-4 flex gap-2">
+              <button type="button" onClick={() => setPedindoSenha(false)} className="flex-1 rounded-lg border border-[#62527e] p-2.5">Cancelar</button>
+              <button type="submit" disabled={processando || !senhaDigitada} className="flex-1 rounded-lg bg-[#7654bb] p-2.5 font-semibold disabled:opacity-50">{processando ? 'Conferindo…' : 'Entrar'}</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {modal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/75 p-4"

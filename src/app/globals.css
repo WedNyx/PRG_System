@@ -24,3 +24,25 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ---- Temas do PRG System ----
+ * Padrão: “Céu estrelado” (roxo com nuvens, estrelas e lua; arte própria em /temas/ceu-estrelado.svg).
+ * Alternativo: data-tema="classico" no <html> (escuro liso).
+ */
+.fundo-tema {
+  background-color: #160f3d;
+  background-image: linear-gradient(180deg, rgba(14, 9, 38, 0.35), rgba(14, 9, 38, 0.6)), url('/temas/ceu-estrelado.svg');
+  background-size: auto, 640px auto;
+  background-repeat: no-repeat, repeat;
+  background-attachment: fixed, fixed;
+}
+[data-tema="classico"] .fundo-tema {
+  background-color: #100d1c;
+  background-image: radial-gradient(ellipse at 85% 0%, #322044 0%, transparent 48%);
+  background-size: auto;
+  background-repeat: no-repeat;
+  background-attachment: scroll;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .fundo-tema { background-image: none; }
+}

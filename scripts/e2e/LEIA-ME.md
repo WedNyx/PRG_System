@@ -18,6 +18,7 @@ Simulam três aventureiros (mestre, jogador e intruso) contra um banco real.
    PRG_BASE=http://localhost:3000 node scripts/e2e/fase3-mesa.mjs   # precisa da migração 007
    PRG_BASE=http://localhost:3000 node scripts/e2e/v06-mesa-e-mestre.mjs   # precisa da migração 008
    PRG_BASE=http://localhost:3000 node scripts/e2e/v07-musica.mjs   # precisa da migração 009
+   PRG_BASE=http://localhost:3000 ADMIN_SENHA=<a mesma do PRG_ADMIN_SENHA do site> node scripts/e2e/v08-perfis.mjs
    ```
 Nunca rode contra o banco de produção: os testes criam campanhas e fichas.
 

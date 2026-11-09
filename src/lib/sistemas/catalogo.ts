@@ -92,13 +92,17 @@ export const SISTEMAS: Sistema[] = [
     campos: [
       { id: 'classe', nome: 'Classe', tipo: 'texto' }, { id: 'especie', nome: 'Espécie', tipo: 'texto' },
       { id: 'antecedente', nome: 'Antecedente', tipo: 'texto' }, { id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 },
-      { id: 'armadura', nome: 'Bônus de armadura/escudo', tipo: 'numero', padrao: 0 }, { id: 'deslocamento', nome: 'Deslocamento (m)', tipo: 'numero', padrao: 9 },
+      { id: 'dado_vida', nome: 'Dado de Vida da classe (6, 8, 10 ou 12)', tipo: 'numero', padrao: 8 },
+      { id: 'ca_base', nome: 'CA base da armadura (10 = sem armadura)', tipo: 'numero', padrao: 10 },
+      { id: 'des_max', nome: 'Limite de Destreza da armadura (10 = sem limite; média 2; pesada 0)', tipo: 'numero', padrao: 10 },
+      { id: 'armadura', nome: 'Escudo e outros bônus de CA', tipo: 'numero', padrao: 0 }, { id: 'deslocamento', nome: 'Deslocamento (m)', tipo: 'numero', padrao: 9 },
     ],
     atributos: ATR6(1, 30, 10),
     formulaModificador: 'piso((X - 10) / 2)',
     derivados: [
       { id: 'prof', nome: 'Bônus de proficiência', formula: 'piso((max(1, nivel) - 1) / 4) + 2' },
-      { id: 'ca', nome: 'Classe de Armadura (sem armadura)', formula: '10 + mod_DES + armadura', dica: 'Armaduras podem limitar a Destreza' },
+      { id: 'ca', nome: 'Classe de Armadura', formula: 'ca_base + min(mod_DES, des_max) + armadura', dica: 'Base da armadura + Destreza (até o limite) + escudo' },
+      { id: 'pv_sugerido', nome: 'PV máximos (média fixa)', formula: 'dado_vida + mod_CON + (max(1, nivel) - 1) * (piso(dado_vida / 2) + 1 + mod_CON)', dica: 'Nível 1: dado cheio + CON; depois a média do dado + CON por nível' },
       { id: 'iniciativa', nome: 'Iniciativa', formula: 'mod_DES' },
       { id: 'percepcao_passiva', nome: 'Percepção passiva', formula: '10 + tot_percepcao' },
     ],
@@ -127,10 +131,17 @@ export const SISTEMAS: Sistema[] = [
     campos: [
       { id: 'ancestralidade', nome: 'Ancestralidade', tipo: 'texto' }, { id: 'classe', nome: 'Classe', tipo: 'texto' },
       { id: 'antecedente', nome: 'Antecedente', tipo: 'texto' }, { id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 },
-      { id: 'armadura', nome: 'Bônus de item da armadura', tipo: 'numero', padrao: 0 }, { id: 'prof_armadura', nome: 'Proficiência em armadura (2/4/6/8 + nível; 0 se destreinado)', tipo: 'numero', padrao: 3 },
+      { id: 'pv_ancestralidade', nome: 'PV da ancestralidade', tipo: 'numero', padrao: 8 },
+      { id: 'pv_classe', nome: 'PV da classe por nível', tipo: 'numero', padrao: 8 },
+      { id: 'armadura', nome: 'Bônus de item da armadura (e escudo erguido)', tipo: 'numero', padrao: 0 },
+      { id: 'des_max', nome: 'Limite de Destreza da armadura (sem armadura: 9)', tipo: 'numero', padrao: 9 },
+      { id: 'grau_armadura', nome: 'Grau em armadura (0 destreinado, 2 treinado, 4 especialista, 6 mestre, 8 lendário)', tipo: 'numero', padrao: 2 },
     ],
     atributos: ATR6(-5, 7, 0),
-    derivados: [{ id: 'ca', nome: 'CA', formula: '10 + DES + armadura + prof_armadura', dica: 'Limite de Destreza da armadura não aplicado' }],
+    derivados: [
+      { id: 'pv_max', nome: 'PV máximos', formula: 'pv_ancestralidade + (pv_classe + CON) * max(1, nivel)' },
+      { id: 'ca', nome: 'CA', formula: '10 + min(DES, des_max) + armadura + grau_armadura + nivel * min(1, grau_armadura)', dica: 'Proficiência = grau + nível (só se treinado)' },
+    ],
     pericias: {
       modo: 'treino', total: 'MOD + TREINO',
       treinos: [
@@ -145,7 +156,7 @@ export const SISTEMAS: Sistema[] = [
         ['Performance', 'CAR', 'Perícias'], ['Religião', 'SAB', 'Perícias'], ['Sobrevivência', 'SAB', 'Perícias'], ['Sociedade', 'INT', 'Perícias'], ['Saber (tema)', 'INT', 'Perícias'],
       ]),
     },
-    recursos: [{ id: 'pv', nome: 'Pontos de Vida' }, { id: 'heroismo', nome: 'Pontos de Heroísmo', maxFixo: 3 }],
+    recursos: [{ id: 'pv', nome: 'Pontos de Vida', formula: 'pv_max' }, { id: 'heroismo', nome: 'Pontos de Heroísmo', maxFixo: 3 }],
     listas: [{ id: 'ataques', nome: 'Ataques' }, { id: 'talentos', nome: 'Talentos e habilidades' }, { id: 'magias', nome: 'Magias' }, ...LISTAS_PADRAO.slice(1)],
   },
   {
@@ -174,6 +185,12 @@ export const SISTEMAS: Sistema[] = [
       { id: 'estresse_fisico', nome: 'Estresse físico', formula: '2 + min(1, per_vigor) + min(1, max(0, per_vigor - 2))' },
       { id: 'estresse_mental', nome: 'Estresse mental', formula: '2 + min(1, per_vontade) + min(1, max(0, per_vontade - 2))' },
     ],
+    limites: [
+      { nome: 'Perícias Ótimas (+4) na criação', uso: 'qtd_otimo', max: '1' },
+      { nome: 'Perícias Boas (+3) na criação', uso: 'qtd_bom', max: '2' },
+      { nome: 'Perícias Razoáveis (+2) na criação', uso: 'qtd_razoavel', max: '3' },
+      { nome: 'Perícias Regulares (+1) na criação', uso: 'qtd_regular', max: '4' },
+    ],
     listas: [{ id: 'facanhas', nome: 'Façanhas' }, { id: 'consequencias', nome: 'Consequências (suave 2 / moderada 4 / severa 6)' }, { id: 'anotacoes', nome: 'Anotações' }],
   },
   {
@@ -194,12 +211,20 @@ export const SISTEMAS: Sistema[] = [
     ],
     pericias: {
       titulo: 'Ações (dados)', modo: 'treino', total: 'TREINO',
-      treinos: [0, 1, 2, 3, 4].map(n => ({ id: 'd' + n, nome: '●'.repeat(n) + '○'.repeat(4 - n), formula: String(n) })),
+      treinos: [0, 1, 2, 3, 4].map(n => ({ id: 'd' + n, nome: '●'.repeat(n) + '○'.repeat(4 - n), formula: String(n), custo: n })),
       lista: p([['Caçar', '', 'Perspicácia'], ['Estudar', '', 'Perspicácia'], ['Vigiar', '', 'Perspicácia'], ['Ajustar', '', 'Perspicácia'],
         ['Finesse', '', 'Proeza'], ['Rondar', '', 'Proeza'], ['Escaramuçar', '', 'Proeza'], ['Destruir', '', 'Proeza'],
         ['Sintonizar', '', 'Determinação'], ['Comandar', '', 'Determinação'], ['Conviver', '', 'Determinação'], ['Influenciar', '', 'Determinação']]),
     },
-    recursos: [{ id: 'estresse', nome: 'Estresse', maxFixo: 9 }, { id: 'trauma', nome: 'Trauma', maxFixo: 4 }, { id: 'xp', nome: 'XP da cartilha', maxFixo: 8 }],
+    recursos: [
+      { id: 'estresse', nome: 'Estresse', maxFixo: 9 }, { id: 'trauma', nome: 'Trauma', maxFixo: 4 }, { id: 'xp', nome: 'XP da cartilha', maxFixo: 8 },
+      { id: 'xp_perspicacia', nome: 'XP de Perspicácia', maxFixo: 6 }, { id: 'xp_proeza', nome: 'XP de Proeza', maxFixo: 6 }, { id: 'xp_determinacao', nome: 'XP de Determinação', maxFixo: 6 },
+      { id: 'cura', nome: 'Relógio de cura', maxFixo: 4 }, { id: 'moedas', nome: 'Moedas (com você)', maxFixo: 4 }, { id: 'reserva', nome: 'Reserva (stash)', maxFixo: 40 },
+    ],
+    limites: [
+      { nome: 'Pontos de ação na criação (3 da cartilha + 4 livres)', uso: 'custo_pericias', max: '7' },
+      { nome: 'Ações com 3 ou mais pontos na criação', uso: 'qtd_d3 + qtd_d4', max: '0' },
+    ],
     listas: [{ id: 'dano', nome: 'Dano (nível 1 / 2 / 3)' }, { id: 'habilidades', nome: 'Habilidades especiais' }, { id: 'equipamento', nome: 'Equipamento e carga' }, { id: 'anotacoes', nome: 'Amigos, rivais e anotações' }],
   },
   {
@@ -216,6 +241,7 @@ export const SISTEMAS: Sistema[] = [
       { id: 'pv_max', nome: 'PV máximos', formula: 'teto((CON + TAM) / 2)' },
       { id: 'pp_max', nome: 'Pontos de Poder', formula: 'POD' },
       { id: 'sanidade_inicial', nome: 'Sanidade inicial (opcional)', formula: 'POD * 5' },
+      { id: 'for_tam', nome: 'FOR + TAM (modificador de dano)', formula: 'FOR + TAM', dica: 'até 12: −1d6 · 13–16: −1d4 · 17–24: nenhum · 25–32: +1d4 · 33–40: +1d6 · 41–56: +2d6' },
       { id: 'esforco', nome: 'Esforço (FOR × 5)', formula: 'FOR * 5' }, { id: 'vigor', nome: 'Vigor (CON × 5)', formula: 'CON * 5' },
       { id: 'ideia', nome: 'Ideia (INT × 5)', formula: 'INT * 5' }, { id: 'sorte', nome: 'Sorte (POD × 5)', formula: 'POD * 5' }, { id: 'agilidade', nome: 'Agilidade (DES × 5)', formula: 'DES * 5' },
     ],

@@ -120,3 +120,38 @@ describe('Faroeste Arcano', () => {
     expect(calcular(s, d).limites[0].excedido).toBe(true)
   })
 })
+
+describe('revisão das fichas (v0.8.0)', () => {
+  it('D&D: CA com armadura respeita o limite de Destreza e PV pela média', () => {
+    const s = sistemaPorId('dnd5e-srd')!, d = fichaVazia(s)
+    d.atributos.DES = 16; d.atributos.CON = 14
+    expect(calcular(s, d).derivados.ca).toBe(13) // sem armadura: 10 + 3
+    Object.assign(d.campos, { ca_base: 14, des_max: 2, armadura: 2 }) // meia armadura + escudo
+    expect(calcular(s, d).derivados.ca).toBe(18)
+    Object.assign(d.campos, { dado_vida: 10, nivel: 3 })
+    expect(calcular(s, d).derivados.pv_sugerido).toBe(10 + 2 + 2 * (6 + 2))
+  })
+  it('PF2e: PV e CA pelas regras do Remaster', () => {
+    const s = sistemaPorId('pf2e')!, d = fichaVazia(s)
+    Object.assign(d.campos, { pv_ancestralidade: 8, pv_classe: 10, nivel: 1 }); d.atributos.CON = 2; d.atributos.DES = 3
+    const c = calcular(s, d)
+    expect(c.derivados.pv_max).toBe(20); expect(c.recursosMax.pv).toBe(20)
+    expect(c.derivados.ca).toBe(10 + 3 + 0 + 2 + 1)
+    Object.assign(d.campos, { des_max: 1, armadura: 4 })
+    expect(calcular(s, d).derivados.ca).toBe(10 + 1 + 4 + 3)
+  })
+  it('Fate: pirâmide de perícias', () => {
+    const s = sistemaPorId('fate-core')!, d = fichaVazia(s)
+    d.pericias.lutar = 'otimo'; d.pericias.atirar = 'otimo'
+    expect(calcular(s, d).limites.find(l => l.nome.includes('Ótimas'))?.excedido).toBe(true)
+  })
+  it('Blades: 7 pontos de ação e no máximo 2 por ação na criação', () => {
+    const s = sistemaPorId('blades')!, d = fichaVazia(s)
+    Object.assign(d.pericias, { cacar: 'd2', estudar: 'd2', finesse: 'd2', comandar: 'd1' })
+    let c = calcular(s, d)
+    expect(c.limites.every(l => !l.excedido)).toBe(true); expect(c.derivados.perspicacia).toBe(2)
+    d.pericias.cacar = 'd3'
+    c = calcular(s, d)
+    expect(c.limites.filter(l => l.excedido).length).toBe(2)
+  })
+})

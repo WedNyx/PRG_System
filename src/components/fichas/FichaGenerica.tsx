@@ -6,6 +6,8 @@ import { AlertTriangle, Dice5, Info } from 'lucide-react'
 import { calcular } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { rolarExpressao } from '@/lib/dice'
+import GuiaSistema from '@/components/sistemas/GuiaSistema'
+import { GUIAS } from '@/lib/sistemas/guias'
 
 const card = 'rounded-2xl border border-[#55456e] bg-[#201a32] p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-[#5e4b78] bg-[#151123] p-2 text-white disabled:opacity-70'
@@ -50,17 +52,19 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     { id: 'habilidades', icone: '🌌', nome: 'Habilidades e poderes', sub: 'Técnicas, talentos, magias', ok: listasDe('habilidades').length > 0 },
     { id: 'equipamentos', icone: '⚔️', nome: 'Armas e equipamentos', sub: 'Inventário e itens', ok: listasDe('equipamentos').length > 0 },
     { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ok: true },
+    { id: 'guia', icone: '📖', nome: 'Guia de criação', sub: 'Passo a passo deste sistema', ok: !!GUIAS[s.id] },
   ] as const).filter(x => x.ok)
   const [secao, setSecao] = useState<string>('principal')
   const ir = (id: string) => { setSecao(id); window.scrollTo({ top: 0, behavior: 'smooth' }) }
-  const recursoPrincipal = s.recursos.find(r => c.recursosMax[r.id])
+  // PV primeiro (mesmo com máximo digitado); senão, o primeiro recurso com máximo.
+  const recursoPrincipal = s.recursos.find(r => /^(pv|vida)$/.test(r.id)) ?? s.recursos.find(r => c.recursosMax[r.id])
   const defesa = s.derivados.find(x => /^(defesa|ca)$/.test(x.id))
 
   return <div>
     <div className="sticky top-[57px] z-10 -mx-3 mb-4 flex items-center gap-3 overflow-x-auto border-b border-[#373251] bg-[#100d1c]/95 px-3 py-2 backdrop-blur sm:-mx-6 sm:px-6">
       <span className="shrink-0 truncate font-semibold text-[#e4d3ff]">{d.nome || 'Personagem'}</span>
-      {recursoPrincipal && (() => { const max = c.recursosMax[recursoPrincipal.id] ?? 0, at = d.recursos[recursoPrincipal.id]?.atual ?? 0
-        return <span className="shrink-0 rounded-lg border border-[#62527e] bg-[#201a32] px-3 py-1 text-sm">❤️ {recursoPrincipal.nome.split(' ')[0]} <strong>{at} / {max}</strong></span> })()}
+      {recursoPrincipal && (() => { const max = c.recursosMax[recursoPrincipal.id] ?? d.recursos[recursoPrincipal.id]?.max ?? (s.id === 'dnd5e-srd' ? c.derivados.pv_sugerido : null) ?? 0, at = d.recursos[recursoPrincipal.id]?.atual ?? 0
+        return <span className="shrink-0 rounded-lg border border-[#62527e] bg-[#201a32] px-3 py-1 text-sm">❤️ {/^pv/.test(recursoPrincipal.id) ? 'PV' : recursoPrincipal.nome.split(' ')[0]} <strong>{at} / {max}</strong></span> })()}
       {defesa && <span className="shrink-0 rounded-lg border border-[#62527e] bg-[#201a32] px-3 py-1 text-sm">🛡️ {defesa.nome.split(' (')[0]} <strong>{c.derivados[defesa.id] ?? '—'}</strong></span>}
     </div>
     <div className="lg:flex lg:gap-6">
@@ -189,6 +193,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       {s.creditos && <p className="mt-2 border-t border-[#3d3152] pt-2 text-[11px] leading-relaxed text-[#9d8db0]">{s.creditos}</p>}
     </section>}
         </>}
+        {secao === 'guia' && <GuiaSistema sistemaId={s.id} />}
       </div>
     </div>
   </div>

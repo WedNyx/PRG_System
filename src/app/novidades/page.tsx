@@ -6,7 +6,7 @@ import pacote from '../../../package.json'
 export const metadata = { title: 'Novidades · PRG System' }
 
 export default function NovidadesPage() {
-  return <main className="min-h-screen bg-[#100d1c] px-4 py-8 text-[#f2ebff]">
+  return <main className="min-h-screen fundo-tema px-4 py-8 text-[#f2ebff]">
     <div className="mx-auto max-w-2xl">
       <Link href="/central" className="text-sm text-[#b99bff] hover:underline">← Início</Link>
       <h1 className="mt-3 flex items-center gap-2 text-3xl font-bold"><Sparkles className="text-[#c5a7ff]" /> Novidades</h1>

@@ -85,7 +85,7 @@ export default function CampanhasNuvem({ aventureiroId }: { aventureiroId: strin
     {campanhas?.length === 0 && <div className="rounded-2xl border border-dashed border-[#594871] p-8 text-center text-[#cbb9dc]"><Castle className="mx-auto mb-3" size={32} />Você ainda não participa de nenhuma campanha. Crie uma ou entre com um código.</div>}
     <div className="grid gap-4 sm:grid-cols-2">{campanhas?.map(c => <article key={c.id} className="rounded-2xl border border-[#55456e] bg-[#201a32] p-5">
       <div className="flex items-start gap-3"><BookOpen className="shrink-0 text-[#c5a7ff]" /><div className="min-w-0 flex-1">
-        <h2 className="break-words text-lg font-semibold">{c.nome}</h2><p className="mt-1 text-sm text-[#c4b6d4]">{c.sistema}</p></div>
+        <h2 className="break-words text-lg font-semibold">{c.nome}</h2><p className="mt-1 text-sm text-[#c4b6d4]">{nomeSistema(c.sistema)}</p></div>
         <span className={'shrink-0 rounded-full px-2 py-1 text-xs ' + corEstado[c.estado]}>{ESTADO_TITULO[c.estado]}</span></div>
       {!!c.pendencias && <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-[#7652ac] px-3 py-1 text-xs font-semibold">🔔 {c.pendencias} pendência(s) para você</p>}
       {c.descricao && <p className="mt-3 line-clamp-3 whitespace-pre-wrap break-words text-sm text-[#d1c4df]">{c.descricao}</p>}
@@ -166,7 +166,7 @@ function Gerenciar({ aventureiroId, id, onVoltar, onEditar }: { aventureiroId: s
     <button type="button" onClick={onVoltar} className="text-sm text-[#c7a8ff] hover:underline">← Todas as campanhas</button>
     <section className="rounded-2xl border border-[#55456e] bg-[#201a32] p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0"><h2 className="break-words text-2xl font-bold">{c.nome}</h2><p className="mt-1 text-sm text-[#c4b6d4]">{c.sistema} · Modelo {c.modelo_padrao}</p></div>
+        <div className="min-w-0"><h2 className="break-words text-2xl font-bold">{c.nome}</h2><p className="mt-1 text-sm text-[#c4b6d4]">{nomeSistema(c.sistema)} · Modelo {c.modelo_padrao}</p></div>
         <span className={'rounded-full px-3 py-1 text-sm ' + corEstado[c.estado]}>{ESTADO_TITULO[c.estado]}</span>
       </div>
       {c.descricao && <p className="mt-3 whitespace-pre-wrap break-words text-sm text-[#d1c4df]">{c.descricao}</p>}
@@ -245,6 +245,9 @@ function Excecoes({ campanha, membro, ocupado, salvar }: { campanha: Campanha; m
       <button type="button" onClick={() => setAberto(false)} className={btn}>Cancelar</button></div>
   </div>
 }
+
+/** Campanhas antigas podem guardar o id do sistema; mostra o nome bonito. */
+const nomeSistema = (v: string) => SISTEMAS.find(x => x.id === v)?.nome ?? v
 
 /** O sistema da campanha é texto livre; tenta achar o modelo correspondente. */
 function sistemaDaCampanha(nome: string) {

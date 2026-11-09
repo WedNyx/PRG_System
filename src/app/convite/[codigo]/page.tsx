@@ -34,7 +34,7 @@ export default function ConvitePage({ params }: { params: Promise<{ codigo: stri
   }
 
   const voltar = '/portal?depois=' + encodeURIComponent('/convite/' + codigo)
-  return <main className="flex min-h-screen items-center justify-center bg-[#100d1c] px-4 py-10 text-[#f2ebff]">
+  return <main className="flex min-h-screen items-center justify-center fundo-tema px-4 py-10 text-[#f2ebff]">
     <div className="w-full max-w-md rounded-3xl border border-[#655079] bg-[#201a32] p-6 text-center sm:p-8">
       <MoonStar className="mx-auto text-[#c5a7ff]" size={40} />
       <p className="mt-3 text-xs uppercase tracking-[.2em] text-[#d3adf0]">Convite de campanha</p>

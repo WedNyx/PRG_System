@@ -8,7 +8,9 @@ import FichasIndependentes from '@/components/central/FichasIndependentes'
 import Campanhas from '@/components/central/Campanhas'
 import FichasNuvem from '@/components/central/FichasNuvem'
 import SistemasGaleria from '@/components/central/SistemasGaleria'
-import { BookOpen, Castle, ChevronRight, Dice5, House, Menu, MoonStar, ScrollText, Sparkles, UserRound, X } from 'lucide-react'
+import { BookOpen, Castle, ChevronRight, CircleHelp, Dice5, House, Menu, MoonStar, Palette, Pencil, ScrollText, Sparkles, UserRound, X } from 'lucide-react'
+import EditarPerfil from '@/components/perfil/EditarPerfil'
+import { aplicarTema, temaAtual, TEMAS, type Tema } from '@/lib/tema'
 import { VERSOES } from '@/lib/versoes'
 
 type Perfil = { id: string; apelido: string; avatar?: string }
@@ -33,6 +35,10 @@ function CentralContent() {
   const [perfil, setPerfil] = useState<Perfil | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [editando, setEditando] = useState(false)
+  const [tema, setTema] = useState<Tema>('ceu')
+  useEffect(() => { setTema(temaAtual()) }, []) // eslint-disable-line react-hooks/set-state-in-effect
+  const trocarTema = () => { const t: Tema = tema === 'ceu' ? 'classico' : 'ceu'; aplicarTema(t); setTema(t) }
 
   useEffect(() => {
     const id = params.get('personagem') || localStorage.getItem(SELECTED_KEY)
@@ -62,22 +68,23 @@ function CentralContent() {
   const cardClass = 'group rounded-2xl border border-[#55456e] bg-[#201a32]/90 p-5 text-left transition hover:-translate-y-0.5 hover:border-[#b79aff] hover:bg-[#2b2143] focus-visible:outline-2 focus-visible:outline-[#c5a7ff]'
   const sheetUrl = '/ficha-v8?personagem=' + encodeURIComponent(perfil?.id || '')
 
-  if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#100d1c] text-[#e8dff7]">Carregando sua jornada...</main>
-  if (!perfil) return <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#100d1c] px-5 text-center text-[#e8dff7]"><MoonStar size={48} className="text-[#bda0f5]" /><h1 className="text-2xl font-bold">Aventureiro não encontrado</h1><p className="text-[#bdb1ce]">{error || 'Selecione um perfil no portal para continuar.'}</p><Link href="/portal" className="rounded-xl bg-[#7853b4] px-5 py-3 font-semibold">Voltar aos perfis</Link></main>
+  if (loading) return <main className="flex min-h-screen items-center justify-center fundo-tema text-[#e8dff7]">Carregando sua jornada...</main>
+  if (!perfil) return <main className="flex min-h-screen flex-col items-center justify-center gap-4 fundo-tema px-5 text-center text-[#e8dff7]"><MoonStar size={48} className="text-[#bda0f5]" /><h1 className="text-2xl font-bold">Aventureiro não encontrado</h1><p className="text-[#bdb1ce]">{error || 'Selecione um perfil no portal para continuar.'}</p><Link href="/portal" className="rounded-xl bg-[#7853b4] px-5 py-3 font-semibold">Voltar aos perfis</Link></main>
 
   return (
-    <main className="min-h-screen bg-[#100d1c] text-[#f2ebff]" style={{ backgroundImage: 'radial-gradient(ellipse at 85% 0%, #322044 0%, transparent 48%)' }}>
+    <main className="min-h-screen fundo-tema text-[#f2ebff]">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#4b3b62] bg-[#151123]/95 px-4 backdrop-blur lg:px-8">
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg p-2 hover:bg-[#342749] lg:hidden" aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuOpen}>{menuOpen ? <X /> : <Menu />}</button>
           <MoonStar className="text-[#c5a7ff] drop-shadow-[0_0_9px_#a76aff]" size={30} aria-hidden="true" />
           <span className="font-bold tracking-wide">PRG <span className="text-[#c5a7ff]">System</span></span>
         </div>
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex items-center gap-2 text-sm sm:gap-3">
+          <Link href="/guia" className="inline-flex items-center gap-1.5 rounded-full border border-[#8d70b6] px-3 py-1.5 text-[#e4d3ff] hover:bg-[#342749]" title="Guia da plataforma"><CircleHelp size={18} aria-hidden="true" /><span>Guia</span></Link>
           <span className="hidden text-[#d0c2df] sm:inline">{perfil.apelido}</span>
-          <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-[#8d70b6] bg-[#342749] font-semibold text-[#d8c0ff]">
+          <button type="button" onClick={() => CLOUD_ENABLED && setEditando(true)} disabled={!CLOUD_ENABLED} aria-label="Editar perfil" title={CLOUD_ENABLED ? 'Editar perfil' : perfil.apelido} className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-[#8d70b6] bg-[#342749] font-semibold text-[#d8c0ff]">
             {perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : perfil.apelido[0]?.toUpperCase()}
-          </div>
+          </button>
         </div>
       </header>
       <div className="mx-auto flex max-w-[1500px]">
@@ -88,7 +95,10 @@ function CentralContent() {
             {navigation.map(item => <button key={item.id} type="button" onClick={() => choose(item.id)} aria-current={section === item.id ? 'page' : undefined} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition ${section === item.id ? 'border border-[#8b6cba] bg-[#38274e] text-white' : 'text-[#c9bdd9] hover:bg-[#2b213d]'}`}><item.icon size={19} aria-hidden="true" />{item.label}</button>)}
           </nav>
           <div className="mt-8 border-t border-[#49375f] pt-4">
+            {CLOUD_ENABLED && <button type="button" onClick={() => { setEditando(true); setMenuOpen(false) }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><Pencil size={19} />Editar perfil</button>}
             <Link href="/portal" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><UserRound size={19} />Trocar aventureiro</Link>
+            <button type="button" onClick={trocarTema} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><Palette size={19} />Tema: {TEMAS.find(t => t.id === tema)?.nome}</button>
+            <Link href="/guia" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><CircleHelp size={19} />Guia da plataforma</Link>
             <Link href="/novidades" className="mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><Sparkles size={19} />Novidades · v{VERSOES[0].versao}</Link>
           </div>
         </aside>
@@ -106,7 +116,7 @@ function CentralContent() {
                 <item.icon className="mb-5 text-[#c3a4f5]" size={30} aria-hidden="true" />
                 <div className="flex items-center justify-between gap-2"><h3 className="font-semibold">{item.label}</h3><ChevronRight size={18} className="text-[#b69ad4]" /></div>
                 <p className="mt-2 text-sm text-[#bfb2cf]">{item.id === 'fichas' ? 'Independentes e de campanhas' : item.id === 'campanhas' ? 'Entre ou crie uma aventura' : item.id === 'sistemas' ? 'D&D, Pathfinder, Fate, Tormenta20 e mais' : 'Consulte suas rolagens'}</p>
-                <p className="mt-4 text-xs text-[#a99bbb]">{item.id === 'fichas' ? 'Acesso à Ficha V8' : 'Em preparação'}</p>
+                <p className="mt-4 text-xs text-[#a99bbb]">{item.id === 'fichas' ? 'Ficha V8 e fichas de todos os sistemas' : item.id === 'campanhas' ? 'Convites, mesa virtual e música' : item.id === 'sistemas' ? 'Com guia do mestre' : 'Rolagens no histórico de cada mesa'}</p>
               </button>)}
             </div>
           </>}
@@ -122,13 +132,14 @@ function CentralContent() {
             <Campanhas aventureiroId={perfil.id} />
           </>}
           {section === 'sistemas' && <><h1 className="text-3xl font-bold">Sistemas de RPG</h1><p className="mt-2 text-[#bfb2cf]">Escolha um sistema e crie uma ficha que calcula as regras sozinha.</p><SistemasGaleria aventureiroId={perfil.id} fichaV8Url={sheetUrl} /></>}
-          {section === 'historico' && <><h1 className="text-3xl font-bold">Histórico de rolagens</h1><p className="mt-2 text-[#bfb2cf]">Em breve, suas rolagens estarão organizadas por aventureiro e campanha.</p><div className="mt-6 rounded-2xl border border-[#55456e] bg-[#201a32] p-6 text-sm text-[#c4b6d4]">O histórico compartilhado ainda não está conectado. As rolagens existentes na Ficha V8 continuam disponíveis nela.</div><Link href={sheetUrl} className="mt-4 inline-flex items-center text-[#c7a8ff] underline underline-offset-4">Abrir Ficha V8 <ChevronRight size={16} /></Link></>}
+          {section === 'historico' && <><h1 className="text-3xl font-bold">Histórico de rolagens</h1><p className="mt-2 text-[#bfb2cf]">Onde encontrar suas rolagens.</p><div className="mt-6 rounded-2xl border border-[#55456e] bg-[#201a32] p-6 text-sm text-[#c4b6d4]">As rolagens das campanhas ficam salvas no histórico da mesa: abra a campanha, entre na mesa e toque em “Histórico” no chat (dá para filtrar por pessoa, personagem e tipo). As rolagens feitas fora de campanha continuam na própria Ficha V8.</div><Link href={sheetUrl} className="mt-4 inline-flex items-center text-[#c7a8ff] underline underline-offset-4">Abrir Ficha V8 <ChevronRight size={16} /></Link></>}
         </div>
       </div>
+      {editando && <EditarPerfil perfil={perfil} fechar={() => setEditando(false)} salvo={p => setPerfil({ id: p.id, apelido: p.apelido, avatar: p.avatar ?? undefined })} />}
     </main>
   )
 }
 
 export default function CentralAventureiro() {
-  return <Suspense fallback={<main className="min-h-screen bg-[#100d1c]" />}><CentralContent /></Suspense>
+  return <Suspense fallback={<main className="min-h-screen fundo-tema" />}><CentralContent /></Suspense>
 }

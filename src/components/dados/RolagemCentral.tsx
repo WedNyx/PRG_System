@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import confetti from 'canvas-confetti'
 import { detectarCritico } from '@/lib/dice'
 import { somCritico, somFalha, somRolagem } from '@/lib/sons'
-import { notacao3D } from '@/lib/dados3d'
+import { detalheDaRolagem, notacao3D } from '@/lib/dados3d'
 
 export type Rolagem = {
   /** O que foi rolado (ex.: "Força", "Bola de fogo"). */
@@ -21,9 +21,10 @@ export type Rolagem = {
 }
 export type RolagemCentralHandle = { mostrar: (r: Rolagem) => void }
 
-type DiceBox = { initialize: () => Promise<void>; roll: (notacao: string) => Promise<unknown>; clearDice: () => void }
+type Corpo = { mass: number; sleepTimeLimit: number; linearDamping: number; angularDamping: number }
+type DiceBox = { initialize: () => Promise<void>; roll: (notacao: string) => Promise<unknown>; clearDice: () => void; world: { addBody: (b: Corpo) => void } }
 
-const TEMPO_MAX_DADOS = 3500, TEMPO_CARTAO = 4500, MAX_CHIPS = 24
+const TEMPO_MAX_DADOS = 6000, TEMPO_CARTAO = 4500, MAX_CHIPS = 24
 
 /**
  * Rolagem no meio da tela: os dados 3D caem numa área central e, quando param,
@@ -50,10 +51,14 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
         // dice-box-threejs: aceita o resultado já sorteado (ex.: "1d20@7"), então a face de cima é a do servidor.
         const { default: DiceBox } = await import('@3d-dice/dice-box-threejs')
         const b = new DiceBox('#' + id, {
-          sounds: false, shadows: true, light_intensity: 0.9, gravity_multiplier: 400, baseScale: 110, strength: 1.2,
+          sounds: false, shadows: true, light_intensity: 0.9, gravity_multiplier: 400, baseScale: 110, strength: 1,
           theme_customColorset: { name: 'prg-roxo', foreground: '#ffffff', background: '#7c3aed', outline: '#2e1065', texture: 'none', material: 'glass' },
         }) as unknown as DiceBox
         await b.initialize()
+        // Os dados “assentam” mais rápido e tremem menos no fim (mesma física na simulação e na animação,
+        // então a face de cima continua sendo a sorteada pelo servidor).
+        const add = b.world.addBody.bind(b.world)
+        b.world.addBody = corpo => { if (corpo.mass > 0) { corpo.sleepTimeLimit = 0.35; corpo.linearDamping = 0.2; corpo.angularDamping = 0.2 } return add(corpo) }
         if (!cancelado) box.current = b
       } catch (e) { console.warn('Dados 3D indisponíveis:', e) }
     })()
@@ -105,6 +110,7 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
 
   const critico = atual ? detectarCritico(atual.expressao, atual.resultados) : null
   const extras = atual ? atual.resultados.length - MAX_CHIPS : 0
+  const det = atual ? detalheDaRolagem(atual.expressao, atual.resultados) : null
   if (!noNavegador) return null
   return createPortal(<>
     {/* Fundo: escurece e brilha no centro enquanto rola; toque fecha. */}
@@ -120,7 +126,9 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
         {atual.quem && <span className="font-semibold text-[#e4d3ff]">{atual.quem}</span>}{atual.quem && atual.rotulo && ' · '}{atual.rotulo}{atual.privada && ' 🔒'}</p>}
       <p className={'mt-1 bg-gradient-to-b bg-clip-text text-7xl font-black tabular-nums text-transparent ' + (critico === 'critico' ? 'from-amber-200 to-amber-500' : critico === 'falha' ? 'from-red-300 to-red-600' : 'from-[#e4d3ff] to-[#9f6bff]')}>{atual.total}</p>
       <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-        {atual.resultados.slice(0, MAX_CHIPS).map((n, i) => <span key={i} className="flex h-9 min-w-9 items-center justify-center rounded-lg border border-[#62527e] bg-[#2b2140] px-1.5 text-base font-bold tabular-nums">{n}</span>)}
+        {atual.resultados.slice(0, MAX_CHIPS).map((n, i) => { const fora = det?.descartados.has(i)
+          return <span key={i} title={fora ? 'Descartado' : undefined} className={'flex h-9 min-w-9 items-center justify-center rounded-lg border px-1.5 text-base font-bold tabular-nums ' + (fora ? 'border-[#3d3152] bg-[#1a1528] text-[#7d6f92] line-through' : 'border-[#62527e] bg-[#2b2140]')}>{n}</span> })}
+        {!!det?.modificador && <span className="flex h-9 items-center rounded-lg bg-[#1f3a2c] px-2 text-base font-bold tabular-nums text-emerald-200" title="Bônus somado aos dados">{det.modificador > 0 ? '+' : '−'}{Math.abs(det.modificador)}</span>}
         {extras > 0 && <span className="flex h-9 items-center px-1.5 text-sm text-[#b4aeca]">+{extras}</span>}
       </div>
       <p className="mt-2 text-xs text-[#9d8db0]">{atual.expressao}</p>

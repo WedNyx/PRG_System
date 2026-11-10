@@ -33,7 +33,15 @@ Simulam três aventureiros (mestre, jogador e intruso) contra um banco real.
    PRG_BASE=http://localhost:3000 node scripts/e2e/v21-grupos-e-escolhas.mjs   # migração 017
    PRG_BASE=http://localhost:3000 node scripts/e2e/v22-classe-progressao.mjs
    PRG_BASE=http://localhost:3000 node scripts/e2e/v23-condicoes-turnos.mjs   # migração 018
+   PRG_BASE=http://localhost:3000 node scripts/e2e/v24-dano-por-turno.mjs   # migração 019
    ```
 Nunca rode contra o banco de produção: os testes criam campanhas e fichas.
 
 Rode cada arquivo com o banco limpo (os testes compartilham os mesmos aventureiros).
+
+## Teste pela tela (mestre, jogador e espectador)
+`scripts/tela/papeis.cjs` abre a plataforma no navegador (Playwright) como mestre e jogador (celular) e espectador (computador):
+portal, central, ficha, mesa, sessão, fichas na mesa, condições com dano por turno, combate, ataque tocando no mapa, fim de turno e as restrições do espectador.
+```
+NODE_PATH=$(npm root -g) node scripts/tela/papeis.cjs /tmp/fotos
+```

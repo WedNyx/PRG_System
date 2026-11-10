@@ -23,7 +23,7 @@ import { btn, input, msg } from './estilos'
 import { CartaoAtaque, ConfigCombate, JanelaAtaque, PainelFichas, PrepararCombate, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type FichaMesa } from './Combate'
 
 type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean }
-type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; condicoes_rodadas?: Record<string, number> | null; dono_id: string | null; ficha_id: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number }
+type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; condicoes_rodadas?: Record<string, number> | null; condicoes_dano?: Record<string, string> | null; dono_id: string | null; ficha_id: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number }
 export type Evento = { id: number; tipo: 'chat' | 'rolagem' | 'sistema' | 'ataque'; dados?: DadosAtaque | null; visibilidade: 'publica' | 'mestre' | 'privada'; autor_id: string | null; destinatario_id: string | null; personagem: string | null; texto: string | null; expressao: string | null; resultados: number[] | null; total: number | null; criado_em: string; autor: { apelido: string } | null }
 type Iniciativa = { id: string; nome: string; valor: number; tokenId?: string | null }
 export type Estado = {
@@ -484,11 +484,13 @@ function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar }: { t: Tok
         <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-[#34294f]"><X size={18} /></button></div>
       {atacar && <button type="button" onClick={atacar} className="mt-3 w-full rounded-xl bg-gradient-to-r from-[#b91c1c] to-[#7c3aed] p-2.5 font-bold shadow-[0_0_14px_#b91c1c55]">⚔️ Atacar</button>}
       {t.ficha_id && <p className="mt-2 text-[11px] text-[#a99bbb]">📜 Ligado a uma ficha: a vida é a da ficha.</p>}
+      {t.ficha_id && !t.hp_max && !hp && <p className="mt-2 rounded-lg bg-[#3a2a14]/80 p-2 text-[11px] text-[#f6dca8]">⚠️ A ficha está com a vida zerada e sem máximo. Preencha a vida na ficha para o dano contar.</p>}
       {t.hp_max ? <div className="mt-3"><p className="text-sm">PV <strong>{hp} / {t.hp_max}</strong></p>
         <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#2b2140]"><div className="h-full bg-[#b06ad8]" style={{ width: Math.max(0, Math.min(100, hp / t.hp_max * 100)) + '%' }} /></div>
         {pode && <div className="mt-2 flex gap-2"><input aria-label="Quantidade" value={dano} onChange={x => setDano(x.target.value)} inputMode="numeric" placeholder="Qtd." className={input + ' w-20'} />
           <button type="button" className={btn} onClick={() => { void acao({ acao: 'token_editar', tokenId: t.id, hp_atual: hp - (Number(dano) || 0) }).catch(() => {}); setDano('') }}>− Dano</button>
           <button type="button" className={btn} onClick={() => { void acao({ acao: 'token_editar', tokenId: t.id, hp_atual: Math.min(t.hp_max ?? hp, hp + (Number(dano) || 0)) }).catch(() => {}); setDano('') }}>+ Cura</button></div>}
+        {pode && hp < (t.hp_max ?? 0) && <button type="button" className={btn + ' mt-2'} onClick={() => void acao({ acao: 'token_editar', tokenId: t.id, hp_atual: t.hp_max }).catch(() => {})}>❤️ Vida cheia ({t.hp_max})</button>}
       </div> : null}
       <p className="mt-3 text-sm font-semibold">Condições</p>
       <div className="mt-1 flex flex-wrap gap-1">{condicoesDisponiveis.map(c => { const ativa = t.condicoes.includes(c.id)
@@ -497,10 +499,13 @@ function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar }: { t: Tok
       {t.condicoes.length > 0 && <div className="mt-2 space-y-1 rounded-lg bg-[#1e1a30] p-2 text-xs">
         <p className="text-[#c4b6d4]">Quanto tempo dura? A contagem desce no fim de cada turno de {t.nome}.</p>
         {t.condicoes.map(c => { const n = t.condicoes_rodadas?.[c] ?? 0
-          return <label key={c} className="flex items-center justify-between gap-2"><span>{emojiCondicao[c]} {nomeCondicao(c)}</span>
+          return <div key={c} className="flex flex-wrap items-center gap-2 border-t border-[#2b2140] pt-1.5 first-of-type:border-0"><span className="min-w-24 flex-1">{emojiCondicao[c]} {nomeCondicao(c)}</span>
             <select aria-label={'Duração de ' + nomeCondicao(c)} disabled={!pode} value={n} onChange={x => acao({ acao: 'token_editar', tokenId: t.id, rodadas: { ...(t.condicoes_rodadas ?? {}), [c]: Number(x.target.value) } }).catch(() => {})} className={input + ' !w-auto !py-1'}>
               <option value={0}>Sem limite</option>{[1, 2, 3, 4, 5, 6, 8, 10].map(k => <option key={k} value={k}>{k} {k === 1 ? 'rodada' : 'rodadas'}</option>)}
-            </select></label> })}
+            </select>
+            <DanoPorTurno key={c + (t.condicoes_dano?.[c] ?? '')} valor={t.condicoes_dano?.[c] ?? ''} nome={nomeCondicao(c)} pode={pode}
+              salvar={v => acao({ acao: 'token_editar', tokenId: t.id, danos: { ...(t.condicoes_dano ?? {}), [c]: v } }).catch(() => {})} /></div> })}
+        <p className="text-[11px] text-[#a998bd]">💥 Dano por turno: rolado no começo do turno de {t.nome} e tirado da vida dele. Deixe vazio para não causar dano.</p>
       </div>}
       {pode && <label className={btn + ' mt-3 cursor-pointer'}><ImageIcon size={14} /> Trocar imagem do token<input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={async x => {
         const f = x.target.files?.[0]; x.target.value = ''; if (!f) return
@@ -633,4 +638,12 @@ function Historico({ campanhaId, membros, fechar }: { campanhaId: string; membro
       {lista && lista.length >= 100 && <button type="button" className={btn + ' mt-2 justify-center'} onClick={() => buscar(lista.at(-1)?.id)}>Carregar mais</button>}
     </div>
   </div>
+}
+
+/** Campo do dano por turno de uma condição (salva ao sair do campo ou com Enter). */
+function DanoPorTurno({ valor, nome, pode, salvar }: { valor: string; nome: string; pode: boolean; salvar: (v: string) => void }) {
+  const [v, setV] = useState(valor)
+  const enviar = () => { if (v.trim().toLowerCase() !== valor) salvar(v.trim().toLowerCase()) }
+  return <label className="flex items-center gap-1 text-[11px]">💥<input aria-label={'Dano por turno de ' + nome} disabled={!pode} value={v} maxLength={20} placeholder="sem dano"
+    onChange={x => setV(x.target.value)} onBlur={enviar} onKeyDown={x => { if (x.key === 'Enter') { x.preventDefault(); (x.target as HTMLInputElement).blur() } }} className={input + ' !w-20 !py-1 font-mono'} /></label>
 }

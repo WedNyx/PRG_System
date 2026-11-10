@@ -21,3 +21,22 @@ describe('notação dos dados 3D com resultado do servidor', () => {
     expect(notacao3D('30d6', Array(30).fill(3))).toBeNull()
   })
 })
+
+describe('d100 e cartão', () => {
+  it('d100 vira dezenas + unidades', () => {
+    expect(notacao3D('1d100', [57])).toBe('1d100+1d10@50,7')
+    expect(notacao3D('1d100', [100])).toBe('1d100+1d10@100,10')
+    expect(notacao3D('1d100', [5])).toBe('1d100+1d10@100,5')
+    expect(notacao3D('1d100', [30])).toBe('1d100+1d10@30,10')
+    expect(notacao3D('2d100+1d20', [91, 10, 4])).toBe('2d100+2d10+1d20@90,10,1,10,4')
+  })
+  it('mostra o bônus e os dados descartados', async () => {
+    const { detalheDaRolagem } = await import('./dados3d')
+    const a = detalheDaRolagem('2d20kh1+3', [4, 17])
+    expect(a.modificador).toBe(3); expect([...a.descartados]).toEqual([0])
+    const b = detalheDaRolagem('4d6kh3-1', [5, 2, 6, 2])
+    expect(b.modificador).toBe(-1); expect([...b.descartados]).toEqual([3])
+    expect([...detalheDaRolagem('2d20kl1', [4, 17]).descartados]).toEqual([1])
+    expect(detalheDaRolagem('1d20+2+3', [9]).modificador).toBe(5)
+  })
+})

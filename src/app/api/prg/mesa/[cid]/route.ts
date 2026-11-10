@@ -7,7 +7,7 @@ import { aplicarDano, fichaDeCombate, lerRegrasCombate, mudarFicha, tokenCombate
 import { acertou, ALCANCE_CORPO, distancia, gastarCusto, ordenarIniciativa, regraDeAtaque, regraDeIniciativa, rolarDano, resumoCombate, type EntradaOrdem } from '@/lib/sistemas/combate'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { ehV8 } from '@/lib/nuvem/categorias'
-import { emojiCondicao, nomeCondicao, normalizarRodadas, passarRodada } from '@/lib/condicoes'
+import { condicoesDisponiveis, emojiCondicao, nomeCondicao, normalizarDanos, normalizarRodadas, passarRodada } from '@/lib/condicoes'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ cid: string }> }
@@ -45,6 +45,39 @@ async function tokenDaCampanha(cid: string, tokenId: unknown): Promise<Token> {
 const normalizarIniciativaSemOrdenar = (v: unknown) => {
   const l = normalizarIniciativa(v), ids = Array.isArray(v) ? (v as { id?: unknown }[]).map(x => x?.id) : []
   return [...l].sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id))
+}
+/**
+ * Começo do turno de um token: condições com dano por turno (Queimando, Envenenado…) rolam e tiram vida.
+ * Devolve as linhas para o chat.
+ */
+async function danoNoInicioDoTurno(cid: string, tokenId: string | null | undefined): Promise<string[]> {
+  if (!tokenId) return []
+  const [tk] = await rest<{ id: string; nome: string; condicoes: string[] | null; condicoes_dano: Record<string, string> | null }[]>(`prg_tokens?select=id,nome,condicoes,condicoes_dano&id=eq.${q(tokenId)}&campanha_id=eq.${q(cid)}`).catch(() => [])
+  const danos = tk ? normalizarDanos(tk.condicoes_dano, tk.condicoes ?? []) : {}
+  if (!tk || !Object.keys(danos).length) return []
+  const linhas: string[] = []
+  for (const [c, expr] of Object.entries(danos)) {
+    const rol = rolarExpressao(expr); if (!rol) continue
+    const dano = Math.max(0, rol.total)
+    const alvo = await tokenCombate(cid, tk.id)
+    const vida = dano > 0 ? await aplicarDano(alvo, dano) : null
+    linhas.push(`${emojiCondicao[c] ?? ''} ${nomeCondicao(c)}: ${tk.nome} sofreu ${dano} de dano (${expr} → [${rol.resultados.join(', ')}])${vida?.depois !== null && vida?.depois !== undefined ? ` · ❤️ ${vida.depois}${vida.max ? '/' + vida.max : ''}` : ''}.`)
+  }
+  return linhas
+}
+/** Onde o token novo entra: a casa pedida ou, sem casa, a livre mais perto do meio (para não ficar um em cima do outro). */
+async function posicaoLivre(c: { id: string; grid_cols: number; grid_rows: number }, x: unknown, y: unknown) {
+  const px = inteiro(x, 0, c.grid_cols - 1), py = inteiro(y, 0, c.grid_rows - 1)
+  if (px !== null && py !== null) return { x: px, y: py }
+  const ocupadas = new Set((await rest<{ x: number; y: number }[]>(`prg_tokens?select=x,y&cena_id=eq.${q(c.id)}&limit=300`).catch(() => [])).map(t => t.x + ',' + t.y))
+  const cx = Math.floor(c.grid_cols / 2), cy = Math.floor(c.grid_rows / 2)
+  for (let raio = 0; raio < Math.max(c.grid_cols, c.grid_rows); raio++)
+    for (let dy = -raio; dy <= raio; dy++) for (let dx = -raio; dx <= raio; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== raio) continue
+      const nx = cx + dx, ny = cy + dy
+      if (nx >= 0 && ny >= 0 && nx < c.grid_cols && ny < c.grid_rows && !ocupadas.has(nx + ',' + ny)) return { x: nx, y: ny }
+    }
+  return { x: cx, y: cy }
 }
 const inteiro = (v: unknown, min: number, max: number) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : null }
 
@@ -241,7 +274,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       const hp = inteiro(b.hp_max, 0, 100000)
       const [t] = await rest<unknown[]>('prg_tokens', { method: 'POST', prefer: 'return=representation', body: JSON.stringify({
         campanha_id: cid, cena_id: c.id, ficha_id: ficha, dono_id: dono, nome: nome || nomeFicha.slice(0, 60) || 'Personagem', cor: b.cor ?? '#a78bfa', imagem_url: b.imagem_url || null,
-        x: inteiro(b.x, 0, c.grid_cols - 1) ?? Math.floor(c.grid_cols / 2), y: inteiro(b.y, 0, c.grid_rows - 1) ?? Math.floor(c.grid_rows / 2), npc: admin && b.npc === true,
+        ...(await posicaoLivre(c, b.x, b.y)), npc: admin && b.npc === true,
         visivel: !(admin && b.visivel === false), hp_max: hp, hp_atual: hp,
         tamanho: inteiro(b.tamanho, 1, 4) ?? 1, movimento: admin && (b.movimento === 'todos' || b.movimento === 'mestre') ? b.movimento : 'dono',
       }) })
@@ -266,12 +299,17 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         if (fc?.r.vida) { const v = fc.r.vida; await aplicarDano({ ...(t as unknown as Parameters<typeof aplicarDano>[0]), hp_atual: v.atual, hp_max: v.max }, v.atual - (novo as number)) }
         else m.hp_atual = novo
       }
-      if (b.condicoes !== undefined || b.rodadas !== undefined) {
-        // Condições e quantas rodadas cada uma dura (sem número = sem limite).
-        const [atual] = await rest<{ condicoes: string[] | null; condicoes_rodadas: Record<string, number> | null }[]>(`prg_tokens?select=condicoes,condicoes_rodadas&id=eq.${q(t.id)}`)
-        const cond = b.condicoes !== undefined ? normalizarCondicoes(b.condicoes) : atual?.condicoes ?? []
+      if (b.condicoes !== undefined || b.rodadas !== undefined || b.danos !== undefined) {
+        // Condições, quantas rodadas cada uma dura (sem número = sem limite) e o dano por turno.
+        const [atual] = await rest<{ condicoes: string[] | null; condicoes_rodadas: Record<string, number> | null; condicoes_dano: Record<string, string> | null }[]>(`prg_tokens?select=condicoes,condicoes_rodadas,condicoes_dano&id=eq.${q(t.id)}`)
+        const antes = atual?.condicoes ?? []
+        const cond = b.condicoes !== undefined ? normalizarCondicoes(b.condicoes) : antes
         m.condicoes = cond
         m.condicoes_rodadas = normalizarRodadas(b.rodadas !== undefined ? b.rodadas : atual?.condicoes_rodadas, cond)
+        // Condição que acabou de entrar já vem com o dano sugerido (Queimando 1d6…); o mestre pode mudar ou tirar.
+        const danos: Record<string, unknown> = { ...(atual?.condicoes_dano ?? {}), ...(b.danos && typeof b.danos === 'object' ? b.danos as object : {}) }
+        for (const c of cond) if (!antes.includes(c) && danos[c] === undefined) { const sug = condicoesDisponiveis.find(x => x.id === c)?.dano; if (sug) danos[c] = sug }
+        m.condicoes_dano = normalizarDanos(danos, cond)
       }
       if (admin || dono) {
         if (b.imagem_url !== undefined) { if (!urlValida(b.imagem_url)) throw new ErroApi(400, 'Imagem inválida.'); m.imagem_url = b.imagem_url || null }
@@ -379,6 +417,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify({ mesa: { iniciativa, turno: 0, rodada: 1 } }) })
       await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica',
         texto: ('⚔️ O combate começou! Ordem: ' + ord.map((o, i) => `${i + 1}. ${o.nome} (${o.valor})`).join(' · ') + `\n▶️ Vez de ${ord[0].nome}.`).slice(0, 1000) }) }).catch(() => {})
+      for (const texto of await danoNoInicioDoTurno(cid, ord[0].tokenId)) await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica', texto }) }).catch(() => {})
       return ok({ mesa: { iniciativa, turno: 0, rodada: 1 }, rolagens: ord })
     }
     case 'turno': {
@@ -414,7 +453,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
           const cs = tk?.condicoes ?? []
           if (cs.length) estado = ' (' + cs.map(x => `${emojiCondicao[x] ?? ''} ${nomeCondicao(x)}${tk?.condicoes_rodadas?.[x] ? ' · ' + tk.condicoes_rodadas[x] : ''}`).join(', ') + ')'
         }
-        const linhas = [...avisos, `▶️ Vez de ${prox.nome}${turno === 0 ? ` · rodada ${rodada}` : ''}${estado}.`]
+        const linhas = [...avisos, `▶️ Vez de ${prox.nome}${turno === 0 ? ` · rodada ${rodada}` : ''}${estado}.`, ...await danoNoInicioDoTurno(cid, prox.tokenId)]
         for (const texto of linhas) await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica', texto }) }).catch(() => {})
       }
       return ok({ mesa: { iniciativa: lista, turno, rodada } })

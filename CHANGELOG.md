@@ -2,6 +2,16 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.24.0 — Dano por turno e dados certos (2026-11-10)
+- Dano por turno: Queimando (1d6), Envenenado (1d4) e Sangrando (1d4) já entram causando dano. Na janela do token, o campo 💥 de cada condição muda o dano (ex.: 2d4+1 ou 3) ou tira, se ficar vazio.
+- O dano é rolado no começo do turno de quem tem a condição e sai da vida dele (ou da ficha ligada). O chat mostra os dados e a vida que sobrou, e a condição continua até as rodadas acabarem.
+- Corrigido: fichas novas começavam com a vida em 0, então o dano não tinha de onde sair. Agora vida, mana e afins começam cheias quando o sistema calcula o máximo.
+- Janela do token: botão “❤️ Vida cheia” e aviso quando a ficha ligada está sem vida preenchida.
+- Dados 3D: o d100 agora cai como dois dados (dezenas + unidades) e mostra o número certo. Os dados assentam mais rápido e tremem menos no fim.
+- Cartão da rolagem: o bônus aparece separado (ex.: dado 13 e +5 = 18) e os dados descartados (vantagem, 4d6kh3) aparecem riscados, para o número do dado bater com o total.
+- Tokens colocados na mesa sem posição entram na casa livre mais perto do meio (antes ficavam um em cima do outro, e tocar num pegava o outro).
+- Migração 019: dano por turno das condições.
+
 ## v0.23.1 — Zoom suave no mapa (2026-11-10)
 - Zoom do mapa da mesa e da árvore de habilidades com a rodinha do mouse ficou suave: cada clique aproxima ou afasta só um pouco, mirando onde está o mouse. Antes, um movimento pequeno pulava do zoom mínimo ao máximo.
 

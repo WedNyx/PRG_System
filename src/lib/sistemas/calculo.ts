@@ -19,6 +19,19 @@ export type Calculo = {
 const num = (v: unknown, padrao = 0) => { const n = Number(v); return Number.isFinite(n) ? n : padrao }
 
 export function fichaVazia(s: Sistema, nome = ''): DadosFicha {
+  const base = fichaBase(s, nome)
+  // Recursos começam cheios (vida, mana…) quando o máximo é calculado; senão, 0 até o jogador preencher.
+  try {
+    const c = calcular(s, base), max = c.recursosMax
+    for (const r of s.recursos) {
+      // Vida sem fórmula: usa o PV sugerido do sistema (igual ao combate da mesa).
+      const m = max[r.id] ?? (/^(pv|vida|hp)$/i.test(r.id) ? (c.derivados.pv_max ?? c.derivados.pv_sugerido ?? null) : null)
+      if (m !== null && m !== undefined && Number.isFinite(m) && m > 0) base.recursos[r.id] = { atual: m } }
+  } catch { /* sem cálculo: fica 0 */ }
+  return base
+}
+
+function fichaBase(s: Sistema, nome: string): DadosFicha {
   return {
     sistema: s.id, nome,
     campos: Object.fromEntries(s.campos.map(c => [c.id, c.padrao ?? (c.tipo === 'numero' ? 0 : '')])),

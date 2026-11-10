@@ -89,9 +89,9 @@ export function JanelaAtaque({ estado, mudar, tokens, ficha, admin, acao, fechar
   const dist = at && al ? distancia(at, al) : null
   const fora = dist !== null && alcance !== null && dist > alcance
   if (!at) return null
-  if (estado.mirando) return <div className="pointer-events-auto absolute inset-x-2 top-2 z-40 mx-auto flex max-w-md items-center gap-2 rounded-xl border border-amber-400/60 bg-[#2b2310]/95 p-2 text-sm text-amber-100 shadow-xl">
+  if (estado.mirando) return <div className="pointer-events-none absolute inset-x-2 top-2 z-40 mx-auto flex max-w-md items-center gap-2 rounded-xl border border-amber-400/60 bg-[#2b2310]/85 p-2 text-sm text-amber-100 shadow-xl">
     <Target size={18} className="shrink-0" /><span className="flex-1">Toque no alvo de <strong>{at.nome}</strong>{alcance ? ` · alcance ${alcance} m` : ''}</span>
-    <button type="button" onClick={() => mudar({ ...estado, mirando: false })} className="rounded-lg border border-amber-300/60 px-2 py-1 text-xs">Voltar</button>
+    <button type="button" onClick={() => mudar({ ...estado, mirando: false })} className="pointer-events-auto rounded-lg border border-amber-300/60 px-2 py-1 text-xs">Voltar</button>
   </div>
 
   async function atacar() {

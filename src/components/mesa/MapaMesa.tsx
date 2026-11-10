@@ -12,7 +12,7 @@ export type Ping = { id: string; x: number; y: number; autor: string }
 export type CursorRemoto = { id: string; nome: string; x: number; y: number }
 export type TokenMapa = {
   id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; tamanho: number
-  visivel: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; podeMover: boolean; meu: boolean
+  visivel: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; rodadas?: Record<string, number>; podeMover: boolean; meu: boolean
 }
 
 type Props = {
@@ -26,6 +26,8 @@ type Props = {
   onArrastando?: (id: string, x: number, y: number) => void; onTracando?: (id: string, pontos: number[]) => void
   /** Ataque: círculo de alcance em volta do atacante e alvo marcado. */
   alcance?: { tokenId: string; metros: number | null; alvo: string | null } | null
+  /** Escolhendo o alvo de um ataque: tocar num token só escolhe (não arrasta), em qualquer ferramenta. */
+  mirando?: boolean
   /** Token da vez no combate (ganha um anel dourado). */
   vez?: string | null
 }
@@ -48,6 +50,9 @@ export default function MapaMesa(p: Props) {
   const inicio = useRef<{ px: number; py: number } | null>(null)
   const tracoId = useRef('')
   const houveDrag = useRef(false)
+  // Toque/clique num token: só vale no evento “click”. Abrir a janela no “pointerup” fazia o clique-fantasma
+  // do celular (que vem depois do toque) cair na janela recém-aberta e fechá-la na hora.
+  const tokenTocado = useRef<string | null>(null)
   const pintando = useRef(false)
   const editandoMapa = modo === 'editar-mapa'
 
@@ -67,7 +72,7 @@ export default function MapaMesa(p: Props) {
   useEffect(() => { if (!editandoMapa) setCamadaEdit(null) }, [editandoMapa])
 
   function tokenDown(e: React.PointerEvent, t: TokenMapa) {
-    if (modo !== 'mover') return
+    if (modo !== 'mover' && !p.mirando) return
     e.preventDefault(); e.stopPropagation()
     inicio.current = { px: e.clientX, py: e.clientY }; houveDrag.current = false
     setArrastando(t.id); setDragPos({ x: t.x, y: t.y })
@@ -92,6 +97,7 @@ export default function MapaMesa(p: Props) {
       return
     }
     if (arrastando) {
+      if (p.mirando) return
       const cel = celula(e)
       if (cel && (cel.x !== dragPos?.x || cel.y !== dragPos?.y)) {
         setDragPos(cel)
@@ -114,8 +120,8 @@ export default function MapaMesa(p: Props) {
     if (camadaEdit) { p.onAlterarCamada(camadaEdit.c); setCamadaEdit(null) }
     if (arrastando && dragPos) {
       const t = p.tokens.find(x => x.id === arrastando)
-      if (houveDrag.current && t?.podeMover) p.onMoverToken(arrastando, dragPos.x, dragPos.y)
-      else if (!houveDrag.current) p.onTokenClick(arrastando)
+      if (houveDrag.current && t?.podeMover && !p.mirando) p.onMoverToken(arrastando, dragPos.x, dragPos.y)
+      else if (!houveDrag.current || p.mirando) tokenTocado.current = arrastando
     }
     setArrastando(null); setDragPos(null); inicio.current = null; setRegua(null)
     if (traco && traco.length >= 4) p.onDesenhar(traco, tracoId.current)
@@ -194,6 +200,7 @@ export default function MapaMesa(p: Props) {
             const pct = t.hp_max ? Math.max(0, Math.min(1, (t.hp_atual ?? 0) / t.hp_max)) : null
             const morto = t.hp_max ? (t.hp_atual ?? 0) <= 0 : false
             return <div key={t.id} className={'absolute ' + (emDrag ? '' : 'transition-[left,top] duration-100')} onPointerDown={e => tokenDown(e, t)}
+              onClick={e => { e.stopPropagation(); if (tokenTocado.current === t.id) { tokenTocado.current = null; p.onTokenClick(t.id) } }}
               style={{ left: x * CELULA, top: y * CELULA, width: lado, height: lado, zIndex: emDrag ? 30 : 10, opacity: t.visivel ? 1 : 0.45, pointerEvents: editandoMapa ? 'none' : undefined }}>
               <div title={t.nome} className={'flex h-full w-full items-center justify-center overflow-hidden rounded-full border-2 bg-cover bg-center text-sm font-bold text-[#0b0a14] shadow-lg '
                 + (t.podeMover && modo === 'mover' ? 'cursor-grab ' : 'cursor-pointer ') + (emDrag ? 'scale-110 border-white ' : t.meu ? 'border-[#b99bff] ' : 'border-black/50 ') + (morto ? 'grayscale' : '')}
@@ -203,7 +210,7 @@ export default function MapaMesa(p: Props) {
               {p.vez === t.id && <><span aria-hidden className="prg-vez pointer-events-none absolute -inset-1.5 rounded-full border-[3px] border-amber-300" />
                 <span className="pointer-events-none absolute -left-2 -top-2 rounded-full bg-amber-400 px-1 text-[10px] font-bold text-[#1a1230] shadow" title="Vez deste token">⚔️</span></>}
               {!t.podeMover && <span className="pointer-events-none absolute -right-1 -top-1 text-[10px]" title="Travado">🔒</span>}
-              {t.condicoes.length > 0 && <div className="pointer-events-none absolute -top-3 left-1/2 flex -translate-x-1/2 gap-px whitespace-nowrap rounded-full bg-black/70 px-1 text-[9px]">{t.condicoes.slice(0, 4).map(c => <span key={c}>{emojiCondicao[c] ?? '❓'}</span>)}</div>}
+              {t.condicoes.length > 0 && <div className="pointer-events-none absolute -top-3 left-1/2 flex -translate-x-1/2 gap-px whitespace-nowrap rounded-full bg-black/70 px-1 text-[9px]">{t.condicoes.slice(0, 4).map(c => <span key={c}>{emojiCondicao[c] ?? '❓'}{t.rodadas?.[c] ? <sub className="font-bold text-amber-200">{t.rodadas[c]}</sub> : null}</span>)}{t.condicoes.length > 4 && <span>+{t.condicoes.length - 4}</span>}</div>}
               {pct !== null && <div className="absolute -bottom-1.5 left-1 right-1 h-1.5 overflow-hidden rounded-full bg-black/80"><div className="h-full rounded-full" style={{ width: pct * 100 + '%', background: pct > 0.5 ? '#10b981' : pct > 0.25 ? '#f59e0b' : '#ef4444' }} /></div>}
               <div className="pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-slate-200">{t.nome}{!t.visivel && ' 🙈'}</div>
             </div>

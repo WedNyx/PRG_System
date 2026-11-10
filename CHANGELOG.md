@@ -2,6 +2,15 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.23.0 — Condições com duração e toque no celular (2026-11-10)
+- Corrigido: no celular, tocar num token (para abrir a janela dele ou escolher o alvo do ataque) abria e fechava na hora. Agora o toque funciona.
+- Escolher o alvo funciona com qualquer ferramenta do mapa selecionada, e o token não sai do lugar enquanto você mira.
+- Condições com duração: na janela do token, cada condição pode durar de 1 a 10 rodadas (ou sem limite). A contagem desce no fim do turno daquele token, e o chat avisa quando ela acaba.
+- O número de rodadas aparece em cima do token no mapa e na lista de iniciativa. Quando chega a vez de alguém, o chat mostra as condições dele.
+- Novas condições: 🩸 Sangrando, 🔥 Queimando, 🐌 Lento e ⛓️ Paralisado.
+- O jogador pode tocar em “✅ Terminar meu turno” quando é a vez dele, sem esperar o mestre.
+- Migração 018: duração das condições nos tokens.
+
 ## v0.22.0 — Classe com a sua tabela de níveis (2026-11-10)
 - A classe escolhida define a tabela de níveis: numa “Lista de opções” (Classe), cada opção pode ter a sua “📈 Tabela de níveis”. Na ficha, só vale a tabela da classe escolhida.
 - Construtor, em “Progressão por nível”: botão “🔗 Uma tabela para cada opção de…”. Ele cria uma tabela para Guerreiro, Mago… (começando igual à atual) e já liga tudo.

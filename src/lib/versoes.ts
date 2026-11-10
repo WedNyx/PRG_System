@@ -6,6 +6,54 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.13.1', data: '2026-11-10', titulo: 'Mesa sem atraso',
+    itens: [
+      'Mesa sem atraso: o token acompanha o dedo/mouse na hora e fica onde você soltou, sem voltar nem pular enquanto o servidor salva.',
+      'Desenhar sem atraso: o traço fica na tela assim que você solta, sem sumir e reaparecer.',
+      'Os outros jogadores veem o token sendo arrastado e o traço sendo desenhado ao vivo, sem esperar o salvamento.',
+      'Mapa mais leve: grade, névoa e desenhos não são redesenhados a cada movimento (melhora em celulares e mapas grandes).',
+      'Cursor dos outros enviado com menos mensagens, para não congestionar o canal ao vivo.',
+    ],
+  },
+  {
+    versao: '0.13.0', data: '2026-11-09', titulo: 'Segurança, cópias de segurança e saúde da plataforma',
+    itens: [
+      'O login antigo por e-mail saiu de vez (telas, código e banco de dados). A entrada é só pelo portal de perfis.',
+      'Três funções antigas do banco que ficavam abertas foram removidas, junto com as tabelas vazias do sistema antigo.',
+      'Cópia de segurança automática todos os dias, numa pasta privada (ficam as últimas 14). O administrador também pode guardar ou baixar uma cópia na hora.',
+      'Saúde da plataforma (área do administrador): banco no ar, versão publicada e os erros inesperados registrados, com detalhes.',
+      'Se uma tela quebrar, aparece um aviso amigável com “Tentar de novo”, e o erro é registrado automaticamente.',
+      'O importar/exportar sistemas por arquivo foi retirado, e a Ficha V8 não entra mais na plataforma nem por importação.',
+    ],
+  },
+  {
+    versao: '0.12.1', data: '2026-11-09', titulo: 'Créditos do criador',
+    itens: [
+      '“✍️ Criado por” com o nome de quem fez o sistema, em destaque na lista de sistemas, na escolha de sistema e dentro das fichas.',
+      'Lunethernnyis (ficha automática e Ficha V8) saiu da plataforma por enquanto, para revisão do autor. Fichas que já existiam continuam abrindo normalmente; não dá para criar novas.',
+    ],
+  },
+  {
+    versao: '0.12.0', data: '2026-11-09', titulo: 'Construtor de sistemas autorais',
+    itens: [
+      'Construtor de sistemas autorais: monte seu próprio RPG com identidade, atributos, valores calculados por fórmula, perícias (por graus ou por número), recursos, espaços de texto, limites de criação, carga e lembretes de regras.',
+      'Comece com um exemplo simples ou copiando a estrutura de um sistema da plataforma (os créditos de licença aberta vão junto).',
+      'Prévia ao vivo da ficha e conferência das fórmulas: o construtor avisa, em português, qualquer variável que não existe ou conta com erro.',
+      'Rascunho (só você vê e testa) ou publicado (aparece em “Sistemas autorais” para todos, com o seu nome). Fichas, campanhas, inventário, poderes e permissões funcionam igual aos outros sistemas.',
+      'Os balões de aviso agora aparecem logo abaixo do topo, sem cobrir os botões.',
+    ],
+  },
+  {
+    versao: '0.11.0', data: '2026-11-09', titulo: 'Avisos (notificações)',
+    itens: [
+      'Avisos dentro da plataforma (🔔 no topo da Central e da mesa), sem nada por e-mail: número de não lidos, balão quando chega algo novo e toque para ir direto ao lugar certo.',
+      'Jogadores são avisados de: entrada aceita ou recusada, ficha aprovada/recusada/ajustes, ficha travada, recompensas, sessão começando, mudança de papel, anotações compartilhadas e resumos novos no diário.',
+      'O mestre é avisado de: pedidos para entrar, fichas e playlists enviadas e pedidos de alteração de ficha.',
+      '“Ler todos” e “Apagar os já lidos”; avisos com mais de 60 dias somem sozinhos.',
+      'Links diretos para uma campanha na Central (usados pelos avisos).',
+    ],
+  },
+  {
     versao: '0.10.0', data: '2026-11-09', titulo: 'Sessões, espectadores e música do mestre',
     itens: [
       'Sessão aberta/fechada: só o mestre abre a mesa (“▶ Abrir sessão”). Com a sessão fechada, ninguém além do mestre entra; quem estiver esperando entra sozinho quando ela abrir.',

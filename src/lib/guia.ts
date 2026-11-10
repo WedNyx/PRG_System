@@ -21,6 +21,11 @@ export const GUIA: TopicoGuia[] = [
     passos: ['No menu, toque em “Editar perfil” (ou na sua foto, no canto de cima).', 'Toque em “📷 Trocar foto”, ajuste o recorte e toque em “Usar esta foto”.', 'Mude o nome se quiser e toque em “Salvar”. Todo mundo verá a mudança.'],
   },
   {
+    id: 'avisos', icone: '🔔', titulo: 'Avisos (sininho)', foto: 'avisos.jpg', legenda: 'Lista de avisos',
+    resumo: 'O sininho no topo mostra o que aconteceu enquanto você não estava olhando. Tudo fica dentro da plataforma: nada vai por e-mail.',
+    passos: ['O número vermelho no 🔔 mostra quantos avisos você ainda não leu. Avisos novos também aparecem num balão rápido.', 'Toque num aviso para ir direto ao lugar certo (a ficha, a campanha ou a mesa).', 'Jogadores recebem: entrada aceita, ficha aprovada/recusada/ajustes, recompensas, sessão começando, papel novo, anotações e resumos do diário.', 'O mestre recebe: pedidos para entrar, fichas e playlists enviadas e pedidos de alteração de ficha.', 'Use “Ler todos” e “Apagar os já lidos” para organizar. Avisos com mais de 60 dias somem sozinhos.'],
+  },
+  {
     id: 'tema', icone: '🎨', titulo: 'Tema da plataforma',
     resumo: 'O tema principal é o Céu estrelado. Também existe a Noite clássica, mais lisa.',
     passos: ['No menu, toque em “Tema” para alternar entre Céu estrelado e Noite clássica.', 'A escolha vale para este aparelho.'],
@@ -30,6 +35,12 @@ export const GUIA: TopicoGuia[] = [
     resumo: 'A plataforma tem fichas prontas para vários sistemas, que calculam as regras sozinhas.',
     passos: ['Abra “Sistemas de RPG” no menu. Escolha entre “Sistemas publicados” (RPGs já existentes) e “Sistemas autorais” (criados por jogadores).', 'Toque em “📖 Guia do mestre” para ver como criar a ficha naquele sistema e o que a ficha calcula sozinha.', 'Toque em “Criar ficha” para começar um personagem.'],
     dica: 'Sistemas com selo “Estrutura de ficha” são comerciais: a ficha organiza os campos e as regras ficam com o seu livro.',
+  },
+  {
+    id: 'construtor', icone: '✍️', titulo: 'Criar o seu próprio sistema', foto: 'construtor.jpg', legenda: 'Construtor com a prévia da ficha',
+    resumo: 'Monte um sistema de RPG do zero (ou a partir de um da plataforma) e use nas suas campanhas.',
+    passos: ['Em “Sistemas de RPG” → “Sistemas autorais”, toque em “Abrir o construtor”.', 'Comece com o exemplo simples ou copie a estrutura de um sistema da plataforma.', 'Monte as seções: identidade, atributos, valores calculados (com fórmulas), perícias, recursos, espaços de texto e regras.', 'As fórmulas usam os nomes que aparecem em “na fórmula” (ex.: 10 + FOR * 2). Toque numa fórmula e depois numa variável para inserir. Se algo estiver errado, o aviso amarelo explica o quê.', 'Use “Prévia” para testar a ficha na hora. Toque em “Salvar”: já dá para criar fichas (só você, enquanto for rascunho).', 'Quando estiver pronto, “Publicar para todos”: ele aparece nos Sistemas autorais com “✍️ Criado por” e o seu nome, e pode ser escolhido nas campanhas.'],
+    dica: 'Dá para editar depois: as fichas existentes passam a usar a versão nova. Um sistema com fichas não pode ser excluído, só voltar a rascunho.',
   },
   {
     id: 'fichas', icone: '📜', titulo: 'Criar e preencher fichas', foto: 'ficha.jpg', legenda: 'Ficha com menu por seções',
@@ -81,8 +92,8 @@ export const GUIA: TopicoGuia[] = [
   },
   {
     id: 'admin', icone: '🔒', titulo: 'Gerenciar perfis (administrador)', foto: 'portal-admin.jpg', legenda: 'Senha do administrador', quem: 'admin',
-    resumo: 'Só quem sabe a senha de administrador pode remover perfis da plataforma.',
-    passos: ['No portal, toque em “🔒 Gerenciar perfis” e digite a senha.', 'Toque na 🗑 de um perfil para removê-lo. As fichas e playlists dele também são apagadas.', 'Um perfil que é mestre de alguma campanha só pode ser removido depois que essas campanhas forem excluídas.'],
+    resumo: 'Só quem sabe a senha de administrador pode remover perfis e ver a saúde da plataforma.',
+    passos: ['No portal, toque em “🔒 Gerenciar perfis” e digite a senha.', 'Toque na 🗑 de um perfil para removê-lo. As fichas e playlists dele também são apagadas.', 'Um perfil que é mestre de alguma campanha só pode ser removido depois que essas campanhas forem excluídas.', 'Em “🩺 Saúde da plataforma e cópias de segurança” você vê se o banco está no ar, os erros inesperados registrados e as cópias diárias. Dá para guardar uma cópia na hora ou baixar o arquivo para guardar no seu computador.'],
     dica: 'A senha fica na Vercel, na variável PRG_ADMIN_SENHA. Para trocar, mude a variável e faça um Redeploy.',
   },
   {

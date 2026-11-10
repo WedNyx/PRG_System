@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import FichaGenerica from '@/components/fichas/FichaGenerica'
 import { sistemaPorId } from '@/lib/sistemas/catalogo'
+import { obterSistema } from '@/lib/sistemas/cliente'
 import { normalizarFicha } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
@@ -45,8 +46,8 @@ function Conteudo() {
           if (r.pendentes?.length) setAviso({ texto: 'Aguardando o mestre aprovar: ' + r.pendentes.map(a => AREAS[a] ?? a).join(', ') + '.', desfazer: false })
           if (r.ficha.observacao_mestre) setErro('Mestre: ' + r.ficha.observacao_mestre)
           else if (!r.podeEditar && r.ficha.bloqueada) setErro('O mestre travou esta ficha neste momento.')
-          const s = sistemaPorId(r.ficha.sistema)
-          if (!s) throw new ErroNuvem(400, 'Sistema desta ficha não é suportado aqui.')
+          const s = await obterSistema(r.ficha.sistema)
+          if (!s) throw new ErroNuvem(400, 'O sistema desta ficha não foi encontrado (talvez tenha sido excluído).')
           if (!ativo) return
           versao.current = r.ficha.versao
           setCampanhaId(r.ficha.campanha_id ?? null)
@@ -106,7 +107,7 @@ function Conteudo() {
   return <main className="min-h-screen fundo-tema text-[#f2ebff]">
     <header className="sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b border-[#373251] bg-[#19172c]/95 px-4 py-3 backdrop-blur">
       <Link href="/central" className="text-sm text-[#b99bff] hover:underline">← Início</Link>
-      <h1 className="min-w-0 flex-1 truncate font-bold">{sistema?.nome ?? 'Ficha'}</h1>
+      <h1 className="min-w-0 flex-1 truncate font-bold">{sistema?.nome ?? 'Ficha'}{sistema?.autor && <span className="block truncate text-xs font-normal text-[#ed9cd8]">✍️ Sistema criado por {sistema.autor}</span>}</h1>
       <span className="text-xs text-[#b4aeca]" aria-live="polite">{ROTULO[estado]}</span>
     </header>
     <div className="mx-auto max-w-5xl px-3 py-5 sm:px-6">

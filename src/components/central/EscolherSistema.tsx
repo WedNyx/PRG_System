@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import { BookOpen, Loader2, X } from 'lucide-react'
-import { GRUPOS_SISTEMA, OPCOES_SISTEMA, criarEAbrirFicha } from '@/lib/sistemas/criar'
+import { GRUPOS_SISTEMA, criarEAbrirFicha } from '@/lib/sistemas/criar'
+import { useOpcoesSistema } from '@/lib/sistemas/cliente'
 
 /** Janela para escolher o sistema antes de criar uma ficha. */
 export default function EscolherSistema({ aventureiroId, onFechar }: { aventureiroId: string; onFechar: () => void }) {
   const [criando, setCriando] = useState('')
   const [erro, setErro] = useState('')
+  const { opcoes } = useOpcoesSistema()
   async function criar(id: string) {
     setCriando(id); setErro('')
     try { await criarEAbrirFicha(id, aventureiroId) } catch (e) { setErro(e instanceof Error ? e.message : 'Não foi possível criar a ficha.'); setCriando('') }
@@ -20,7 +22,7 @@ export default function EscolherSistema({ aventureiroId, onFechar }: { aventurei
       {erro && <p role="alert" className="mt-3 text-sm text-red-200">{erro}</p>}
       {GRUPOS_SISTEMA.map(g => <section key={g.id} className="mt-4">
         <h3 className="text-xs font-bold uppercase tracking-wide text-[#d3adf0]">{g.nome}</h3>
-        <ul className="mt-2 space-y-2">{OPCOES_SISTEMA.filter(o => o.grupo === g.id).map(o => <li key={o.id}>
+        <ul className="mt-2 space-y-2">{opcoes.filter(o => o.grupo === g.id).map(o => <li key={o.id}>
           <button type="button" disabled={!!criando} onClick={() => criar(o.id)} className="flex w-full items-center gap-3 rounded-xl border border-[#55456e] bg-[#201a32] p-3 text-left hover:border-[#b79aff] disabled:opacity-60">
             {criando === o.id ? <Loader2 className="animate-spin text-[#c5a7ff]" size={20} /> : <BookOpen className="text-[#c5a7ff]" size={20} />}
             <span className="text-sm font-semibold">{o.nome}</span>

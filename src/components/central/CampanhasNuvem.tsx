@@ -9,6 +9,7 @@ import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import PainelFichasCampanha from './PainelFichasCampanha'
 import SeletorSistemaCampanha from './SeletorSistemaCampanha'
 import { SISTEMAS, sistemaDaCampanha } from '@/lib/sistemas/catalogo'
+import { useSistemasAutorais } from '@/lib/sistemas/cliente'
 import { campanhasLocais, marcarImportado, type CampanhaLocal } from '@/lib/nuvem/locais'
 
 type Campanha = {
@@ -33,9 +34,11 @@ const btn = 'inline-flex items-center gap-2 rounded-lg border border-[#70588c] p
 const btnPrim = 'inline-flex items-center gap-2 rounded-xl bg-[#7652ac] px-4 py-3 font-semibold hover:bg-[#8b68c4] disabled:opacity-50'
 const msg = (e: unknown) => e instanceof ErroNuvem ? e.message : 'Falha de conexão. Tente novamente.'
 
-export default function CampanhasNuvem({ aventureiroId }: { aventureiroId: string }) {
+export default function CampanhasNuvem({ aventureiroId, abrirCampanha }: { aventureiroId: string; abrirCampanha?: string | null }) {
+  const { lista: autorais } = useSistemasAutorais()
+  for (const a of autorais ?? []) nomesAutorais.set(a.id, a.nome)
   const [campanhas, setCampanhas] = useState<Campanha[] | null>(null)
-  const [tela, setTela] = useState<{ tipo: 'lista' } | { tipo: 'form'; campanha?: Campanha } | { tipo: 'gerenciar'; id: string }>({ tipo: 'lista' })
+  const [tela, setTela] = useState<{ tipo: 'lista' } | { tipo: 'form'; campanha?: Campanha } | { tipo: 'gerenciar'; id: string }>(() => abrirCampanha && /^[0-9a-f-]{36}$/i.test(abrirCampanha) ? { tipo: 'gerenciar', id: abrirCampanha } : { tipo: 'lista' })
   const [erro, setErro] = useState('')
   const [codigo, setCodigo] = useState('')
   const [locais, setLocais] = useState<CampanhaLocal[]>([])
@@ -255,5 +258,7 @@ function Excecoes({ campanha, membro, ocupado, salvar }: { campanha: Campanha; m
 }
 
 /** Campanhas antigas podem guardar o id do sistema; mostra o nome bonito. */
-const nomeSistema = (v: string) => SISTEMAS.find(x => x.id === v)?.nome ?? v
+/** Nome bonito: catálogo, autoral (pelo id) ou o texto livre digitado. */
+const nomeSistema = (v: string) => SISTEMAS.find(x => x.id === v)?.nome ?? (/^autoral-[0-9a-f]{32}$/.test(v) ? (nomesAutorais.get(v) ?? 'Sistema autoral') : v)
+const nomesAutorais = new Map<string, string>()
 

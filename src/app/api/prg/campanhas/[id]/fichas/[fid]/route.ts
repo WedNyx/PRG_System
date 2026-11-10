@@ -1,4 +1,4 @@
-import { ator, buscarFicha, lerJson, ok, papelNaCampanha, q, registrar, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
+import { ator, linkFichaNuvem, nomeDaCampanha, notificar, buscarFicha, lerJson, ok, papelNaCampanha, q, registrar, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { podeAdministrar, isUuid } from '@/lib/nuvem/validacao'
 import { CAMPOS } from '@/lib/campanhas/permissoes'
 
@@ -47,5 +47,13 @@ export const POST = rota<Ctx>(async (req, { params }) => {
   if (!Object.keys(mudanca).length && !log.length) throw new ErroApi(400, 'Nada para alterar.')
   if (Object.keys(mudanca).length) await rest(`prg_fichas?id=eq.${q(f.id)}`, { method: 'PATCH', body: JSON.stringify(mudanca) })
   await registrar([{ ficha_id: f.id, campanha_id: id, autor_id: eu, tipo: b.decisao !== undefined ? 'aprovacao' : 'bloqueio', descricao: log.join(' · ') + (obs ? ` — "${obs}"` : '') }])
+  if (!f.npc) {
+    const nomeF = f.nome || 'sua ficha', nomeC = await nomeDaCampanha(id), link = linkFichaNuvem(f)
+    const aviso = b.decisao === 'aprovar' ? { tipo: 'ficha_aprovada', titulo: `✅ ${nomeF} foi aprovada em ${nomeC}` }
+      : b.decisao === 'recusar' ? { tipo: 'ficha_recusada', titulo: `❌ ${nomeF} foi recusada em ${nomeC}` }
+      : b.decisao === 'ajustar' ? { tipo: 'ficha_ajuste', titulo: `✏️ O mestre pediu ajustes em ${nomeF}` }
+      : typeof b.bloqueada === 'boolean' ? { tipo: 'ficha_trava', titulo: b.bloqueada ? `🔒 O mestre travou ${nomeF}` : `🔓 O mestre destravou ${nomeF}` } : null
+    if (aviso) await notificar([{ destinatario_id: f.dono_id, campanha_id: id, ...aviso, texto: obs ?? '', link }], eu)
+  }
   return ok({ ok: true })
 })

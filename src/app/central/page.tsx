@@ -10,6 +10,7 @@ import FichasNuvem from '@/components/central/FichasNuvem'
 import SistemasGaleria from '@/components/central/SistemasGaleria'
 import { BookOpen, Castle, ChevronRight, CircleHelp, Dice5, House, Menu, MoonStar, Palette, Pencil, ScrollText, Sparkles, UserRound, X } from 'lucide-react'
 import EditarPerfil from '@/components/perfil/EditarPerfil'
+import Sino from '@/components/Sino'
 import { CHAVE_ENTRADA } from '@/components/perfil/TransicaoPerfil'
 import { aplicarTema, temaAtual, TEMAS, type Tema } from '@/lib/tema'
 import { VERSOES } from '@/lib/versoes'
@@ -30,7 +31,8 @@ const navigation: { id: Section; label: string; icon: typeof House }[] = [
 
 function CentralContent() {
   const params = useSearchParams()
-  const [section, setSection] = useState<Section>('inicio')
+  // Links diretos (ex.: avisos): /central?secao=campanhas&campanha=<id>
+  const [section, setSection] = useState<Section>(() => { const s = params.get('secao'); return s && ['inicio', 'fichas', 'campanhas', 'sistemas', 'historico'].includes(s) ? s as Section : 'inicio' })
   const [fichasTab, setFichasTab] = useState<'independentes' | 'campanhas'>('independentes')
   const [menuOpen, setMenuOpen] = useState(false)
   const [perfil, setPerfil] = useState<Perfil | null>(null)
@@ -76,12 +78,13 @@ function CentralContent() {
   return (
     <main className={'min-h-screen fundo-tema text-[#f2ebff]' + (entrada ? ' prg-entrada' : '')}>
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#4b3b62] bg-[#151123]/95 px-4 backdrop-blur lg:px-8">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button type="button" onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg p-2 hover:bg-[#342749] lg:hidden" aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuOpen}>{menuOpen ? <X /> : <Menu />}</button>
           <MoonStar className="text-[#c5a7ff] drop-shadow-[0_0_9px_#a76aff]" size={30} aria-hidden="true" />
-          <span className="font-bold tracking-wide">PRG <span className="text-[#c5a7ff]">System</span></span>
+          <span className="whitespace-nowrap text-sm font-bold tracking-wide sm:text-base">PRG <span className="text-[#c5a7ff]">System</span></span>
         </div>
         <div className="flex items-center gap-2 text-sm sm:gap-3">
+          <Sino />
           <Link href="/guia" className="inline-flex items-center gap-1.5 rounded-full border border-[#8d70b6] px-3 py-1.5 text-[#e4d3ff] hover:bg-[#342749]" title="Guia da plataforma"><CircleHelp size={18} aria-hidden="true" /><span>Guia</span></Link>
           <span className="hidden text-[#d0c2df] sm:inline">{perfil.apelido}</span>
           <button type="button" onClick={() => CLOUD_ENABLED && setEditando(true)} disabled={!CLOUD_ENABLED} aria-label="Editar perfil" title={CLOUD_ENABLED ? 'Editar perfil' : perfil.apelido} className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-[#8d70b6] bg-[#342749] font-semibold text-[#d8c0ff]">
@@ -131,7 +134,7 @@ function CentralContent() {
           </>}
           {section === 'campanhas' && <>
             <h1 className="text-3xl font-bold">Campanhas</h1><p className="mt-2 text-[#bfb2cf]">Prepare suas aventuras e defina as regras de edição das fichas.</p>
-            <Campanhas aventureiroId={perfil.id} />
+            <Campanhas aventureiroId={perfil.id} abrirCampanha={params.get('campanha')} />
           </>}
           {section === 'sistemas' && <><h1 className="text-3xl font-bold">Sistemas de RPG</h1><p className="mt-2 text-[#bfb2cf]">Escolha um sistema e crie uma ficha que calcula as regras sozinha.</p><SistemasGaleria aventureiroId={perfil.id} /></>}
           {section === 'historico' && <><h1 className="text-3xl font-bold">Histórico de rolagens</h1><p className="mt-2 text-[#bfb2cf]">Onde encontrar suas rolagens.</p><div className="mt-6 rounded-2xl border border-[#55456e] bg-[#201a32] p-6 text-sm text-[#c4b6d4]">As rolagens das campanhas ficam salvas no histórico da mesa: abra a campanha, entre na mesa e toque em “Histórico” no chat (dá para filtrar por pessoa, personagem e tipo). Rolagens feitas em fichas fora de campanha não entram nesse histórico.</div></>}

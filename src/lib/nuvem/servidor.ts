@@ -84,11 +84,31 @@ export function rota<C>(fn: (req: NextRequest, ctx: C) => Promise<NextResponse>)
   return async (req: NextRequest, ctx: C) => {
     if (!configurado()) return NextResponse.json({ erro: 'Sincronização na nuvem ainda não configurada.' }, { status: 503 })
     try { return await fn(req, ctx) } catch (e) {
-      if (e instanceof ErroApi) return NextResponse.json({ erro: e.message }, { status: e.status })
-      console.error('[prg-api]', e instanceof Error ? e.message : 'erro desconhecido')
+      const local = `${req.method} ${localDaRota(req.nextUrl.pathname)}`
+      if (e instanceof ErroApi) {
+        if (e.status >= 500 && e.status !== 503) await registrarErro('servidor', local, e.message)
+        return NextResponse.json({ erro: e.message }, { status: e.status })
+      }
+      const msg = e instanceof Error ? e.message : 'erro desconhecido'
+      console.error('[prg-api]', msg)
+      await registrarErro('servidor', local, msg || 'erro desconhecido', e instanceof Error ? (e.stack ?? '') : '')
       return NextResponse.json({ erro: 'Erro inesperado. Tente novamente.' }, { status: 500 })
     }
   }
+}
+
+/** Caminho sem ids (assim erros iguais aparecem juntos e nenhum id vai para o registro). */
+export const localDaRota = (p: string) => p.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, ':id').slice(0, 200)
+
+/** Guarda um erro inesperado para o administrador ver em “Saúde da plataforma”. Nunca derruba a requisição. */
+export async function registrarErro(origem: 'servidor' | 'navegador', local: string, mensagem: string, detalhe = '') {
+  try {
+    await fetch(url() + '/rest/v1/prg_erros', {
+      method: 'POST', cache: 'no-store',
+      headers: { apikey: chave()!, Authorization: 'Bearer ' + chave()!, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ origem, local: local.slice(0, 200), mensagem: (mensagem || '?').slice(0, 500), detalhe: detalhe.slice(0, 2000) }),
+    })
+  } catch { /* sem banco: só fica no log da Vercel */ }
 }
 export const ok = (dados: unknown, status = 200) => NextResponse.json(dados, { status, headers: { 'Cache-Control': 'no-store' } })
 
@@ -119,3 +139,33 @@ export async function regrasDoJogador(campanhaId: string, aventureiroId: string)
   const [m] = await rest<{ excecoes: Record<string, string> }[]>(`prg_campanha_membros?select=excecoes&campanha_id=eq.${q(campanhaId)}&aventureiro_id=eq.${q(aventureiroId)}`)
   return { campanha: c, excecoes: m?.excecoes ?? {} }
 }
+
+// ---- v0.11.0: notificações dentro da plataforma (nunca por e-mail) ----
+export type NovaNotificacao = { destinatario_id: string; campanha_id?: string | null; tipo: string; titulo: string; texto?: string; link?: string | null }
+/** Cria avisos. Falhar aqui nunca impede a ação principal. Quem fez a ação não recebe aviso dela (`autor`). */
+export async function notificar(lista: NovaNotificacao[], autor?: string) {
+  const vistos = new Set<string>()
+  const linhas = lista.filter(n => n.destinatario_id && n.destinatario_id !== autor).filter(n => {
+    const k = n.destinatario_id + '|' + n.tipo + '|' + n.titulo; if (vistos.has(k)) return false; vistos.add(k); return true
+  }).map(n => ({
+    destinatario_id: n.destinatario_id, campanha_id: n.campanha_id ?? null, tipo: n.tipo.slice(0, 40),
+    titulo: n.titulo.slice(0, 160), texto: (n.texto ?? '').slice(0, 400), link: n.link && n.link.startsWith('/') ? n.link.slice(0, 300) : null,
+  }))
+  if (!linhas.length) return
+  try { await rest('prg_notificacoes', { method: 'POST', body: JSON.stringify(linhas) }) }
+  catch (e) { console.error('[prg-notificacoes]', e instanceof Error ? e.message : '') }
+}
+/** Participantes da campanha (para avisar o grupo ou só o mestre). */
+export async function participantes(campanhaId: string): Promise<{ aventureiro_id: string; papel: string }[]> {
+  try { return await rest(`prg_campanha_membros?select=aventureiro_id,papel&campanha_id=eq.${q(campanhaId)}`) } catch { return [] }
+}
+export const mestresDe = (ps: { aventureiro_id: string; papel: string }[]) => ps.filter(p => p.papel === 'mestre' || p.papel === 'comestre').map(p => p.aventureiro_id)
+export async function nomeDaCampanha(campanhaId: string): Promise<string> {
+  try { const [c] = await rest<{ nome: string }[]>(`prg_campanhas?select=nome&id=eq.${q(campanhaId)}`); return c?.nome ?? 'campanha' } catch { return 'campanha' }
+}
+export async function apelidoDe(id: string): Promise<string> {
+  try { const [a] = await rest<{ apelido: string }[]>(`prg_public_adventurers?select=apelido&id=eq.${q(id)}`); return a?.apelido ?? 'Alguém' } catch { return 'Alguém' }
+}
+/** Links usados nos avisos. */
+export const linkCampanha = (cid: string) => `/central?secao=campanhas&campanha=${cid}`
+export const linkFichaNuvem = (f: { id: string; sistema: string }) => (f.sistema === 'lunethernnyis-v8' ? '/ficha-v8?nuvem=' : '/ficha?nuvem=') + f.id

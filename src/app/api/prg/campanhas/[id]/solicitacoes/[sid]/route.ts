@@ -1,4 +1,4 @@
-import { ator, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
+import { ator, linkCampanha, nomeDaCampanha, notificar, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar } from '@/lib/nuvem/validacao'
 
 export const dynamic = 'force-dynamic'
@@ -25,5 +25,9 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       body: JSON.stringify({ campanha_id: id, aventureiro_id: pedido.aventureiro_id, papel: 'jogador' }),
     })
   }
+  const nomeC = await nomeDaCampanha(id)
+  await notificar([body.decisao === 'aceitar'
+    ? { destinatario_id: pedido.aventureiro_id, campanha_id: id, tipo: 'entrada_aceita', titulo: `Você entrou em ${nomeC}! 🎉`, texto: 'Agora é só esperar o mestre abrir a sessão.', link: linkCampanha(id) }
+    : { destinatario_id: pedido.aventureiro_id, campanha_id: id, tipo: 'entrada_recusada', titulo: `Seu pedido para ${nomeC} foi recusado`, texto: 'Fale com o mestre se achar que foi engano.' }], eu)
   return ok({ ok: true })
 })

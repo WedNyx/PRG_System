@@ -1,6 +1,6 @@
 import { ator, lerJson, ok, papelNaCampanha, q, registrar, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar } from '@/lib/nuvem/validacao'
-import { sistemaValido, sistemaPorId, SISTEMA_V8 } from '@/lib/sistemas/catalogo'
+import { carregarSistema, sistemaPermitido } from '@/lib/nuvem/sistemasServidor'
 import { fichaVazia } from '@/lib/sistemas/calculo'
 
 export const dynamic = 'force-dynamic'
@@ -24,8 +24,8 @@ export const POST = rota<Ctx>(async (req, { params }) => {
   const eu = await ator(req)
   if (!podeAdministrar(await papelNaCampanha(id, eu))) throw new ErroApi(403, 'Apenas o mestre cria fichas na campanha.')
   const b = await lerJson(req) as { tipo?: unknown; jogadorId?: unknown; sistema?: unknown; nome?: unknown }
-  const sistema = b.sistema ?? SISTEMA_V8
-  if (!sistemaValido(sistema)) throw new ErroApi(400, 'Sistema de RPG desconhecido.')
+  const sistema = b.sistema ?? 'livre'
+  if (!(await sistemaPermitido(sistema, eu))) throw new ErroApi(400, 'Este sistema não está disponível para fichas novas.')
   const nome = typeof b.nome === 'string' ? b.nome.trim().slice(0, 90) : ''
   let dono = eu, npc = true
   if (b.tipo === 'jogador') {
@@ -34,7 +34,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
     if (papelAlvo === 'espectador') throw new ErroApi(400, 'Espectadores não têm ficha na campanha.')
     dono = b.jogadorId as string; npc = false
   }
-  const s = sistemaPorId(sistema)
+  const s = await carregarSistema(sistema as string)
   const dados = s ? { ...fichaVazia(s), nome } : { version: 2, fields: { name: nome } }
   const [f] = await rest<{ id: string }[]>('prg_fichas', {
     method: 'POST', prefer: 'return=representation',

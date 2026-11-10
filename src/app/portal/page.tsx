@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { validarApelidoAventureiro } from '@/lib/auth/aventureiro'
 import { useRouter } from 'next/navigation'
 import TransicaoPerfil from '@/components/perfil/TransicaoPerfil'
+import SaudePlataforma from '@/components/admin/SaudePlataforma'
 
 type Perfil = { id: string; apelido: string; avatar?: string }
 const KEY = 'prg-aventureiros-demo-v1'
@@ -47,6 +48,7 @@ export default function PortalAventureiros() {
   const [entrando, setEntrando] = useState<{ perfil: Perfil; origem: DOMRect; destino: string } | null>(null)
   const router = useRouter()
   const [pedindoSenha, setPedindoSenha] = useState(false)
+  const [vendoSaude, setVendoSaude] = useState(false)
   const [senhaDigitada, setSenhaDigitada] = useState('')
   const [erroSenha, setErroSenha] = useState('')
   const [editandoId, setEditandoId] = useState<string | null>(null)
@@ -303,6 +305,8 @@ export default function PortalAventureiros() {
           </div>
           {erro && !modal && <p role="alert" className="mt-6 max-w-md rounded-lg border border-red-500/40 p-3 text-center text-sm text-red-200">{erro}</p>}
           {gerenciando && CLOUD_ENABLED && <p className="mt-6 text-center text-sm text-[#ed9cd8]">Modo administrador: toque na 🗑 para remover um perfil.</p>}
+          {gerenciando && CLOUD_ENABLED && senhaAdmin && <button type="button" onClick={() => setVendoSaude(true)}
+            className="mt-3 rounded-lg border border-[#ed9cd8]/60 px-5 py-2 text-sm text-[#ed9cd8] hover:bg-[#34294f]">🩺 Saúde da plataforma e cópias de segurança</button>}
           <button onClick={alternarGerenciar}
             className="mt-6 rounded-lg border border-[#62527e] px-5 py-2 text-sm text-[#b99bff] hover:bg-[#34294f]">
             {gerenciando ? '✓ Concluir' : '🔒 Gerenciar perfis'}
@@ -310,7 +314,7 @@ export default function PortalAventureiros() {
           {CLOUD_ENABLED && <p className="mt-2 text-center text-xs text-[#8f86a8]">Para mudar seu nome ou foto, entre no seu perfil e use “Editar perfil” no menu.</p>}
         </section>
         <div className="flex flex-wrap items-center justify-center gap-3 pb-3 text-xs text-[#b4aeca]">
-          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.10.0'}</Link>
+          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.13.1'}</Link>
           {versao?.revision && <span title="Identificador da implantação">Build {versao.revision}</span>}
           <button type="button" onClick={() => window.location.reload()}
             className="rounded-md border border-[#62527e] px-2 py-1 text-[#b99bff] hover:bg-[#34294f]">
@@ -322,6 +326,8 @@ export default function PortalAventureiros() {
         </p>
       </div>
 
+      {vendoSaude && senhaAdmin && <SaudePlataforma senha={senhaAdmin} fechar={() => setVendoSaude(false)} />}
+
       {entrando && <TransicaoPerfil perfil={entrando.perfil} origem={entrando.origem} aoTerminar={() => router.push(entrando.destino)} />}
 
       {pedindoSenha && (
@@ -329,7 +335,7 @@ export default function PortalAventureiros() {
           <form onSubmit={conferirSenha} role="dialog" aria-modal="true" aria-labelledby="senha-titulo" onKeyDown={event => { if (event.key === 'Escape') setPedindoSenha(false) }}
             className="w-full max-w-sm rounded-2xl border border-[#62527e] bg-[#19172c] p-5 shadow-2xl">
             <h2 id="senha-titulo" className="text-lg font-bold">🔒 Área do administrador</h2>
-            <p className="mt-1 text-sm text-[#b4aeca]">Digite a senha para remover perfis da plataforma.</p>
+            <p className="mt-1 text-sm text-[#b4aeca]">Digite a senha para remover perfis e ver a saúde da plataforma.</p>
             <input type="password" autoFocus autoComplete="current-password" value={senhaDigitada} onChange={e => setSenhaDigitada(e.target.value)} maxLength={200} aria-label="Senha do administrador"
               className="mt-4 w-full rounded-lg border border-[#4a4267] bg-[#100f20] p-3 text-white outline-none focus:border-[#b99bff]" />
             {erroSenha && <p role="alert" className="mt-3 text-sm text-red-200">{erroSenha}</p>}

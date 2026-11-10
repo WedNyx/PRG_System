@@ -1,4 +1,4 @@
-import { ator, checarOrigem, exigirParticipante, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
+import { apelidoDe, ator, notificar, checarOrigem, exigirParticipante, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar } from '@/lib/nuvem/validacao'
 
 export const dynamic = 'force-dynamic'
@@ -40,6 +40,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
     return ok({ nota: r[0] })
   }
   const [n] = await rest<unknown[]>('prg_notas', { method: 'POST', prefer: 'return=representation', body: JSON.stringify({ ...linha, campanha_id: id, autor_id: eu }) })
+  if (destinatario) await notificar([{ destinatario_id: destinatario, campanha_id: id, tipo: 'nota', titulo: `📝 ${await apelidoDe(eu)} compartilhou uma anotação com você`, texto: titulo, link: `/mesa?campanha=${id}` }], eu)
   return ok({ nota: n }, 201)
 })
 

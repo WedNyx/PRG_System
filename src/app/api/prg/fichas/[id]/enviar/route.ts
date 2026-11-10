@@ -1,4 +1,4 @@
-import { ator, buscarFicha, lerJson, ok, papelNaCampanha, q, registrar, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
+import { ator, apelidoDe, linkCampanha, mestresDe, nomeDaCampanha, notificar, participantes, buscarFicha, lerJson, ok, papelNaCampanha, q, registrar, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid } from '@/lib/nuvem/validacao'
 
 export const dynamic = 'force-dynamic'
@@ -25,6 +25,9 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       body: JSON.stringify({ dono_id: eu, campanha_id: body.campanhaId, origem_id: f.id, sistema: f.sistema, nome: f.nome, dados: f.dados, status: 'pendente' }),
     })
     await registrar([{ ficha_id: copia.id, campanha_id: body.campanhaId, autor_id: eu, tipo: 'envio', descricao: `Ficha "${f.nome || 'sem nome'}" enviada para avaliação${mensagem ? ': ' + mensagem : ''}` }])
+    const cid = body.campanhaId as string
+    const [quem, nomeC, ps] = await Promise.all([apelidoDe(eu), nomeDaCampanha(cid), participantes(cid)])
+    await notificar(mestresDe(ps).map(m => ({ destinatario_id: m, campanha_id: cid, tipo: 'ficha_enviada', titulo: `📜 ${quem} enviou “${f.nome || 'uma ficha'}” para ${nomeC}`, texto: mensagem || 'Aprove, recuse ou peça ajustes.', link: linkCampanha(cid) })), eu)
     return ok({ ficha: copia }, 201)
   } catch (e) {
     if (e instanceof ErroApi && e.status === 409) throw new ErroApi(409, 'Esta ficha já está aguardando o mestre nesta campanha.')

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import RelatorErros from "@/components/RelatorErros";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,7 +36,8 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         {children}
-        <Toaster theme="dark" richColors position="top-center" />
+        <RelatorErros />
+        <Toaster theme="dark" richColors position="top-center" offset={72} mobileOffset={{ top: 70 }} />
       </body>
     </html>
   );

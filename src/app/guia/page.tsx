@@ -6,6 +6,9 @@ import { VERSOES } from '@/lib/versoes'
 
 export const metadata: Metadata = { title: 'Guia da plataforma · PRG System', description: 'Tudo o que o PRG System tem e como usar cada parte.' }
 
+/** Tópicos do guia que têm lição prática no /tutorial. */
+const PRATICA: Record<string, string> = { rolagens: 'dados', arvore: 'arvore', construtor: 'rolagem', fichas: 'imagens', campanhas: 'imagens', mesa: 'mesa', sessao: 'mesa' }
+
 const SELO = { mestre: '🎩 Para o mestre', admin: '🔒 Administrador', todos: '' } as const
 
 export default function GuiaPlataforma() {
@@ -16,6 +19,12 @@ export default function GuiaPlataforma() {
         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.22em] text-[#ed9cd8]"><CircleHelp size={16} /> Guia da plataforma</p>
         <h1 className="mt-3 text-2xl font-bold sm:text-4xl">Como usar o PRG System</h1>
         <p className="mt-3 text-sm leading-relaxed text-[#cfc0df]">Tudo o que a plataforma tem, com fotos de cada parte. Versão {VERSOES[0].versao}.</p>
+        <Link href="/tutorial" className="mt-5 flex items-center gap-4 rounded-2xl border border-[#b99bff]/60 bg-gradient-to-r from-[#3b2470] to-[#5b2a6e] p-4 shadow-[0_0_24px_#7654bb55] transition hover:brightness-110">
+          <span className="text-4xl" aria-hidden="true">🎓</span>
+          <span className="min-w-0 flex-1"><span className="block font-bold">Tutoriais práticos: aprenda fazendo</span>
+            <span className="block text-sm text-[#e4d3ff]">Missões curtas num campo de treino: dados, árvore de habilidades, rolagem personalizada, imagens e mesa.</span></span>
+          <span className="shrink-0 text-xl text-[#e4d3ff]">→</span>
+        </Link>
         <nav aria-label="Tópicos do guia" className="mt-5 grid gap-2 sm:grid-cols-2">
           {GUIA.map(t => <a key={t.id} href={'#' + t.id} className="flex items-center gap-2 rounded-xl bg-[#2a2142] px-3 py-2 text-sm hover:bg-[#3a2c58]"><span aria-hidden="true">{t.icone}</span>{t.titulo}</a>)}
         </nav>
@@ -34,6 +43,7 @@ export default function GuiaPlataforma() {
           </figure>}
           <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-[#e6dbf2]">{t.passos.map(p => <li key={p}>{p}</li>)}</ol>
           {t.dica && <p className="mt-4 rounded-xl border border-[#6d5690] bg-[#2a2142] p-3 text-sm text-[#e4d3ff]">💡 {t.dica}</p>}
+          {PRATICA[t.id] && <Link href={'/tutorial?licao=' + PRATICA[t.id]} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#5b4380] px-4 py-2 text-sm font-semibold hover:bg-[#6b5190]">🎓 Praticar no tutorial</Link>}
           <a href="#topo" className="sr-only">Voltar ao topo</a>
         </section>)}
       </div>

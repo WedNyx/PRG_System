@@ -8,7 +8,7 @@ import FichasIndependentes from '@/components/central/FichasIndependentes'
 import Campanhas from '@/components/central/Campanhas'
 import FichasNuvem from '@/components/central/FichasNuvem'
 import SistemasGaleria from '@/components/central/SistemasGaleria'
-import { BookOpen, Castle, ChevronRight, CircleHelp, Dice5, House, Menu, MoonStar, Palette, Pencil, ScrollText, Sparkles, UserRound, X } from 'lucide-react'
+import { BookOpen, Castle, ChevronRight, CircleHelp, GraduationCap, Dice5, House, Menu, MoonStar, Palette, Pencil, ScrollText, Sparkles, UserRound, X } from 'lucide-react'
 import EditarPerfil from '@/components/perfil/EditarPerfil'
 import Sino from '@/components/Sino'
 import { CHAVE_ENTRADA } from '@/components/perfil/TransicaoPerfil'
@@ -104,6 +104,7 @@ function CentralContent() {
             <Link href="/portal" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><UserRound size={19} />Trocar aventureiro</Link>
             <button type="button" onClick={trocarTema} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><Palette size={19} />Tema: {TEMAS.find(t => t.id === tema)?.nome}</button>
             <Link href="/guia" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><CircleHelp size={19} />Guia da plataforma</Link>
+            <Link href="/tutorial" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><GraduationCap size={19} />Tutoriais práticos</Link>
             <Link href="/novidades" className="mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><Sparkles size={19} />Novidades · v{VERSOES[0].versao}</Link>
           </div>
         </aside>

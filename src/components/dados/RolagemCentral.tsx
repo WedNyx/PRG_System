@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import confetti from 'canvas-confetti'
 import { detectarCritico } from '@/lib/dice'
 import { somCritico, somFalha, somRolagem } from '@/lib/sons'
-import { montarNotacao } from '@/components/mesa/Dados3D'
+import { notacao3D } from '@/lib/dados3d'
 
 export type Rolagem = {
   /** O que foi rolado (ex.: "Força", "Bola de fogo"). */
@@ -21,9 +21,9 @@ export type Rolagem = {
 }
 export type RolagemCentralHandle = { mostrar: (r: Rolagem) => void }
 
-type DiceBox = { init: () => Promise<unknown>; roll: (n: string | string[]) => void; clear: () => void }
+type DiceBox = { initialize: () => Promise<void>; roll: (notacao: string) => Promise<unknown>; clearDice: () => void }
 
-const TEMPO_DADOS = 1500, TEMPO_CARTAO = 4500, MAX_CHIPS = 24
+const TEMPO_MAX_DADOS = 3500, TEMPO_CARTAO = 4500, MAX_CHIPS = 24
 
 /**
  * Rolagem no meio da tela: os dados 3D caem numa área central e, quando param,
@@ -33,6 +33,7 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
   const [id] = useState(() => 'dados-centro-' + Math.random().toString(36).slice(2, 9))
   const box = useRef<DiceBox | null>(null)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
+  const rodada = useRef(0)
   const somRef = useRef(som)
   useEffect(() => { somRef.current = som }, [som])
   const [fase, setFase] = useState<'nada' | 'rolando' | 'cartao'>('nada')
@@ -46,9 +47,13 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
     let cancelado = false
     void (async () => {
       try {
-        const { default: DiceBox } = await import('@3d-dice/dice-box')
-        const b = new DiceBox({ container: '#' + id, assetPath: '/assets/dice-box/', theme: 'default', themeColor: '#8b5cf6', scale: 8, gravity: 1.6, throwForce: 5, lightIntensity: 1.1 }) as DiceBox
-        await b.init()
+        // dice-box-threejs: aceita o resultado já sorteado (ex.: "1d20@7"), então a face de cima é a do servidor.
+        const { default: DiceBox } = await import('@3d-dice/dice-box-threejs')
+        const b = new DiceBox('#' + id, {
+          sounds: false, shadows: true, light_intensity: 0.9, gravity_multiplier: 400, baseScale: 110, strength: 1.2,
+          theme_customColorset: { name: 'prg-roxo', foreground: '#ffffff', background: '#7c3aed', outline: '#2e1065', texture: 'none', material: 'glass' },
+        }) as unknown as DiceBox
+        await b.initialize()
         if (!cancelado) box.current = b
       } catch (e) { console.warn('Dados 3D indisponíveis:', e) }
     })()
@@ -57,7 +62,8 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
 
   const fechar = useCallback(() => {
     timers.current.forEach(clearTimeout); timers.current = []
-    setFase('nada'); try { box.current?.clear() } catch { /* nada */ }
+    rodada.current++
+    setFase('nada'); try { box.current?.clearDice() } catch { /* nada */ }
   }, [])
 
   useEffect(() => {
@@ -70,25 +76,30 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
   useImperativeHandle(ref, () => ({
     mostrar(r) {
       timers.current.forEach(clearTimeout); timers.current = []
+      const minha = ++rodada.current
       setAtual(r); setFase('rolando')
       if (somRef.current) somRolagem()
-      let tempo = 250
-      if (box.current) {
-        try {
-          box.current.clear()
-          box.current.roll(montarNotacao(r.expressao, r.resultados) ?? r.expressao.toLowerCase().replace(/df/g, 'd6').replace(/!|r1|k[hl]\d+|s\d+/g, ''))
-          tempo = TEMPO_DADOS
-        } catch (e) { console.warn('Erro ao animar dados:', e) }
-      }
       const critico = detectarCritico(r.expressao, r.resultados)
-      timers.current.push(setTimeout(() => {
+      let mostrou = false
+      const mostrarCartao = () => {
+        if (mostrou || minha !== rodada.current) return
+        mostrou = true
         setFase('cartao')
         if (critico === 'critico') {
           if (somRef.current) somCritico()
           confetti({ particleCount: 140, spread: 80, origin: { y: 0.55 }, colors: ['#b99bff', '#ed9cd8', '#fbbf24', '#ffffff'] })
         } else if (critico === 'falha' && somRef.current) somFalha()
-      }, tempo))
-      timers.current.push(setTimeout(fechar, tempo + TEMPO_CARTAO))
+        timers.current.push(setTimeout(() => { if (minha === rodada.current) fechar() }, TEMPO_CARTAO))
+      }
+      const notacao = notacao3D(r.expressao, r.resultados)
+      if (box.current && notacao) {
+        try {
+          box.current.clearDice()
+          // O cartão aparece quando os dados param (ou depois de um tempo, se algo travar).
+          void box.current.roll(notacao).then(() => timers.current.push(setTimeout(mostrarCartao, 250)), mostrarCartao)
+          timers.current.push(setTimeout(mostrarCartao, TEMPO_MAX_DADOS))
+        } catch (e) { console.warn('Erro ao animar dados:', e); timers.current.push(setTimeout(mostrarCartao, 250)) }
+      } else timers.current.push(setTimeout(mostrarCartao, 250))
     },
   }), [fechar])
 

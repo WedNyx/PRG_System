@@ -6,6 +6,18 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.23.0', data: '2026-11-10', titulo: 'Condições com duração e toque no celular',
+    itens: [
+      'Corrigido: no celular, tocar num token (para abrir a janela dele ou escolher o alvo do ataque) abria e fechava na hora. Agora o toque funciona.',
+      'Escolher o alvo funciona com qualquer ferramenta do mapa selecionada, e o token não sai do lugar enquanto você mira.',
+      'Condições com duração: na janela do token, cada condição pode durar de 1 a 10 rodadas (ou sem limite). A contagem desce no fim do turno daquele token, e o chat avisa quando ela acaba.',
+      'O número de rodadas aparece em cima do token no mapa e na lista de iniciativa. Quando chega a vez de alguém, o chat mostra as condições dele.',
+      'Novas condições: 🩸 Sangrando, 🔥 Queimando, 🐌 Lento e ⛓️ Paralisado.',
+      'O jogador pode tocar em “✅ Terminar meu turno” quando é a vez dele, sem esperar o mestre.',
+      'Migração 018: duração das condições nos tokens.',
+    ],
+  },
+  {
     versao: '0.22.0', data: '2026-11-10', titulo: 'Classe com a sua tabela de níveis',
     itens: [
       'A classe escolhida define a tabela de níveis: numa “Lista de opções” (Classe), cada opção pode ter a sua “📈 Tabela de níveis”. Na ficha, só vale a tabela da classe escolhida.',

@@ -7,6 +7,7 @@ import { aplicarDano, fichaDeCombate, lerRegrasCombate, mudarFicha, tokenCombate
 import { acertou, ALCANCE_CORPO, distancia, gastarCusto, ordenarIniciativa, regraDeAtaque, regraDeIniciativa, rolarDano, resumoCombate, type EntradaOrdem } from '@/lib/sistemas/combate'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { ehV8 } from '@/lib/nuvem/categorias'
+import { emojiCondicao, nomeCondicao, normalizarRodadas, passarRodada } from '@/lib/condicoes'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ cid: string }> }
@@ -265,7 +266,13 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         if (fc?.r.vida) { const v = fc.r.vida; await aplicarDano({ ...(t as unknown as Parameters<typeof aplicarDano>[0]), hp_atual: v.atual, hp_max: v.max }, v.atual - (novo as number)) }
         else m.hp_atual = novo
       }
-      if (b.condicoes !== undefined) m.condicoes = normalizarCondicoes(b.condicoes)
+      if (b.condicoes !== undefined || b.rodadas !== undefined) {
+        // Condições e quantas rodadas cada uma dura (sem número = sem limite).
+        const [atual] = await rest<{ condicoes: string[] | null; condicoes_rodadas: Record<string, number> | null }[]>(`prg_tokens?select=condicoes,condicoes_rodadas&id=eq.${q(t.id)}`)
+        const cond = b.condicoes !== undefined ? normalizarCondicoes(b.condicoes) : atual?.condicoes ?? []
+        m.condicoes = cond
+        m.condicoes_rodadas = normalizarRodadas(b.rodadas !== undefined ? b.rodadas : atual?.condicoes_rodadas, cond)
+      }
       if (admin || dono) {
         if (b.imagem_url !== undefined) { if (!urlValida(b.imagem_url)) throw new ErroApi(400, 'Imagem inválida.'); m.imagem_url = b.imagem_url || null }
         if (corValida(b.cor)) m.cor = b.cor
@@ -375,16 +382,41 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       return ok({ mesa: { iniciativa, turno: 0, rodada: 1 }, rolagens: ord })
     }
     case 'turno': {
-      exigirAdmin(admin)
       const [c] = await rest<{ mesa: { iniciativa?: unknown; turno?: number; rodada?: number } }[]>(`prg_campanhas?select=mesa&id=eq.${q(cid)}`)
       const lista = normalizarIniciativaSemOrdenar(c?.mesa?.iniciativa)
       if (!lista.length) throw new ErroApi(400, 'Ninguém na iniciativa.')
       let turno = Math.min(Math.max(0, Number(c.mesa.turno) || 0), lista.length - 1), rodada = Math.max(1, Number(c.mesa.rodada) || 1)
+      const antes = lista[turno]
+      if (!admin) {
+        // O jogador pode encerrar o próprio turno (só para a frente, e só quando é a vez de um token dele).
+        if (b.direcao === -1 || !antes.tokenId || typeof b.turnoAtual !== 'number' || b.turnoAtual !== turno) throw new ErroApi(403, 'Só o mestre passa o turno.')
+        const [tk] = await rest<{ dono_id: string | null }[]>(`prg_tokens?select=dono_id&id=eq.${q(antes.tokenId)}&campanha_id=eq.${q(cid)}`)
+        if (!tk || tk.dono_id !== eu) throw new ErroApi(403, 'Não é a sua vez.')
+      }
       if (b.direcao === -1) { turno--; if (turno < 0) { turno = lista.length - 1; rodada = Math.max(1, rodada - 1) } }
       else { turno++; if (turno >= lista.length) { turno = 0; rodada++ } }
       await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify({ mesa: { iniciativa: lista, turno, rodada } }) })
-      if (b.direcao !== -1) await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica',
-        texto: `▶️ Vez de ${lista[turno].nome}${turno === 0 ? ` · rodada ${rodada}` : ''}.` }) }).catch(() => {})
+      if (b.direcao !== -1) {
+        // Fim do turno de quem jogou: as condições com duração perdem 1 rodada.
+        const avisos: string[] = []
+        if (antes.tokenId) {
+          const [tk] = await rest<{ id: string; nome: string; condicoes: string[] | null; condicoes_rodadas: Record<string, number> | null }[]>(`prg_tokens?select=id,nome,condicoes,condicoes_rodadas&id=eq.${q(antes.tokenId)}&campanha_id=eq.${q(cid)}`).catch(() => [])
+          if (tk && Object.keys(tk.condicoes_rodadas ?? {}).length) {
+            const p = passarRodada(tk.condicoes ?? [], tk.condicoes_rodadas ?? {})
+            await rest(`prg_tokens?id=eq.${q(tk.id)}`, { method: 'PATCH', body: JSON.stringify({ condicoes: p.condicoes, condicoes_rodadas: p.rodadas }) })
+            for (const a of p.acabaram) avisos.push(`⏳ ${emojiCondicao[a] ?? ''} ${nomeCondicao(a)} acabou em ${tk.nome}.`)
+          }
+        }
+        let estado = ''
+        const prox = lista[turno]
+        if (prox.tokenId) {
+          const [tk] = await rest<{ condicoes: string[] | null; condicoes_rodadas: Record<string, number> | null }[]>(`prg_tokens?select=condicoes,condicoes_rodadas&id=eq.${q(prox.tokenId)}&campanha_id=eq.${q(cid)}`).catch(() => [])
+          const cs = tk?.condicoes ?? []
+          if (cs.length) estado = ' (' + cs.map(x => `${emojiCondicao[x] ?? ''} ${nomeCondicao(x)}${tk?.condicoes_rodadas?.[x] ? ' · ' + tk.condicoes_rodadas[x] : ''}`).join(', ') + ')'
+        }
+        const linhas = [...avisos, `▶️ Vez de ${prox.nome}${turno === 0 ? ` · rodada ${rodada}` : ''}${estado}.`]
+        for (const texto of linhas) await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica', texto }) }).catch(() => {})
+      }
       return ok({ mesa: { iniciativa: lista, turno, rodada } })
     }
     case 'combate_encerrar': {

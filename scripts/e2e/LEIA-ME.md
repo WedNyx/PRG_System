@@ -32,6 +32,7 @@ Simulam três aventureiros (mestre, jogador e intruso) contra um banco real.
    PRG_BASE=http://localhost:3000 node scripts/e2e/v20-arvore-progressao.mjs
    PRG_BASE=http://localhost:3000 node scripts/e2e/v21-grupos-e-escolhas.mjs   # migração 017
    PRG_BASE=http://localhost:3000 node scripts/e2e/v22-classe-progressao.mjs
+   PRG_BASE=http://localhost:3000 node scripts/e2e/v23-condicoes-turnos.mjs   # migração 018
    ```
 Nunca rode contra o banco de produção: os testes criam campanhas e fichas.
 

@@ -2,6 +2,13 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.27.0 — Forja de itens (2026-11-10)
+- ⚒️ Forja de itens: no editor de item, escolha entre 19 formas desenhadas pela plataforma (espada, adaga, machado, martelo, lança, arco, cajado, escudo, armadura, elmo, poção, pergaminho, livro, tocha, chave, anel, amuleto, gema e bolsa de moedas), a cor principal, a cor do detalhe (ou qualquer cor) e a raridade.
+- Raridades com moldura colorida: Comum, Incomum, Raro, Épico, Lendário e Único. Do Raro para cima o item brilha, e Lendário e Único ganham uma faísca.
+- “🎲 Surpreenda-me” sorteia forma, cores e raridade combinando com o tipo do item; “✨ Sugerir um nome” cria nomes como “Lâmina do Crepúsculo”.
+- Itens que já existem ganham arte sozinhos, pelo nome e pelo tipo (uma “Adaga” vira adaga, um “Elixir” vira poção…).
+- A arte aparece no inventário, na biblioteca do mestre e na mesa: na escolha da arma ao atacar e na aba Fichas.
+
 ## v0.26.0 — À beira da morte e barras vivas (2026-11-10)
 - À beira da morte: quando a vida chega a 0, o personagem cai e faz um teste contra a morte (d20) sozinho no começo de cada turno. 10+ é sucesso, 9 ou menos é falha, 1 conta duas falhas e 20 levanta com 1 de vida.
 - 3 sucessos deixam estável; 3 falhas, morreu (⚰️). Dano em quem está caído conta falha (crítico conta duas), e qualquer cura levanta e zera a contagem.

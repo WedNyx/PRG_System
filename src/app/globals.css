@@ -109,3 +109,6 @@ body {
 @keyframes prg-treme { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-3px); } 40% { transform: translateX(3px); } 60% { transform: translateX(-2px); } 80% { transform: translateX(2px); } }
 .prg-treme { animation: prg-treme .35s ease-out; }
 @media (prefers-reduced-motion: reduce) { .prg-rastro, .prg-sobe, .prg-baixa, .prg-treme { animation: none; } }
+@keyframes prg-brilha { 0%, 100% { opacity: .25; transform: scale(.7) rotate(0deg); } 50% { opacity: 1; transform: scale(1.15) rotate(45deg); } }
+.prg-brilha { animation: prg-brilha 1.8s ease-in-out infinite; color: #fff7d6; text-shadow: 0 0 6px #fde68a; }
+@media (prefers-reduced-motion: reduce) { .prg-brilha { animation: none; } }

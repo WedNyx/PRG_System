@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-r
 /** Cor da barra pelo tipo de recurso: vida vermelha, sanidade azul, esforço/energia laranja, mana anil… */
 export function corDoRecurso(id: string, nome: string): { de: string; ate: string; emoji: string } {
   const t = (id + ' ' + nome).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  if (/dado/.test(t)) return { de: '#4c1d95', ate: '#c084fc', emoji: '🎲' }
   if (/\b(pv|vida|hp|pontos_de_vida|saude)\b|vida/.test(t)) return { de: '#7f1d1d', ate: '#ef4444', emoji: '❤️' }
   if (/san|sanidade|mente|estabilidade/.test(t)) return { de: '#1e3a8a', ate: '#3b82f6', emoji: '🧠' }
   if (/\bpe\b|esforco|energia|stamina|vigor|folego/.test(t)) return { de: '#9a3412', ate: '#f59e0b', emoji: '⚡' }

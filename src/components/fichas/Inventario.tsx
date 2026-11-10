@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
+import ArteItem from './ArteItem'
+import { arteDoItem, CORES_FORJA, corDaRaridade, FORMAS, nomeAleatorio, RARIDADES, type ArteItem as ArteItemT } from '@/lib/itensArte'
 import { Backpack, Dice5, Minus, Moon, Pencil, Plus, Shield, Sparkles, Trash2, X } from 'lucide-react'
 import type { Calculo } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
@@ -66,9 +68,12 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar }: Pr
         <ul className="space-y-2">{lista.map(it => {
           const eq = !!uso.itens[it.id]?.equipado, n = qtd(it)
           return <li key={it.id} className={'rounded-xl border p-3 ' + (eq ? 'border-[#8b6cba] bg-[#2b2143]' : 'border-transparent bg-[#171325]') + (n <= 0 ? ' opacity-60' : '')}>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="min-w-0 flex-1 font-semibold">{it.nome}{eq && <span className="ml-2 rounded bg-[#5b4380] px-1.5 py-0.5 text-[10px]">equipado</span>}</span>
-              <span className="text-xs text-[#c4b6d4]">{it.peso ? `${it.peso} ${c.carga.unidade} cada` : ''}</span>
+            <div className="flex items-center gap-3">
+              <ArteItem item={it} tamanho={46} />
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">{it.nome}{eq && <span className="ml-2 rounded bg-[#5b4380] px-1.5 py-0.5 text-[10px]">equipado</span>}</span>
+                <span className="block text-[11px]">{it.raridade && <strong style={{ color: corDaRaridade(it.raridade) }}>{RARIDADES.find(x => x.id === it.raridade)?.nome} · </strong>}<span className="text-[#c4b6d4]">{it.peso ? `${it.peso} ${c.carga.unidade} cada` : ''}</span></span>
+              </span>
             </div>
             {(it.bonus.length > 0 || it.descricao) && <p className="mt-1 text-xs text-[#c9bcd9]">{it.bonus.map(b => `${nomeAlvo[b.alvo] ?? b.alvo} ${b.valor >= 0 ? '+' : ''}${b.valor}`).join(' · ')}{it.bonus.length && it.descricao ? ' — ' : ''}{it.descricao}</p>}
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -167,7 +172,8 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
   const setB = (i: number, b: Partial<Bonus>) => setIt({ ...it, bonus: it.bonus.map((x, k) => k === i ? { ...x, ...b } : x) })
   return <Janela titulo={inicial.nome ? 'Editar item' : 'Novo item'} fechar={fechar}>
     <form className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return } salvar({ ...v, id: inicial.id }) }}>
-      <label className="block">Nome<input autoFocus required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Espada longa" /></label>
+      <Forja it={it} setIt={setIt} />
+      <label className="block">Nome<input required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Espada longa" /></label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block">Tipo<select value={it.categoria} onChange={e => setIt({ ...it, categoria: e.target.value as Item['categoria'] })} className={input + ' mt-1'}>{CATEGORIAS_ITEM.map(c => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></label>
         <label className="block">Peso{s?.carga ? ` (${s.carga.unidade})` : ''}<input type="number" min={0} step="0.1" value={it.peso} onChange={e => setIt({ ...it, peso: Number(e.target.value) || 0 })} className={input + ' mt-1'} /></label>
@@ -216,4 +222,47 @@ export function EditorPoder({ s, inicial, salvar, fechar }: { s?: Sistema; inici
         <button type="submit" className="flex-1 rounded-lg bg-[#7654bb] p-2.5 font-semibold">Salvar</button></div>
     </form>
   </Janela>
+}
+
+/** Forja: escolher a forma, as cores e a raridade do item (com prévia grande e um “surpreenda-me”). */
+function Forja({ it, setIt }: { it: Item; setIt: (i: Item) => void }) {
+  const a = arteDoItem(it)
+  const [aberta, setAberta] = useState(!it.nome)
+  const mudar = (x: Partial<ArteItemT>) => setIt({ ...it, arte: { ...a, ...x } })
+  const sortear = () => {
+    const doTipo = FORMAS.filter(f => f.categoria === it.categoria || (it.categoria === 'outro'))
+    const f = (doTipo.length ? doTipo : FORMAS)[Math.floor(Math.random() * (doTipo.length || FORMAS.length))]
+    const c = () => CORES_FORJA[Math.floor(Math.random() * CORES_FORJA.length)]
+    const rar = RARIDADES[Math.min(5, Math.floor(Math.random() ** 2 * 6))].id
+    setIt({ ...it, arte: { forma: f.id, cor: c(), cor2: c() }, raridade: rar, nome: it.nome || nomeAleatorio(f.id) })
+  }
+  const cor = corDaRaridade(it.raridade)
+  return <div className="overflow-hidden rounded-2xl border border-[#55456e] bg-[#151123]">
+    <div className="flex items-center gap-3 p-3" style={{ background: `linear-gradient(90deg, ${cor}22, transparent)` }}>
+      <ArteItem item={it} tamanho={aberta ? 96 : 56} />
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-bold uppercase tracking-widest text-[#ed9cd8]">⚒️ Forja</p>
+        <p className="truncate font-semibold">{it.nome || 'Item sem nome'}</p>
+        {it.raridade && <p className="text-xs font-bold" style={{ color: cor }}>{RARIDADES.find(r => r.id === it.raridade)?.nome}</p>}
+      </div>
+      <div className="flex flex-col gap-1">
+        <button type="button" onClick={sortear} className={botao} title="Forma, cores e raridade aleatórias">🎲 Surpreenda-me</button>
+        <button type="button" onClick={() => setAberta(v => !v)} className={botao}>{aberta ? 'Fechar forja' : '🎨 Personalizar'}</button>
+      </div>
+    </div>
+    {aberta && <div className="space-y-3 border-t border-[#3d3152] p-3">
+      <div><p className="mb-1 text-xs text-[#d3adf0]">Forma</p>
+        <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-7">{FORMAS.map(f => <button key={f.id} type="button" title={f.nome} aria-label={'Forma ' + f.nome} aria-pressed={a.forma === f.id}
+          onClick={() => mudar({ forma: f.id })} className={'rounded-lg border p-0.5 ' + (a.forma === f.id ? 'border-[#e4d3ff] bg-[#3b2a5a]' : 'border-[#3d3152] bg-[#1e1a30] hover:border-[#8b6cba]')}>
+          <svg viewBox="0 0 100 100" className="h-9 w-full" aria-hidden dangerouslySetInnerHTML={{ __html: f.desenho(a.cor, a.cor2) }} /></button>)}</div></div>
+      {([['cor', 'Cor principal'], ['cor2', 'Cor do detalhe']] as const).map(([k, rot]) => <div key={k}><p className="mb-1 text-xs text-[#d3adf0]">{rot}</p>
+        <div className="flex flex-wrap items-center gap-1.5">{CORES_FORJA.map(c => <button key={c} type="button" aria-label={rot + ' ' + c} aria-pressed={a[k] === c} onClick={() => mudar({ [k]: c })}
+          className={'h-7 w-7 rounded-full border-2 ' + (a[k] === c ? 'border-white' : 'border-black/40')} style={{ background: c }} />)}
+          <input type="color" aria-label={rot + ' personalizada'} value={a[k]} onChange={e => mudar({ [k]: e.target.value })} className="h-7 w-9 cursor-pointer rounded border border-[#5e4b78] bg-transparent" /></div></div>)}
+      <div><p className="mb-1 text-xs text-[#d3adf0]">Raridade</p>
+        <div className="flex flex-wrap gap-1.5"><button type="button" onClick={() => setIt({ ...it, raridade: undefined })} className={botao + (!it.raridade ? ' border-white' : '')}>Nenhuma</button>
+          {RARIDADES.map(r => <button key={r.id} type="button" onClick={() => setIt({ ...it, raridade: r.id })} className={botao + ' font-semibold'} style={{ color: r.cor, borderColor: it.raridade === r.id ? r.cor : undefined, background: it.raridade === r.id ? r.cor + '22' : undefined }}>{r.nome}</button>)}</div></div>
+      <button type="button" className={botao} onClick={() => setIt({ ...it, nome: nomeAleatorio(a.forma) })}>✨ Sugerir um nome</button>
+    </div>}
+  </div>
 }

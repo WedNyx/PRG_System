@@ -35,6 +35,7 @@ Simulam três aventureiros (mestre, jogador e intruso) contra um banco real.
    PRG_BASE=http://localhost:3000 node scripts/e2e/v23-condicoes-turnos.mjs   # migração 018
    PRG_BASE=http://localhost:3000 node scripts/e2e/v24-dano-por-turno.mjs   # migração 019
    PRG_BASE=http://localhost:3000 node scripts/e2e/v26-morte.mjs   # migração 020
+   PRG_BASE=http://localhost:3000 node scripts/e2e/v27-forja.mjs
    ```
 Nunca rode contra o banco de produção: os testes criam campanhas e fichas.
 

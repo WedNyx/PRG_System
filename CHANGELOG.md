@@ -2,6 +2,13 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.13.1 — Mesa sem atraso (2026-11-10)
+- Mesa sem atraso: o token acompanha o dedo/mouse na hora e fica onde você soltou, sem voltar nem pular enquanto o servidor salva.
+- Desenhar sem atraso: o traço fica na tela assim que você solta, sem sumir e reaparecer.
+- Os outros jogadores veem o token sendo arrastado e o traço sendo desenhado ao vivo, sem esperar o salvamento.
+- Mapa mais leve: grade, névoa e desenhos não são redesenhados a cada movimento (melhora em celulares e mapas grandes).
+- Cursor dos outros enviado com menos mensagens, para não congestionar o canal ao vivo.
+
 ## v0.13.0 — Segurança, cópias de segurança e saúde da plataforma (2026-11-09)
 - O login antigo por e-mail saiu de vez (telas, código e banco de dados). A entrada é só pelo portal de perfis.
 - Três funções antigas do banco que ficavam abertas foram removidas (handle_new_user, entrar_com_codigo, sou_membro_da_campanha), junto com as tabelas vazias do sistema antigo.

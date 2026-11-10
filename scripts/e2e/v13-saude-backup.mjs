@@ -2,6 +2,7 @@
 // Precisa do servidor com PRG_ADMIN_SENHA=lua-roxa-teste e CRON_SECRET=cron-teste.
 const M='11111111-1111-4111-8111-111111111111'
 const BASE=process.env.PRG_BASE || 'http://localhost:3000', SENHA='lua-roxa-teste'; let falhas=0
+const versaoNoAr=(await (await fetch(BASE+'/api/version')).json()).version
 function check(n,c,e){ console.log((c?'✔':'✘')+' '+n+(c?'':'  '+JSON.stringify(e).slice(0,300))); if(!c) falhas++ }
 async function admin(body, senha=SENHA){ const r=await fetch(BASE+'/api/prg/admin',{method:'POST',headers:{'content-type':'application/json',origin:BASE},body:JSON.stringify({senha,...body})}); const t=await r.text(); let d={}; try{d=JSON.parse(t)}catch{}; return {s:r.status,d,t,h:r.headers} }
 
@@ -12,7 +13,7 @@ for (const p of ['/', '/login', '/register', '/dashboard', '/campanha/x', '/mesa
 let r=await fetch(BASE+'/mesa?campanha=x',{redirect:'manual'}); check('/mesa (nova) continua abrindo', r.status===200, r.status)
 
 // saúde pública
-r=await fetch(BASE+'/api/prg/saude'); let d=await r.json(); check('saúde pública: banco ok + versão', r.status===200 && d.banco==='ok' && d.versao==='0.13.0', d)
+r=await fetch(BASE+'/api/prg/saude'); let d=await r.json(); check('saúde pública: banco ok + versão', r.status===200 && d.banco==='ok' && d.versao===versaoNoAr, d)
 check('saúde pública não expõe dados', !('erros' in d) && !('copias' in d), d)
 
 // área do administrador
@@ -40,7 +41,7 @@ r=await admin({acao:'saude'}); check('lista mostra a cópia', r.d.copias?.length
 r=await admin({acao:'baixar',nome}); let c=JSON.parse(r.t)
 check('baixa a cópia guardada (arquivo)', r.s===200 && /attachment; filename="prg-backup-/.test(r.h.get('content-disposition')) && c.tabelas.prg_public_adventurers.some(p=>p.id===M), r.h.get('content-disposition'))
 check('cópia tem todas as tabelas', ['prg_campanhas','prg_fichas','prg_mesa_eventos','prg_sistemas_autorais','prg_notificacoes'].every(t=>Array.isArray(c.tabelas[t])) && !('prg_erros' in c.tabelas), Object.keys(c.tabelas))
-r=await admin({acao:'baixar'}); c=JSON.parse(r.t); check('baixa uma cópia novinha', r.s===200 && c.versao===1 && c.plataforma==='0.13.0', c.plataforma)
+r=await admin({acao:'baixar'}); c=JSON.parse(r.t); check('baixa uma cópia novinha', r.s===200 && c.versao===1 && c.plataforma===versaoNoAr, c.plataforma)
 r=await admin({acao:'baixar',nome:'../../etc/passwd'}); check('nome inválido é recusado', r.s===400, r.d)
 r=await admin({acao:'baixar',nome:'prg-backup-1999-01-01.json'}); check('cópia inexistente = 404', r.s===404, r.d)
 r=await fetch(BASE+'/api/prg/admin',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({senha:SENHA,acao:'baixar'})}); check('download exige vir do próprio site', r.status===403, r.status)

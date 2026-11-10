@@ -48,6 +48,14 @@ async function enviarImagem(campanhaId: string, eu: string, arq: File): Promise<
   return { url: d.url, ar }
 }
 
+type Pendente = { ate: number }
+/** Copia o objeto mantendo só as entradas aprovadas por `manter`. */
+function limpar<T>(m: Record<string, T>, manter: (id: string, v: T) => boolean): Record<string, T> {
+  const r: Record<string, T> = {}; let mudou = false
+  for (const [k, v] of Object.entries(m)) { if (manter(k, v)) r[k] = v; else mudou = true }
+  return mudou ? r : m
+}
+
 export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [e, setE] = useState<Estado | null>(null)
   const [erro, setErro] = useState('')
@@ -67,6 +75,10 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [destaque, setDestaque] = useState<Evento | null>(null)
   const [desvio, setDesvio] = useState(0)
   const [fechada, setFechada] = useState(false)
+  // Mudanças que aparecem na hora (antes do servidor confirmar): posições de tokens e traços de desenho.
+  const [posicoes, setPosicoes] = useState<Record<string, Pendente & { x: number; y: number }>>({})
+  const [tracos, setTracos] = useState<Record<string, Pendente & { id: string; cor: string; pontos: number[] }>>({})
+  const ultimoEnvio = useRef<Record<string, number>>({})
   const canal = useRef<RealtimeChannel | null>(null)
   const dados = useRef<Dados3DHandle>(null)
   const ultimoEvento = useRef(0)
@@ -92,6 +104,10 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       if (ult) ultimoEvento.current = Math.max(ultimoEvento.current, ult.id)
       if (novo.agora) setDesvio(Date.parse(novo.agora) - Date.now())
       setE(novo); setErro(''); setFechada(false)
+      // O que o servidor já confirmou deixa de ser "pendente" (e o que ficou velho demais também).
+      const agora = Date.now()
+      setPosicoes(m => limpar(m, (id, v) => v.ate > agora && !novo.tokens.some(t => t.id === id && t.x === v.x && t.y === v.y)))
+      setTracos(m => limpar(m, (id, v) => v.ate > agora && !novo.desenhos.some(d => d.id === id)))
     } catch (er) {
       // Sessão fechada pelo mestre: ninguém (além do mestre) fica na mesa.
       if (er instanceof ErroNuvem && er.status === 423) { setFechada(true); setE(null); ultimoEvento.current = 0; return }
@@ -110,6 +126,17 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     ch.on('broadcast', { event: 'mudou' }, () => recarregarEmBreve())
       .on('broadcast', { event: 'ping' }, ({ payload }) => { const p = payload as Ping; setPings(x => [...x, p]); setTimeout(() => setPings(x => x.filter(y => y.id !== p.id)), 2500) })
       .on('broadcast', { event: 'cursor' }, ({ payload }) => { const c = payload as CursorRemoto; setCursores(x => [...x.filter(y => y.id !== c.id), c]) })
+      // Ao vivo: token sendo arrastado/solto e traço sendo desenhado por outra pessoa.
+      .on('broadcast', { event: 'token' }, ({ payload }) => {
+        const t = payload as { id?: unknown; x?: unknown; y?: unknown }
+        if (typeof t.id === 'string' && Number.isInteger(t.x) && Number.isInteger(t.y)) setPosicoes(m => ({ ...m, [t.id as string]: { x: t.x as number, y: t.y as number, ate: Date.now() + 6000 } }))
+      })
+      .on('broadcast', { event: 'traco' }, ({ payload }) => {
+        const d = payload as { id?: unknown; cor?: unknown; pontos?: unknown }
+        if (typeof d.id === 'string' && typeof d.cor === 'string' && Array.isArray(d.pontos) && d.pontos.length <= 2000 && d.pontos.every(n => typeof n === 'number'))
+          setTracos(m => ({ ...m, [d.id as string]: { id: d.id as string, cor: d.cor as string, pontos: d.pontos as number[], ate: Date.now() + 10000 } }))
+      })
+      .on('broadcast', { event: 'limpar' }, () => setTracos({}))
       .on('presence', { event: 'sync' }, () => setOnline(Object.keys(ch.presenceState())))
       .subscribe(status => { setTempoReal(status === 'SUBSCRIBED'); if (status === 'SUBSCRIBED') void ch.track({ em: Date.now() }) })
     canal.current = ch
@@ -126,6 +153,20 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   /** Avisa os outros que algo mudou (ex.: música) e recarrega. */
   const avisarMudanca = useCallback(() => { void canal.current?.send({ type: 'broadcast', event: 'mudou', payload: {} }); void carregar() }, [carregar])
 
+  /** Envia algo ao vivo para os outros, no máximo uma vez a cada `ms` por chave (o canal tem limite de mensagens). */
+  const aoVivo = useCallback((chave: string, ms: number, evento: string, payload: Record<string, unknown>, forcar = false) => {
+    const agora = Date.now()
+    if (!forcar && agora - (ultimoEnvio.current[chave] ?? 0) < ms) return
+    ultimoEnvio.current[chave] = agora
+    void canal.current?.send({ type: 'broadcast', event: evento, payload })
+  }, [])
+
+  const desenhosMapa = useMemo(() => {
+    if (!e) return []
+    const extras = Object.values(tracos).filter(t => !e.desenhos.some(d => d.id === t.id)).map(({ id, cor, pontos }) => ({ id, cor, pontos }))
+    return extras.length ? [...e.desenhos, ...extras] : e.desenhos
+  }, [e, tracos])
+
   const nomes = useMemo(() => Object.fromEntries((e?.membros ?? []).map(m => [m.aventureiro_id, m.aventureiro?.apelido ?? '?'])), [e?.membros])
   if (!e && fechada) return <main className="fundo-tema flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center text-[#e8dff7]">
     <p className="text-5xl" aria-hidden="true">🌙</p>
@@ -141,14 +182,22 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const sessaoAberta = !!e.sessao?.aberta
   const cena = e.cenaAtiva
   const travada = !!cena?.tokens_travados
-  const tokensMapa: TokenMapa[] = e.tokens.map(t => ({ ...t, tamanho: t.tamanho ?? 1, meu: t.dono_id === e.eu, podeMover: !espectador && podeMoverToken({ movimento: t.movimento ?? 'dono', dono_id: t.dono_id }, e.eu, admin, travada) }))
+  const tokensMapa: TokenMapa[] = e.tokens.map(t => ({ ...t, ...(posicoes[t.id] ? { x: posicoes[t.id].x, y: posicoes[t.id].y } : {}), tamanho: t.tamanho ?? 1, meu: t.dono_id === e.eu, podeMover: !espectador && podeMoverToken({ movimento: t.movimento ?? 'dono', dono_id: t.dono_id }, e.eu, admin, travada) }))
   const token = e.tokens.find(t => t.id === tokenAberto)
   const vez = e.mesa?.iniciativa?.[e.mesa.turno]
   const salvarCamadas = (camadas: Camada[]) => cena && acao({ acao: 'cena_editar', cenaId: cena.id, camadas }).catch(() => {})
 
+  /** Solta o token: aparece na hora para mim e para os outros; o servidor confirma em seguida. */
   async function moverToken(id: string, x: number, y: number) {
-    setE(s => s && { ...s, tokens: s.tokens.map(t => t.id === id ? { ...t, x, y } : t) })
-    await acao({ acao: 'token_mover', tokenId: id, x, y }).catch(() => {})
+    setPosicoes(m => ({ ...m, [id]: { x, y, ate: Date.now() + 8000 } }))
+    aoVivo('token:' + id, 0, 'token', { id, x, y }, true)
+    await acao({ acao: 'token_mover', tokenId: id, x, y }).catch(() => setPosicoes(m => limpar(m, k => k !== id)))
+  }
+  function desenhar(pontos: number[], id: string) {
+    if (!cena) return
+    setTracos(m => ({ ...m, [id]: { id, cor, pontos, ate: Date.now() + 15000 } }))
+    aoVivo('traco:' + id, 0, 'traco', { id, cor, pontos }, true)
+    void acao({ acao: 'desenho', cenaId: cena.id, id, cor, pontos }).catch(() => setTracos(m => limpar(m, k => k !== id)))
   }
   const ferramentas: { id: ModoMesa; icone: typeof Hand; nome: string; so?: boolean; fog?: boolean }[] = [
     { id: 'mover', icone: Hand, nome: 'Mover / arrastar' }, { id: 'regua', icone: Ruler, nome: 'Régua' }, { id: 'ping', icone: MapPin, nome: 'Marcar' }, { id: 'desenhar', icone: Pencil, nome: 'Desenhar' },
@@ -189,7 +238,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
             className={'rounded-lg p-2 ' + (modo === f.id ? 'bg-[#7654bb]' : 'hover:bg-[#34294f]')}><f.icone size={18} /></button>)}
           {(modo === 'revelar' || modo === 'esconder') && [1, 3, 5].map(n => <button key={n} type="button" onClick={() => setPincel(n)} aria-label={'Pincel ' + n + '×' + n} className={'rounded-lg px-2 py-1.5 text-xs ' + (pincel === n ? 'bg-[#7654bb]' : 'hover:bg-[#34294f]')}>{n}×{n}</button>)}
           {modo === 'desenhar' && <>{CORES.map(c => <button key={c} type="button" aria-label={'Cor ' + c} onClick={() => setCor(c)} className={'h-8 w-8 rounded-lg border-2 ' + (cor === c ? 'border-white' : 'border-transparent')} style={{ background: c }} />)}
-            {admin && cena && <button type="button" title="Apagar desenhos" aria-label="Apagar desenhos" onClick={() => acao({ acao: 'desenhos_limpar', cenaId: cena.id })} className="rounded-lg p-2 hover:bg-[#34294f]"><Eraser size={18} /></button>}</>}
+            {admin && cena && <button type="button" title="Apagar desenhos" aria-label="Apagar desenhos" onClick={() => { setTracos({}); aoVivo('limpar', 0, 'limpar', {}, true); void acao({ acao: 'desenhos_limpar', cenaId: cena.id }).catch(() => {}) }} className="rounded-lg p-2 hover:bg-[#34294f]"><Eraser size={18} /></button>}</>}
           {modo === 'editar-mapa' && camadaSel && cena && <>
             <button type="button" className={btn} onClick={() => { const l = cena.camadas; const i = l.findIndex(c => c.id === camadaSel); if (i < l.length - 1) { const n = [...l]; [n[i], n[i + 1]] = [n[i + 1], n[i]]; void salvarCamadas(n) } }}><ArrowUp size={14} /> Frente</button>
             <button type="button" className={btn} onClick={() => { const l = cena.camadas; const i = l.findIndex(c => c.id === camadaSel); if (i > 0) { const n = [...l]; [n[i], n[i - 1]] = [n[i - 1], n[i]]; void salvarCamadas(n) } }}><ArrowDown size={14} /> Trás</button>
@@ -197,15 +246,17 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
         </div>}
         {modo === 'editar-mapa' && <p className="absolute left-2 top-2 z-20 rounded-lg bg-[#19172c]/95 px-3 py-1.5 text-xs">Arraste as imagens para montar o mapa. Toque numa imagem e puxe a bolinha para mudar o tamanho.</p>}
         {cena ? <MapaMesa cols={cena.grid_cols} rows={cena.grid_rows} fundo={cena.mapa_url} camadas={cena.camadas ?? []} fogAtivo={cena.fog_ativo} fogRevelado={cena.fog_revelado}
-          tokens={tokensMapa} desenhos={e.desenhos} cursores={cursores} pings={pings} admin={admin} modo={modo} cor={cor} pincel={pincel}
+          tokens={tokensMapa} desenhos={desenhosMapa} cursores={cursores} pings={pings} admin={admin} modo={modo} cor={cor} pincel={pincel}
           camadaSel={camadaSel} onSelecionarCamada={setCamadaSel}
           onAlterarCamada={c => { setE(s => s && s.cenaAtiva ? { ...s, cenaAtiva: { ...s.cenaAtiva, camadas: s.cenaAtiva.camadas.map(x => x.id === c.id ? c : x) } } : s); void salvarCamadas(cena.camadas.map(x => x.id === c.id ? c : x)) }}
           onMoverToken={moverToken}
           onNevoa={(celulas, revelar) => void acao({ acao: 'nevoa', cenaId: cena.id, celulas, revelar }).catch(() => {})}
           onPing={(x, y) => { const p = { id: crypto.randomUUID(), x, y, autor: nomes[e.eu] ?? '' }; setPings(s => [...s, p]); setTimeout(() => setPings(s => s.filter(q => q.id !== p.id)), 2500); void canal.current?.send({ type: 'broadcast', event: 'ping', payload: p }) }}
           onTokenClick={espectador ? () => {} : setTokenAberto}
-          onDesenhar={pontos => void acao({ acao: 'desenho', cenaId: cena.id, cor, pontos }).catch(() => {})}
-          onCursor={(x, y) => void canal.current?.send({ type: 'broadcast', event: 'cursor', payload: { id: e.eu, nome: nomes[e.eu] ?? '', x, y } })} />
+          onDesenhar={desenhar}
+          onArrastando={(id, x, y) => aoVivo('token:' + id, 60, 'token', { id, x, y })}
+          onTracando={(id, pontos) => aoVivo('traco:' + id, 120, 'traco', { id, cor, pontos })}
+          onCursor={(x, y) => aoVivo('cursor', 90, 'cursor', { id: e.eu, nome: nomes[e.eu] ?? '', x, y })} />
           : <div className="flex h-full items-center justify-center p-6 text-center text-[#b4aeca]">{admin ? 'Crie uma cena na aba "Mestre" para começar.' : 'O mestre ainda não abriu nenhuma cena.'}</div>}
 
         <TocadorMesa estado={e.musica} desvio={desvio} aoTerminar={admin && e.musica?.por === e.eu ? () => { void api(`campanhas/${campanhaId}/musica`, { method: 'POST', body: { acao: 'proxima', auto: true } }).then(avisarMudanca).catch(() => {}) } : undefined} />

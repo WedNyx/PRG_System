@@ -6,6 +6,16 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.13.1', data: '2026-11-10', titulo: 'Mesa sem atraso',
+    itens: [
+      'Mesa sem atraso: o token acompanha o dedo/mouse na hora e fica onde você soltou, sem voltar nem pular enquanto o servidor salva.',
+      'Desenhar sem atraso: o traço fica na tela assim que você solta, sem sumir e reaparecer.',
+      'Os outros jogadores veem o token sendo arrastado e o traço sendo desenhado ao vivo, sem esperar o salvamento.',
+      'Mapa mais leve: grade, névoa e desenhos não são redesenhados a cada movimento (melhora em celulares e mapas grandes).',
+      'Cursor dos outros enviado com menos mensagens, para não congestionar o canal ao vivo.',
+    ],
+  },
+  {
     versao: '0.13.0', data: '2026-11-09', titulo: 'Segurança, cópias de segurança e saúde da plataforma',
     itens: [
       'O login antigo por e-mail saiu de vez (telas, código e banco de dados). A entrada é só pelo portal de perfis.',

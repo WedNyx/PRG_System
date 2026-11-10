@@ -254,7 +254,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       const c = await cenaDaCampanha(cid, b.cenaId)
       const pontos = normalizarPontos(b.pontos)
       if (!pontos || !corValida(b.cor)) throw new ErroApi(400, 'Desenho inválido.')
-      await rest('prg_desenhos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, cena_id: c.id, autor_id: eu, cor: b.cor, pontos }) })
+      await rest('prg_desenhos', { method: 'POST', body: JSON.stringify({ ...(isUuid(b.id) ? { id: b.id } : {}), campanha_id: cid, cena_id: c.id, autor_id: eu, cor: b.cor, pontos }) })
       return ok({ ok: true }, 201)
     }
     case 'desenhos_limpar': {

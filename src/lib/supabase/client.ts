@@ -7,6 +7,8 @@ import { createBrowserClient } from '@supabase/ssr'
 export function createClient() {
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    // A mesa manda posições ao vivo (cursor, token arrastado, traço); o padrão (10/s) atrasava as mensagens.
+    { realtime: { params: { eventsPerSecond: 30 } } },
   )
 }

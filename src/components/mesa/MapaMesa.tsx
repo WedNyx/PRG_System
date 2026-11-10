@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
 import { emojiCondicao } from '@/lib/condicoes'
 import { celulasPincel, celulasRetangulo, type Camada } from '@/lib/nuvem/mesa'
@@ -21,15 +21,19 @@ type Props = {
   cursores: CursorRemoto[]; pings: Ping[]; admin: boolean; modo: ModoMesa; cor: string; pincel: number
   camadaSel: string | null; onSelecionarCamada: (id: string | null) => void; onAlterarCamada: (c: Camada) => void
   onMoverToken: (id: string, x: number, y: number) => void; onNevoa: (celulas: string[], revelar: boolean) => void
-  onPing: (x: number, y: number) => void; onTokenClick: (id: string) => void; onDesenhar: (pontos: number[]) => void; onCursor: (x: number, y: number) => void
+  onPing: (x: number, y: number) => void; onTokenClick: (id: string) => void; onDesenhar: (pontos: number[], id: string) => void; onCursor: (x: number, y: number) => void
+  /** Ao vivo (para os outros verem): token sendo arrastado e traço sendo desenhado. */
+  onArrastando?: (id: string, x: number, y: number) => void; onTracando?: (id: string, pontos: number[]) => void
 }
+
+const pts = (a: number[]) => { const r: string[] = []; for (let i = 0; i + 1 < a.length; i += 2) r.push(`${a[i]},${a[i + 1]}`); return r.join(' ') }
 
 /** Mapa da mesa: imagens em camadas, grade, névoa com pincel/área, tokens com tamanho e permissão de mover. */
 export default function MapaMesa(p: Props) {
   const { cols, rows, admin, modo } = p
   const ref = useRef<HTMLDivElement>(null)
   const largura = cols * CELULA, altura = rows * CELULA
-  const reveladas = new Set(p.fogRevelado)
+  const reveladas = useMemo(() => new Set(p.fogRevelado), [p.fogRevelado])
   const [arrastando, setArrastando] = useState<string | null>(null)
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null)
   const [regua, setRegua] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
@@ -38,6 +42,7 @@ export default function MapaMesa(p: Props) {
   const [pintura, setPintura] = useState<Set<string>>(new Set())
   const [camadaEdit, setCamadaEdit] = useState<{ c: Camada; tipo: 'mover' | 'tamanho'; ox: number; oy: number; ar: number } | null>(null)
   const inicio = useRef<{ px: number; py: number } | null>(null)
+  const tracoId = useRef('')
   const houveDrag = useRef(false)
   const pintando = useRef(false)
   const editandoMapa = modo === 'editar-mapa'
@@ -82,10 +87,22 @@ export default function MapaMesa(p: Props) {
       else { const w = Math.max(1, cel.x - c.x + 1); setCamadaEdit({ ...camadaEdit, c: { ...c, w, h: Math.max(1, Math.round(w * camadaEdit.ar)) } }) }
       return
     }
-    if (arrastando) { const cel = celula(e); if (cel) setDragPos(cel); return }
+    if (arrastando) {
+      const cel = celula(e)
+      if (cel && (cel.x !== dragPos?.x || cel.y !== dragPos?.y)) {
+        setDragPos(cel)
+        if (houveDrag.current && p.tokens.find(t => t.id === arrastando)?.podeMover) p.onArrastando?.(arrastando, cel.x, cel.y)
+      }
+      return
+    }
     if (regua) { const cel = celula(e); if (cel) setRegua({ ...regua, x2: cel.x, y2: cel.y }); return }
     if (area) { const cel = celula(e); if (cel) setArea({ ...area, x2: cel.x, y2: cel.y }); return }
-    if (traco && q) { setTraco(t => !t || Math.abs(q.px - t[t.length - 2]) + Math.abs(q.py - t[t.length - 1]) < 4 ? t : [...t, Math.round(q.px), Math.round(q.py)]); return }
+    if (traco && q) {
+      if (Math.abs(q.px - traco[traco.length - 2]) + Math.abs(q.py - traco[traco.length - 1]) < 4) return
+      const novo = [...traco, Math.round(q.px), Math.round(q.py)]
+      setTraco(novo); p.onTracando?.(tracoId.current, novo)
+      return
+    }
     if (pintando.current) { const cel = celula(e); if (cel) setPintura(s => { const n = new Set(s); celulasPincel(cel.x, cel.y, p.pincel).forEach(k => n.add(k)); return n }) }
   }
 
@@ -97,7 +114,7 @@ export default function MapaMesa(p: Props) {
       else if (!houveDrag.current) p.onTokenClick(arrastando)
     }
     setArrastando(null); setDragPos(null); inicio.current = null; setRegua(null)
-    if (traco && traco.length >= 4) p.onDesenhar(traco)
+    if (traco && traco.length >= 4) p.onDesenhar(traco, tracoId.current)
     setTraco(null)
     if (area) { p.onNevoa(celulasRetangulo(area.x1, area.y1, area.x2, area.y2), modo === 'area-revelar'); setArea(null) }
     if (pintando.current && pintura.size) p.onNevoa([...pintura], modo === 'revelar')
@@ -110,23 +127,32 @@ export default function MapaMesa(p: Props) {
     const cel = celula(e)
     if (modo === 'ping') { if (cel) p.onPing(cel.x, cel.y); return }
     if (modo === 'regua') { if (cel) setRegua({ x1: cel.x, y1: cel.y, x2: cel.x, y2: cel.y }); return }
-    if (modo === 'desenhar') { const q = ponto(e); if (q) setTraco([Math.round(q.px), Math.round(q.py)]); return }
+    if (modo === 'desenhar') { const q = ponto(e); if (q) { tracoId.current = crypto.randomUUID(); setTraco([Math.round(q.px), Math.round(q.py)]) } return }
     if (admin && (modo === 'area-revelar' || modo === 'area-esconder')) { if (cel) setArea({ x1: cel.x, y1: cel.y, x2: cel.x, y2: cel.y }); return }
     if (admin && (modo === 'revelar' || modo === 'esconder')) { pintando.current = true; if (cel) setPintura(new Set(celulasPincel(cel.x, cel.y, p.pincel))) }
   }
 
   // Névoa: o mestre vê a prévia do que está pintando.
-  const escondidas: string[] = []
-  if (p.fogAtivo) for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
-    const k = `${x},${y}`
-    let rev = reveladas.has(k)
-    if (pintura.has(k)) rev = modo === 'revelar'
-    if (area && x >= Math.min(area.x1, area.x2) && x <= Math.max(area.x1, area.x2) && y >= Math.min(area.y1, area.y2) && y <= Math.max(area.y1, area.y2)) rev = modo === 'area-revelar'
-    if (!rev) escondidas.push(k)
-  }
+  // Partes pesadas (grade, névoa, desenhos) só são refeitas quando mudam: arrastar e desenhar ficam leves.
+  const camadaNevoa = useMemo(() => {
+    if (!p.fogAtivo) return null
+    const rects = []
+    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+      const k = `${x},${y}`
+      let rev = reveladas.has(k)
+      if (pintura.has(k)) rev = modo === 'revelar'
+      if (area && x >= Math.min(area.x1, area.x2) && x <= Math.max(area.x1, area.x2) && y >= Math.min(area.y1, area.y2) && y <= Math.max(area.y1, area.y2)) rev = modo === 'area-revelar'
+      if (!rev) rects.push(<rect key={k} x={x * CELULA} y={y * CELULA} width={CELULA + 0.5} height={CELULA + 0.5} fill={admin ? 'rgba(5,4,12,0.55)' : 'rgb(5,4,12)'} />)
+    }
+    return <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 20 }}>{rects}</svg>
+  }, [p.fogAtivo, rows, cols, reveladas, pintura, area, modo, admin, largura, altura])
+  const camadaGrade = useMemo(() => <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 2 }}>
+    {Array.from({ length: cols + 1 }, (_, i) => <line key={'v' + i} x1={i * CELULA} y1={0} x2={i * CELULA} y2={altura} stroke="rgba(148,163,184,0.18)" />)}
+    {Array.from({ length: rows + 1 }, (_, i) => <line key={'h' + i} x1={0} y1={i * CELULA} x2={largura} y2={i * CELULA} stroke="rgba(148,163,184,0.18)" />)}
+  </svg>, [cols, rows, largura, altura])
+  const linhasDesenhos = useMemo(() => p.desenhos.map(d => <polyline key={d.id} points={pts(d.pontos)} fill="none" stroke={d.cor} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" opacity={0.9} />), [p.desenhos])
   const camadas = p.camadas.map(c => camadaEdit?.c.id === c.id ? camadaEdit.c : c)
   const medida = regua ? (() => { const n = Math.max(Math.abs(regua.x2 - regua.x1), Math.abs(regua.y2 - regua.y1)); return { n, m: Math.round(n * METROS_POR_CELULA * 10) / 10 } })() : null
-  const pts = (a: number[]) => { const r: string[] = []; for (let i = 0; i + 1 < a.length; i += 2) r.push(`${a[i]},${a[i + 1]}`); return r.join(' ') }
 
   return <div className="h-full w-full overflow-hidden bg-[#0b0a14]">
     <TransformWrapper minScale={0.2} maxScale={4} centerOnInit doubleClick={{ disabled: true }} wheel={{ step: 0.12 }}
@@ -150,12 +176,9 @@ export default function MapaMesa(p: Props) {
             {editandoMapa && p.camadaSel === c.id && <div role="button" aria-label="Redimensionar imagem" onPointerDown={e => camadaDown(e, c, 'tamanho')}
               className="absolute -bottom-2 -right-2 h-6 w-6 cursor-nwse-resize rounded-full border-2 border-white bg-[#7654bb]" />}
           </div>)}
-          <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 2 }}>
-            {Array.from({ length: cols + 1 }, (_, i) => <line key={'v' + i} x1={i * CELULA} y1={0} x2={i * CELULA} y2={altura} stroke="rgba(148,163,184,0.18)" />)}
-            {Array.from({ length: rows + 1 }, (_, i) => <line key={'h' + i} x1={0} y1={i * CELULA} x2={largura} y2={i * CELULA} stroke="rgba(148,163,184,0.18)" />)}
-          </svg>
+          {camadaGrade}
           <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 5 }}>
-            {p.desenhos.map(d => <polyline key={d.id} points={pts(d.pontos)} fill="none" stroke={d.cor} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" opacity={0.9} />)}
+            {linhasDesenhos}
             {traco && <polyline points={pts(traco)} fill="none" stroke={p.cor} strokeWidth={3} strokeLinecap="round" />}
           </svg>
 
@@ -166,7 +189,7 @@ export default function MapaMesa(p: Props) {
             const lado = t.tamanho * CELULA
             const pct = t.hp_max ? Math.max(0, Math.min(1, (t.hp_atual ?? 0) / t.hp_max)) : null
             const morto = t.hp_max ? (t.hp_atual ?? 0) <= 0 : false
-            return <div key={t.id} className="absolute transition-[left,top] duration-150" onPointerDown={e => tokenDown(e, t)}
+            return <div key={t.id} className={'absolute ' + (emDrag ? '' : 'transition-[left,top] duration-100')} onPointerDown={e => tokenDown(e, t)}
               style={{ left: x * CELULA, top: y * CELULA, width: lado, height: lado, zIndex: emDrag ? 30 : 10, opacity: t.visivel ? 1 : 0.45, pointerEvents: editandoMapa ? 'none' : undefined }}>
               <div title={t.nome} className={'flex h-full w-full items-center justify-center overflow-hidden rounded-full border-2 bg-cover bg-center text-sm font-bold text-[#0b0a14] shadow-lg '
                 + (t.podeMover && modo === 'mover' ? 'cursor-grab ' : 'cursor-pointer ') + (emDrag ? 'scale-110 border-white ' : t.meu ? 'border-[#b99bff] ' : 'border-black/50 ') + (morto ? 'grayscale' : '')}
@@ -180,9 +203,7 @@ export default function MapaMesa(p: Props) {
             </div>
           })}
 
-          {p.fogAtivo && <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 20 }}>
-            {escondidas.map(k => { const [x, y] = k.split(',').map(Number); return <rect key={k} x={x * CELULA} y={y * CELULA} width={CELULA + 0.5} height={CELULA + 0.5} fill={admin ? 'rgba(5,4,12,0.55)' : 'rgb(5,4,12)'} /> })}
-          </svg>}
+          {camadaNevoa}
           {area && <div className="pointer-events-none absolute border-2 border-dashed border-amber-300 bg-amber-300/10" style={{ zIndex: 25, left: Math.min(area.x1, area.x2) * CELULA, top: Math.min(area.y1, area.y2) * CELULA, width: (Math.abs(area.x2 - area.x1) + 1) * CELULA, height: (Math.abs(area.y2 - area.y1) + 1) * CELULA }} />}
 
           {regua && medida && <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 40 }}>

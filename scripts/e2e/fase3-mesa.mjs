@@ -47,6 +47,10 @@ r=await mesa(J,{acao:'iniciativa',iniciativa:[]}); check('jogador não controla 
 r=await mesa(M,{acao:'iniciativa',iniciativa:[{nome:'Bandido',valor:8},{nome:'Calamity',valor:17}],turno:1,rodada:2}); check('iniciativa ordenada', r.d.mesa.iniciativa[0].nome==='Calamity' && r.d.mesa.turno===1, r)
 // desenhos
 r=await mesa(J,{acao:'desenho',cenaId:c1,cor:'#38bdf8',pontos:[1,2,30,40]}); check('jogador desenha', r.s===201, r)
+const idTraco='5a5a5a5a-1111-4222-8333-444455556666'
+r=await mesa(J,{acao:'desenho',cenaId:c1,id:idTraco,cor:'#38bdf8',pontos:[5,5,9,9]}); check('desenho com id do aparelho (v0.13.1: aparece na hora)', r.s===201, r)
+r=await mesa(J,{acao:'desenho',cenaId:c1,id:idTraco,cor:'#38bdf8',pontos:[5,5,9,9]}); check('mesmo id não duplica', r.s===409, r)
+r=await call(M,'GET','mesa/'+cid); check('desenho volta do servidor com o mesmo id', r.d.desenhos.some(d=>d.id===idTraco), r.d.desenhos)
 r=await mesa(J,{acao:'desenhos_limpar',cenaId:c1}); check('só o mestre apaga desenhos', r.s===403, r)
 // trocar cena
 r=await mesa(M,{acao:'cena_ativar',cenaId:c2}); r=await call(J,'GET','mesa/'+cid); check('jogador passa a ver a nova cena, sem tokens da outra', r.d.cenaAtiva.id===c2 && r.d.tokens.length===0, r.d.cenaAtiva)

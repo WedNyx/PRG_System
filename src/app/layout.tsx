@@ -35,7 +35,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         {children}
-        <Toaster theme="dark" richColors position="top-center" />
+        <Toaster theme="dark" richColors position="top-center" offset={72} mobileOffset={{ top: 70 }} />
       </body>
     </html>
   );

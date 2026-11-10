@@ -89,3 +89,10 @@ export function avaliar(expr: string, vars: Variaveis): number {
 export function avaliarSeguro(expr: string, vars: Variaveis): number | null {
   try { return avaliar(expr, vars) } catch { return null }
 }
+
+/** Nomes de variáveis usados numa fórmula (sem as funções). Lança erro se a fórmula tiver caractere inválido. */
+export function variaveisDaFormula(expr: string): string[] {
+  const tk = tokenizar(expr)
+  return [...new Set(tk.filter((t, i) => t.t === 'id' && !(tk[i + 1]?.t === 'op' && tk[i + 1].v === '(')).map(t => t.v as string))]
+}
+export const FUNCOES_FORMULA = Object.keys(FUNCOES)

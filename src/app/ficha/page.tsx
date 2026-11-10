@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import FichaGenerica from '@/components/fichas/FichaGenerica'
 import { sistemaPorId } from '@/lib/sistemas/catalogo'
+import { obterSistema } from '@/lib/sistemas/cliente'
 import { normalizarFicha } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
@@ -45,8 +46,8 @@ function Conteudo() {
           if (r.pendentes?.length) setAviso({ texto: 'Aguardando o mestre aprovar: ' + r.pendentes.map(a => AREAS[a] ?? a).join(', ') + '.', desfazer: false })
           if (r.ficha.observacao_mestre) setErro('Mestre: ' + r.ficha.observacao_mestre)
           else if (!r.podeEditar && r.ficha.bloqueada) setErro('O mestre travou esta ficha neste momento.')
-          const s = sistemaPorId(r.ficha.sistema)
-          if (!s) throw new ErroNuvem(400, 'Sistema desta ficha não é suportado aqui.')
+          const s = await obterSistema(r.ficha.sistema)
+          if (!s) throw new ErroNuvem(400, 'O sistema desta ficha não foi encontrado (talvez tenha sido excluído).')
           if (!ativo) return
           versao.current = r.ficha.versao
           setCampanhaId(r.ficha.campanha_id ?? null)

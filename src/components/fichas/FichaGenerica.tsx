@@ -21,12 +21,13 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
   rolarNaCampanha?: (expressao: string, rotulo: string) => Promise<{ resultados: number[]; total: number } | null>
 }) {
   const c = useMemo(() => calcular(s, d), [s, d])
-  const d20 = s.dados.startsWith('d20')
+  const d20 = s.rolagem ? s.rolagem === 'd20' : s.dados.startsWith('d20')
+  const d100 = s.id === 'brp' || s.rolagem === 'd100'
   const set = <K extends keyof DadosFicha>(k: K, v: DadosFicha[K]) => onChange({ ...d, [k]: v })
 
   async function rolar(nome: string, bonus: number | null) {
     const b = bonus ?? 0
-    if (s.id === 'brp') {
+    if (d100) {
       const alvo = bonus ?? 0
       const r = rolarNaCampanha ? await rolarNaCampanha('1d100', nome + ' (' + alvo + '%)') : rolarExpressao('1d100')
       if (!r) return
@@ -39,7 +40,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     const nat = r.resultados[0]
     toast(`${nome}: ${r.total}`, { description: `d20 = ${nat} ${sinal(b)}${nat === 20 ? ' · 20 natural!' : nat === 1 ? ' · 1 natural' : ''}${rolarNaCampanha ? ' · no chat da mesa' : ''}` })
   }
-  const podeRolar = d20 || s.id === 'brp'
+  const podeRolar = d20 || d100
   /** Rolagem livre (dano, poder, item). Em campanha, vai para o chat da mesa. */
   async function rolarExpr(expressao: string, rotulo: string) {
     const r = rolarNaCampanha ? await rolarNaCampanha(expressao, rotulo) : rolarExpressao(expressao)

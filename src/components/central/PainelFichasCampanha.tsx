@@ -6,7 +6,8 @@ import { Check, ChevronRight, Copy, Eye, EyeOff, History, Lock, LockOpen, Messag
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import { CAMPOS } from '@/lib/campanhas/permissoes'
 import { SISTEMA_V8, sistemaPorId } from '@/lib/sistemas/catalogo'
-import { GRUPOS_SISTEMA, OPCOES_SISTEMA } from '@/lib/sistemas/criar'
+import { GRUPOS_SISTEMA } from '@/lib/sistemas/criar'
+import { useOpcoesSistema } from '@/lib/sistemas/cliente'
 
 type Ficha = {
   id: string; nome: string; sistema: string; status: string; npc: boolean; oculta: boolean; bloqueada: boolean
@@ -21,7 +22,6 @@ const sec = 'rounded-2xl border border-[#55456e] bg-[#201a32] p-5'
 const msg = (e: unknown) => e instanceof ErroNuvem ? e.message : 'Falha de conexão.'
 const tituloArea = (id: string) => CAMPOS.find(c => c.id === id)?.titulo ?? id
 export const linkFicha = (f: { id: string; sistema: string }) => (f.sistema === SISTEMA_V8 ? '/ficha-v8?nuvem=' : '/ficha?nuvem=') + f.id
-const nomeSistema = (s: string) => s === SISTEMA_V8 ? 'Lunethernnyis · Ficha V8' : sistemaPorId(s)?.nome ?? s
 const quando = (d: string) => new Date(d).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 
 const STATUS: Record<string, [string, string]> = {
@@ -37,6 +37,8 @@ export function SeloStatus({ status }: { status: string }) {
 export default function PainelFichasCampanha({ aventureiroId, campanhaId, admin, membros, sistemaPadrao, aoMudar }: {
   aventureiroId: string; campanhaId: string; admin: boolean; membros: Membro[]; sistemaPadrao: string; aoMudar?: () => void
 }) {
+  const { opcoes, nomeDe } = useOpcoesSistema()
+  const nomeSistema = (s: string) => s === SISTEMA_V8 ? 'Lunethernnyis · Ficha V8' : sistemaPorId(s)?.nome ?? nomeDe(s)
   const [fichas, setFichas] = useState<Ficha[]>([])
   const [alteracoes, setAlteracoes] = useState<Alteracao[]>([])
   const [registro, setRegistro] = useState<Registro[] | null>(null)
@@ -160,7 +162,7 @@ export default function PainelFichasCampanha({ aventureiroId, campanhaId, admin,
         {nova.tipo === 'jogador' && <label className="text-sm">Jogador<select value={nova.jogadorId} onChange={e => setNova({ ...nova, jogadorId: e.target.value })} className="mt-1 w-full rounded-lg border border-[#70588c] bg-[#151123] p-2 text-white">
           <option value="">Escolha…</option>{membros.filter(m => m.papel !== 'mestre').map(m => <option key={m.aventureiro_id} value={m.aventureiro_id}>{m.aventureiro?.apelido}</option>)}</select></label>}
         <label className="text-sm">Sistema<select value={nova.sistema} onChange={e => setNova({ ...nova, sistema: e.target.value })} className="mt-1 w-full rounded-lg border border-[#70588c] bg-[#151123] p-2 text-white">
-          {GRUPOS_SISTEMA.map(g => <optgroup key={g.id} label={g.nome.replace(/^\S+ /, '')}>{OPCOES_SISTEMA.filter(o => o.grupo === g.id).map(o => <option key={o.id} value={o.id}>{o.id === SISTEMA_V8 ? 'Lunethernnyis · Ficha V8' : o.nome}</option>)}</optgroup>)}</select></label>
+          {GRUPOS_SISTEMA.map(g => <optgroup key={g.id} label={g.nome.replace(/^\S+ /, '')}>{opcoes.filter(o => o.grupo === g.id).map(o => <option key={o.id} value={o.id}>{o.id === SISTEMA_V8 ? 'Lunethernnyis · Ficha V8' : o.nome}</option>)}</optgroup>)}</select></label>
         <label className="text-sm">Nome<input value={nova.nome} maxLength={90} onChange={e => setNova({ ...nova, nome: e.target.value })} className="mt-1 w-full rounded-lg border border-[#70588c] bg-[#151123] p-2 text-white" /></label>
       </div>
       {nova.tipo === 'jogador' && <p className="mt-2 text-xs text-[#ab9bbc]">A ficha pertence ao jogador, já aprovada nesta campanha. Os dois editam conforme as permissões.</p>}

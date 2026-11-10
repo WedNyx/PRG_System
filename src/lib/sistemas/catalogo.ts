@@ -413,6 +413,7 @@ export const sistemaPorId = (id: string) => SISTEMAS.find(s => s.id === id)
 /** O sistema da campanha é texto livre (nome); acha o modelo correspondente. Desconhecido → ficha livre. */
 export function sistemaDaCampanha(nome: string): string {
   const n = (nome ?? '').toLowerCase()
+  if (/^autoral-[0-9a-f]{32}$/.test(n)) return n
   if (n.includes('lunethernnyis') || n.includes('opositores')) return 'lunethernnyis-v8'
   const exato = SISTEMAS.find(s => s.nome.toLowerCase() === n || s.id === n)
   if (exato) return exato.id

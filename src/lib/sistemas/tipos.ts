@@ -17,6 +17,8 @@ export type Sistema = {
   licenca: string
   creditos?: string
   dados: string
+  /** Como a ficha rola: d20 + bônus, d100 abaixo do valor, ou sem rolagem. Sem isso, deduz por `dados`. */
+  rolagem?: 'd20' | 'd100' | 'nenhuma'
   campos: CampoDef[]
   atributos: AtributoDef[]
   /** Modificador do atributo; `X` é o valor do atributo. Sem isso, o modificador é o próprio valor. */

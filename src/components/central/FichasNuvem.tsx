@@ -8,6 +8,7 @@ import EscolherSistema from './EscolherSistema'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import { fichasLocais, lerFichaLocal, marcarImportado, type FichaLocal } from '@/lib/nuvem/locais'
 import { sistemaPorId, SISTEMA_V8 } from '@/lib/sistemas/catalogo'
+import { useOpcoesSistema } from '@/lib/sistemas/cliente'
 
 const linkFicha = (f: { id: string; sistema: string }) => (f.sistema === SISTEMA_V8 ? '/ficha-v8?nuvem=' : '/ficha?nuvem=') + f.id
 
@@ -16,6 +17,7 @@ const msg = (e: unknown) => e instanceof ErroNuvem ? e.message : 'Falha de conex
 
 /** Fichas sincronizadas. `tipo` separa independentes das fichas de campanha. */
 export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: string; tipo: 'independentes' | 'campanhas' }) {
+  const { nomeDe } = useOpcoesSistema()
   const [fichas, setFichas] = useState<Ficha[] | null>(null)
   const [locais, setLocais] = useState<FichaLocal[]>([])
   const [erro, setErro] = useState('')
@@ -74,7 +76,7 @@ export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: st
   const cartao = (f: Ficha) => <div key={f.id} className={'rounded-xl border border-[#594871] bg-[#171325] p-4 ' + (f.status === 'arquivada' ? 'opacity-60' : '')}>
     <div className="flex items-start gap-3"><ScrollText className="shrink-0 text-[#c3a4f5]" size={25} /><div className="min-w-0 flex-1">
       <h3 className="break-words font-semibold">{f.nome || 'Personagem sem nome'}</h3>
-      <p className="mt-1 text-xs text-[#b5a5c8]">{f.sistema === SISTEMA_V8 ? 'Lunethernnyis · Ficha V8' : sistemaPorId(f.sistema)?.nome ?? f.sistema}<br />Atualizada {new Date(f.atualizada_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</p>
+      <p className="mt-1 text-xs text-[#b5a5c8]">{f.sistema === SISTEMA_V8 ? 'Lunethernnyis · Ficha V8' : nomeDe(f.sistema)}<br />Atualizada {new Date(f.atualizada_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</p>
       {f.campanha_id && <div className="mt-1 flex flex-wrap gap-1"><SeloStatus status={f.status} />{f.bloqueada && <span className="rounded-full bg-[#4b253a] px-2 py-0.5 text-[11px] text-[#f2a9c3]">Travada pelo mestre</span>}</div>}
       {f.observacao_mestre && <p className="mt-2 rounded-lg bg-[#2b2140] p-2 text-xs">Mestre: {f.observacao_mestre}</p>}</div></div>
     <div className="mt-4 flex flex-wrap items-center gap-2">

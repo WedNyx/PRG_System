@@ -37,6 +37,12 @@ export const GUIA: TopicoGuia[] = [
     dica: 'Sistemas com selo “Estrutura de ficha” são comerciais: a ficha organiza os campos e as regras ficam com o seu livro.',
   },
   {
+    id: 'construtor', icone: '✍️', titulo: 'Criar o seu próprio sistema', foto: 'construtor.jpg', legenda: 'Construtor com a prévia da ficha',
+    resumo: 'Monte um sistema de RPG do zero (ou a partir de um da plataforma) e use nas suas campanhas.',
+    passos: ['Em “Sistemas de RPG” → “Sistemas autorais”, toque em “Abrir o construtor”.', 'Comece com o exemplo simples ou copie a estrutura de um sistema da plataforma.', 'Monte as seções: identidade, atributos, valores calculados (com fórmulas), perícias, recursos, espaços de texto e regras.', 'As fórmulas usam os nomes que aparecem em “na fórmula” (ex.: 10 + FOR * 2). Toque numa fórmula e depois numa variável para inserir. Se algo estiver errado, o aviso amarelo explica o quê.', 'Use “Prévia” para testar a ficha na hora. Toque em “Salvar”: já dá para criar fichas (só você, enquanto for rascunho).', 'Quando estiver pronto, “Publicar para todos”: ele aparece nos Sistemas autorais com o seu nome e pode ser escolhido nas campanhas.'],
+    dica: 'Dá para editar depois: as fichas existentes passam a usar a versão nova. Um sistema com fichas não pode ser excluído, só voltar a rascunho.',
+  },
+  {
     id: 'fichas', icone: '📜', titulo: 'Criar e preencher fichas', foto: 'ficha.jpg', legenda: 'Ficha com menu por seções',
     resumo: 'As fichas ficam salvas na nuvem e abrem no celular ou no computador.',
     passos: ['Em “Fichas”, toque em “Nova ficha” e escolha o sistema.', 'Use o menu de seções (Principal, Atributos e perícias, Habilidades, Equipamentos, Anotações e Guia de criação).', 'Toque no dado ao lado de uma perícia para rolar. Em fichas de campanha, a rolagem vai para o chat da mesa.', 'Para jogar numa campanha, use “Enviar para campanha” na lista de fichas.'],

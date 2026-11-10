@@ -6,6 +6,16 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.12.0', data: '2026-11-09', titulo: 'Construtor de sistemas autorais',
+    itens: [
+      'Construtor de sistemas autorais: monte seu próprio RPG com identidade, atributos, valores calculados por fórmula, perícias (por graus ou por número), recursos, espaços de texto, limites de criação, carga e lembretes de regras.',
+      'Comece com um exemplo simples ou copiando a estrutura de um sistema da plataforma (os créditos de licença aberta vão junto).',
+      'Prévia ao vivo da ficha e conferência das fórmulas: o construtor avisa, em português, qualquer variável que não existe ou conta com erro.',
+      'Rascunho (só você vê e testa) ou publicado (aparece em “Sistemas autorais” para todos, com o seu nome). Fichas, campanhas, inventário, poderes e permissões funcionam igual aos outros sistemas.',
+      'Os balões de aviso agora aparecem logo abaixo do topo, sem cobrir os botões.',
+    ],
+  },
+  {
     versao: '0.11.0', data: '2026-11-09', titulo: 'Avisos (notificações)',
     itens: [
       'Avisos dentro da plataforma (🔔 no topo da Central e da mesa), sem nada por e-mail: número de não lidos, balão quando chega algo novo e toque para ir direto ao lugar certo.',

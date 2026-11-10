@@ -1,6 +1,7 @@
 import { ator, lerJson, ok, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { validarFichaDados } from '@/lib/nuvem/validacao'
-import { SISTEMA_V8, sistemaValido } from '@/lib/sistemas/catalogo'
+import { SISTEMA_V8 } from '@/lib/sistemas/catalogo'
+import { sistemaPermitido } from '@/lib/nuvem/sistemasServidor'
 
 export const dynamic = 'force-dynamic'
 const MAX_FICHAS = 100
@@ -18,7 +19,7 @@ export const POST = rota(async req => {
   const eu = await ator(req)
   const body = await lerJson(req, 600_000) as { dados?: unknown; sistema?: unknown }
   const sistema = body.sistema === undefined ? SISTEMA_V8 : body.sistema
-  if (!sistemaValido(sistema)) throw new ErroApi(400, 'Sistema de RPG desconhecido.')
+  if (!(await sistemaPermitido(sistema, eu))) throw new ErroApi(400, 'Sistema de RPG desconhecido.')
   const v = validarFichaDados(body.dados ?? (sistema === SISTEMA_V8 ? { version: 2, fields: {} } : { sistema, nome: '' }))
   if (!v.ok) throw new ErroApi(400, v.erro)
   const atuais = await rest<unknown[]>(`prg_fichas?select=id&dono_id=eq.${q(eu)}&limit=${MAX_FICHAS}`)

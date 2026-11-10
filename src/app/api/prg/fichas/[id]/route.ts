@@ -3,7 +3,7 @@ import { apelidoDe, ator, buscarFicha, linkCampanha, mestresDe, notificar, parti
 import { isUuid, normalizarPermissoes, normalizarExcecoes, podeAdministrar, validarFichaDados, isModelo } from '@/lib/nuvem/validacao'
 import { diferencas, aplicar, separarPorRegra, resumoMudanca, type Mudanca } from '@/lib/nuvem/categorias'
 import type { Campo } from '@/lib/campanhas/permissoes'
-import { sistemaPorId } from '@/lib/sistemas/catalogo'
+import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { normalizarFicha } from '@/lib/sistemas/calculo'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 
@@ -75,7 +75,7 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
   } else {
     if (f.npc ? !admin : (!dono && !admin)) throw new ErroApi(403, 'Sem permissão para editar esta ficha.')
     // Fichas genéricas: completa as chaves que faltam com os valores iniciais do modelo antes de comparar.
-    const s = sistemaPorId(f.sistema)
+    const s = await carregarSistema(f.sistema)
     const antes = s ? normalizarFicha(s, f.dados as Partial<DadosFicha>) as unknown as Record<string, unknown> : (f.dados ?? {})
     if (s) v.valor.dados = normalizarFicha(s, v.valor.dados as Partial<DadosFicha>) as unknown as Record<string, unknown>
     f.dados = antes

@@ -2,6 +2,13 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.12.0 — Construtor de sistemas autorais (2026-11-09)
+- Construtor de sistemas autorais: monte seu próprio RPG com identidade, atributos, valores calculados por fórmula, perícias (por graus ou por número), recursos, espaços de texto, limites de criação, carga e lembretes de regras.
+- Comece com um exemplo simples ou copiando a estrutura de um sistema da plataforma (os créditos de licença aberta vão junto).
+- Prévia ao vivo da ficha e conferência das fórmulas: o construtor avisa, em português, qualquer variável que não existe ou conta com erro.
+- Rascunho (só você vê e testa) ou publicado (aparece em “Sistemas autorais” para todos, com o seu nome). Fichas, campanhas, inventário, poderes e permissões funcionam igual aos outros sistemas.
+- Os balões de aviso agora aparecem logo abaixo do topo, sem cobrir os botões.
+
 ## v0.11.0 — Avisos (notificações) (2026-11-09)
 - Avisos dentro da plataforma (🔔 no topo da Central e da mesa), sem nada por e-mail: número de não lidos, balão quando chega algo novo e toque para ir direto ao lugar certo.
 - Jogadores são avisados de: entrada aceita ou recusada, ficha aprovada/recusada/ajustes, ficha travada, recompensas, sessão começando, mudança de papel, anotações compartilhadas e resumos novos no diário.

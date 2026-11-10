@@ -92,3 +92,9 @@ body {
 @keyframes prg-hex-pronto { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .35; } }
 .prg-hex-pronto { animation: prg-hex-pronto 1.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .prg-hex-pronto { animation: none; } }
+
+/* Combate: anel do token da vez e botão “Sua vez” */
+@keyframes prg-vez { 0%, 100% { box-shadow: 0 0 0 0 #fcd34d99, 0 0 14px #fbbf24aa; } 50% { box-shadow: 0 0 0 6px #fcd34d00, 0 0 26px #fbbf24; } }
+.prg-vez { animation: prg-vez 1.4s ease-in-out infinite; }
+.prg-sua-vez { animation: prg-vez 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .prg-vez, .prg-sua-vez { animation: none; } }

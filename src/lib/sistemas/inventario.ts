@@ -11,8 +11,9 @@ export type CategoriaItem = 'arma' | 'armadura' | 'consumivel' | 'equipamento' |
 export type TipoPoder = 'magia' | 'habilidade' | 'talento' | 'tecnica' | 'outro'
 /** Bônus de um item equipado: soma `valor` no alvo (ex.: 'derivado:ca', 'atributo:FOR', 'pericia:furtividade', 'recurso:pv'). */
 export type Bonus = { alvo: string; valor: number }
-export type Item = { id: string; nome: string; categoria: CategoriaItem; peso: number; dano?: string; bonus: Bonus[]; descricao?: string }
-export type Poder = { id: string; nome: string; tipo: TipoPoder; recurso?: string; custo?: number; usosMax?: number; expressao?: string; descricao?: string }
+/** `alcance` em metros (ataques na mesa); sem alcance = corpo a corpo (1,5 m). */
+export type Item = { id: string; nome: string; categoria: CategoriaItem; peso: number; dano?: string; alcance?: number; bonus: Bonus[]; descricao?: string }
+export type Poder = { id: string; nome: string; tipo: TipoPoder; recurso?: string; custo?: number; usosMax?: number; expressao?: string; alcance?: number; descricao?: string }
 export type Uso = { itens: Record<string, { qtd: number; equipado: boolean }>; poderes: Record<string, number>; carteira: string }
 
 export const CATEGORIAS_ITEM: { id: CategoriaItem; nome: string; icone: string }[] = [
@@ -42,7 +43,7 @@ export function normalizarItem(v: unknown): Item | null {
       ? [{ alvo: x.alvo, valor: num(x.valor, -99, 99) }] : []
   })
   const dano = txt(o.dano, 40).trim()
-  return { id: id(o.id), nome, categoria, peso: num(o.peso, 0, 100000), ...(dano && EXPR.test(dano) ? { dano } : {}), bonus, ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}) }
+  return { id: id(o.id), nome, categoria, peso: num(o.peso, 0, 100000), ...(dano && EXPR.test(dano) ? { dano } : {}), ...(Number(o.alcance) > 0 ? { alcance: num(o.alcance, 0, 1000) } : {}), bonus, ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}) }
 }
 export function normalizarPoder(v: unknown): Poder | null {
   if (!v || typeof v !== 'object') return null
@@ -56,6 +57,7 @@ export function normalizarPoder(v: unknown): Poder | null {
     ...(recurso ? { recurso, custo: num(o.custo, 0, 999, 1) } : {}),
     ...(Number(o.usosMax) > 0 ? { usosMax: num(o.usosMax, 1, 99) } : {}),
     ...(expressao && EXPR.test(expressao) ? { expressao } : {}),
+    ...(Number(o.alcance) > 0 ? { alcance: num(o.alcance, 0, 1000) } : {}),
     ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}),
   }
 }

@@ -92,6 +92,12 @@ export const GUIA: TopicoGuia[] = [
     passos: ['Sessões: o mestre escreve a preparação (só ele vê) e publica o resumo para o grupo.', 'Anotações: escolha quem vê (só você, você e o mestre, toda a campanha ou uma pessoa).', 'Recompensas (mestre): dê XP, itens e moedas direto nas fichas.'],
   },
   {
+    id: 'combate', icone: '⚔️', titulo: 'Combate: fichas na mesa e ataques',
+    resumo: 'Os personagens e NPCs entram na mesa pela ficha e atacam com as armas e poderes dela.',
+    passos: ['Na mesa, abra a aba “📜 Fichas”. O mestre vê todas (jogadores e NPCs); o jogador vê as dele.', 'Toque numa ficha e em “📍 Colocar na mesa”: o token já vem com o nome, a imagem e a vida da ficha.', 'Toque no seu token e em “⚔️ Atacar”. Escolha a arma ou o poder (o alcance aparece em vermelho no mapa), toque em “Escolher o alvo no mapa” e no inimigo.', 'Toque em “⚔️ Atacar!”: o ataque é rolado contra a Defesa do alvo e, se acertar, o dano aparece em seguida, no meio da tela. Poderes descontam o custo (PM, esforço…) sozinhos.', 'Mestre: na aba “Mestre”, em “⚔️ Regras de combate”, escolha se o dano sai automaticamente ou se você confirma (aplicar, metade ou anular) no chat.', 'Mestre: na aba “Iniciativa”, toque em “⚔️ Preparar combate”, marque quem luta e role a iniciativa de todos de uma vez (com o bônus da ficha). Use “Próximo turno” para passar a vez: o token da vez ganha um anel dourado e o jogador recebe um aviso com o botão “⚔️ Sua vez: atacar”.'],
+    dica: 'Para dar alcance a uma arma ou poder, edite o item ou o poder na ficha e preencha “Alcance (m)”. Sem alcance, vale corpo a corpo (1,5 m).',
+  },
+  {
     id: 'mestre', icone: '🎩', titulo: 'Painel do mestre na mesa', foto: 'mesa-mestre.jpg', legenda: 'Aba Mestre', quem: 'mestre',
     resumo: 'Cenas, mapas, névoa e controle dos tokens.',
     passos: ['Crie cenas e escolha o tamanho do mapa (Pequeno, Médio, Grande, Enorme).', 'Envie imagens do aparelho, recorte com ✂️ e monte o mapa juntando várias imagens.', 'Ligue a névoa e revele partes do mapa com o pincel ou por área.', 'Trave todos os tokens da cena quando precisar.'],

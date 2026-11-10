@@ -4,6 +4,7 @@
  * Tudo aqui é puro e testado (autoral.test.ts): o servidor valida antes de salvar.
  */
 import { calcular, fichaVazia } from './calculo'
+import { erroDaFormula } from './regrasRolagem'
 import { avaliar, variaveisDaFormula } from './formula'
 import type { Sistema } from './tipos'
 
@@ -109,7 +110,14 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   })
   const observacoes = (Array.isArray(e.observacoes) ? e.observacoes : []).map(o => txt(o, 300)).filter(Boolean).slice(0, LIMITES.observacoes)
   const formulaModificador = txt(e.formulaModificador, LIMITES.formula) || undefined
-  const rolagem = e.rolagem === 'd100' || e.rolagem === 'nenhuma' ? e.rolagem : 'd20'
+  let rolagem: Sistema['rolagem'] = e.rolagem === 'd100' || e.rolagem === 'nenhuma' || e.rolagem === 'personalizada' ? e.rolagem : 'd20'
+  let regraRolagem: Sistema['regraRolagem']
+  if (rolagem === 'personalizada') {
+    const r = e.regraRolagem && typeof e.regraRolagem === 'object' ? e.regraRolagem as Record<string, unknown> : {}
+    const formula = txt(r.formula, 60).trim(), erro = erroDaFormula(formula)
+    if (erro) { erros.push('Rolagem personalizada: ' + erro); rolagem = 'd20' }
+    else regraRolagem = { nome: txt(r.nome, 40).trim() || 'Teste', formula: formula.replace(/\s+/g, '') }
+  }
   const cargaF = e.carga && typeof e.carga === 'object' ? e.carga as Record<string, unknown> : null
   const carga = cargaF && txt(cargaF.formula, LIMITES.formula) ? { formula: txt(cargaF.formula, LIMITES.formula), unidade: txt(cargaF.unidade, 16) || 'kg' } : undefined
   const creditos = txt(e.creditos, 1500) || undefined
@@ -117,7 +125,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   const sistema: Sistema = {
     id: meta.id, nome, resumo: txt(e.resumo, 400), tipo: 'autoral',
     licenca: 'Sistema autoral' + (meta.autor ? ' de ' + meta.autor : ''), ...(creditos ? { creditos } : {}),
-    dados: txt(e.dados, 40) || (rolagem === 'd100' ? 'd100' : rolagem === 'd20' ? 'd20' : 'Livre'), rolagem,
+    dados: txt(e.dados, 40) || (rolagem === 'd100' ? 'd100' : rolagem === 'd20' ? 'd20' : regraRolagem ? regraRolagem.formula.replace(/VALOR/gi, 'X') : 'Livre'), rolagem, ...(regraRolagem ? { regraRolagem } : {}),
     campos, atributos, ...(formulaModificador ? { formulaModificador } : {}), derivados, ...(pericias ? { pericias } : {}),
     recursos, ...(limites.length ? { limites } : {}), listas: listas.length ? listas : [{ id: 'anotacoes', nome: 'Anotações' }],
     ...(observacoes.length ? { observacoes } : {}), ...(carga ? { carga } : {}),

@@ -26,6 +26,7 @@ Simulam três aventureiros (mestre, jogador e intruso) contra um banco real.
    PRG_BASE=http://localhost:3000 node scripts/e2e/v13-saude-backup.mjs   # migração 014; site com PRG_ADMIN_SENHA=lua-roxa-teste e CRON_SECRET=cron-teste
    PRG_BASE=http://localhost:3000 node scripts/e2e/v14-cartoes.mjs   # migração 015
    PRG_BASE=http://localhost:3000 node scripts/e2e/v15-arvore.mjs
+   PRG_BASE=http://localhost:3000 node scripts/e2e/v16-rolagem-personalizada.mjs
    ```
 Nunca rode contra o banco de produção: os testes criam campanhas e fichas.
 

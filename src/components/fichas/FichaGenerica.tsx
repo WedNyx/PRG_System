@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { AlertTriangle, Dice5, Info } from 'lucide-react'
 import { calcular } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
-import { rolarExpressao } from '@/lib/dice'
+import { montarRolagem, rolarExpressao } from '@/lib/dice'
 import { enviarImagemNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 import GuiaSistema from '@/components/sistemas/GuiaSistema'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
@@ -26,12 +26,21 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
   const c = useMemo(() => calcular(s, d), [s, d])
   const central = useRef<RolagemCentralHandle>(null)
   const naMesa = rolarNaCampanha ? 'Também foi para o chat da mesa' : null
-  const d20 = s.rolagem ? s.rolagem === 'd20' : s.dados.startsWith('d20')
+  const regra = s.rolagem === 'personalizada' ? s.regraRolagem : undefined
+  const d20 = !regra && (s.rolagem ? s.rolagem === 'd20' : s.dados.startsWith('d20'))
   const d100 = s.id === 'brp' || s.rolagem === 'd100'
   const set = <K extends keyof DadosFicha>(k: K, v: DadosFicha[K]) => onChange({ ...d, [k]: v })
 
   async function rolar(nome: string, bonus: number | null) {
     const b = bonus ?? 0
+    if (regra) {
+      // Regra do sistema autoral: VALOR vira o número em que a pessoa tocou.
+      const expr = montarRolagem(regra.formula, b)
+      const r = rolarNaCampanha ? await rolarNaCampanha(expr, `${nome} (${regra.nome})`) : rolarExpressao(expr)
+      if (!r) { if (!rolarNaCampanha) toast.error('Rolagem inválida: ' + expr); return }
+      central.current?.mostrar({ rotulo: `${nome} · ${regra.nome}`, expressao: expr, resultados: r.resultados, total: r.total, nota: /s\d/.test(expr) ? `${r.total} sucesso${r.total === 1 ? '' : 's'}` : naMesa })
+      return
+    }
     if (d100) {
       const alvo = bonus ?? 0
       const r = rolarNaCampanha ? await rolarNaCampanha('1d100', nome + ' (' + alvo + '%)') : rolarExpressao('1d100')
@@ -44,7 +53,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     if (!r) return
     central.current?.mostrar({ rotulo: `${nome} (d20 ${sinal(b)})`, expressao: expr, resultados: r.resultados, total: r.total, nota: naMesa })
   }
-  const podeRolar = d20 || d100
+  const podeRolar = d20 || d100 || !!regra
   /** Rolagem livre (dano, poder, item). Em campanha, vai para o chat da mesa. */
   async function rolarExpr(expressao: string, rotulo: string) {
     const r = rolarNaCampanha ? await rolarNaCampanha(expressao, rotulo) : rolarExpressao(expressao)
@@ -165,7 +174,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     </section>}
     {s.pericias && <section className={card}>
       <h2 className="mb-1 font-bold text-[#ed9cd8]">{s.pericias.titulo ?? 'Perícias'}</h2>
-      {podeRolar && <p className="mb-3 text-xs text-[#a998bd]">Toque no valor para rolar.</p>}
+      {podeRolar && <p className="mb-3 text-xs text-[#a998bd]">Toque no valor para rolar.{regra && <> Regra: <strong className="text-[#e4d3ff]">{regra.nome}</strong> (<span className="font-mono">{regra.formula}</span>, VALOR = o número tocado).</>}</p>}
       {[...grupos].map(([g, lista]) => <div key={g} className="mb-4">
         {g && <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#d3adf0]">{g}</h3>}
         <div className="grid gap-2 sm:grid-cols-2">

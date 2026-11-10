@@ -2,6 +2,12 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.16.0 — Rolagem personalizada (2026-11-10)
+- Rolagem personalizada no construtor de sistemas: em “Como se rola”, escolha 🎲 Rolagem personalizada e use um dos 12 modelos (vantagem, 2d6, pool de dados, contar sucessos, rola e mantém, Fate…) ou monte a sua fórmula.
+- A fórmula usa VALOR no lugar do atributo/perícia em que a pessoa toca na ficha (ex.: 2d20kh1+VALOR, VALORd6s5). Botões ajudam a montar e dá para testar a rolagem na hora.
+- Dados novos em qualquer rolagem (chat, poderes, itens): contar sucessos (6d6s5), dados Fate (4dF), rerrolar 1 (2d6r1) e explodir mantendo os maiores (5d10!kh2).
+- As fichas do sistema rolam com a regra dele, com o resultado no meio da tela; em campanhas, o servidor rola e manda para o chat da mesa.
+
 ## v0.15.0 — Árvore de habilidades (2026-11-10)
 - Árvore de habilidades em todas as fichas (menu da ficha → 🌠 Árvore de habilidades): hexágonos ligados num céu estrelado, com custo em pontos e pré-requisitos.
 - Liberar um hexágono gasta pontos e acende o caminho; os que já podem ser liberados piscam a borda. “Devolver pontos” desfaz (se nenhum outro depender dele).

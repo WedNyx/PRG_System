@@ -39,7 +39,7 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'construtor', icone: '✍️', titulo: 'Criar o seu próprio sistema', foto: 'construtor.jpg', legenda: 'Construtor com a prévia da ficha',
     resumo: 'Monte um sistema de RPG do zero (ou a partir de um da plataforma) e use nas suas campanhas.',
-    passos: ['Em “Sistemas de RPG” → “Sistemas autorais”, toque em “Abrir o construtor”.', 'Comece com o exemplo simples ou copie a estrutura de um sistema da plataforma.', 'Monte as seções: identidade, atributos, valores calculados (com fórmulas), perícias, recursos, espaços de texto e regras.', 'As fórmulas usam os nomes que aparecem em “na fórmula” (ex.: 10 + FOR * 2). Toque numa fórmula e depois numa variável para inserir. Se algo estiver errado, o aviso amarelo explica o quê.', 'Use “Prévia” para testar a ficha na hora. Toque em “Salvar”: já dá para criar fichas (só você, enquanto for rascunho).', 'Quando estiver pronto, “Publicar para todos”: ele aparece nos Sistemas autorais com “✍️ Criado por” e o seu nome, e pode ser escolhido nas campanhas.'],
+    passos: ['Em “Sistemas de RPG” → “Sistemas autorais”, toque em “Abrir o construtor”.', 'Comece com o exemplo simples ou copie a estrutura de um sistema da plataforma.', 'Monte as seções: identidade, atributos, valores calculados (com fórmulas), perícias, recursos, espaços de texto e regras.', 'Em “Como se rola”, escolha 🎲 Rolagem personalizada para usar um modelo pronto (vantagem, pool de dados, sucessos, Fate…) ou montar a fórmula com VALOR (o número do atributo/perícia). Use “Rolar teste” para conferir.', 'As fórmulas usam os nomes que aparecem em “na fórmula” (ex.: 10 + FOR * 2). Toque numa fórmula e depois numa variável para inserir. Se algo estiver errado, o aviso amarelo explica o quê.', 'Use “Prévia” para testar a ficha na hora. Toque em “Salvar”: já dá para criar fichas (só você, enquanto for rascunho).', 'Quando estiver pronto, “Publicar para todos”: ele aparece nos Sistemas autorais com “✍️ Criado por” e o seu nome, e pode ser escolhido nas campanhas.'],
     dica: 'Dá para editar depois: as fichas existentes passam a usar a versão nova. Um sistema com fichas não pode ser excluído, só voltar a rascunho.',
   },
   {
@@ -79,7 +79,7 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'rolagens', icone: '🎲', titulo: 'Chat e rolagens', foto: 'mesa-chat.jpg', legenda: 'Chat com rolagens',
     resumo: 'Todas as rolagens são feitas no servidor e aparecem para o grupo com cada dado que caiu.',
-    passos: ['Na aba “Chat”, toque em um dado rápido (d4 a d100) ou escreva uma expressão como 2d6+3. Os dados rolam no meio da tela para todos, com o total bem grande; toque para fechar.', 'Escolha quem vê: todos, só o mestre ou só você.', 'Toque em “Histórico” para procurar rolagens antigas por pessoa, personagem ou tipo.'],
+    passos: ['Na aba “Chat”, toque em um dado rápido (d4 a d100) ou escreva uma expressão como 2d6+3 (também vale 2d20kh1, 6d6s5 para contar sucessos e 4dF). Os dados rolam no meio da tela para todos, com o total bem grande; toque para fechar.', 'Escolha quem vê: todos, só o mestre ou só você.', 'Toque em “Histórico” para procurar rolagens antigas por pessoa, personagem ou tipo.'],
   },
   {
     id: 'musica', icone: '🎵', titulo: 'Música na mesa', foto: 'mesa-musica.jpg', legenda: 'Aba Música com playlists',

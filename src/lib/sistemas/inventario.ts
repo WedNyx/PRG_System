@@ -29,7 +29,7 @@ const LIM = { itens: 300, poderes: 200, bonus: 8, texto: 2000 }
 const txt = (v: unknown, max: number) => typeof v === 'string' ? v.slice(0, max) : ''
 const num = (v: unknown, min: number, max: number, padrao = 0) => { const n = Number(v); return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : padrao }
 const id = (v: unknown) => typeof v === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(v) ? v : Math.random().toString(36).slice(2, 12)
-const EXPR = /^[0-9dkhl!+\- ]{0,40}$/i
+const EXPR = /^[0-9dkhlfrs!+\- ]{0,40}$/i
 
 export function normalizarItem(v: unknown): Item | null {
   if (!v || typeof v !== 'object') return null

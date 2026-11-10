@@ -6,6 +6,15 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.16.0', data: '2026-11-10', titulo: 'Rolagem personalizada',
+    itens: [
+      'Rolagem personalizada no construtor de sistemas: em “Como se rola”, escolha 🎲 Rolagem personalizada e use um dos 12 modelos (vantagem, 2d6, pool de dados, contar sucessos, rola e mantém, Fate…) ou monte a sua fórmula.',
+      'A fórmula usa VALOR no lugar do atributo/perícia em que a pessoa toca na ficha (ex.: 2d20kh1+VALOR, VALORd6s5). Botões ajudam a montar e dá para testar a rolagem na hora.',
+      'Dados novos em qualquer rolagem (chat, poderes, itens): contar sucessos (6d6s5), dados Fate (4dF), rerrolar 1 (2d6r1) e explodir mantendo os maiores (5d10!kh2).',
+      'As fichas do sistema rolam com a regra dele, com o resultado no meio da tela; em campanhas, o servidor rola e manda para o chat da mesa.',
+    ],
+  },
+  {
     versao: '0.15.0', data: '2026-11-10', titulo: 'Árvore de habilidades',
     itens: [
       'Árvore de habilidades em todas as fichas (menu da ficha → 🌠 Árvore de habilidades): hexágonos ligados num céu estrelado, com custo em pontos e pré-requisitos.',

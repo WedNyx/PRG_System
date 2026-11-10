@@ -76,7 +76,7 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
       if (box.current) {
         try {
           box.current.clear()
-          box.current.roll(montarNotacao(r.expressao, r.resultados) ?? r.expressao.replace(/[!]|k[hl]\d+/g, ''))
+          box.current.roll(montarNotacao(r.expressao, r.resultados) ?? r.expressao.toLowerCase().replace(/df/g, 'd6').replace(/!|r1|k[hl]\d+|s\d+/g, ''))
           tempo = TEMPO_DADOS
         } catch (e) { console.warn('Erro ao animar dados:', e) }
       }

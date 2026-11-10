@@ -44,3 +44,24 @@ describe('sistemas autorais', () => {
     }
   })
 })
+
+describe('rolagem personalizada (v0.16)', () => {
+  const base = { nome: 'Pool', atributos: [{ nome: 'Corpo', min: 0, max: 6, padrao: 2 }] }
+  it('aceita fórmula válida e guarda a regra', () => {
+    const r = validarSistema({ ...base, rolagem: 'personalizada', regraRolagem: { nome: 'Sucessos', formula: 'VALORd6s5' } }, { id: 'autoral-' + '0'.repeat(32) })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.sistema.rolagem).toBe('personalizada')
+    expect(r.sistema.regraRolagem).toEqual({ nome: 'Sucessos', formula: 'VALORd6s5' })
+  })
+  it('recusa fórmula que não funciona e explica', () => {
+    const r = validarSistema({ ...base, rolagem: 'personalizada', regraRolagem: { nome: 'X', formula: '2d6s9+VALOR' } }, { id: 'autoral-' + '0'.repeat(32) })
+    expect(!r.ok && r.erros.join()).toMatch(/Rolagem personalizada/)
+    const r2 = validarSistema({ ...base, rolagem: 'personalizada', regraRolagem: { nome: 'X', formula: 'alert(1)' } }, { id: 'autoral-' + '0'.repeat(32) })
+    expect(!r2.ok && r2.erros.join()).toMatch(/só pode ter/)
+  })
+  it('todos os modelos prontos funcionam', async () => {
+    const { MODELOS_ROLAGEM, erroDaFormula } = await import('./regrasRolagem')
+    for (const m of MODELOS_ROLAGEM) expect(erroDaFormula(m.formula), m.id).toBeNull()
+  })
+})

@@ -97,6 +97,7 @@ export default function CampanhasNuvem({ aventureiroId, abrirCampanha }: { avent
       {c.descricao && <p className="mb-3 line-clamp-2 whitespace-pre-wrap break-words text-sm text-[#d1c4df]">{c.descricao}</p>}
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={() => setTela({ tipo: 'gerenciar', id: c.id })} className={btn}><Settings size={16} /> Abrir</button>
+        <Link href={'/mundo?campanha=' + c.id} className="inline-flex items-center gap-2 rounded-lg border border-[#6d5690] px-3 py-2 text-sm hover:bg-[#2b2143]">🌍 Mundo</Link>
         {(c.sessao_aberta || c.meuPapel === 'mestre' || c.meuPapel === 'comestre') && <Link href={'/mesa?campanha=' + c.id} className="inline-flex items-center gap-2 rounded-lg bg-[#7652ac] px-3 py-2 text-sm font-semibold hover:bg-[#8b68c4]">🗺️ {c.sessao_aberta && c.meuPapel !== 'mestre' && c.meuPapel !== 'comestre' ? 'Entrar na sessão' : 'Mesa'}</Link>}
       </div>
     </CartaoCapa>)}</div>

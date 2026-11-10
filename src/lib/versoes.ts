@@ -6,6 +6,17 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.28.0', data: '2026-11-10', titulo: 'Mundo da campanha',
+    itens: [
+      '🌍 Mundo da campanha (botão “🌍 Mundo” na mesa e nas campanhas): o mestre envia o mapa-múndi e toca em “Marcar lugar” para pôr alfinetes. Cada alfinete abre uma página com imagem, descrição e relações.',
+      'Páginas de lugares, personagens, facções, perigos, segredos e relíquias, com 32 ícones. Dá para procurar e filtrar por tipo, e o mestre arrasta os alfinetes para ajustar.',
+      '🕸️ Teia de relações: quem é aliado, inimigo, rival, família, amor, quem serve a quem e conhecidos, cada um com uma cor e texto na linha (ex.: “quer o trono”). O mestre arrasta para organizar; tocar abre a página.',
+      '🙈 “Só o mestre vê” em páginas e ligações: os jogadores só descobrem quando o mestre mostrar (o servidor esconde de verdade).',
+      'O mapa tem zoom suave, os alfinetes ficam do mesmo tamanho em qualquer zoom e “Ver no mapa” acende o lugar. Os jogadores veem as mudanças sem recarregar.',
+      'Migração 021: mundo da campanha.',
+    ],
+  },
+  {
     versao: '0.27.0', data: '2026-11-10', titulo: 'Forja de itens',
     itens: [
       '⚒️ Forja de itens: no editor de item, escolha entre 19 formas desenhadas pela plataforma (espada, adaga, machado, martelo, lança, arco, cajado, escudo, armadura, elmo, poção, pergaminho, livro, tocha, chave, anel, amuleto, gema e bolsa de moedas), a cor principal, a cor do detalhe (ou qualquer cor) e a raridade.',

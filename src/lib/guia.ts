@@ -114,6 +114,11 @@ export const GUIA: TopicoGuia[] = [
     dica: 'Para dar alcance a uma arma ou poder, edite o item ou o poder na ficha e preencha “Alcance (m)”. Sem alcance, vale corpo a corpo (1,5 m).',
   },
   {
+    id: 'mundo', icone: '🌍', titulo: 'Mundo da campanha', quem: 'todos',
+    resumo: 'Mapa-múndi com alfinetes, páginas de lugares e personagens e a teia de relações.',
+    passos: ['Na mesa (ou na lista de campanhas), toque em “🌍 Mundo”.', 'Mestre: em “🗺️ Mapa”, envie a imagem do mapa. Toque em “Marcar lugar” e depois no mapa para criar um alfinete com nome, ícone, descrição e imagem. Arraste os alfinetes para ajustar.', 'Em “📖 Páginas”, crie personagens, facções, perigos, segredos e relíquias. Procure e filtre por tipo.', 'Em “🕸️ Relações”, ligue quem é aliado, inimigo, rival, família, amor ou quem serve a quem. Arraste para organizar.', 'Marque “🙈 Só o mestre vê” em páginas e ligações secretas: os jogadores só descobrem quando você mostrar.', 'Jogadores: toque nos alfinetes e nas pessoas da teia para ler tudo o que o mestre revelou.'],
+  },
+  {
     id: 'mestre', icone: '🎩', titulo: 'Painel do mestre na mesa', foto: 'mesa-mestre.jpg', legenda: 'Aba Mestre', quem: 'mestre',
     resumo: 'Cenas, mapas, névoa e controle dos tokens.',
     passos: ['Crie cenas e escolha o tamanho do mapa (Pequeno, Médio, Grande, Enorme).', 'Envie imagens do aparelho, recorte com ✂️ e monte o mapa juntando várias imagens.', 'Ligue a névoa e revele partes do mapa com o pincel ou por área.', 'Trave todos os tokens da cena quando precisar.'],

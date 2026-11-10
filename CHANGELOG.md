@@ -2,6 +2,14 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.28.0 — Mundo da campanha (2026-11-10)
+- 🌍 Mundo da campanha (botão “🌍 Mundo” na mesa e nas campanhas): o mestre envia o mapa-múndi e toca em “Marcar lugar” para pôr alfinetes. Cada alfinete abre uma página com imagem, descrição e relações.
+- Páginas de lugares, personagens, facções, perigos, segredos e relíquias, com 32 ícones. Dá para procurar e filtrar por tipo, e o mestre arrasta os alfinetes para ajustar.
+- 🕸️ Teia de relações: quem é aliado, inimigo, rival, família, amor, quem serve a quem e conhecidos, cada um com uma cor e texto na linha (ex.: “quer o trono”). O mestre arrasta para organizar; tocar abre a página.
+- 🙈 “Só o mestre vê” em páginas e ligações: os jogadores só descobrem quando o mestre mostrar (o servidor esconde de verdade).
+- O mapa tem zoom suave, os alfinetes ficam do mesmo tamanho em qualquer zoom e “Ver no mapa” acende o lugar. Os jogadores veem as mudanças sem recarregar.
+- Migração 021: mundo da campanha.
+
 ## v0.27.0 — Forja de itens (2026-11-10)
 - ⚒️ Forja de itens: no editor de item, escolha entre 19 formas desenhadas pela plataforma (espada, adaga, machado, martelo, lança, arco, cajado, escudo, armadura, elmo, poção, pergaminho, livro, tocha, chave, anel, amuleto, gema e bolsa de moedas), a cor principal, a cor do detalhe (ou qualquer cor) e a raridade.
 - Raridades com moldura colorida: Comum, Incomum, Raro, Épico, Lendário e Único. Do Raro para cima o item brilha, e Lendário e Único ganham uma faísca.

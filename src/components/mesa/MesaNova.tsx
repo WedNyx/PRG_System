@@ -253,6 +253,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       <span title={tempoReal ? 'Tempo real ligado' : 'Atualizando a cada 4 s'} className={'h-2.5 w-2.5 rounded-full ' + (tempoReal ? 'bg-emerald-400' : 'bg-amber-400')} />
       <span className="text-xs text-[#b4aeca]">{online.length || 1} online</span>
       <button type="button" onClick={() => setSom(!som)} aria-label={som ? 'Desligar som' : 'Ligar som'} className="rounded-lg p-1.5 hover:bg-[#34294f]">{som ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
+      <Link href={'/mundo?campanha=' + campanhaId} className={btn} title="Mapa do mundo, lugares, personagens e relações">🌍 Mundo</Link>
       <button type="button" onClick={() => setPainel(!painel)} className={btn}>{painel ? 'Só o mapa' : 'Painel'}</button>
     </header>
 

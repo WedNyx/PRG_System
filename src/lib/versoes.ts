@@ -6,6 +6,12 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.23.1', data: '2026-11-10', titulo: 'Zoom suave no mapa',
+    itens: [
+      'Zoom do mapa da mesa e da árvore de habilidades com a rodinha do mouse ficou suave: cada clique aproxima ou afasta só um pouco, mirando onde está o mouse. Antes, um movimento pequeno pulava do zoom mínimo ao máximo.',
+    ],
+  },
+  {
     versao: '0.23.0', data: '2026-11-10', titulo: 'Condições com duração e toque no celular',
     itens: [
       'Corrigido: no celular, tocar num token (para abrir a janela dele ou escolher o alvo do ataque) abria e fechava na hora. Agora o toque funciona.',

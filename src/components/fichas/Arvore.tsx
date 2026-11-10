@@ -1,7 +1,8 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
-import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { TransformComponent, TransformWrapper, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
+import { ligarZoomSuave } from '@/lib/zoomRoda'
 import { Dice5, Link2, Minus, Pencil, Plus, Sparkles, Trash2, Undo2, X } from 'lucide-react'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { alvosDeBonus, lerPoderes, TIPOS_PODER, type TipoPoder } from '@/lib/sistemas/inventario'
@@ -29,6 +30,8 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
   const a = useMemo(() => lerArvore(d.arvore), [d.arvore])
   const alvos = useMemo(() => alvosDeBonus(s), [s])
   const [montando, setMontando] = useState(editorSistema)
+  const desligarZoom = useRef<(() => void) | null>(null)
+  useEffect(() => () => desligarZoom.current?.(), [])
   const [sel, setSel] = useState<string | null>(null)
   const [editor, setEditor] = useState<NoArvore | null>(null)
   const [ligando, setLigando] = useState<string | null>(null)
@@ -133,7 +136,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
           <button type="button" className="rounded-xl bg-[#7652ac] px-4 py-2.5 font-semibold hover:bg-[#8b68c4]" onClick={() => { setMontando(true); novoNo() }}><Plus size={16} className="mr-1 inline" />Criar o primeiro hexágono</button>
           <button type="button" className={btn} onClick={() => { salvar(arvoreExemplo(alvos)); setMontando(true) }}><Sparkles size={14} /> Começar com um exemplo</button></div>}
       </div>
-        : <TransformWrapper minScale={0.3} maxScale={2.5} initialScale={0.9} centerOnInit limitToBounds={false} doubleClick={{ disabled: true }} wheel={{ step: 0.1 }} panning={{ disabled: !!arrasto, velocityDisabled: true, excluded: ['arvore-no-arrastavel'] }}>
+        : <TransformWrapper onInit={ref => { desligarZoom.current?.(); desligarZoom.current = ligarZoomSuave(ref, 0.3, 2.5) }} minScale={0.3} maxScale={2.5} initialScale={0.9} centerOnInit limitToBounds={false} doubleClick={{ disabled: true }} wheel={{ disabled: true }} panning={{ disabled: !!arrasto, velocityDisabled: true, excluded: ['arvore-no-arrastavel'] }}>
           <TransformComponent wrapperClass="!w-full !h-full" contentClass="">
             <svg ref={svg} width={W} height={H} viewBox={`0 0 ${W} ${H}`} onPointerMove={mover} onPointerUp={e => { soltar(); fundoSolto(e) }} onPointerLeave={soltar} onPointerDown={e => { fundo.current = { x: e.clientX, y: e.clientY } }}
               role="group" aria-label="Árvore de habilidades">

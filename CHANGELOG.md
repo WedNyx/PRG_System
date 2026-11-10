@@ -2,6 +2,9 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.23.1 — Zoom suave no mapa (2026-11-10)
+- Zoom do mapa da mesa e da árvore de habilidades com a rodinha do mouse ficou suave: cada clique aproxima ou afasta só um pouco, mirando onde está o mouse. Antes, um movimento pequeno pulava do zoom mínimo ao máximo.
+
 ## v0.23.0 — Condições com duração e toque no celular (2026-11-10)
 - Corrigido: no celular, tocar num token (para abrir a janela dele ou escolher o alvo do ataque) abria e fechava na hora. Agora o toque funciona.
 - Escolher o alvo funciona com qualquer ferramenta do mapa selecionada, e o token não sai do lugar enquanto você mira.

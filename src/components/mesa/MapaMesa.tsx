@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
+import { TransformComponent, TransformWrapper, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
+import { ligarZoomSuave } from '@/lib/zoomRoda'
 import { emojiCondicao } from '@/lib/condicoes'
 import { celulasPincel, celulasRetangulo, type Camada } from '@/lib/nuvem/mesa'
 
@@ -50,6 +51,8 @@ export default function MapaMesa(p: Props) {
   const inicio = useRef<{ px: number; py: number } | null>(null)
   const tracoId = useRef('')
   const houveDrag = useRef(false)
+  const zoom = useRef<ReactZoomPanPinchRef>(null)
+  useEffect(() => ligarZoomSuave(zoom.current, 0.2, 4), [])
   // Toque/clique num token: só vale no evento “click”. Abrir a janela no “pointerup” fazia o clique-fantasma
   // do celular (que vem depois do toque) cair na janela recém-aberta e fechá-la na hora.
   const tokenTocado = useRef<string | null>(null)
@@ -165,7 +168,7 @@ export default function MapaMesa(p: Props) {
   const medida = regua ? (() => { const n = Math.max(Math.abs(regua.x2 - regua.x1), Math.abs(regua.y2 - regua.y1)); return { n, m: Math.round(n * METROS_POR_CELULA * 10) / 10 } })() : null
 
   return <div className="h-full w-full overflow-hidden bg-[#0b0a14]">
-    <TransformWrapper minScale={0.2} maxScale={4} centerOnInit doubleClick={{ disabled: true }} wheel={{ step: 0.12 }}
+    <TransformWrapper ref={zoom} minScale={0.2} maxScale={4} centerOnInit doubleClick={{ disabled: true }} wheel={{ disabled: true }}
       panning={{ disabled: modo !== 'mover' || !!arrastando, velocityDisabled: true }}>
       <TransformComponent wrapperClass="!w-full !h-full" contentClass="p-6">
         <div ref={ref} className="relative select-none touch-none overflow-hidden rounded-lg border border-[#2c2840]"

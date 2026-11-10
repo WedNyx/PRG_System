@@ -1,6 +1,8 @@
 import { avaliarSeguro, type Variaveis } from './formula'
+import { imagemDaPlataforma } from '../nuvem/validacao'
 import type { DadosFicha, Sistema } from './tipos'
 import { bonusEquipados, lerItens, lerPoderes, lerUso, pesoTotal } from './inventario'
+import { bonusDaArvore, lerArvore, sincronizarPoderes, somarBonus } from './arvore'
 
 export type Calculo = {
   vars: Variaveis
@@ -33,20 +35,24 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
   if (!d || typeof d !== 'object') return base
   return {
     sistema: s.id, nome: typeof d.nome === 'string' ? d.nome.slice(0, 90) : '',
+    ...(imagemDaPlataforma(d.retrato) ? { retrato: d.retrato } : {}),
     campos: { ...base.campos, ...(d.campos ?? {}) },
     atributos: { ...base.atributos, ...(d.atributos ?? {}) },
     pericias: { ...base.pericias, ...(d.pericias ?? {}) },
     recursos: { ...base.recursos, ...(d.recursos ?? {}) },
     listas: { ...base.listas, ...(d.listas ?? {}) },
     // Inventário só entra quando existe (fichas antigas continuam iguais) e sempre limpo/validado.
-    ...(d.itens !== undefined ? { itens: lerItens(d.itens) } : {}), ...(d.poderes !== undefined ? { poderes: lerPoderes(d.poderes) } : {}), ...(d.uso !== undefined ? { uso: lerUso(d.uso) } : {}),
+    ...(d.itens !== undefined ? { itens: lerItens(d.itens) } : {}), ...(d.uso !== undefined ? { uso: lerUso(d.uso) } : {}),
+    // Habilidades da árvore entram/saem dos poderes conforme os hexágonos liberados.
+    ...(d.arvore !== undefined ? { arvore: lerArvore(d.arvore), poderes: sincronizarPoderes(lerPoderes(d.poderes), lerArvore(d.arvore)) }
+      : d.poderes !== undefined ? { poderes: lerPoderes(d.poderes) } : {}),
   }
 }
 
 export function calcular(s: Sistema, d: DadosFicha): Calculo {
   const vars: Variaveis = {}
   const itens = lerItens(d.itens), uso = lerUso(d.uso)
-  const bonus = bonusEquipados(itens, uso)
+  const bonus = somarBonus(bonusEquipados(itens, uso), bonusDaArvore(lerArvore(d.arvore)))
   const b = (alvo: string) => bonus[alvo] ?? 0
   for (const c of s.campos) if (c.tipo === 'numero') vars[c.id] = num(d.campos[c.id])
   const mods: Record<string, number> = {}

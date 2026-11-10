@@ -97,7 +97,7 @@ function Notas({ campanhaId, e, admin }: { campanhaId: string; e: Estado; admin:
 function Recompensas({ campanhaId, e }: { campanhaId: string; e: Estado }) {
   const fichas = e.fichas.filter(f => !f.npc)
   const [sel, setSel] = useState<string[]>([])
-  const [r, setR] = useState({ xp: '', item: '', moedas: '', motivo: '' })
+  const [r, setR] = useState({ xp: '', pontos: '', item: '', moedas: '', motivo: '' })
   const [enviando, setEnviando] = useState(false)
   const [bib, setBib] = useState<EntradaBib[]>([])
   const [escolhidos, setEscolhidos] = useState<string[]>([])
@@ -107,11 +107,11 @@ function Recompensas({ campanhaId, e }: { campanhaId: string; e: Estado }) {
     setEnviando(true)
     try {
       const res = await api<{ recompensados: string[] }>(`campanhas/${campanhaId}/recompensas`, { method: 'POST', body: { ...r, fichaIds: sel, bibliotecaIds: escolhidos } })
-      toast.success('Recompensa entregue para ' + res.recompensados.join(', ')); setR({ xp: '', item: '', moedas: '', motivo: '' }); setSel([]); setEscolhidos([])
+      toast.success('Recompensa entregue para ' + res.recompensados.join(', ')); setR({ xp: '', pontos: '', item: '', moedas: '', motivo: '' }); setSel([]); setEscolhidos([])
     } catch (er) { toast.error(msg(er)) } finally { setEnviando(false) }
   }
   return <div className="space-y-2">
-    <p className="text-xs text-[#b4aeca]">Vai direto para as fichas aprovadas: o XP soma no campo de XP (ou é anotado), itens, poderes e moedas vão para o inventário. Fica no histórico e aparece no chat.</p>
+    <p className="text-xs text-[#b4aeca]">Vai direto para as fichas aprovadas: o XP soma no campo de XP (ou é anotado), itens, poderes e moedas vão para o inventário, e os pontos vão para a árvore de habilidades. Fica no histórico e aparece no chat.</p>
     <div className="space-y-1">{fichas.map(f => <label key={f.id} className="flex items-center gap-2 rounded-lg bg-[#1e1a30] p-2">
       <input type="checkbox" checked={sel.includes(f.id)} onChange={x => setSel(s => x.target.checked ? [...s, f.id] : s.filter(y => y !== f.id))} />
       <span className="flex-1">{f.nome || 'sem nome'}</span><span className="text-[11px] text-[#b4aeca]">{nomes[f.dono_id]}</span></label>)}</div>
@@ -120,6 +120,7 @@ function Recompensas({ campanhaId, e }: { campanhaId: string; e: Estado }) {
     <div className="grid grid-cols-2 gap-2">
       <input aria-label="XP" value={r.xp} onChange={x => setR({ ...r, xp: x.target.value })} inputMode="numeric" placeholder="XP (ex.: 150)" className={input} />
       <input aria-label="Moedas" value={r.moedas} onChange={x => setR({ ...r, moedas: x.target.value })} placeholder="Moedas (ex.: 20 PO)" className={input} />
+      <input aria-label="Pontos de habilidade" value={r.pontos} onChange={x => setR({ ...r, pontos: x.target.value })} inputMode="numeric" placeholder="🌠 Pontos da árvore (ex.: 2)" className={input + ' col-span-2'} />
     </div>
     <input aria-label="Item" value={r.item} onChange={x => setR({ ...r, item: x.target.value })} placeholder="Item rápido (ex.: Revólver encantado)" className={input} />
     {bib.length > 0 && <div className="rounded-lg bg-[#1e1a30] p-2">

@@ -1,6 +1,7 @@
 /** Aplica XP, itens, poderes e moedas a uma ficha (V8 ou genérica). Funções puras, testadas. */
 import { sistemaPorId } from '../sistemas/catalogo'
 import { lerItens, lerPoderes, lerUso, normalizarItem, normalizarPoder, type Item, type Poder } from '../sistemas/inventario'
+import { lerArvore } from '../sistemas/arvore'
 
 type Dados = Record<string, unknown>
 const obj = (v: unknown): Dados => (v && typeof v === 'object' && !Array.isArray(v) ? { ...(v as Dados) } : {})
@@ -8,15 +9,16 @@ const anexar = (atual: unknown, linha: string) => (typeof atual === 'string' && 
 
 /** Uma entrada da biblioteca do mestre (já validada no servidor). */
 export type EntradaBiblioteca = { tipo: 'item'; item: Item } | { tipo: 'poder'; poder: Poder }
-export type Recompensa = { xp: number; item: string; moedas: string; biblioteca?: EntradaBiblioteca[] }
+export type Recompensa = { xp: number; item: string; moedas: string; biblioteca?: EntradaBiblioteca[]; pontos?: number }
 
 export function validarRecompensa(b: Record<string, unknown>, biblioteca: EntradaBiblioteca[] = []): Recompensa | null {
   const xp = Math.round(Number(b.xp) || 0)
   const item = typeof b.item === 'string' ? b.item.trim().slice(0, 200) : ''
   const moedas = typeof b.moedas === 'string' ? b.moedas.trim().slice(0, 60) : ''
-  if (xp < -100000 || xp > 100000) return null
-  if (!xp && !item && !moedas && !biblioteca.length) return null
-  return biblioteca.length ? { xp, item, moedas, biblioteca } : { xp, item, moedas }
+  const pontos = Math.round(Number(b.pontos) || 0)
+  if (xp < -100000 || xp > 100000 || pontos < -99 || pontos > 99) return null
+  if (!xp && !item && !moedas && !biblioteca.length && !pontos) return null
+  return { xp, item, moedas, ...(biblioteca.length ? { biblioteca } : {}), ...(pontos ? { pontos } : {}) }
 }
 
 /** Converte uma linha da tabela prg_biblioteca numa entrada válida. */
@@ -58,10 +60,12 @@ export function aplicarRecompensa(sistema: string, dados: Dados, r: Recompensa):
     else if (!poderes.some(p => p.id === e.poder.id)) poderes.push({ ...e.poder, id: novoId(e.poder.id, usados) })
   }
   if (r.moedas) uso.carteira = (uso.carteira.trim() ? uso.carteira.trim() + ' · ' : '') + '+' + r.moedas
-  return { ...dados, campos, listas, itens, poderes, uso }
+  // Pontos de habilidade: vão para a árvore da ficha (mesmo que ela ainda esteja vazia).
+  const arvore = r.pontos ? (a => ({ ...a, pontos: Math.max(0, Math.min(9999, a.pontos + (r.pontos ?? 0))) }))(lerArvore(dados.arvore)) : undefined
+  return { ...dados, campos, listas, itens, poderes, uso, ...(arvore ? { arvore } : {}) }
 }
 
 export function descreverRecompensa(r: Recompensa) {
-  return [r.xp ? `${r.xp > 0 ? '+' : ''}${r.xp} XP` : '', r.item ? `“${r.item}”` : '',
+  return [r.xp ? `${r.xp > 0 ? '+' : ''}${r.xp} XP` : '', r.pontos ? `${r.pontos > 0 ? '+' : ''}${r.pontos} ponto(s) de habilidade` : '', r.item ? `“${r.item}”` : '',
     ...(r.biblioteca ?? []).map(e => `“${e.tipo === 'item' ? e.item.nome : e.poder.nome}”`), r.moedas ? r.moedas : ''].filter(Boolean).join(', ')
 }

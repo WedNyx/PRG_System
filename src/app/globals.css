@@ -75,3 +75,20 @@ body {
 }
 .prg-sino { animation: prg-sino 4s ease-in-out infinite; transform-origin: 50% 10%; }
 @media (prefers-reduced-motion: reduce) { .prg-sino { animation: none; } }
+
+/* Cartão da rolagem aparecendo no meio da tela */
+@keyframes prg-pop {
+  0% { opacity: 0; transform: scale(.7); }
+  60% { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.prg-pop { animation: prg-pop .35s cubic-bezier(.2,.9,.3,1.2) both; }
+@media (prefers-reduced-motion: reduce) { .prg-pop { animation: none; } }
+
+/* O dice-box cria o <canvas> sem tamanho (ficava 300×150 no canto): ocupa toda a área reservada para os dados. */
+.dice-box-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* Árvore de habilidades: hexágono que já pode ser liberado pisca a borda */
+@keyframes prg-hex-pronto { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .35; } }
+.prg-hex-pronto { animation: prg-hex-pronto 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .prg-hex-pronto { animation: none; } }

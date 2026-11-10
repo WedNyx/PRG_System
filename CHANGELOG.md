@@ -2,6 +2,29 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.16.0 — Rolagem personalizada (2026-11-10)
+- Rolagem personalizada no construtor de sistemas: em “Como se rola”, escolha 🎲 Rolagem personalizada e use um dos 12 modelos (vantagem, 2d6, pool de dados, contar sucessos, rola e mantém, Fate…) ou monte a sua fórmula.
+- A fórmula usa VALOR no lugar do atributo/perícia em que a pessoa toca na ficha (ex.: 2d20kh1+VALOR, VALORd6s5). Botões ajudam a montar e dá para testar a rolagem na hora.
+- Dados novos em qualquer rolagem (chat, poderes, itens): contar sucessos (6d6s5), dados Fate (4dF), rerrolar 1 (2d6r1) e explodir mantendo os maiores (5d10!kh2).
+- As fichas do sistema rolam com a regra dele, com o resultado no meio da tela; em campanhas, o servidor rola e manda para o chat da mesa.
+
+## v0.15.0 — Árvore de habilidades (2026-11-10)
+- Árvore de habilidades em todas as fichas (menu da ficha → 🌠 Árvore de habilidades): hexágonos ligados num céu estrelado, com custo em pontos e pré-requisitos.
+- Liberar um hexágono gasta pontos e acende o caminho; os que já podem ser liberados piscam a borda. “Devolver pontos” desfaz (se nenhum outro depender dele).
+- Efeitos automáticos: bônus (atributo, valor calculado, perícia ou máximo de recurso) e habilidades novas, com dados, custo de uso e descrição, que aparecem sozinhas em “Poderes e habilidades”.
+- “Montar árvore”: criar hexágonos, arrastar para organizar, ligar um ao outro e editar. Dá para começar com um exemplo pronto.
+- Recompensas do mestre agora podem dar pontos de habilidade, que vão direto para a árvore das fichas.
+- Nas campanhas, a árvore segue a regra da área “Habilidades” (livre, com aprovação ou só o mestre).
+
+## v0.14.0 — Dados no centro e cartões com imagem (2026-11-10)
+- Dados 3D no meio da tela: os dados caem numa área central e, quando param, aparece um cartão com o total bem grande e cada dado que caiu (crítico em dourado, falha em vermelho). Toque para fechar.
+- Vale na mesa e também nas fichas: rolar um atributo, perícia, poder ou item mostra a rolagem no centro.
+- Fichas em cartões com imagem: cada personagem pode ter um retrato (toque no quadro ao lado do nome, na ficha). Sem imagem, o cartão ganha uma cor própria.
+- Campanhas em cartões com capa: o mestre coloca a capa dentro da campanha (🖼️ Colocar capa). O cartão mostra sessão acontecendo, estado, pendências e o botão direto para a mesa.
+- Dentro da campanha, a capa aparece grande no topo, e a lista de fichas do mestre mostra o retrato de cada personagem.
+- Imagens enviadas são diminuídas no aparelho antes de subir: mais rápido e sem gastar espaço à toa.
+- Migração 015: coluna capa_url em prg_campanhas.
+
 ## v0.13.1 — Mesa sem atraso (2026-11-10)
 - Mesa sem atraso: o token acompanha o dedo/mouse na hora e fica onde você soltou, sem voltar nem pular enquanto o servidor salva.
 - Desenhar sem atraso: o traço fica na tela assim que você solta, sem sumir e reaparecer.

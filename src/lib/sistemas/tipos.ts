@@ -18,7 +18,9 @@ export type Sistema = {
   creditos?: string
   dados: string
   /** Como a ficha rola: d20 + bônus, d100 abaixo do valor, ou sem rolagem. Sem isso, deduz por `dados`. */
-  rolagem?: 'd20' | 'd100' | 'nenhuma'
+  rolagem?: 'd20' | 'd100' | 'nenhuma' | 'personalizada'
+  /** Com rolagem 'personalizada': a fórmula do teste, com VALOR no lugar do atributo/perícia (ver regrasRolagem.ts). */
+  regraRolagem?: { nome: string; formula: string }
   /** Fora das listas (não dá para criar fichas novas); fichas antigas continuam abrindo. */
   oculto?: boolean
   /** Quem criou (sistemas autorais). */
@@ -55,6 +57,8 @@ export type Sistema = {
 export type DadosFicha = {
   sistema: string
   nome: string
+  /** Imagem do personagem (enviada pela plataforma). */
+  retrato?: string
   campos: Record<string, string | number>
   atributos: Record<string, number>
   pericias: Record<string, string | number>
@@ -64,4 +68,6 @@ export type DadosFicha = {
   itens?: unknown[]
   poderes?: unknown[]
   uso?: unknown
+  /** Árvore de habilidades (ver arvore.ts). */
+  arvore?: unknown
 }

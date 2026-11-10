@@ -118,7 +118,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         // O servidor rola os dados: ninguém consegue "escolher" o resultado.
         const expr = typeof b.expressao === 'string' ? b.expressao.trim().slice(0, 80) : ''
         const r = rolarExpressao(expr)
-        if (!r) throw new ErroApi(400, 'Expressão de dados inválida. Ex.: 1d20+5, 2d6, 4d6kh3.')
+        if (!r) throw new ErroApi(400, 'Expressão de dados inválida. Ex.: 1d20+5, 2d6, 4d6kh3, 6d6s5, 4dF.')
         Object.assign(linha, { expressao: r.expressao, resultados: r.resultados, total: r.total, texto: typeof b.texto === 'string' ? b.texto.trim().slice(0, 200) || null : null })
       } else {
         const texto = typeof b.texto === 'string' ? b.texto.trim().slice(0, 1000) : ''

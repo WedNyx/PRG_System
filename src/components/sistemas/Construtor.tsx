@@ -12,11 +12,13 @@ import { fichaVazia } from '@/lib/sistemas/calculo'
 import { idUnico, sistemaEmBranco, slug, validarSistema } from '@/lib/sistemas/autoral'
 import { esquecerSistema } from '@/lib/sistemas/cliente'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
+import { MODELOS_ROLAGEM, PECAS_ROLAGEM, erroDaFormula } from '@/lib/sistemas/regrasRolagem'
+import { montarRolagem, rolarExpressao } from '@/lib/dice'
 
 /* Linhas editáveis: `auto` = o nome na fórmula ainda acompanha o nome (até salvar pela 1ª vez). */
 type Linha = Record<string, unknown> & { id: string; nome: string; auto?: boolean }
 type Def = {
-  nome: string; resumo: string; dados: string; rolagem: 'd20' | 'd100' | 'nenhuma'; creditos?: string
+  nome: string; resumo: string; dados: string; rolagem: 'd20' | 'd100' | 'nenhuma' | 'personalizada'; regraRolagem: { nome: string; formula: string }; creditos?: string
   campos: Linha[]; atributos: Linha[]; formulaModificador: string; derivados: Linha[]
   pericias: { modo: 'treino' | 'valor' | 'nenhuma'; titulo?: string; total: string; treinos: Linha[]; lista: Linha[] }
   recursos: Linha[]; listas: Linha[]; limites: { nome: string; uso: string; max: string }[]; observacoes: string; carga: { formula: string; unidade: string }
@@ -38,6 +40,7 @@ function paraDef(s: Partial<Sistema> & Record<string, unknown>, auto = false): D
   return {
     nome: String(s.nome ?? ''), resumo: String(s.resumo ?? ''), dados: String(s.dados ?? 'd20'),
     rolagem: (s.rolagem as Def['rolagem']) ?? (String(s.dados ?? '').startsWith('d100') || s.id === 'brp' ? 'd100' : String(s.dados ?? 'd20').startsWith('d20') ? 'd20' : 'nenhuma'),
+    regraRolagem: (s.regraRolagem as Def['regraRolagem']) ?? { nome: 'Teste', formula: '1d20+VALOR' },
     creditos: typeof s.creditos === 'string' ? s.creditos : undefined,
     campos: l(s.campos), atributos: l(s.atributos), formulaModificador: String(s.formulaModificador ?? ''), derivados: l(s.derivados),
     pericias: p ? { modo: p.modo, titulo: p.titulo, total: p.total, treinos: l(p.treinos), lista: l(p.lista) } : { modo: 'nenhuma', total: 'MOD + TREINO', treinos: [], lista: [] },
@@ -48,7 +51,7 @@ function paraDef(s: Partial<Sistema> & Record<string, unknown>, auto = false): D
 function paraEnvio(d: Def) {
   const tira = (ls: Linha[]) => ls.map(({ auto: _a, ...r }) => r)
   return {
-    nome: d.nome, resumo: d.resumo, dados: d.dados, rolagem: d.rolagem, creditos: d.creditos,
+    nome: d.nome, resumo: d.resumo, dados: d.dados, rolagem: d.rolagem, ...(d.rolagem === 'personalizada' ? { regraRolagem: d.regraRolagem } : {}), creditos: d.creditos,
     campos: tira(d.campos), atributos: tira(d.atributos), formulaModificador: d.formulaModificador, derivados: tira(d.derivados),
     pericias: d.pericias.modo === 'nenhuma' ? undefined : { modo: d.pericias.modo, titulo: d.pericias.titulo, total: d.pericias.total, treinos: tira(d.pericias.treinos), lista: tira(d.pericias.lista) },
     recursos: tira(d.recursos), listas: tira(d.listas), limites: d.limites, observacoes: d.observacoes.split('\n').map(x => x.trim()).filter(Boolean),
@@ -162,9 +165,10 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
           <label className="block">Descrição curta<textarea rows={2} value={def.resumo} maxLength={400} onChange={e => mudar(d => ({ ...d, resumo: e.target.value }))} className={input + ' mt-1'} /></label>
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="block">Como se rola<select value={def.rolagem} onChange={e => mudar(d => ({ ...d, rolagem: e.target.value as Def['rolagem'] }))} className={input + ' mt-1'}>
-              <option value="d20">d20 + bônus (toque na perícia para rolar)</option><option value="d100">d100 abaixo do valor (porcentagem)</option><option value="nenhuma">Sem rolagem automática</option></select></label>
+              <option value="d20">d20 + bônus (toque na perícia para rolar)</option><option value="d100">d100 abaixo do valor (porcentagem)</option><option value="personalizada">🎲 Rolagem personalizada (monte a sua)</option><option value="nenhuma">Sem rolagem automática</option></select></label>
             <label className="block">Dados (texto que aparece no cartão)<input value={def.dados} maxLength={40} onChange={e => mudar(d => ({ ...d, dados: e.target.value }))} className={input + ' mt-1'} placeholder="Ex.: d20, 2d6, d100" /></label>
           </div>
+          {def.rolagem === 'personalizada' && <EditorRolagem regra={def.regraRolagem} mudar={r => mudar(d => ({ ...d, regraRolagem: r }))} />}
           {def.creditos && <p className="rounded-lg bg-[#171325] p-2 text-[11px] text-[#a998bd]">Créditos do modelo usado (licença aberta): {def.creditos}</p>}
         </SecaoBase>
 
@@ -345,4 +349,44 @@ function EscolherModelo({ escolher }: { escolher: (d: Def) => void }) {
       <Link href="/central?secao=sistemas" className="mt-5 inline-block text-sm text-[#c7a8ff] underline">Voltar</Link>
     </div>
   </Tela>
+}
+
+/** Monta a regra dos testes: escolhe um modelo ou escreve a fórmula com VALOR e testa na hora. */
+function EditorRolagem({ regra, mudar }: { regra: { nome: string; formula: string }; mudar: (r: { nome: string; formula: string }) => void }) {
+  const campo = useRef<HTMLInputElement>(null)
+  const [valorTeste, setValorTeste] = useState(3)
+  const [teste, setTeste] = useState<{ expr: string; total: number; detalhes: string } | null>(null)
+  const erro = erroDaFormula(regra.formula)
+  function inserir(pedaco: string) {
+    const el = campo.current, f = regra.formula
+    const ini = el?.selectionStart ?? f.length, fim = el?.selectionEnd ?? f.length
+    const nova = (f.slice(0, ini) + pedaco + f.slice(fim)).slice(0, 60)
+    mudar({ ...regra, formula: nova })
+    requestAnimationFrame(() => { el?.focus(); el?.setSelectionRange(ini + pedaco.length, ini + pedaco.length) })
+  }
+  function testar() {
+    const expr = montarRolagem(regra.formula, valorTeste), r = rolarExpressao(expr)
+    setTeste(r ? { expr, total: r.total, detalhes: r.detalhes } : null)
+  }
+  return <div className="space-y-3 rounded-xl border border-[#6d5690] bg-[#171325] p-3">
+    <p className="text-xs font-semibold uppercase tracking-wider text-[#ed9cd8]">1. Escolha um modelo (ou pule e monte a sua)</p>
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{MODELOS_ROLAGEM.map(m => <button key={m.id} type="button" onClick={() => { mudar({ nome: m.nome, formula: m.formula }); setTeste(null) }}
+      className={'rounded-lg border p-2 text-left text-xs hover:bg-[#2b2140] ' + (regra.formula === m.formula ? 'border-[#b99bff] bg-[#2b2140]' : 'border-[#4a3d63]')}>
+      <span className="block font-semibold text-[#f2ebff]">{m.nome}</span><span className="block font-mono text-[11px] text-[#c7a8ff]">{m.formula}</span>
+      <span className="mt-0.5 block text-[11px] text-[#a998bd]">{m.explica}</span></button>)}</div>
+    <p className="text-xs font-semibold uppercase tracking-wider text-[#ed9cd8]">2. Monte a sua regra</p>
+    <div className="grid gap-2 sm:grid-cols-[1fr_2fr]">
+      <label className="block text-sm">Nome da rolagem<input value={regra.nome} maxLength={40} onChange={e => mudar({ ...regra, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Teste de destino" /></label>
+      <label className="block text-sm">Fórmula<input ref={campo} value={regra.formula} maxLength={60} onChange={e => { mudar({ ...regra, formula: e.target.value }); setTeste(null) }} className={input + ' mt-1 font-mono'} placeholder="Ex.: 2d20kh1+VALOR" /></label>
+    </div>
+    <div className="flex flex-wrap gap-1.5">{PECAS_ROLAGEM.map(p => <button key={p.texto} type="button" title={p.dica} onClick={() => inserir(p.texto)} className={botao + ' font-mono'}>{p.rotulo}</button>)}</div>
+    <p className="text-[11px] text-[#a998bd]">VALOR é o número do atributo ou da perícia em que a pessoa tocou na ficha. Ex.: <span className="font-mono">VALORd6s5</span> rola tantos d6 quanto o valor e conta os 5 e 6.</p>
+    {erro ? <p className="flex items-start gap-2 rounded-lg bg-[#4d3f1d]/80 p-2 text-xs text-[#f3dc9a]"><AlertTriangle size={14} className="mt-0.5 shrink-0" /> {erro}</p>
+      : <div className="flex flex-wrap items-center gap-2 rounded-lg bg-[#201a32] p-2 text-sm">
+        <span>Testar com VALOR =</span>
+        <input type="number" aria-label="Valor de teste" value={valorTeste} min={-20} max={30} onChange={e => setValorTeste(Number(e.target.value) || 0)} className={pequeno + ' w-20'} />
+        <button type="button" onClick={testar} className={botao}>🎲 Rolar teste</button>
+        {teste && <span className="text-xs"><span className="font-mono text-[#c7a8ff]">{teste.expr}</span> → <strong className="text-lg text-[#ed9cd8]">{teste.total}</strong> <span className="text-[#a998bd]">{teste.detalhes}</span></span>}
+      </div>}
+  </div>
 }

@@ -5,7 +5,7 @@ import { fichaVazia } from '@/lib/sistemas/calculo'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
-const CAMPOS = 'id,nome,sistema,status,npc,oculta,bloqueada,areas_bloqueadas,observacao_mestre,dono_id,origem_id,versao,atualizada_em,dono:prg_public_adventurers(apelido,avatar)'
+const CAMPOS = 'id,nome,sistema,retrato:dados->>retrato,status,npc,oculta,bloqueada,areas_bloqueadas,observacao_mestre,dono_id,origem_id,versao,atualizada_em,dono:prg_public_adventurers(apelido,avatar)'
 
 /** Mestre: todas as fichas e NPCs. Jogador: as próprias fichas desta campanha. */
 export const GET = rota<Ctx>(async (req, { params }) => {

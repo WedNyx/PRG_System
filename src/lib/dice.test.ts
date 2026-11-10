@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectarCritico, rolarExpressao } from './dice'
+import { detectarCritico, montarRolagem, rolarExpressao } from './dice'
 
 describe('rolarExpressao', () => {
   it('rola um dado simples', () => {
@@ -96,5 +96,40 @@ describe('detectarCritico', () => {
 
   it('crítico vence falha quando ambos aparecem', () => {
     expect(detectarCritico('2d20kh1', [20, 1])).toBe('critico')
+  })
+})
+
+describe('rolagens personalizadas (v0.16)', () => {
+  it('conta sucessos', () => {
+    const r = rolarExpressao('6d6s5')!
+    expect(r.total).toBe(r.resultados.filter(v => v >= 5).length)
+  })
+  it('dados Fate', () => {
+    const r = rolarExpressao('4df+2')!
+    expect(r.resultados).toHaveLength(4)
+    expect(r.resultados.every(v => v >= -1 && v <= 1)).toBe(true)
+    expect(r.total).toBe(r.resultados.reduce((a, b) => a + b, 0) + 2)
+  })
+  it('explode e mantém (Roll and Keep)', () => {
+    const r = rolarExpressao('5d10!kh2')!
+    expect(r).not.toBeNull()
+    expect(r.resultados.length).toBeGreaterThanOrEqual(5)
+    expect(r.total).toBeGreaterThanOrEqual(2)
+  })
+  it('rerrola 1', () => {
+    for (let i = 0; i < 30; i++) expect(rolarExpressao('1d2r1')).not.toBeNull()
+  })
+  it('limites', () => {
+    expect(rolarExpressao('60d6+60d6')).toBeNull()
+    expect(rolarExpressao('2d6s7')).toBeNull()
+  })
+  it('monta a fórmula com VALOR', () => {
+    expect(montarRolagem('1d20+VALOR', 3)).toBe('1d20+3')
+    expect(montarRolagem('1d20+VALOR', -2)).toBe('1d20-2')
+    expect(montarRolagem('VALORd6s5', 0)).toBe('1d6s5')
+    expect(montarRolagem('VALORd10!kh2', 5)).toBe('5d10!kh2')
+    expect(montarRolagem('2d20kh1 + VALOR', 4)).toBe('2d20kh1+4')
+    expect(montarRolagem('4dF+VALOR', 1)).toBe('4df+1')
+    expect(montarRolagem('VALORd10!kh2', 1)).toBe('1d10!kh1')
   })
 })

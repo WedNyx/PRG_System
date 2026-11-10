@@ -159,7 +159,7 @@ export function CartaoAtaque({ d, eventoId, admin, acao }: { d: DadosAtaque; eve
 }
 
 /** Regras de combate da campanha (no painel do mestre). */
-export function ConfigCombate({ acerto, acao }: { acerto: 'automatico' | 'mestre'; acao: Acao }) {
+export function ConfigCombate({ acerto, morte = 'testes', acao }: { acerto: 'automatico' | 'mestre'; morte?: 'desligado' | 'testes' | 'desesperadas'; acao: Acao }) {
   return <section className="rounded-xl border border-[#5e3a52] bg-[#1e1a30] p-3">
     <h3 className="font-semibold">⚔️ Regras de combate</h3>
     <p className="mt-1 text-xs text-[#b4aeca]">Quando um ataque acerta, o dano…</p>
@@ -168,6 +168,15 @@ export function ConfigCombate({ acerto, acao }: { acerto: 'automatico' | 'mestre
         ['automatico', '⚡ Sai automaticamente', 'O dano já sai da vida do alvo na hora. Mais rápido para combates grandes.']] as const).map(([id, nome, txt]) =>
         <label key={id} className={'flex cursor-pointer gap-2 rounded-lg border p-2 text-sm ' + (acerto === id ? 'border-[#b99bff] bg-[#2b2140]' : 'border-[#3d3152]')}>
           <input type="radio" name="acerto" checked={acerto === id} onChange={() => void acao({ acao: 'combate_config', acerto: id }).catch(() => {})} className="mt-1 accent-[#b99bff]" />
+          <span><strong>{nome}</strong><span className="block text-xs text-[#c4b6d4]">{txt}</span></span></label>)}
+    </div>
+    <p className="mt-3 text-xs text-[#b4aeca]">Quando a vida chega a 0…</p>
+    <div className="mt-2 grid gap-2">
+      {([['testes', '💀 Testes contra a morte', 'Cai e rola um d20 no começo de cada turno: 10+ sucesso, 9− falha, 1 = duas falhas, 20 = levanta. 3 sucessos estabiliza; 3 falhas, morre. Dano caído = falha.'],
+        ['desesperadas', '⚠️ Testes + Medidas desesperadas', 'Igual, e o jogador pode aceitar falhas futuras para agir além do normal (1 falha: fugir, correr ou +5 num d20; 3 falhas: ataque extra ou recuperar uma magia). As falhas entram quando ele cair.'],
+        ['desligado', '🚫 Desligado', 'Vida 0 não faz nada sozinho: o mestre decide.']] as const).map(([id, nome, txt]) =>
+        <label key={id} className={'flex cursor-pointer gap-2 rounded-lg border p-2 text-sm ' + (morte === id ? 'border-[#b99bff] bg-[#2b2140]' : 'border-[#3d3152]')}>
+          <input type="radio" name="morte" checked={morte === id} onChange={() => void acao({ acao: 'combate_config', morte: id }).catch(() => {})} className="mt-1 accent-[#b99bff]" />
           <span><strong>{nome}</strong><span className="block text-xs text-[#c4b6d4]">{txt}</span></span></label>)}
     </div>
   </section>
@@ -217,5 +226,48 @@ export function PrepararCombate({ tokens, fichas, acao, fechar }: { tokens: Toke
         className="mt-3 w-full rounded-xl bg-gradient-to-r from-[#b91c1c] to-[#7c3aed] p-3 font-bold shadow-[0_0_18px_#b91c1c55] disabled:opacity-40 disabled:shadow-none">
         {enviando ? 'Rolando…' : `🎲 Rolar iniciativa e começar (${escolhidos.length})`}</button>
     </div>
+  </div>
+}
+
+export type Morte = { estado?: 'caido' | 'estavel' | 'morto'; sucessos?: number; falhas?: number; futuras?: number }
+/** Bolinhas de sucesso/falha (3 + 3). */
+export function Bolinhas({ m, pequeno = false }: { m: Morte; pequeno?: boolean }) {
+  const t = pequeno ? 'h-1.5 w-1.5' : 'h-5 w-5'
+  return <span className={'inline-flex items-center ' + (pequeno ? 'gap-px' : 'gap-1.5')}>
+    {[0, 1, 2].map(i => <span key={'s' + i} className={t + ' rounded-full border ' + (i < (m.sucessos ?? 0) ? 'border-emerald-200 bg-emerald-500 shadow-[0_0_6px_#10b981]' : 'border-[#4a3d63] bg-black/60')} />)}
+    <span className={pequeno ? 'w-0.5' : 'w-2'} />
+    {[0, 1, 2].map(i => <span key={'f' + i} className={t + ' rounded-full border ' + (i < (m.falhas ?? 0) ? 'border-red-200 bg-red-600 shadow-[0_0_6px_#dc2626]' : 'border-[#4a3d63] bg-black/60')} />)}
+  </span>
+}
+
+/** “À beira da morte” na janela do token. */
+export function PainelMorte({ nome, m, regra, admin, pode, vida, acao, tokenId }: { nome: string; m: Morte; regra: 'desligado' | 'testes' | 'desesperadas'; admin: boolean; pode: boolean; vida: number | null; acao: Acao; tokenId: string }) {
+  if (regra === 'desligado') return null
+  const op = (o: Record<string, unknown>) => void acao({ acao: 'morte', tokenId, ...o }).catch(e => toast.error(msg(e)))
+  const btn = 'rounded-lg border border-[#62527e] px-2 py-1 text-xs hover:bg-[#34294f]'
+  if (m.estado) return <div className={'mt-3 rounded-xl border p-3 ' + (m.estado === 'morto' ? 'border-zinc-500 bg-zinc-900/80' : m.estado === 'estavel' ? 'border-emerald-700 bg-emerald-950/40' : 'border-red-800 bg-red-950/40')}>
+    <p className="text-sm font-bold">{m.estado === 'morto' ? `⚰️ ${nome} morreu` : m.estado === 'estavel' ? `🩹 ${nome} está estável` : `💀 ${nome} está à beira da morte`}</p>
+    <div className="mt-2 flex items-center gap-3 text-xs"><span>✅ Sucessos · ❌ Falhas</span><Bolinhas m={m} /></div>
+    {m.estado === 'caido' && <p className="mt-1 text-[11px] text-[#d6c8e8]">Rola sozinho no começo do turno. 10+ sucesso · 1 = duas falhas · 20 = levanta com 1 de vida. Dano agora conta falha.</p>}
+    {m.estado === 'estavel' && <p className="mt-1 text-[11px] text-[#d6c8e8]">Inconsciente, mas fora de perigo. Qualquer cura levanta; dano volta a cair.</p>}
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {m.estado === 'caido' && pode && <button type="button" className={btn + ' border-red-400/60 bg-red-900/40 font-semibold'} onClick={() => op({ op: 'rolar' })}>🎲 Rolar teste agora</button>}
+      {admin && <><button type="button" className={btn} onClick={() => op({ op: 'sucesso' })}>+ ✅</button><button type="button" className={btn} onClick={() => op({ op: 'falha' })}>+ ❌</button>
+        {m.estado !== 'estavel' && m.estado !== 'morto' && <button type="button" className={btn} onClick={() => op({ op: 'estabilizar' })}>🩹 Estabilizar</button>}
+        <button type="button" className={btn} onClick={() => op({ op: 'zerar' })}>Zerar</button></>}
+    </div>
+  </div>
+  return <div className="mt-3 rounded-xl border border-[#3d3152] bg-[#1e1a30] p-3 text-xs">
+    <p className="font-semibold">💀 À beira da morte</p>
+    <p className="mt-1 text-[#c4b6d4]">Se a vida chegar a 0, {nome} cai e faz testes contra a morte.{admin && vida !== null && vida > 0 ? '' : ''}</p>
+    {regra === 'desesperadas' && <>
+      <p className="mt-2 font-semibold text-amber-200">⚠️ Medidas desesperadas{m.futuras ? ` · ${m.futuras}/3 falhas guardadas` : ''}</p>
+      {pode ? <div className="mt-1 grid gap-1.5">
+        <button type="button" disabled={(m.futuras ?? 0) + 1 > 3} onClick={() => { if (confirm('Aceitar 1 falha futura?')) op({ op: 'medida', n: 1 }) }} className={btn + ' text-left disabled:opacity-40'}>1 falha futura: fugir sem provocar ataques, correr o dobro ou +5 num d20</button>
+        <button type="button" disabled={(m.futuras ?? 0) + 3 > 3} onClick={() => { if (confirm('Aceitar 3 falhas futuras? Se cair, morre na hora.')) op({ op: 'medida', n: 3 }) }} className={btn + ' text-left disabled:opacity-40'}>3 falhas futuras: ataque extra ou recuperar uma magia/poder</button>
+      </div> : <p className="mt-1 text-[#a998bd]">Só o dono do token escolhe.</p>}
+      <p className="mt-1 text-[11px] text-[#a998bd]">As falhas aceitas entram na conta assim que ele cair. 3 guardadas = morre ao cair.</p>
+    </>}
+    {admin && <button type="button" className={btn + ' mt-2'} onClick={() => op({ op: 'cair' })}>Marcar como caído</button>}
   </div>
 }

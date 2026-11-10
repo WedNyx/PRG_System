@@ -3,7 +3,9 @@ import { ator, buscarFicha, nomeDaCampanha, notificar, participantes, lerJson, o
 import { isUuid, podeAdministrar, type Papel } from '@/lib/nuvem/validacao'
 import { aplicarNevoa, corValida, filtroVisibilidade, normalizarCamadas, normalizarCondicoes, normalizarIniciativa, normalizarPontos, podeMoverToken, todasCelulas, urlValida, type Movimento, type Visibilidade } from '@/lib/nuvem/mesa'
 import { rolarExpressao } from '@/lib/dice'
-import { aplicarDano, fichaDeCombate, lerRegrasCombate, mudarFicha, tokenCombate, vidaDasFichas } from '@/lib/nuvem/combateServidor'
+import { aplicarDano, atualizarMorte, avisarMesa, danoComMorte, fichaDeCombate, lerRegrasCombate, mudarFicha, tokenCombate, vidaDasFichas } from '@/lib/nuvem/combateServidor'
+import { aceitarMedida, aoCair, lerMorte, MEDIDAS, testeMorte, type EstadoMorte } from '@/lib/sistemas/morte'
+import { detectarCritico } from '@/lib/dice'
 import { acertou, ALCANCE_CORPO, distancia, gastarCusto, ordenarIniciativa, regraDeAtaque, regraDeIniciativa, rolarDano, resumoCombate, type EntradaOrdem } from '@/lib/sistemas/combate'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { ehV8 } from '@/lib/nuvem/categorias'
@@ -61,9 +63,27 @@ async function danoNoInicioDoTurno(cid: string, tokenId: string | null | undefin
     const dano = Math.max(0, rol.total)
     const alvo = await tokenCombate(cid, tk.id)
     const vida = dano > 0 ? await aplicarDano(alvo, dano) : null
-    linhas.push(`${emojiCondicao[c] ?? ''} ${nomeCondicao(c)}: ${tk.nome} sofreu ${dano} de dano (${expr} → [${rol.resultados.join(', ')}])${vida?.depois !== null && vida?.depois !== undefined ? ` · ❤️ ${vida.depois}${vida.max ? '/' + vida.max : ''}` : ''}.`)
+    const extra = vida ? await atualizarMorte(cid, alvo, vida, dano) : []
+    linhas.push(`${emojiCondicao[c] ?? ''} ${nomeCondicao(c)}: ${tk.nome} sofreu ${dano} de dano (${expr} → [${rol.resultados.join(', ')}])${vida?.depois !== null && vida?.depois !== undefined ? ` · ❤️ ${vida.depois}${vida.max ? '/' + vida.max : ''}` : ''}.`, ...extra)
   }
   return linhas
+}
+/** Começo do turno de quem está caído: teste contra a morte automático (d20), se a regra estiver ligada. */
+async function testeNoInicioDoTurno(cid: string, tokenId: string | null | undefined): Promise<string[]> {
+  if (!tokenId) return []
+  const [camp] = await rest<{ combate: unknown }[]>(`prg_campanhas?select=combate&id=eq.${q(cid)}`)
+  if (lerRegrasCombate(camp?.combate).morte === 'desligado') return []
+  const [tk] = await rest<{ id: string; nome: string; morte: unknown }[]>(`prg_tokens?select=id,nome,morte&id=eq.${q(tokenId)}&campanha_id=eq.${q(cid)}`).catch(() => [])
+  const m = lerMorte(tk?.morte)
+  if (!tk || m.estado !== 'caido') return []
+  return [await rolarTesteMorte(cid, tk, m)]
+}
+async function rolarTesteMorte(cid: string, tk: { id: string; nome: string }, m: EstadoMorte): Promise<string> {
+  const d20 = rolarExpressao('1d20')!.resultados[0]
+  const r = testeMorte(m, d20)
+  await rest(`prg_tokens?id=eq.${q(tk.id)}`, { method: 'PATCH', body: JSON.stringify({ morte: r.m }) })
+  if (r.levanta) await aplicarDano(await tokenCombate(cid, tk.id), -1)
+  return `💀 Teste contra a morte de ${tk.nome}: 🎲 ${r.texto}`
 }
 /** Onde o token novo entra: a casa pedida ou, sem casa, a livre mais perto do meio (para não ficar um em cima do outro). */
 async function posicaoLivre(c: { id: string; grid_cols: number; grid_rows: number }, x: unknown, y: unknown) {
@@ -296,7 +316,9 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         const novo = inteiro(b.hp_atual, -1000, 100000)
         const fc = t.ficha_id && novo !== null ? await fichaDeCombate(t.ficha_id) : null
         // Token ligado a ficha: o dano/cura vai para a vida da ficha.
-        if (fc?.r.vida) { const v = fc.r.vida; await aplicarDano({ ...(t as unknown as Parameters<typeof aplicarDano>[0]), hp_atual: v.atual, hp_max: v.max }, v.atual - (novo as number)) }
+        const tc = await tokenCombate(cid, t.id)
+        if (fc?.r.vida) { const v = fc.r.vida; await danoComMorte(cid, eu, { ...tc, hp_atual: v.atual, hp_max: v.max }, v.atual - (novo as number)) }
+        else if (novo !== null && (tc.hp_atual !== null || tc.hp_max !== null)) await danoComMorte(cid, eu, tc, (tc.hp_atual ?? tc.hp_max ?? 0) - novo)
         else m.hp_atual = novo
       }
       if (b.condicoes !== undefined || b.rodadas !== undefined || b.danos !== undefined) {
@@ -345,12 +367,52 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       await rest(`prg_desenhos?cena_id=eq.${q(c.id)}`, { method: 'DELETE' })
       return ok({ ok: true })
     }
+    case 'morte': {
+      // À beira da morte: rolar o teste, ajustar na mão (mestre) ou aceitar medidas desesperadas (dono).
+      const t = await tokenDaCampanha(cid, b.tokenId)
+      if (!admin && t.dono_id !== eu) throw new ErroApi(403, 'Só o mestre ou o dono deste token.')
+      const [camp] = await rest<{ combate: unknown }[]>(`prg_campanhas?select=combate&id=eq.${q(cid)}`)
+      const regra = lerRegrasCombate(camp?.combate).morte
+      if (regra === 'desligado') throw new ErroApi(400, 'A regra “à beira da morte” está desligada nesta campanha.')
+      const tc = await tokenCombate(cid, t.id)
+      const [tk] = await rest<{ morte: unknown }[]>(`prg_tokens?select=morte&id=eq.${q(t.id)}`)
+      let m = lerMorte(tk?.morte)
+      const op = b.op
+      if (op === 'rolar') {
+        if (m.estado !== 'caido') throw new ErroApi(400, `${tc.nome} não está caído.`)
+        await avisarMesa(cid, eu, await rolarTesteMorte(cid, tc, m))
+        return ok({ ok: true })
+      }
+      if (op === 'medida') {
+        if (regra !== 'desesperadas') throw new ErroApi(400, 'A campanha não usa Medidas desesperadas.')
+        const n = b.n === 3 ? 3 : 1
+        const novo = aceitarMedida(m, n)
+        if (!novo) throw new ErroApi(400, m.estado ? 'Só dá para usar de pé.' : 'No máximo 3 falhas futuras guardadas.')
+        await rest(`prg_tokens?id=eq.${q(t.id)}`, { method: 'PATCH', body: JSON.stringify({ morte: novo }) })
+        await avisarMesa(cid, eu, `⚠️ ${tc.nome} usou Medidas desesperadas: aceita ${n} falha(s) futura(s) para ${MEDIDAS[n]}. (Guardadas: ${novo.futuras}/3)`)
+        return ok({ morte: novo })
+      }
+      exigirAdmin(admin)
+      if (op === 'sucesso') m = { ...m, estado: m.estado ?? 'caido', sucessos: Math.min(3, m.sucessos + 1) }
+      else if (op === 'falha') m = { ...m, estado: m.estado ?? 'caido', falhas: Math.min(3, m.falhas + 1) }
+      else if (op === 'estabilizar') m = { ...m, estado: 'estavel', sucessos: 3 }
+      else if (op === 'cair') m = aoCair(m)
+      else if (op === 'zerar') m = { sucessos: 0, falhas: 0, futuras: 0 }
+      else throw new ErroApi(400, 'Ação inválida.')
+      if (m.sucessos >= 3 && m.estado === 'caido') m = { ...m, estado: 'estavel' }
+      if (m.falhas >= 3) m = { ...m, estado: 'morto' }
+      await rest(`prg_tokens?id=eq.${q(t.id)}`, { method: 'PATCH', body: JSON.stringify({ morte: m }) })
+      return ok({ morte: m })
+    }
     case 'combate_config': {
       exigirAdmin(admin)
-      const combate = lerRegrasCombate({ acerto: b.acerto })
+      const [atual] = await rest<{ combate: unknown }[]>(`prg_campanhas?select=combate&id=eq.${q(cid)}`)
+      const antes = lerRegrasCombate(atual?.combate)
+      const combate = lerRegrasCombate({ acerto: b.acerto ?? antes.acerto, morte: b.morte ?? antes.morte })
       await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify({ combate }) })
-      await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica',
-        texto: combate.acerto === 'automatico' ? '⚔️ Combate: o dano dos ataques agora sai automaticamente.' : '⚔️ Combate: o mestre confirma cada dano antes de aplicar.' }) }).catch(() => {})
+      if (combate.acerto !== antes.acerto) await avisarMesa(cid, eu, combate.acerto === 'automatico' ? '⚔️ Combate: o dano dos ataques agora sai automaticamente.' : '⚔️ Combate: o mestre confirma cada dano antes de aplicar.')
+      if (combate.morte !== antes.morte) await avisarMesa(cid, eu, combate.morte === 'desligado' ? '💀 Regra “à beira da morte” desligada: vida 0 não faz testes.'
+        : combate.morte === 'desesperadas' ? '💀 À beira da morte: testes contra a morte + ⚠️ Medidas desesperadas (falhas futuras em troca de agir agora).' : '💀 À beira da morte: quem chega a 0 faz testes contra a morte no turno.')
       return ok({ combate })
     }
     case 'ataque': {
@@ -386,13 +448,14 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       const dano = hit ? rolarDano(danoExpr) : null
       const status: 'errou' | 'pendente' | 'aplicado' = hit ? (regras.acerto === 'automatico' ? 'aplicado' : 'pendente') : 'errou'
       let vida: Awaited<ReturnType<typeof aplicarDano>> | null = null
-      if (status === 'aplicado' && dano) vida = await aplicarDano(al, dano.total)
+      const critico = hit && detectarCritico(regra.expressao, rolagem.resultados) === 'critico'
+      if (status === 'aplicado' && dano) vida = await danoComMorte(cid, eu, al, dano.total, critico)
       const arma = opcao?.nome ?? 'Ataque'
       const texto = `⚔️ ${at.nome} atacou ${al.nome} com ${arma}: ${rolagem.total}${regra.comparar === 'maior_igual' ? ` contra Defesa ${defesa}` : regra.comparar === 'menor_igual' ? ` (precisava ≤ ${bonus})` : ' sucesso(s)'} → `
         + (!hit ? 'errou.' : status === 'aplicado' ? `acertou! ${dano?.total ?? 0} de dano.` : `acertou! ${dano?.total ?? 0} de dano (aguardando o mestre).`)
       const dados = { atacante: { id: at.id, nome: at.nome }, alvo: { id: al.id, nome: al.nome }, arma, defesa, comparar: regra.comparar, acerto: hit,
         dano: dano ? { expressao: dano.expressao, resultados: dano.resultados.slice(0, 60), total: dano.total } : null, status, aplicado: status === 'aplicado' ? dano?.total ?? 0 : 0,
-        vida: vida ? { depois: vida.depois, max: vida.max } : null, distancia: dist }
+        vida: vida ? { depois: vida.depois, max: vida.max } : null, distancia: dist, ...(critico ? { critico: true } : {}) }
       const [ev] = await rest<unknown[]>(`prg_mesa_eventos?select=${EVENTO}`, { method: 'POST', prefer: 'return=representation', body: JSON.stringify({
         campanha_id: cid, autor_id: eu, tipo: 'ataque', visibilidade: 'publica', personagem: at.nome.slice(0, 90), texto: texto.slice(0, 1000),
         expressao: rolagem.expressao, resultados: rolagem.resultados.slice(0, 100), total: rolagem.total, dados }) })
@@ -417,7 +480,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify({ mesa: { iniciativa, turno: 0, rodada: 1 } }) })
       await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica',
         texto: ('⚔️ O combate começou! Ordem: ' + ord.map((o, i) => `${i + 1}. ${o.nome} (${o.valor})`).join(' · ') + `\n▶️ Vez de ${ord[0].nome}.`).slice(0, 1000) }) }).catch(() => {})
-      for (const texto of await danoNoInicioDoTurno(cid, ord[0].tokenId)) await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica', texto }) }).catch(() => {})
+      for (const texto of [...await danoNoInicioDoTurno(cid, ord[0].tokenId), ...await testeNoInicioDoTurno(cid, ord[0].tokenId)]) await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica', texto }) }).catch(() => {})
       return ok({ mesa: { iniciativa, turno: 0, rodada: 1 }, rolagens: ord })
     }
     case 'turno': {
@@ -453,7 +516,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
           const cs = tk?.condicoes ?? []
           if (cs.length) estado = ' (' + cs.map(x => `${emojiCondicao[x] ?? ''} ${nomeCondicao(x)}${tk?.condicoes_rodadas?.[x] ? ' · ' + tk.condicoes_rodadas[x] : ''}`).join(', ') + ')'
         }
-        const linhas = [...avisos, `▶️ Vez de ${prox.nome}${turno === 0 ? ` · rodada ${rodada}` : ''}${estado}.`, ...await danoNoInicioDoTurno(cid, prox.tokenId)]
+        const linhas = [...avisos, `▶️ Vez de ${prox.nome}${turno === 0 ? ` · rodada ${rodada}` : ''}${estado}.`, ...await danoNoInicioDoTurno(cid, prox.tokenId), ...await testeNoInicioDoTurno(cid, prox.tokenId)]
         for (const texto of linhas) await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica', texto }) }).catch(() => {})
       }
       return ok({ mesa: { iniciativa: lista, turno, rodada } })
@@ -478,7 +541,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       if (!dano && fator > 0) total = inteiro(b.dano, 0, 100000) ?? 0
       const aplicado = Math.floor(total * fator)
       let vida: Awaited<ReturnType<typeof aplicarDano>> | null = null
-      if (aplicado > 0) { const al = await tokenCombate(cid, (d.alvo as { id: string }).id); vida = await aplicarDano(al, aplicado) }
+      if (aplicado > 0) { const al = await tokenCombate(cid, (d.alvo as { id: string }).id); vida = await danoComMorte(cid, eu, al, aplicado, d.critico === true) }
       const novo = { ...d, status: fator === 0 ? 'ignorado' : 'aplicado', aplicado, vida: vida ? { depois: vida.depois, max: vida.max } : null }
       await rest(`prg_mesa_eventos?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ dados: novo }) })
       const alvo = (d.alvo as { nome: string }).nome

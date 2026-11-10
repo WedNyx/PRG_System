@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TransformComponent, TransformWrapper, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch'
 import { ligarZoomSuave } from '@/lib/zoomRoda'
 import { emojiCondicao } from '@/lib/condicoes'
+import { Bolinhas } from './Combate'
 import { celulasPincel, celulasRetangulo, type Camada } from '@/lib/nuvem/mesa'
 
 export const CELULA = 44
@@ -13,7 +14,7 @@ export type Ping = { id: string; x: number; y: number; autor: string }
 export type CursorRemoto = { id: string; nome: string; x: number; y: number }
 export type TokenMapa = {
   id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; tamanho: number
-  visivel: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; rodadas?: Record<string, number>; podeMover: boolean; meu: boolean
+  visivel: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; rodadas?: Record<string, number>; morte?: { estado?: 'caido' | 'estavel' | 'morto'; sucessos?: number; falhas?: number; futuras?: number } | null; podeMover: boolean; meu: boolean
 }
 
 type Props = {
@@ -208,12 +209,15 @@ export default function MapaMesa(p: Props) {
               <div title={t.nome} className={'flex h-full w-full items-center justify-center overflow-hidden rounded-full border-2 bg-cover bg-center text-sm font-bold text-[#0b0a14] shadow-lg '
                 + (t.podeMover && modo === 'mover' ? 'cursor-grab ' : 'cursor-pointer ') + (emDrag ? 'scale-110 border-white ' : t.meu ? 'border-[#b99bff] ' : 'border-black/50 ') + (morto ? 'grayscale' : '')}
                 style={{ backgroundColor: t.cor, backgroundImage: t.imagem_url ? `url(${t.imagem_url})` : undefined }}>
-                {morto ? '💀' : !t.imagem_url && t.nome[0]?.toUpperCase()}
+                {t.morte?.estado === 'morto' ? '⚰️' : morto ? '💀' : !t.imagem_url && t.nome[0]?.toUpperCase()}
               </div>
               {p.vez === t.id && <><span aria-hidden className="prg-vez pointer-events-none absolute -inset-1.5 rounded-full border-[3px] border-amber-300" />
                 <span className="pointer-events-none absolute -left-2 -top-2 rounded-full bg-amber-400 px-1 text-[10px] font-bold text-[#1a1230] shadow" title="Vez deste token">⚔️</span></>}
               {!t.podeMover && <span className="pointer-events-none absolute -right-1 -top-1 text-[10px]" title="Travado">🔒</span>}
               {t.condicoes.length > 0 && <div className="pointer-events-none absolute -top-3 left-1/2 flex -translate-x-1/2 gap-px whitespace-nowrap rounded-full bg-black/70 px-1 text-[9px]">{t.condicoes.slice(0, 4).map(c => <span key={c}>{emojiCondicao[c] ?? '❓'}{t.rodadas?.[c] ? <sub className="font-bold text-amber-200">{t.rodadas[c]}</sub> : null}</span>)}{t.condicoes.length > 4 && <span>+{t.condicoes.length - 4}</span>}</div>}
+              {t.morte?.estado === 'caido' && <div className="pointer-events-none absolute -bottom-[38px] left-1/2 flex -translate-x-1/2 rounded-full bg-black/80 px-1.5 py-1" title="Testes contra a morte"><Bolinhas m={t.morte} pequeno /></div>}
+              {t.morte?.estado === 'estavel' && <span className="pointer-events-none absolute -bottom-1 -right-1 text-xs" title="Estável">🩹</span>}
+              {!t.morte?.estado && !!t.morte?.futuras && <span className="pointer-events-none absolute -left-1 bottom-0 rounded-full bg-amber-500 px-1 text-[9px] font-bold text-black" title="Falhas futuras (medidas desesperadas)">⚠️{t.morte.futuras}</span>}
               {pct !== null && <div className="absolute -bottom-1.5 left-1 right-1 h-1.5 overflow-hidden rounded-full bg-black/80"><div className="h-full rounded-full" style={{ width: pct * 100 + '%', background: pct > 0.5 ? '#10b981' : pct > 0.25 ? '#f59e0b' : '#ef4444' }} /></div>}
               <div className="pointer-events-none absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-slate-200">{t.nome}{!t.visivel && ' 🙈'}</div>
             </div>

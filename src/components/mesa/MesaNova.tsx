@@ -20,17 +20,17 @@ import TocadorMesa from './TocadorMesa'
 import type { EstadoMusica } from '@/lib/nuvem/musica'
 import RecorteImagem from './RecorteImagem'
 import { btn, input, msg } from './estilos'
-import { CartaoAtaque, ConfigCombate, JanelaAtaque, PainelFichas, PrepararCombate, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type FichaMesa } from './Combate'
+import { CartaoAtaque, ConfigCombate, JanelaAtaque, PainelFichas, PainelMorte, PrepararCombate, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type FichaMesa, type Morte } from './Combate'
 
 type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean }
-type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; condicoes_rodadas?: Record<string, number> | null; condicoes_dano?: Record<string, string> | null; dono_id: string | null; ficha_id: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number }
+type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; condicoes_rodadas?: Record<string, number> | null; condicoes_dano?: Record<string, string> | null; morte?: Morte | null; dono_id: string | null; ficha_id: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number }
 export type Evento = { id: number; tipo: 'chat' | 'rolagem' | 'sistema' | 'ataque'; dados?: DadosAtaque | null; visibilidade: 'publica' | 'mestre' | 'privada'; autor_id: string | null; destinatario_id: string | null; personagem: string | null; texto: string | null; expressao: string | null; resultados: number[] | null; total: number | null; criado_em: string; autor: { apelido: string } | null }
 type Iniciativa = { id: string; nome: string; valor: number; tokenId?: string | null }
 export type Estado = {
   campanha: { id: string; nome: string; sistema?: string; meuPapel: string }; mesa: { iniciativa: Iniciativa[]; turno: number; rodada: number }
   cenas: Cena[]; cenaAtiva: Cena | null; tokens: Token[]; desenhos: { id: string; cor: string; pontos: number[] }[]; eventos: Evento[]
   membros: { aventureiro_id: string; papel: string; aventureiro: { apelido: string } | null }[]; fichas: { id: string; nome: string; dono_id: string; npc: boolean }[]; eu: string
-  musica?: EstadoMusica; agora?: string; sessao?: { aberta: boolean; aberta_em: string | null }; combate?: { acerto: 'automatico' | 'mestre' }
+  musica?: EstadoMusica; agora?: string; sessao?: { aberta: boolean; aberta_em: string | null }; combate?: { acerto: 'automatico' | 'mestre'; morte?: 'desligado' | 'testes' | 'desesperadas' }
 }
 export type Acao = (b: Record<string, unknown>) => Promise<Record<string, unknown>>
 
@@ -200,7 +200,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const sessaoAberta = !!e.sessao?.aberta
   const cena = e.cenaAtiva
   const travada = !!cena?.tokens_travados
-  const tokensMapa: TokenMapa[] = e.tokens.map(t => ({ ...t, ...(posicoes[t.id] ? { x: posicoes[t.id].x, y: posicoes[t.id].y } : {}), tamanho: t.tamanho ?? 1, rodadas: t.condicoes_rodadas ?? {}, meu: t.dono_id === e.eu, podeMover: !espectador && podeMoverToken({ movimento: t.movimento ?? 'dono', dono_id: t.dono_id }, e.eu, admin, travada) }))
+  const tokensMapa: TokenMapa[] = e.tokens.map(t => ({ ...t, ...(posicoes[t.id] ? { x: posicoes[t.id].x, y: posicoes[t.id].y } : {}), tamanho: t.tamanho ?? 1, rodadas: t.condicoes_rodadas ?? {}, morte: t.morte ?? null, meu: t.dono_id === e.eu, podeMover: !espectador && podeMoverToken({ movimento: t.movimento ?? 'dono', dono_id: t.dono_id }, e.eu, admin, travada) }))
   const token = e.tokens.find(t => t.id === tokenAberto)
   const fichaDoToken = (tokenId: string) => { const fid = e.tokens.find(t => t.id === tokenId)?.ficha_id; return fid ? fichasMesa?.find(f => f.id === fid) ?? null : null }
   /** Abre a janela de ataque já com a melhor arma/poder e o teste sugerido da ficha. */
@@ -305,12 +305,12 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           {aba === 'iniciativa' && <PainelIniciativa e={e} admin={admin} acao={acao} fichas={fichasMesa} atacar={iniciarAtaque} />}
           {aba === 'musica' && <PainelMusica campanhaId={campanhaId} eu={e.eu} admin={admin} espectador={espectador} tocando={e.musica} aoMudar={avisarMudanca} />}
           {aba === 'campanha' && <PainelCampanha campanhaId={campanhaId} e={e} admin={admin} />}
-          {aba === 'mestre' && admin && <><ConfigCombate acerto={e.combate?.acerto ?? 'mestre'} acao={acao} /><div className="h-3" /><PainelMestre e={e} acao={acao} campanhaId={campanhaId} setModo={setModo} /></>}
+          {aba === 'mestre' && admin && <><ConfigCombate acerto={e.combate?.acerto ?? 'mestre'} morte={e.combate?.morte ?? 'testes'} acao={acao} /><div className="h-3" /><PainelMestre e={e} acao={acao} campanhaId={campanhaId} setModo={setModo} /></>}
         </div>
       </aside>}
     </div>
 
-    {token && <TokenModal t={token} admin={admin} eu={e.eu} acao={acao} campanhaId={campanhaId} fechar={() => setTokenAberto(null)}
+    {token && <TokenModal t={token} admin={admin} eu={e.eu} acao={acao} campanhaId={campanhaId} regraMorte={e.combate?.morte ?? 'testes'} fechar={() => setTokenAberto(null)}
       atacar={!espectador && (admin || token.dono_id === e.eu) ? () => { setTokenAberto(null); iniciarAtaque(token.id) } : undefined} />}
     {historico && <Historico campanhaId={campanhaId} membros={e.membros} fechar={() => setHistorico(false)} />}
   </div>
@@ -474,7 +474,7 @@ function PainelTokens({ e, admin, acao, campanhaId, abrir }: { e: Estado; admin:
   </div>
 }
 
-function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar }: { t: Token; admin: boolean; eu: string; acao: Acao; campanhaId: string; fechar: () => void; atacar?: () => void }) {
+function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar, regraMorte }: { t: Token; admin: boolean; eu: string; acao: Acao; campanhaId: string; fechar: () => void; atacar?: () => void; regraMorte: 'desligado' | 'testes' | 'desesperadas' }) {
   const pode = admin || t.dono_id === eu
   const [dano, setDano] = useState('')
   const hp = t.hp_atual ?? 0
@@ -492,6 +492,7 @@ function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar }: { t: Tok
           <button type="button" className={btn} onClick={() => { void acao({ acao: 'token_editar', tokenId: t.id, hp_atual: Math.min(t.hp_max ?? hp, hp + (Number(dano) || 0)) }).catch(() => {}); setDano('') }}>+ Cura</button></div>}
         {pode && hp < (t.hp_max ?? 0) && <button type="button" className={btn + ' mt-2'} onClick={() => void acao({ acao: 'token_editar', tokenId: t.id, hp_atual: t.hp_max }).catch(() => {})}>❤️ Vida cheia ({t.hp_max})</button>}
       </div> : null}
+      {t.hp_max ? <PainelMorte nome={t.nome} m={t.morte ?? {}} regra={regraMorte} admin={admin} pode={pode} vida={t.hp_atual} acao={acao} tokenId={t.id} /> : null}
       <p className="mt-3 text-sm font-semibold">Condições</p>
       <div className="mt-1 flex flex-wrap gap-1">{condicoesDisponiveis.map(c => { const ativa = t.condicoes.includes(c.id)
         return <button key={c.id} type="button" disabled={!pode} aria-pressed={ativa} onClick={() => acao({ acao: 'token_editar', tokenId: t.id, condicoes: ativa ? t.condicoes.filter(x => x !== c.id) : [...t.condicoes, c.id] }).catch(() => {})}

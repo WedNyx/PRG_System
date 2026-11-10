@@ -6,6 +6,17 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.26.0', data: '2026-11-10', titulo: 'À beira da morte e barras vivas',
+    itens: [
+      'À beira da morte: quando a vida chega a 0, o personagem cai e faz um teste contra a morte (d20) sozinho no começo de cada turno. 10+ é sucesso, 9 ou menos é falha, 1 conta duas falhas e 20 levanta com 1 de vida.',
+      '3 sucessos deixam estável; 3 falhas, morreu (⚰️). Dano em quem está caído conta falha (crítico conta duas), e qualquer cura levanta e zera a contagem.',
+      'As bolinhas de sucesso e falha aparecem embaixo do token no mapa e na janela do token. O dono pode rolar na hora, e o mestre ajusta na mão (+✅, +❌, estabilizar, zerar).',
+      'Regra opcional ⚠️ Medidas desesperadas (aba Mestre → Regras de combate): de pé, o jogador aceita 1 falha futura (fugir, correr o dobro ou +5 num d20) ou 3 (ataque extra ou recuperar uma magia). As falhas entram na conta quando ele cair.',
+      'Barras melhores: o pedaço perdido fica claro e some devagar, a barra treme, o número sobe (−5 / +3) e a barra pulsa quando passa de 25% para baixo. Mini-barras de PV, PE e Sanidade no topo da ficha.',
+      'Migração 020: estado “à beira da morte” nos tokens.',
+    ],
+  },
+  {
     versao: '0.25.0', data: '2026-11-10', titulo: 'Barras de vida, esforço e sanidade',
     itens: [
       'Fichas: PV, PE, Sanidade, Mana e os outros recursos viraram barras grossas e coloridas, no estilo das fichas de Ordem Paranormal: vida vermelha, sanidade azul, esforço laranja, mana anil.',

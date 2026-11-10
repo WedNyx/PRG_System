@@ -13,7 +13,7 @@ import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/Ro
 import { InventarioFicha, PoderesFicha } from './Inventario'
 import ArvoreHabilidades from './Arvore'
 import Progressao from './Progressao'
-import BarraRecurso, { corDoRecurso } from './BarraRecurso'
+import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
 import { GUIAS } from '@/lib/sistemas/guias'
 
 const card = 'rounded-2xl border border-[#55456e] bg-[#201a32] p-4 sm:p-5'
@@ -90,8 +90,11 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     <RolagemCentral ref={central} />
     <div className="sticky top-[57px] z-10 -mx-3 mb-4 flex items-center gap-3 overflow-x-auto border-b border-[#373251] bg-[#100d1c]/95 px-3 py-2 backdrop-blur sm:-mx-6 sm:px-6">
       <span className="shrink-0 truncate font-semibold text-[#e4d3ff]">{d.nome || 'Personagem'}</span>
-      {recursoPrincipal && (() => { const max = c.recursosMax[recursoPrincipal.id] ?? d.recursos[recursoPrincipal.id]?.max ?? (s.id === 'dnd5e-srd' ? c.derivados.pv_sugerido : null) ?? 0, at = d.recursos[recursoPrincipal.id]?.atual ?? 0
-        return <span className="shrink-0 rounded-lg border border-[#62527e] bg-[#201a32] px-3 py-1 text-sm">❤️ {/^pv/.test(recursoPrincipal.id) ? 'PV' : recursoPrincipal.nome.split(' ')[0]} <strong>{at} / {max}</strong></span> })()}
+      {recursoPrincipal && [recursoPrincipal, ...s.recursos.filter(r => r !== recursoPrincipal && (c.recursosMax[r.id] || d.recursos[r.id]?.max))].slice(0, 3).map(r => {
+        const calc = !!r.formula || r.maxFixo !== undefined
+        const max = c.recursosMax[r.id] ?? (calc ? null : (d.recursos[r.id]?.max ?? null)) ?? (/^(pv|vida|hp)$/.test(r.id) ? (c.derivados.pv_max ?? c.derivados.pv_sugerido ?? null) : null)
+        return <MiniBarra key={r.id} nome={/^pv$/.test(r.id) ? 'PV' : r.nome.split(' (')[0]} cor={corDoRecurso(r.id, r.nome)} atual={Number(d.recursos[r.id]?.atual ?? 0) || 0} max={max} />
+      })}
       {defesa && <span className="shrink-0 rounded-lg border border-[#62527e] bg-[#201a32] px-3 py-1 text-sm">🛡️ {defesa.nome.split(' (')[0]} <strong>{c.derivados[defesa.id] ?? '—'}</strong></span>}
     </div>
     <div className="lg:flex lg:gap-6">

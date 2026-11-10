@@ -1,4 +1,5 @@
 import { avaliarSeguro, type Variaveis } from './formula'
+import { imagemDaPlataforma } from '../nuvem/validacao'
 import type { DadosFicha, Sistema } from './tipos'
 import { bonusEquipados, lerItens, lerPoderes, lerUso, pesoTotal } from './inventario'
 
@@ -33,6 +34,7 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
   if (!d || typeof d !== 'object') return base
   return {
     sistema: s.id, nome: typeof d.nome === 'string' ? d.nome.slice(0, 90) : '',
+    ...(imagemDaPlataforma(d.retrato) ? { retrato: d.retrato } : {}),
     campos: { ...base.campos, ...(d.campos ?? {}) },
     atributos: { ...base.atributos, ...(d.atributos ?? {}) },
     pericias: { ...base.pericias, ...(d.pericias ?? {}) },

@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { BookOpen, Castle, Check, Copy, Crown, DoorOpen, Link2, Loader2, Pencil, Plus, RefreshCw, Save, Settings, Shield, Trash2, Upload, UserMinus, X } from 'lucide-react'
+import { Castle, Check, Copy, DoorOpen, Link2, Loader2, Pencil, Plus, RefreshCw, Save, Settings, Shield, Trash2, Upload, UserMinus, X } from 'lucide-react'
 import { CAMPOS, REGRAS, permissoesPadrao, type Modelo, type Permissoes, type Regra } from '@/lib/campanhas/permissoes'
 import { ESTADOS, ESTADO_TITULO, type EstadoCampanha } from '@/lib/nuvem/validacao'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import PainelFichasCampanha from './PainelFichasCampanha'
+import CartaoCapa, { selo } from './CartaoCapa'
+import { enviarImagemNuvem } from '@/lib/nuvem/cliente'
 import SeletorSistemaCampanha from './SeletorSistemaCampanha'
 import { SISTEMAS, sistemaDaCampanha } from '@/lib/sistemas/catalogo'
 import { useSistemasAutorais } from '@/lib/sistemas/cliente'
@@ -14,7 +16,7 @@ import { campanhasLocais, marcarImportado, type CampanhaLocal } from '@/lib/nuve
 
 type Campanha = {
   id: string; nome: string; descricao: string; sistema: string; modelo_padrao: Modelo
-  permissoes: Permissoes; estado: EstadoCampanha; mestre_id: string; meuPapel: 'mestre' | 'comestre' | 'jogador' | 'espectador'; pendencias?: number; sessao_aberta?: boolean
+  permissoes: Permissoes; estado: EstadoCampanha; mestre_id: string; meuPapel: 'mestre' | 'comestre' | 'jogador' | 'espectador'; pendencias?: number; sessao_aberta?: boolean; capa_url?: string | null
 }
 type Membro = { aventureiro_id: string; papel: string; excecoes?: Partial<Permissoes>; aventureiro: { apelido: string; avatar: string | null } | null }
 type Convite = { codigo: string; expira_em: string; usos: number; max_usos: number; situacao: string }
@@ -86,16 +88,18 @@ export default function CampanhasNuvem({ aventureiroId, abrirCampanha }: { avent
     {erro && <p role="alert" className="text-sm text-red-200">{erro}</p>}
     {campanhas === null && <p className="flex items-center gap-2 text-[#cbb9dc]"><Loader2 className="animate-spin" size={18} /> Carregando campanhas...</p>}
     {campanhas?.length === 0 && <div className="rounded-2xl border border-dashed border-[#594871] p-8 text-center text-[#cbb9dc]"><Castle className="mx-auto mb-3" size={32} />Você ainda não participa de nenhuma campanha. Crie uma ou entre com um código.</div>}
-    <div className="grid gap-4 sm:grid-cols-2">{campanhas?.map(c => <article key={c.id} className="rounded-2xl border border-[#55456e] bg-[#201a32] p-5">
-      <div className="flex items-start gap-3"><BookOpen className="shrink-0 text-[#c5a7ff]" /><div className="min-w-0 flex-1">
-        <h2 className="break-words text-lg font-semibold">{c.nome}</h2><p className="mt-1 text-sm text-[#c4b6d4]">{nomeSistema(c.sistema)}</p></div>
-        <span className={'shrink-0 rounded-full px-2 py-1 text-xs ' + corEstado[c.estado]}>{ESTADO_TITULO[c.estado]}</span></div>
-      {!!c.pendencias && <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-[#7652ac] px-3 py-1 text-xs font-semibold">🔔 {c.pendencias} pendência(s) para você</p>}
-      {c.descricao && <p className="mt-3 line-clamp-3 whitespace-pre-wrap break-words text-sm text-[#d1c4df]">{c.descricao}</p>}
-      <p className="mt-3 flex items-center gap-1 text-sm text-[#d4baff]">{c.meuPapel === 'jogador' ? <><Shield size={15} /> Você joga</> : c.meuPapel === 'espectador' ? <>👁️ Você assiste</> : <><Crown size={15} /> Você {c.meuPapel === 'mestre' ? 'é o mestre' : 'é co-mestre'}</>}</p>
-      {c.sessao_aberta && <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-800/70 px-3 py-1 text-xs font-semibold text-emerald-100">🟢 Sessão acontecendo agora</p>}
-      <button type="button" onClick={() => setTela({ tipo: 'gerenciar', id: c.id })} className={btn + ' mt-4'}><Settings size={16} /> Abrir</button>
-    </article>)}</div>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{campanhas?.map(c => <CartaoCapa key={c.id} imagem={c.capa_url} titulo={c.nome} icone="🏰" apagado={c.estado === 'encerrada'}
+      subtitulo={<>{nomeSistema(c.sistema)} · {c.meuPapel === 'jogador' ? '🛡️ Você joga' : c.meuPapel === 'espectador' ? '👁️ Você assiste' : c.meuPapel === 'mestre' ? '👑 Você é o mestre' : '👑 Co-mestre'}</>}
+      selos={<>{c.sessao_aberta && <span className={selo + ' !bg-emerald-700/90'}><span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-300" />Sessão agora</span>}
+        <span className={selo}>{ESTADO_TITULO[c.estado]}</span>
+        {!!c.pendencias && <span className={selo + ' !bg-[#7652ac]'}>🔔 {c.pendencias}</span>}</>}
+      acaoPrincipal={{ rotulo: 'Abrir campanha', onClick: () => setTela({ tipo: 'gerenciar', id: c.id }) }}>
+      {c.descricao && <p className="mb-3 line-clamp-2 whitespace-pre-wrap break-words text-sm text-[#d1c4df]">{c.descricao}</p>}
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={() => setTela({ tipo: 'gerenciar', id: c.id })} className={btn}><Settings size={16} /> Abrir</button>
+        {(c.sessao_aberta || c.meuPapel === 'mestre' || c.meuPapel === 'comestre') && <Link href={'/mesa?campanha=' + c.id} className="inline-flex items-center gap-2 rounded-lg bg-[#7652ac] px-3 py-2 text-sm font-semibold hover:bg-[#8b68c4]">🗺️ {c.sessao_aberta && c.meuPapel !== 'mestre' && c.meuPapel !== 'comestre' ? 'Entrar na sessão' : 'Mesa'}</Link>}
+      </div>
+    </CartaoCapa>)}</div>
     <p className="text-xs text-[#ab9bbc]">Campanhas sincronizadas: aparecem em qualquer dispositivo ao escolher seu aventureiro.</p>
   </div>
 }
@@ -168,9 +172,19 @@ function Gerenciar({ aventureiroId, id, onVoltar, onEditar }: { aventureiroId: s
   const mestre = c.meuPapel === 'mestre'
   return <div className="mt-6 space-y-5">
     <button type="button" onClick={onVoltar} className="text-sm text-[#c7a8ff] hover:underline">← Todas as campanhas</button>
-    <section className="rounded-2xl border border-[#55456e] bg-[#201a32] p-5 sm:p-6">
+    <section className="overflow-hidden rounded-2xl border border-[#55456e] bg-[#201a32]">
+      <div className="relative h-40 sm:h-56" style={{ background: c.capa_url ? `center / cover no-repeat url("${c.capa_url}")` : 'linear-gradient(135deg,#3b2470,#7a3b8f 55%,#1b1530)' }}>
+        {!c.capa_url && <span aria-hidden className="absolute inset-0 flex items-center justify-center text-7xl opacity-30">🏰</span>}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#201a32] via-[#201a32]/30 to-transparent" />
+        {admin && <div className="absolute right-3 top-3 flex gap-2">
+          <label className={'cursor-pointer rounded-lg bg-black/60 px-3 py-1.5 text-xs font-semibold backdrop-blur hover:bg-black/80 ' + (ocupado ? 'pointer-events-none opacity-50' : '')}>🖼️ {c.capa_url ? 'Trocar capa' : 'Colocar capa'}
+            <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={ev => { const f = ev.target.files?.[0]; ev.target.value = ''; if (f) void acao(async () => { const url = await enviarImagemNuvem(`mesa/${c.id}/upload`, f, 1600); await call('campanhas/' + id, 'PATCH', { capa: url }) }) }} /></label>
+          {c.capa_url && <button type="button" disabled={ocupado} onClick={() => acao(() => call('campanhas/' + id, 'PATCH', { capa: null }), 'Tirar a capa da campanha?')} className="rounded-lg bg-black/60 px-3 py-1.5 text-xs backdrop-blur hover:bg-black/80">Remover</button>}
+        </div>}
+      </div>
+      <div className="-mt-10 relative p-5 pt-0 sm:p-6 sm:pt-0">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0"><h2 className="break-words text-2xl font-bold">{c.nome}</h2><p className="mt-1 text-sm text-[#c4b6d4]">{nomeSistema(c.sistema)} · Modelo {c.modelo_padrao}</p></div>
+        <div className="min-w-0"><h2 className="break-words text-2xl font-bold drop-shadow-[0_2px_6px_rgba(0,0,0,.8)]">{c.nome}</h2><p className="mt-1 text-sm text-[#c4b6d4]">{nomeSistema(c.sistema)} · Modelo {c.modelo_padrao}</p></div>
         <span className={'rounded-full px-3 py-1 text-sm ' + corEstado[c.estado]}>{ESTADO_TITULO[c.estado]}</span>
       </div>
       {c.descricao && <p className="mt-3 whitespace-pre-wrap break-words text-sm text-[#d1c4df]">{c.descricao}</p>}
@@ -188,6 +202,7 @@ function Gerenciar({ aventureiroId, id, onVoltar, onEditar }: { aventureiroId: s
           <select value={c.estado} disabled={ocupado} onChange={e => acao(() => call('campanhas/' + id, 'PATCH', { estado: e.target.value }), e.target.value === 'encerrada' ? 'Encerrar a campanha? Novos convites deixarão de funcionar.' : undefined)}
             className="rounded-lg border border-[#70588c] bg-[#151123] p-2 text-white">{ESTADOS.map(s => <option key={s} value={s}>{ESTADO_TITULO[s]}</option>)}</select></label>
       </div>}
+      </div>
     </section>
     {erro && <p role="alert" className="text-sm text-red-200">{erro}</p>}
 

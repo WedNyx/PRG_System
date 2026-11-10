@@ -55,6 +55,8 @@ export type Sistema = {
 export type DadosFicha = {
   sistema: string
   nome: string
+  /** Imagem do personagem (enviada pela plataforma). */
+  retrato?: string
   campos: Record<string, string | number>
   atributos: Record<string, number>
   pericias: Record<string, string | number>

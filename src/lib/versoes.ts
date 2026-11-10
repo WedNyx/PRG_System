@@ -6,6 +6,17 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.14.0', data: '2026-11-10', titulo: 'Dados no centro e cartões com imagem',
+    itens: [
+      'Dados 3D no meio da tela: os dados caem numa área central e, quando param, aparece um cartão com o total bem grande e cada dado que caiu (crítico em dourado, falha em vermelho). Toque para fechar.',
+      'Vale na mesa e também nas fichas: rolar um atributo, perícia, poder ou item mostra a rolagem no centro.',
+      'Fichas em cartões com imagem: cada personagem pode ter um retrato (toque no quadro ao lado do nome, na ficha). Sem imagem, o cartão ganha uma cor própria.',
+      'Campanhas em cartões com capa: o mestre coloca a capa dentro da campanha (🖼️ Colocar capa). O cartão mostra sessão acontecendo, estado, pendências e o botão direto para a mesa.',
+      'Dentro da campanha, a capa aparece grande no topo, e a lista de fichas do mestre mostra o retrato de cada personagem.',
+      'Imagens enviadas são diminuídas no aparelho antes de subir: mais rápido e sem gastar espaço à toa.',
+    ],
+  },
+  {
     versao: '0.13.1', data: '2026-11-10', titulo: 'Mesa sem atraso',
     itens: [
       'Mesa sem atraso: o token acompanha o dedo/mouse na hora e fica onde você soltou, sem voltar nem pular enquanto o servidor salva.',

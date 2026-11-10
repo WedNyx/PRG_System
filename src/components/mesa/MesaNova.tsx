@@ -12,7 +12,7 @@ import { condicoesDisponiveis, emojiCondicao } from '@/lib/condicoes'
 import type { Camada } from '@/lib/nuvem/mesa'
 import { podeMoverToken } from '@/lib/nuvem/mesa'
 import MapaMesa, { type CursorRemoto, type ModoMesa, type Ping, type TokenMapa } from './MapaMesa'
-import Dados3D, { type Dados3DHandle } from './Dados3D'
+import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import PainelCampanha from './PainelCampanha'
 import PainelMusica from './PainelMusica'
 import Sino from '@/components/Sino'
@@ -72,7 +72,6 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [camadaSel, setCamadaSel] = useState<string | null>(null)
   const [som, setSom] = useState(true)
   const [historico, setHistorico] = useState(false)
-  const [destaque, setDestaque] = useState<Evento | null>(null)
   const [desvio, setDesvio] = useState(0)
   const [fechada, setFechada] = useState(false)
   // Mudanças que aparecem na hora (antes do servidor confirmar): posições de tokens e traços de desenho.
@@ -80,17 +79,14 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [tracos, setTracos] = useState<Record<string, Pendente & { id: string; cor: string; pontos: number[] }>>({})
   const ultimoEnvio = useRef<Record<string, number>>({})
   const canal = useRef<RealtimeChannel | null>(null)
-  const dados = useRef<Dados3DHandle>(null)
+  const dados = useRef<RolagemCentralHandle>(null)
   const ultimoEvento = useRef(0)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const timerDestaque = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  /** Mostra a rolagem: dados 3D + painel grande com cada número que caiu. */
+  /** Mostra a rolagem no meio da tela: dados 3D + cartão com o total e cada dado. */
   const destacar = useCallback((ev: Evento) => {
-    if (ev.expressao && ev.resultados) dados.current?.animar(ev.expressao, ev.resultados)
-    if (timerDestaque.current) clearTimeout(timerDestaque.current)
-    setDestaque(null)
-    timerDestaque.current = setTimeout(() => { setDestaque(ev); timerDestaque.current = setTimeout(() => setDestaque(null), 5000) }, 1500)
+    if (!ev.expressao || !ev.resultados) return
+    dados.current?.mostrar({ rotulo: ev.texto, quem: ev.personagem || ev.autor?.apelido, expressao: ev.expressao, resultados: ev.resultados, total: ev.total ?? 0, privada: ev.visibilidade !== 'publica' })
   }, [])
 
   const carregar = useCallback(async () => {
@@ -214,7 +210,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   }
 
   return <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#0d0c19] text-[#f4f0ff]">
-    <Dados3D ref={dados} somAtivo={som} />
+    <RolagemCentral ref={dados} som={som} />
     <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[#373251] bg-[#19172c] px-3 py-2">
       <Link href="/central" className="inline-flex items-center gap-1 text-sm text-[#b99bff] hover:underline"><ArrowLeft size={16} /> Início</Link>
       <h1 className="min-w-0 flex-1 truncate font-bold">🗺️ {e.campanha.nome}{cena ? ' · ' + cena.nome : ''}</h1>
@@ -261,13 +257,6 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
 
         <TocadorMesa estado={e.musica} desvio={desvio} aoTerminar={admin && e.musica?.por === e.eu ? () => { void api(`campanhas/${campanhaId}/musica`, { method: 'POST', body: { acao: 'proxima', auto: true } }).then(avisarMudanca).catch(() => {}) } : undefined} />
 
-        {destaque && <div role="status" aria-live="polite" className="pointer-events-none absolute left-1/2 top-4 z-30 w-[min(92%,420px)] -translate-x-1/2 rounded-2xl border-2 border-[#b99bff] bg-[#19172c]/95 p-4 text-center shadow-2xl">
-          <p className="text-sm text-[#c4b6d4]">{destaque.personagem || destaque.autor?.apelido} rolou <strong className="text-[#e4d3ff]">{destaque.expressao}</strong>{destaque.visibilidade !== 'publica' && ' 🔒'}</p>
-          <div className="mt-2 flex flex-wrap justify-center gap-2">{destaque.resultados?.map((n, i) => <span key={i} className="flex h-12 min-w-12 items-center justify-center rounded-xl border border-[#62527e] bg-[#2b2140] px-2 text-2xl font-black tabular-nums">{n}</span>)}</div>
-          <p className="mt-2 text-4xl font-black text-[#ed9cd8]">{destaque.total}</p>
-          {destaque.expressao?.includes('d20') && destaque.resultados?.[0] === 20 && <p className="font-bold text-amber-300">✨ 20 natural!</p>}
-          {destaque.expressao?.includes('d20') && destaque.resultados?.[0] === 1 && <p className="font-bold text-red-300">💀 1 natural</p>}
-        </div>}
       </section>
 
       {painel && <aside className="flex max-h-[55vh] min-h-0 w-full flex-col border-t border-[#373251] bg-[#14121f] lg:max-h-none lg:w-[390px] lg:border-l lg:border-t-0">

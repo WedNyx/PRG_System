@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Check, ChevronRight, Copy, Eye, EyeOff, History, Lock, LockOpen, MessageSquareWarning, Plus, ScrollText, Trash2, UserPlus, X } from 'lucide-react'
+import { Check, ChevronRight, Copy, Eye, EyeOff, History, Lock, LockOpen, MessageSquareWarning, Plus, Trash2, UserPlus, X } from 'lucide-react'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import { CAMPOS } from '@/lib/campanhas/permissoes'
 import { SISTEMA_V8, sistemaPorId } from '@/lib/sistemas/catalogo'
@@ -10,6 +10,7 @@ import { GRUPOS_SISTEMA } from '@/lib/sistemas/criar'
 import { useOpcoesSistema } from '@/lib/sistemas/cliente'
 
 type Ficha = {
+  retrato?: string | null
   id: string; nome: string; sistema: string; status: string; npc: boolean; oculta: boolean; bloqueada: boolean
   areas_bloqueadas: string[]; observacao_mestre: string; dono_id: string; atualizada_em: string; dono: { apelido: string } | null
 }
@@ -79,7 +80,8 @@ export default function PainelFichasCampanha({ aventureiroId, campanhaId, admin,
 
   const cartao = (f: Ficha, extra?: React.ReactNode) => <li key={f.id} className="rounded-xl bg-[#171325] p-3">
     <div className="flex flex-wrap items-center gap-2">
-      <ScrollText size={18} className="shrink-0 text-[#c3a4f5]" />
+      {f.retrato ? <span aria-hidden className="h-11 w-9 shrink-0 rounded-lg border border-[#62527e] bg-cover bg-center" style={{ backgroundImage: `url("${f.retrato}")` }} />
+        : <span aria-hidden className="flex h-11 w-9 shrink-0 items-center justify-center rounded-lg border border-[#3d3152] bg-gradient-to-br from-[#3b2470] to-[#1b1530] text-sm font-bold text-[#c3a4f5]">{(f.nome.trim()[0] ?? '?').toUpperCase()}</span>}
       <span className="min-w-0 flex-1"><span className="font-semibold">{f.nome || 'Personagem sem nome'}</span>
         <span className="block text-xs text-[#b5a5c8]">{f.npc ? 'NPC' : f.dono?.apelido} · {nomeSistema(f.sistema)} · {quando(f.atualizada_em)}</span></span>
       {!f.npc && <SeloStatus status={f.status} />}

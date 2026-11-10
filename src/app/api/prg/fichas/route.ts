@@ -10,7 +10,7 @@ const MAX_FICHAS = 100
 export const GET = rota(async req => {
   const eu = await ator(req)
   const fichas = await rest(
-    `prg_fichas?select=id,nome,sistema,status,versao,campanha_id,origem_id,observacao_mestre,bloqueada,atualizada_em,campanha:prg_campanhas(nome)&dono_id=eq.${q(eu)}&order=atualizada_em.desc&limit=${MAX_FICHAS}`)
+    `prg_fichas?select=id,nome,sistema,retrato:dados->>retrato,status,versao,campanha_id,origem_id,observacao_mestre,bloqueada,atualizada_em,campanha:prg_campanhas(nome)&dono_id=eq.${q(eu)}&order=atualizada_em.desc&limit=${MAX_FICHAS}`)
   return ok({ fichas })
 })
 

@@ -1,12 +1,14 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { AlertTriangle, Dice5, Info } from 'lucide-react'
 import { calcular } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { rolarExpressao } from '@/lib/dice'
+import { enviarImagemNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 import GuiaSistema from '@/components/sistemas/GuiaSistema'
+import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import { InventarioFicha, PoderesFicha } from './Inventario'
 import { GUIAS } from '@/lib/sistemas/guias'
 
@@ -21,6 +23,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
   rolarNaCampanha?: (expressao: string, rotulo: string) => Promise<{ resultados: number[]; total: number } | null>
 }) {
   const c = useMemo(() => calcular(s, d), [s, d])
+  const central = useRef<RolagemCentralHandle>(null)
+  const naMesa = rolarNaCampanha ? 'Também foi para o chat da mesa' : null
   const d20 = s.rolagem ? s.rolagem === 'd20' : s.dados.startsWith('d20')
   const d100 = s.id === 'brp' || s.rolagem === 'd100'
   const set = <K extends keyof DadosFicha>(k: K, v: DadosFicha[K]) => onChange({ ...d, [k]: v })
@@ -31,21 +35,20 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       const alvo = bonus ?? 0
       const r = rolarNaCampanha ? await rolarNaCampanha('1d100', nome + ' (' + alvo + '%)') : rolarExpressao('1d100')
       if (!r) return
-      toast(`${nome}: ${r.total} / ${alvo}%`, { description: r.total <= Math.floor(alvo / 5) ? 'Sucesso especial!' : r.total <= alvo ? 'Sucesso' : 'Falha' })
+      central.current?.mostrar({ rotulo: `${nome} (${alvo}%)`, expressao: '1d100', resultados: r.resultados, total: r.total, nota: r.total <= Math.floor(alvo / 5) ? '🌟 Sucesso especial!' : r.total <= alvo ? '✅ Sucesso' : '❌ Falha' })
       return
     }
     const expr = '1d20' + (b >= 0 ? '+' + b : String(b))
     const r = rolarNaCampanha ? await rolarNaCampanha(expr, nome) : rolarExpressao(expr)
     if (!r) return
-    const nat = r.resultados[0]
-    toast(`${nome}: ${r.total}`, { description: `d20 = ${nat} ${sinal(b)}${nat === 20 ? ' · 20 natural!' : nat === 1 ? ' · 1 natural' : ''}${rolarNaCampanha ? ' · no chat da mesa' : ''}` })
+    central.current?.mostrar({ rotulo: `${nome} (d20 ${sinal(b)})`, expressao: expr, resultados: r.resultados, total: r.total, nota: naMesa })
   }
   const podeRolar = d20 || d100
   /** Rolagem livre (dano, poder, item). Em campanha, vai para o chat da mesa. */
   async function rolarExpr(expressao: string, rotulo: string) {
     const r = rolarNaCampanha ? await rolarNaCampanha(expressao, rotulo) : rolarExpressao(expressao)
     if (!r) { if (!rolarNaCampanha) toast.error('Rolagem inválida: ' + expressao); return }
-    toast(`${rotulo}: ${r.total}`, { description: `${expressao} → [${r.resultados.join(', ')}]${rolarNaCampanha ? ' · no chat da mesa' : ''}` })
+    central.current?.mostrar({ rotulo, expressao, resultados: r.resultados, total: r.total, nota: naMesa })
   }
   const propsInv = { s, d, c, onChange, somenteLeitura, rolar: rolarExpr }
 
@@ -70,6 +73,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
   const defesa = s.derivados.find(x => /^(defesa|ca)$/.test(x.id))
 
   return <div>
+    <RolagemCentral ref={central} />
     <div className="sticky top-[57px] z-10 -mx-3 mb-4 flex items-center gap-3 overflow-x-auto border-b border-[#373251] bg-[#100d1c]/95 px-3 py-2 backdrop-blur sm:-mx-6 sm:px-6">
       <span className="shrink-0 truncate font-semibold text-[#e4d3ff]">{d.nome || 'Personagem'}</span>
       {recursoPrincipal && (() => { const max = c.recursosMax[recursoPrincipal.id] ?? d.recursos[recursoPrincipal.id]?.max ?? (s.id === 'dnd5e-srd' ? c.derivados.pv_sugerido : null) ?? 0, at = d.recursos[recursoPrincipal.id]?.atual ?? 0
@@ -90,8 +94,11 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       <div className="min-w-0 flex-1 space-y-4">
         {secao === 'principal' && <>
     <section className={card}>
-      <label className="block text-sm font-semibold">Nome do personagem
-        <input value={d.nome} maxLength={90} disabled={somenteLeitura} onChange={e => set('nome', e.target.value)} className={input + ' mt-1 text-lg font-bold'} placeholder="Ex.: Lyra Nyx" /></label>
+      <div className="flex items-start gap-4">
+        <Retrato url={d.retrato} nome={d.nome} somenteLeitura={somenteLeitura} onChange={u => onChange({ ...d, retrato: u ?? undefined })} />
+        <label className="block min-w-0 flex-1 text-sm font-semibold">Nome do personagem
+          <input value={d.nome} maxLength={90} disabled={somenteLeitura} onChange={e => set('nome', e.target.value)} className={input + ' mt-1 text-lg font-bold'} placeholder="Ex.: Lyra Nyx" /></label>
+      </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {s.campos.map(f => <label key={f.id} className={'block text-sm ' + (f.tipo === 'area' ? 'sm:col-span-2 lg:col-span-3' : '')}>{f.nome}
           {f.tipo === 'area'
@@ -210,5 +217,23 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         {secao === 'guia' && <GuiaSistema sistemaId={s.id} />}
       </div>
     </div>
+  </div>
+}
+
+/** Imagem do personagem: aparece aqui e no cartão da ficha. */
+function Retrato({ url, nome, somenteLeitura, onChange }: { url?: string; nome: string; somenteLeitura: boolean; onChange: (u: string | null) => void }) {
+  const [enviando, setEnviando] = useState(false)
+  const podeEnviar = !somenteLeitura && NUVEM_ATIVA
+  async function escolher(f: File) {
+    setEnviando(true)
+    try { onChange(await enviarImagemNuvem('imagens', f, 900)) } catch (e) { toast.error(e instanceof Error ? e.message : 'Falha ao enviar a imagem.') } finally { setEnviando(false) }
+  }
+  return <div className="w-24 shrink-0 text-center sm:w-28">
+    <label className={'group relative flex aspect-[3/4] items-center justify-center overflow-hidden rounded-xl border-2 border-[#62527e] bg-gradient-to-br from-[#3b2470] to-[#1b1530] text-4xl font-black text-[#b99bff] ' + (podeEnviar ? 'cursor-pointer hover:border-[#b99bff]' : '')}>
+      {url ? <span className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url("${url}")` }} aria-hidden /> : (nome.trim()[0] ?? '?').toUpperCase()}
+      {podeEnviar && <span className="absolute inset-x-0 bottom-0 bg-black/60 py-1 text-[11px] font-semibold text-white opacity-90 group-hover:opacity-100">{enviando ? 'Enviando…' : url ? '🖼️ Trocar' : '🖼️ Imagem'}</span>}
+      {podeEnviar && <input type="file" accept="image/png,image/jpeg,image/webp" disabled={enviando} className="sr-only" aria-label="Imagem do personagem" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void escolher(f) }} />}
+    </label>
+    {url && podeEnviar && <button type="button" onClick={() => onChange(null)} className="mt-1 text-[11px] text-[#c4b6d4] hover:underline">Remover</button>}
   </div>
 }

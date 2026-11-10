@@ -37,7 +37,12 @@ export function normalizarExcecoes(valor: unknown): Partial<Permissoes> {
   return out
 }
 
-export type DadosCampanha = { nome: string; descricao: string; sistema: string; modelo_padrao: Modelo; permissoes: Permissoes; estado?: EstadoCampanha }
+export type DadosCampanha = { nome: string; descricao: string; sistema: string; modelo_padrao: Modelo; permissoes: Permissoes; estado?: EstadoCampanha; capa_url?: string | null }
+
+/** Imagem enviada pela própria plataforma (bucket público prg-mesa do Supabase). */
+export function imagemDaPlataforma(v: unknown): v is string {
+  return typeof v === 'string' && v.length <= 500 && /^https?:\/\/[^\s"'<>()]+\/storage\/v1\/object\/public\/prg-mesa\/[A-Za-z0-9/_.-]+\.(png|jpe?g|webp)$/.test(v)
+}
 
 export function validarCampanha(body: unknown, parcial = false): Ok<Partial<DadosCampanha>> | Erro {
   if (!body || typeof body !== 'object') return { ok: false, erro: 'Dados inválidos.' }
@@ -62,6 +67,10 @@ export function validarCampanha(body: unknown, parcial = false): Ok<Partial<Dado
   if (b.estado !== undefined) {
     if (!isEstado(b.estado)) return { ok: false, erro: 'Estado da campanha inválido.' }
     out.estado = b.estado
+  }
+  if (b.capa !== undefined) {
+    if (b.capa !== null && !imagemDaPlataforma(b.capa)) return { ok: false, erro: 'Capa inválida: envie a imagem pela plataforma.' }
+    out.capa_url = b.capa as string | null
   }
   return { ok: true, valor: out }
 }
@@ -105,7 +114,9 @@ export function validarFichaDados(dados: unknown): Ok<{ dados: Record<string, un
   let tamanho: number
   try { tamanho = new TextEncoder().encode(JSON.stringify(dados)).length } catch { return { ok: false, erro: 'Ficha inválida.' } }
   if (tamanho > FICHA_MAX_BYTES) return { ok: false, erro: 'Ficha muito grande (retrato ou textos longos demais).' }
-  const d = dados as Record<string, unknown>
+  let d = dados as Record<string, unknown>
+  // Retrato das fichas genéricas: só imagens enviadas pela plataforma (nada de links de fora).
+  if ('retrato' in d && !imagemDaPlataforma(d.retrato)) { const { retrato: _fora, ...resto } = d; void _fora; d = resto }
   const fields = d.fields && typeof d.fields === 'object' ? d.fields as Record<string, unknown> : {}
   // Ficha V8 guarda o nome em fields.name; os modelos genéricos, em nome.
   const bruto = typeof fields.name === 'string' ? fields.name : typeof d.nome === 'string' ? d.nome : ''

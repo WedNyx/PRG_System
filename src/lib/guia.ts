@@ -45,7 +45,7 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'fichas', icone: '📜', titulo: 'Criar e preencher fichas', foto: 'ficha.jpg', legenda: 'Ficha com menu por seções',
     resumo: 'As fichas ficam salvas na nuvem e abrem no celular ou no computador.',
-    passos: ['Em “Fichas”, toque em “Nova ficha” e escolha o sistema.', 'Use o menu de seções (Principal, Atributos e perícias, Habilidades, Equipamentos, Anotações e Guia de criação).', 'Toque no dado ao lado de uma perícia para rolar. Em fichas de campanha, a rolagem vai para o chat da mesa.', 'Para jogar numa campanha, use “Enviar para campanha” na lista de fichas.'],
+    passos: ['Em “Fichas”, toque em “Nova ficha” e escolha o sistema.', 'Toque no quadro ao lado do nome para colocar a imagem do personagem: ela aparece no cartão da ficha.', 'Use o menu de seções (Principal, Atributos e perícias, Habilidades, Equipamentos, Anotações e Guia de criação).', 'Toque no dado ao lado de uma perícia para rolar: os dados 3D caem no meio da tela e o total aparece grande. Em fichas de campanha, a rolagem também vai para o chat da mesa.', 'Para jogar numa campanha, use “Enviar para campanha” na lista de fichas.'],
     dica: 'A seção “📖 Guia de criação”, dentro da ficha, mostra o passo a passo daquele sistema.',
   },
   {
@@ -57,7 +57,7 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'campanhas', icone: '🏰', titulo: 'Criar campanha e convidar o grupo', foto: 'campanha.jpg', legenda: 'Painel da campanha do mestre', quem: 'mestre',
     resumo: 'O mestre cria a campanha, gera um convite e aprova quem entra.',
-    passos: ['Em “Campanhas”, toque em “Criar campanha”, dê um nome e escolha o sistema.', 'Abra a campanha e toque em “Gerar convite (7 dias)”. Envie o link ou o código para o grupo.', 'Quem usar o convite aparece em pedidos: toque em “Aceitar”.', 'Em “Permissões por área da ficha”, escolha o que os jogadores podem mudar sozinhos e o que precisa da sua aprovação.'],
+    passos: ['Em “Campanhas”, toque em “Criar campanha”, dê um nome e escolha o sistema.', 'Dentro da campanha, toque em “🖼️ Colocar capa” para escolher a imagem do cartão.', 'Abra a campanha e toque em “Gerar convite (7 dias)”. Envie o link ou o código para o grupo.', 'Quem usar o convite aparece em pedidos: toque em “Aceitar”.', 'Em “Permissões por área da ficha”, escolha o que os jogadores podem mudar sozinhos e o que precisa da sua aprovação.'],
   },
   {
     id: 'sessao', icone: '🎬', titulo: 'Abrir a sessão, jogadores e espectadores', quem: 'mestre',
@@ -73,7 +73,7 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'rolagens', icone: '🎲', titulo: 'Chat e rolagens', foto: 'mesa-chat.jpg', legenda: 'Chat com rolagens',
     resumo: 'Todas as rolagens são feitas no servidor e aparecem para o grupo com cada dado que caiu.',
-    passos: ['Na aba “Chat”, toque em um dado rápido (d4 a d100) ou escreva uma expressão como 2d6+3.', 'Escolha quem vê: todos, só o mestre ou só você.', 'Toque em “Histórico” para procurar rolagens antigas por pessoa, personagem ou tipo.'],
+    passos: ['Na aba “Chat”, toque em um dado rápido (d4 a d100) ou escreva uma expressão como 2d6+3. Os dados rolam no meio da tela para todos, com o total bem grande; toque para fechar.', 'Escolha quem vê: todos, só o mestre ou só você.', 'Toque em “Histórico” para procurar rolagens antigas por pessoa, personagem ou tipo.'],
   },
   {
     id: 'musica', icone: '🎵', titulo: 'Música na mesa', foto: 'mesa-musica.jpg', legenda: 'Aba Música com playlists',

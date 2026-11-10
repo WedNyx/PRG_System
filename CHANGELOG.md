@@ -2,6 +2,10 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.25.0 — Barras de vida, esforço e sanidade (2026-11-10)
+- Fichas: PV, PE, Sanidade, Mana e os outros recursos viraram barras grossas e coloridas, no estilo das fichas de Ordem Paranormal: vida vermelha, sanidade azul, esforço laranja, mana anil.
+- Botões dos lados da barra: ‹ › mudam 1 e « » mudam 5. Toque no número para digitar o valor ou, quando o sistema não calcula sozinho, o máximo.
+
 ## v0.24.0 — Dano por turno e dados certos (2026-11-10)
 - Dano por turno: Queimando (1d6), Envenenado (1d4) e Sangrando (1d4) já entram causando dano. Na janela do token, o campo 💥 de cada condição muda o dano (ex.: 2d4+1 ou 3) ou tira, se ficar vazio.
 - O dano é rolado no começo do turno de quem tem a condição e sai da vida dele (ou da ficha ligada). O chat mostra os dados e a vida que sobrou, e a condição continua até as rodadas acabarem.

@@ -13,6 +13,7 @@ import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/Ro
 import { InventarioFicha, PoderesFicha } from './Inventario'
 import ArvoreHabilidades from './Arvore'
 import Progressao from './Progressao'
+import BarraRecurso, { corDoRecurso } from './BarraRecurso'
 import { GUIAS } from '@/lib/sistemas/guias'
 
 const card = 'rounded-2xl border border-[#55456e] bg-[#201a32] p-4 sm:p-5'
@@ -133,21 +134,14 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
           <p className="text-xs text-[#c4b6d4]">{x.nome}</p><p className="text-2xl font-black">{c.derivados[x.id] ?? '—'}</p>
           {x.dica && <p className="text-[10px] text-[#a998bd]">{x.dica}</p>}</div>)}
       </div>}
-      {s.recursos.length > 0 && <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {s.recursos.length > 0 && <div className="mt-3 grid gap-3 lg:grid-cols-2">
         {s.recursos.map(r => {
-          const max = c.recursosMax[r.id], atual = d.recursos[r.id]?.atual ?? 0
           const calc = !!r.formula || r.maxFixo !== undefined
-          const pct = max ? Math.max(0, Math.min(100, (atual / max) * 100)) : 0
-          return <div key={r.id} className="rounded-xl bg-[#171325] p-3">
-            <p className="text-sm font-semibold">{r.nome}</p>
-            <div className="mt-2 flex items-center gap-2">
-              <input type="number" aria-label={r.nome + ' atual'} value={atual} disabled={somenteLeitura} onChange={e => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual: Number(e.target.value) || 0 } })} className={input + ' w-20 text-center'} />
-              <span>/</span>
-              {calc ? <span className="text-lg font-bold">{max ?? '—'}</span>
-                : <input type="number" aria-label={r.nome + ' máximo'} value={d.recursos[r.id]?.max ?? ''} disabled={somenteLeitura} onChange={e => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual, max: Number(e.target.value) || 0 } })} className={input + ' w-20 text-center'} />}
-            </div>
-            {max ? <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#2b2140]"><div className="h-full bg-[#b06ad8] transition-all" style={{ width: pct + '%' }} /></div> : null}
-          </div>
+          const max = c.recursosMax[r.id] ?? (calc ? null : (d.recursos[r.id]?.max ?? null)) ?? (/^(pv|vida|hp)$/.test(r.id) ? (c.derivados.pv_max ?? c.derivados.pv_sugerido ?? null) : null)
+          const atual = Number(d.recursos[r.id]?.atual ?? 0) || 0
+          return <BarraRecurso key={r.id} nome={r.nome} cor={corDoRecurso(r.id, r.nome)} atual={atual} max={max} maxEditavel={!calc} somenteLeitura={somenteLeitura}
+            mudar={v => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual: v } })}
+            mudarMax={v => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual, max: v } })} />
         })}
       </div>}
     </section>}

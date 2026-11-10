@@ -6,6 +6,13 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.25.0', data: '2026-11-10', titulo: 'Barras de vida, esforço e sanidade',
+    itens: [
+      'Fichas: PV, PE, Sanidade, Mana e os outros recursos viraram barras grossas e coloridas, no estilo das fichas de Ordem Paranormal: vida vermelha, sanidade azul, esforço laranja, mana anil.',
+      'Botões dos lados da barra: ‹ › mudam 1 e « » mudam 5. Toque no número para digitar o valor ou, quando o sistema não calcula sozinho, o máximo.',
+    ],
+  },
+  {
     versao: '0.24.0', data: '2026-11-10', titulo: 'Dano por turno e dados certos',
     itens: [
       'Dano por turno: Queimando (1d6), Envenenado (1d4) e Sangrando (1d4) já entram causando dano. Na janela do token, o campo 💥 de cada condição muda o dano (ex.: 2d4+1 ou 3) ou tira, se ficar vazio.',

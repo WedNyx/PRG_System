@@ -5,6 +5,8 @@
  */
 import { calcular, fichaVazia } from './calculo'
 import { erroDaFormula } from './regrasRolagem'
+import { lerArvore } from './arvore'
+import { alvosDeBonus } from './inventario'
 import { avaliar, variaveisDaFormula } from './formula'
 import type { Sistema } from './tipos'
 
@@ -13,7 +15,7 @@ export const ehAutoral = (id: unknown): id is string => typeof id === 'string' &
 export const idAutoral = (uuid: string) => PREFIXO_AUTORAL + uuid.replace(/-/g, '').toLowerCase()
 export const uuidDoAutoral = (id: string) => { const h = id.slice(PREFIXO_AUTORAL.length); return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}` }
 
-export const LIMITES = { campos: 30, atributos: 20, derivados: 30, pericias: 80, treinos: 8, recursos: 12, listas: 12, limites: 12, observacoes: 12, formula: 600, nome: 60 }
+export const LIMITES = { campos: 30, atributos: 20, derivados: 30, pericias: 80, treinos: 8, recursos: 12, listas: 12, limites: 12, observacoes: 12, formula: 600, nome: 60, classes: 6, colunas: 12 }
 const RESERVADO = /^(mod_|per_|tot_|qtd_|prog_)|^(soma_atributos|atributos_zero|maior_atributo|custo_pericias|maior_valor_pericia|carga_total|nivel_total|X|MOD|ATR|TREINO|VALOR)$/
 
 /** Transforma um nome em identificador de fórmula: "Pontos de Mana" → pontos_de_mana. */
@@ -122,13 +124,49 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   const carga = cargaF && txt(cargaF.formula, LIMITES.formula) ? { formula: txt(cargaF.formula, LIMITES.formula), unidade: txt(cargaF.unidade, 16) || 'kg' } : undefined
   const creditos = txt(e.creditos, 1500) || undefined
 
+  // ---- Progressão por nível (tabelas por classe): cada coluna vira a variável prog_<coluna> ----
+  let progressoes: Sistema['progressoes']
+  const pe = e.progressoes && typeof e.progressoes === 'object' ? e.progressoes as Record<string, unknown> : null
+  if (pe && Array.isArray(pe.classes) && pe.classes.length) {
+    const numericos = new Set(campos.filter(c => c.tipo === 'numero').map(c => c.id))
+    const idsCl = new Set<string>(), colunasNomes: Record<string, string> = {}
+    const nomesIn = pe.colunas && typeof pe.colunas === 'object' ? pe.colunas as Record<string, unknown> : {}
+    const classes = (pe.classes as unknown[]).slice(0, LIMITES.classes).flatMap(x => {
+      const c = x && typeof x === 'object' ? x as Record<string, unknown> : {}
+      const nomeCl = txt(c.nome, 40).trim(); if (!nomeCl) return []
+      const id = idUnico(typeof c.id === 'string' && /^[a-z][a-z0-9_]{0,24}$/.test(c.id) ? c.id : slug(nomeCl) || 'classe', idsCl); idsCl.add(id)
+      const campoNivel = typeof c.campoNivel === 'string' ? c.campoNivel : ''
+      if (!numericos.has(campoNivel)) { erros.push(`Progressão “${nomeCl}”: escolha o campo do nível (um campo de número, ex.: Nível).`); return [] }
+      const tabela: Record<string, number[]> = {}
+      const t = c.tabela && typeof c.tabela === 'object' ? c.tabela as Record<string, unknown> : {}
+      for (const [col, valores] of Object.entries(t).slice(0, LIMITES.colunas)) {
+        if (!/^[a-z][a-z0-9_]{0,24}$/.test(col) || !Array.isArray(valores)) continue
+        const v = valores.slice(0, 20).map(n => Math.round(Math.max(-10000, Math.min(10000, Number(n) || 0)) * 100) / 100)
+        while (v.length < 20) v.push(v.at(-1) ?? 0)
+        tabela[col] = v
+        const nomeCol = txt(nomesIn[col], 40).trim(); if (nomeCol) colunasNomes[col] = nomeCol
+      }
+      return [{ id, nome: nomeCl, campoNivel, tabela }]
+    })
+    if (classes.length) progressoes = { classes, ...(Object.keys(colunasNomes).length ? { colunas: colunasNomes } : {}) }
+  }
+
   const sistema: Sistema = {
     id: meta.id, nome, resumo: txt(e.resumo, 400), tipo: 'autoral',
     licenca: 'Sistema autoral' + (meta.autor ? ' de ' + meta.autor : ''), ...(creditos ? { creditos } : {}),
     dados: txt(e.dados, 40) || (rolagem === 'd100' ? 'd100' : rolagem === 'd20' ? 'd20' : regraRolagem ? regraRolagem.formula.replace(/VALOR/gi, 'X') : 'Livre'), rolagem, ...(regraRolagem ? { regraRolagem } : {}),
     campos, atributos, ...(formulaModificador ? { formulaModificador } : {}), derivados, ...(pericias ? { pericias } : {}),
     recursos, ...(limites.length ? { limites } : {}), listas: listas.length ? listas : [{ id: 'anotacoes', nome: 'Anotações' }],
-    ...(observacoes.length ? { observacoes } : {}), ...(carga ? { carga } : {}),
+    ...(observacoes.length ? { observacoes } : {}), ...(carga ? { carga } : {}), ...(progressoes ? { progressoes } : {}),
+  }
+  // ---- Árvore padrão: bônus só em alvos que existem neste sistema ----
+  const arv = lerArvore(e.arvore)
+  if (arv.nos.length) {
+    const alvos = new Set(alvosDeBonus(sistema).map(a => a.id))
+    let tirados = 0
+    for (const n of arv.nos) n.efeitos = n.efeitos.filter(ef => ef.tipo !== 'bonus' || alvos.has(ef.alvo) || (tirados++, false))
+    if (tirados) avisos.push(`${tirados} bônus da árvore apontavam para algo que não existe mais e foram tirados.`)
+    sistema.arvore = { pontos: arv.pontos, nos: arv.nos }
   }
 
   // ---- Fórmulas: só podem usar variáveis que existem ----
@@ -137,6 +175,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
     ...derivados.map(d => d.id), ...(pericias?.lista ?? []).flatMap(x => ['per_' + x.id, 'tot_' + x.id]),
     ...(pericias?.treinos ?? []).map(t => 'qtd_' + t.id),
     'soma_atributos', 'atributos_zero', 'maior_atributo', 'custo_pericias', 'maior_valor_pericia', 'carga_total',
+    ...(progressoes ? ['nivel_total', ...new Set(progressoes.classes.flatMap(c => Object.keys(c.tabela).map(k => 'prog_' + k)))] : []),
   ])
   const conferir = (rotulo: string, f: string | undefined, extras: string[] = []) => {
     if (!f) return

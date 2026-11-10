@@ -6,6 +6,17 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.20.0', data: '2026-11-10', titulo: 'Árvore padrão e progressão por nível',
+    itens: [
+      'Construtor de sistemas: nova seção “🌠 Árvore de habilidades padrão”. Monte os hexágonos uma vez e toda ficha nova do sistema já começa com eles.',
+      'Fichas que já existem trazem a árvore com “🌠 Usar a árvore do sistema”, ou “🔄 Atualizar” quando o autor mudar algo (o que já foi liberado continua).',
+      'Construtor: nova seção “📈 Progressão por nível”. Diga quanto se ganha em cada nível (pontos da árvore, vida, pontos de atributo ou o que quiser) e a ficha soma sozinha.',
+      'Na ficha: botão “Subir de nível” mostra o que o personagem ganhou; os pontos do nível entram direto na árvore.',
+      'Cada coluna da progressão vira a variável prog_nome nas fórmulas (ex.: Vida máxima = 10 + prog_vida). Dá para ter mais de uma classe (multiclasse).',
+      'Sistemas do catálogo com progressão (como D&D 5e) agora podem ser usados como modelo no construtor.',
+    ],
+  },
+  {
     versao: '0.19.0', data: '2026-11-11', titulo: 'Preparar combate',
     itens: [
       'Preparar combate (aba Iniciativa → ⚔️ Preparar combate): marque quem luta (todos, só jogadores, só NPCs) e role a iniciativa de todos de uma vez, com o bônus da ficha (Destreza, Agilidade ou “Iniciativa”) ou o que o mestre escrever.',

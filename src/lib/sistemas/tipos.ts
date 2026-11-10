@@ -45,7 +45,9 @@ export type Sistema = {
    * valores de todas as classes no nível informado em `campoNivel` (multiclasse).
    * Gera as variáveis prog_<coluna> e nivel_total.
    */
-  progressoes?: { classes: { id: string; nome: string; campoNivel: string; tabela: Record<string, number[]> }[] }
+  progressoes?: { classes: { id: string; nome: string; campoNivel: string; tabela: Record<string, number[]> }[]; colunas?: Record<string, string> }
+  /** Árvore de habilidades padrão: toda ficha nova do sistema começa com ela (ver arvore.ts). */
+  arvore?: { pontos: number; nos: unknown[] }
   /** Avisos de criação/evolução (não bloqueiam; mostram quando passa do limite). */
   limites?: LimiteDef[]
   listas: { id: string; nome: string }[]

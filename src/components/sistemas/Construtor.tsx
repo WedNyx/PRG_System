@@ -13,6 +13,9 @@ import { idUnico, sistemaEmBranco, slug, validarSistema } from '@/lib/sistemas/a
 import { esquecerSistema } from '@/lib/sistemas/cliente'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import EditorRolagem from './EditorRolagem'
+import EditorProgressao, { type DefProgressao } from './EditorProgressao'
+import ArvoreHabilidades from '@/components/fichas/Arvore'
+import { lerArvore } from '@/lib/sistemas/arvore'
 
 /* Linhas editáveis: `auto` = o nome na fórmula ainda acompanha o nome (até salvar pela 1ª vez). */
 type Linha = Record<string, unknown> & { id: string; nome: string; auto?: boolean }
@@ -21,6 +24,7 @@ type Def = {
   campos: Linha[]; atributos: Linha[]; formulaModificador: string; derivados: Linha[]
   pericias: { modo: 'treino' | 'valor' | 'nenhuma'; titulo?: string; total: string; treinos: Linha[]; lista: Linha[] }
   recursos: Linha[]; listas: Linha[]; limites: { nome: string; uso: string; max: string }[]; observacoes: string; carga: { formula: string; unidade: string }
+  arvore: { pontos: number; nos: unknown[] }; progressao: DefProgressao | null
 }
 const ID_TESTE = 'autoral-00000000000000000000000000000000'
 const input = 'w-full rounded-lg border border-[#5e4b78] bg-[#151123] p-2 text-sm text-white'
@@ -45,6 +49,8 @@ function paraDef(s: Partial<Sistema> & Record<string, unknown>, auto = false): D
     pericias: p ? { modo: p.modo, titulo: p.titulo, total: p.total, treinos: l(p.treinos), lista: l(p.lista) } : { modo: 'nenhuma', total: 'MOD + TREINO', treinos: [], lista: [] },
     recursos: l(s.recursos), listas: l(s.listas), limites: (s.limites as Def['limites']) ?? [], observacoes: ((s.observacoes as string[]) ?? []).join('\n'),
     carga: { formula: (s.carga as Sistema['carga'])?.formula ?? '', unidade: (s.carga as Sistema['carga'])?.unidade ?? 'kg' },
+    arvore: { pontos: Number((s.arvore as Sistema['arvore'])?.pontos) || 0, nos: (s.arvore as Sistema['arvore'])?.nos ?? [] },
+    progressao: (s.progressoes as Sistema['progressoes'])?.classes?.length ? { classes: (s.progressoes as NonNullable<Sistema['progressoes']>).classes, colunas: (s.progressoes as NonNullable<Sistema['progressoes']>).colunas ?? {} } : null,
   }
 }
 function paraEnvio(d: Def) {
@@ -55,6 +61,8 @@ function paraEnvio(d: Def) {
     pericias: d.pericias.modo === 'nenhuma' ? undefined : { modo: d.pericias.modo, titulo: d.pericias.titulo, total: d.pericias.total, treinos: tira(d.pericias.treinos), lista: tira(d.pericias.lista) },
     recursos: tira(d.recursos), listas: tira(d.listas), limites: d.limites, observacoes: d.observacoes.split('\n').map(x => x.trim()).filter(Boolean),
     carga: d.carga.formula ? d.carga : undefined,
+    ...(d.arvore.nos.length ? { arvore: d.arvore } : {}),
+    ...(d.progressao ? { progressoes: d.progressao } : {}),
   }
 }
 
@@ -97,6 +105,7 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
     ...def.derivados.map(x => ({ v: x.id, d: x.nome })),
     ...(def.pericias.modo !== 'nenhuma' ? def.pericias.lista.map(p => ({ v: 'tot_' + p.id, d: 'Total de ' + p.nome })) : []),
     { v: 'soma_atributos', d: 'Soma dos atributos' }, { v: 'maior_atributo', d: 'Maior atributo' },
+    ...(def.progressao ? [...new Set(def.progressao.classes.flatMap(c => Object.keys(c.tabela)))].map(c => ({ v: 'prog_' + c, d: (def.progressao!.colunas[c] ?? c).replace(/^\S+\s/, '') + ' (do nível)' })) : []),
   ]
   const inserir = (v: string) => { const u = ultimoCampo.current; if (!u) { toast('Toque primeiro numa fórmula.'); return } u.set((u.valor.trim() ? u.valor.trim() + ' + ' : '') + v) }
   const formula = (valor: string, set: (v: string) => void, extra = '') => <input value={valor} onChange={e => { set(e.target.value); ultimoCampo.current = { set, valor: e.target.value } }} onFocus={() => { ultimoCampo.current = { set, valor } }}
@@ -276,6 +285,18 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
             <textarea rows={4} value={def.observacoes} onChange={e => mudar(d => ({ ...d, observacoes: e.target.value }))} className={input + ' mt-1'} placeholder="Ex.: 20 natural é crítico." /></label>
         </SecaoBase>
 
+        <SecaoBase id="progressao" titulo="📈 Progressão por nível" sub="O que o personagem ganha a cada nível" aberta={aberta === 'progressao'} alternar={() => setAberta(a => a === 'progressao' ? '' : 'progressao')}>
+          <EditorProgressao valor={def.progressao} mudar={v => mudar(d => ({ ...d, progressao: v }))}
+            camposNumero={def.campos.filter(c => c.tipo === 'numero').map(c => ({ id: c.id, nome: c.nome }))}
+            criarCampoNivel={() => { mudar(d => d.campos.some(c => c.id === 'nivel') ? d : { ...d, campos: [...d.campos, { id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 }] }); return 'nivel' }} />
+        </SecaoBase>
+        <SecaoBase id="arvore" titulo="🌠 Árvore de habilidades padrão" sub="Toda ficha nova do sistema começa com ela" aberta={aberta === 'arvore'} alternar={() => setAberta(a => a === 'arvore' ? '' : 'arvore')}>
+          {validacao?.ok ? <ArvoreHabilidades s={validacao.sistema} d={{ ...fichaVazia(validacao.sistema), arvore: { ...def.arvore, liberados: [] } }} somenteLeitura={false} rolar={() => {}} editorSistema
+            onChange={nd => { const a = lerArvore(nd.arvore); mudar(d => ({ ...d, arvore: { pontos: a.pontos, nos: a.nos } })) }} />
+            : <p className="rounded-lg bg-[#3a2a14]/90 p-3 text-xs text-[#f6dca8]">Corrija os problemas acima para montar a árvore (ela usa os atributos e recursos do sistema).</p>}
+          <p className="text-xs text-[#a998bd]">Fichas que já existem podem trazer a árvore com o botão “Usar a árvore do sistema” (ou “Atualizar”, se você mudar depois).</p>
+        </SecaoBase>
+
         <section className="rounded-2xl border border-[#55456e] bg-[#201a32]/95 p-4 text-sm">
           <h2 className="font-semibold">🌍 Publicar</h2>
           <p className="mt-1 text-xs text-[#c4b6d4]">Rascunho: só você vê e pode criar fichas para testar. Publicado: aparece em “Sistemas autorais” para todo mundo, com o seu nome.</p>
@@ -334,7 +355,7 @@ function Previa({ def, validacao }: { def: Def; validacao: ReturnType<typeof val
 }
 
 function EscolherModelo({ escolher }: { escolher: (d: Def) => void }) {
-  const modelos = SISTEMAS.filter(s => !s.progressoes && !s.oculto)
+  const modelos = SISTEMAS.filter(s => !s.oculto)
   return <Tela>
     <div className="w-full max-w-lg rounded-3xl border border-[#655079] bg-[#1d1733]/95 p-6 text-left shadow-xl">
       <h1 className="text-2xl font-bold">✍️ Criar sistema autoral</h1>

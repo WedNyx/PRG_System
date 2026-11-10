@@ -38,7 +38,6 @@ describe('sistemas autorais', () => {
   })
   it('todos os sistemas do catálogo podem servir de modelo inicial', () => {
     for (const s of SISTEMAS) {
-      if (s.progressoes) continue // tabelas por classe ainda não são editáveis no construtor
       const r = validarSistema({ ...s, nome: s.nome.slice(0, 80) }, { id: ID })
       expect(r.ok, s.id + ': ' + (!r.ok ? r.erros.join(' | ') : '')).toBe(true)
     }

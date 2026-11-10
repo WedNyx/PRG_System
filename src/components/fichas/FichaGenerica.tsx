@@ -11,6 +11,7 @@ import GuiaSistema from '@/components/sistemas/GuiaSistema'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import { InventarioFicha, PoderesFicha } from './Inventario'
 import ArvoreHabilidades from './Arvore'
+import Progressao from './Progressao'
 import { GUIAS } from '@/lib/sistemas/guias'
 
 const card = 'rounded-2xl border border-[#55456e] bg-[#201a32] p-4 sm:p-5'
@@ -119,6 +120,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         </label>)}
       </div>
     </section>
+    <Progressao s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
     {c.limites.some(l => l.excedido) && <section role="alert" className="rounded-2xl border border-[#c98b3a] bg-[#3a2a14] p-4 text-sm text-[#f6dca8]">
       <p className="flex items-center gap-2 font-semibold"><AlertTriangle size={18} /> Acima do limite das regras</p>
       <ul className="mt-2 list-disc pl-5">{c.limites.filter(l => l.excedido).map(l => <li key={l.nome}>{l.nome}: {l.uso} de {l.max}</li>)}</ul>
@@ -192,7 +194,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       </div>)}
     </section>}
         </>}
-        {secao === 'arvore' && <ArvoreHabilidades s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={(x, r) => void rolarExpr(x, r)} />}
+        {secao === 'arvore' && <ArvoreHabilidades s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0} />}
         {secao === 'habilidades' && <>
     <PoderesFicha {...propsInv} />
     {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-[#d3adf0]">Anotações livres</h3>}

@@ -26,6 +26,8 @@ export function fichaVazia(s: Sistema, nome = ''): DadosFicha {
     pericias: Object.fromEntries((s.pericias?.lista ?? []).map(p => [p.id, s.pericias?.modo === 'valor' ? 0 : s.pericias?.treinos?.[0]?.id ?? ''])),
     recursos: Object.fromEntries(s.recursos.map(r => [r.id, { atual: 0 }])),
     listas: Object.fromEntries(s.listas.map(l => [l.id, ''])),
+    // Árvore padrão do sistema (sem nada liberado).
+    ...(s.arvore?.nos?.length ? { arvore: { pontos: s.arvore.pontos ?? 0, nos: s.arvore.nos, liberados: [] } } : {}),
   }
 }
 

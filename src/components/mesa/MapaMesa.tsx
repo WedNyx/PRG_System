@@ -24,6 +24,8 @@ type Props = {
   onPing: (x: number, y: number) => void; onTokenClick: (id: string) => void; onDesenhar: (pontos: number[], id: string) => void; onCursor: (x: number, y: number) => void
   /** Ao vivo (para os outros verem): token sendo arrastado e traço sendo desenhado. */
   onArrastando?: (id: string, x: number, y: number) => void; onTracando?: (id: string, pontos: number[]) => void
+  /** Ataque: círculo de alcance em volta do atacante e alvo marcado. */
+  alcance?: { tokenId: string; metros: number | null; alvo: string | null } | null
 }
 
 const pts = (a: number[]) => { const r: string[] = []; for (let i = 0; i + 1 < a.length; i += 2) r.push(`${a[i]},${a[i + 1]}`); return r.join(' ') }
@@ -203,6 +205,17 @@ export default function MapaMesa(p: Props) {
             </div>
           })}
 
+          {p.alcance && (() => {
+            const t = p.tokens.find(x => x.id === p.alcance!.tokenId); if (!t) return null
+            const cx = (t.x + t.tamanho / 2) * CELULA, cy = (t.y + t.tamanho / 2) * CELULA
+            const r = p.alcance.metros !== null ? (p.alcance.metros / METROS_POR_CELULA + t.tamanho / 2) * CELULA : null
+            const alvo = p.tokens.find(x => x.id === p.alcance!.alvo)
+            return <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 9 }}>
+              {r !== null && <circle cx={cx} cy={cy} r={r} fill="rgba(239,68,68,0.10)" stroke="#f87171" strokeWidth={2} strokeDasharray="8 6" />}
+              {alvo && <><line x1={cx} y1={cy} x2={(alvo.x + alvo.tamanho / 2) * CELULA} y2={(alvo.y + alvo.tamanho / 2) * CELULA} stroke="#fbbf24" strokeWidth={2.5} strokeDasharray="6 4" />
+                <circle cx={(alvo.x + alvo.tamanho / 2) * CELULA} cy={(alvo.y + alvo.tamanho / 2) * CELULA} r={alvo.tamanho * CELULA * 0.62} fill="none" stroke="#fbbf24" strokeWidth={3} /></>}
+            </svg>
+          })()}
           {camadaNevoa}
           {area && <div className="pointer-events-none absolute border-2 border-dashed border-amber-300 bg-amber-300/10" style={{ zIndex: 25, left: Math.min(area.x1, area.x2) * CELULA, top: Math.min(area.y1, area.y2) * CELULA, width: (Math.abs(area.x2 - area.x1) + 1) * CELULA, height: (Math.abs(area.y2 - area.y1) + 1) * CELULA }} />}
 

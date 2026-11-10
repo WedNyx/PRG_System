@@ -2,6 +2,15 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.18.0 — Combate na mesa (2026-11-11)
+- Combate na mesa: toque no seu token e em “⚔️ Atacar”, escolha a arma ou o poder da ficha, mire no alvo (o alcance aparece no mapa) e ataque. O ataque é rolado contra a Defesa do alvo e o dano aparece em seguida, com os dados no meio da tela.
+- Regras de combate (aba Mestre): o dano sai automaticamente ou o mestre confirma no chat, com “Aplicar”, “Metade” ou “Anular”.
+- Tokens a partir das fichas: o token entra com nome, imagem e vida da ficha, e a vida fica sempre igual à da ficha (dano na mesa muda a ficha).
+- Poderes descontam o custo sozinhos (PM, esforço…) e não deixam usar sem recurso suficiente.
+- Nova aba “📜 Fichas” na mesa: o mestre vê todas as fichas da campanha (jogadores e NPCs) com vida, defesa e ataques, abre a ficha e coloca na mesa. O jogador vê as dele.
+- Itens e poderes ganharam o campo “Alcance (m)”.
+- Migração 016: prg_campanhas.combate e prg_mesa_eventos.dados (tipo 'ataque').
+
 ## v0.17.0 — Tutoriais práticos (2026-11-10)
 - Tutoriais práticos (/tutorial): 5 lições com missões que se marcam sozinhas: rolar dados, árvore de habilidades, rolagem personalizada, retrato e capa, mesa virtual.
 - Campo de treino dentro do tutorial: dá para rolar dados, montar e liberar uma árvore e criar uma regra de rolagem sem mexer nas suas fichas.

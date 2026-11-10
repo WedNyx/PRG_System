@@ -6,6 +6,17 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.18.0', data: '2026-11-11', titulo: 'Combate na mesa',
+    itens: [
+      'Combate na mesa: toque no seu token e em “⚔️ Atacar”, escolha a arma ou o poder da ficha, mire no alvo (o alcance aparece no mapa) e ataque. O ataque é rolado contra a Defesa do alvo e o dano aparece em seguida, com os dados no meio da tela.',
+      'Regras de combate (aba Mestre): o dano sai automaticamente ou o mestre confirma no chat, com “Aplicar”, “Metade” ou “Anular”.',
+      'Tokens a partir das fichas: o token entra com nome, imagem e vida da ficha, e a vida fica sempre igual à da ficha (dano na mesa muda a ficha).',
+      'Poderes descontam o custo sozinhos (PM, esforço…) e não deixam usar sem recurso suficiente.',
+      'Nova aba “📜 Fichas” na mesa: o mestre vê todas as fichas da campanha (jogadores e NPCs) com vida, defesa e ataques, abre a ficha e coloca na mesa. O jogador vê as dele.',
+      'Itens e poderes ganharam o campo “Alcance (m)”.',
+    ],
+  },
+  {
     versao: '0.17.0', data: '2026-11-10', titulo: 'Tutoriais práticos',
     itens: [
       'Tutoriais práticos (/tutorial): 5 lições com missões que se marcam sozinhas: rolar dados, árvore de habilidades, rolagem personalizada, retrato e capa, mesa virtual.',

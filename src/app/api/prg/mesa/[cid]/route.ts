@@ -3,12 +3,16 @@ import { ator, buscarFicha, nomeDaCampanha, notificar, participantes, lerJson, o
 import { isUuid, podeAdministrar, type Papel } from '@/lib/nuvem/validacao'
 import { aplicarNevoa, corValida, filtroVisibilidade, normalizarCamadas, normalizarCondicoes, normalizarIniciativa, normalizarPontos, podeMoverToken, todasCelulas, urlValida, type Movimento, type Visibilidade } from '@/lib/nuvem/mesa'
 import { rolarExpressao } from '@/lib/dice'
+import { aplicarDano, fichaDeCombate, lerRegrasCombate, mudarFicha, tokenCombate, vidaDasFichas } from '@/lib/nuvem/combateServidor'
+import { acertou, ALCANCE_CORPO, distancia, gastarCusto, regraDeAtaque, rolarDano, resumoCombate } from '@/lib/sistemas/combate'
+import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
+import { ehV8 } from '@/lib/nuvem/categorias'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ cid: string }> }
 type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; tokens_travados: boolean }
 type Token = { id: string; cena_id: string; ficha_id: string | null; dono_id: string | null; visivel: boolean; npc: boolean; movimento: Movimento }
-const EVENTO = 'id,tipo,visibilidade,autor_id,destinatario_id,personagem,texto,expressao,resultados,total,criado_em,autor:prg_public_adventurers!prg_mesa_eventos_autor_id_fkey(apelido)'
+const EVENTO = 'id,tipo,visibilidade,autor_id,destinatario_id,personagem,texto,expressao,resultados,total,dados,criado_em,autor:prg_public_adventurers!prg_mesa_eventos_autor_id_fkey(apelido)'
 
 async function contexto(req: NextRequest, cid: string) {
   if (!isUuid(cid)) throw new ErroApi(404, 'Campanha não encontrada.')
@@ -48,6 +52,21 @@ export const GET = rota<Ctx>(async (req, { params }) => {
   const sp = req.nextUrl.searchParams
   const vis = filtroVisibilidade(eu, admin)
 
+  // Aba “Fichas” da mesa: mestre vê todas (jogadores e NPCs); jogador vê as dele. Com vida, defesa e ataques.
+  if (sp.get('fichas')) {
+    const fs = await rest<{ id: string; nome: string; sistema: string; dados: Record<string, unknown>; dono_id: string; npc: boolean; oculta: boolean; dono: { apelido: string } | null }[]>(
+      `prg_fichas?select=id,nome,sistema,dados,dono_id,npc,oculta,dono:prg_public_adventurers(apelido)&campanha_id=eq.${q(cid)}&status=eq.ativa${admin ? '' : `&dono_id=eq.${q(eu)}&npc=eq.false`}&order=npc.asc,nome.asc&limit=200`)
+    const cache = new Map<string, Awaited<ReturnType<typeof carregarSistema>>>()
+    const fichas = []
+    for (const f of fs) {
+      if (!cache.has(f.sistema)) cache.set(f.sistema, ehV8(f.sistema) ? undefined : await carregarSistema(f.sistema))
+      const s = cache.get(f.sistema)
+      fichas.push({ id: f.id, nome: f.nome, sistema: f.sistema, dono_id: f.dono_id, dono: f.dono?.apelido ?? null, npc: f.npc, oculta: f.oculta,
+        retrato: typeof f.dados?.retrato === 'string' ? f.dados.retrato : null, combate: s ? resumoCombate(s, f.dados) : null })
+    }
+    return ok({ fichas })
+  }
+
   if (sp.get('historico')) {
     const filtros: string[] = [vis]
     const antes = Number(sp.get('antes')); if (Number.isInteger(antes) && antes > 0) filtros.push(`id=lt.${antes}`)
@@ -58,7 +77,7 @@ export const GET = rota<Ctx>(async (req, { params }) => {
     return ok({ eventos })
   }
 
-  const [camp] = await rest<{ id: string; nome: string; sistema: string; mesa: Record<string, unknown>; musica: unknown; sessao_aberta: boolean; sessao_aberta_em: string | null }[]>(`prg_campanhas?select=id,nome,sistema,mesa,musica,sessao_aberta,sessao_aberta_em&id=eq.${q(cid)}`)
+  const [camp] = await rest<{ id: string; nome: string; sistema: string; mesa: Record<string, unknown>; musica: unknown; sessao_aberta: boolean; sessao_aberta_em: string | null; combate: unknown }[]>(`prg_campanhas?select=id,nome,sistema,mesa,musica,sessao_aberta,sessao_aberta_em,combate&id=eq.${q(cid)}`)
   if (!admin && !camp.sessao_aberta) throw new ErroApi(423, 'A sessão está fechada. Aguarde o mestre abrir a mesa.')
   const cenas = await rest<Cena[]>(`prg_cenas?select=*&campanha_id=eq.${q(cid)}${admin ? '' : '&ativa=eq.true'}&order=criada_em.asc`)
   const ativa = cenas.find(c => c.ativa) ?? null
@@ -69,9 +88,13 @@ export const GET = rota<Ctx>(async (req, { params }) => {
     rest(`prg_campanha_membros?select=aventureiro_id,papel,aventureiro:prg_public_adventurers(apelido,avatar)&campanha_id=eq.${q(cid)}`),
     rest(`prg_fichas?select=id,nome,dono_id,npc&campanha_id=eq.${q(cid)}&status=eq.ativa${admin ? '' : `&dono_id=eq.${q(eu)}&npc=eq.false`}&limit=200`),
   ])
+  // Tokens ligados a fichas mostram a vida da ficha (ela é quem manda).
+  const ligados = (tokens as { ficha_id: string | null }[]).flatMap(t => t.ficha_id ? [t.ficha_id] : [])
+  const vidas = ligados.length ? await vidaDasFichas(ligados).catch(() => ({} as Record<string, { atual: number; max: number | null }>)) : {}
+  const tokensVivos = (tokens as Record<string, unknown>[]).map(t => { const v = t.ficha_id ? vidas[t.ficha_id as string] : undefined; return v ? { ...t, hp_atual: v.atual, hp_max: v.max } : t })
   return ok({
-    campanha: { id: camp.id, nome: camp.nome, sistema: camp.sistema, meuPapel: papel as Papel },
-    mesa: camp.mesa, cenas: admin ? cenas : ativa ? [ativa] : [], cenaAtiva: ativa, tokens, desenhos,
+    campanha: { id: camp.id, nome: camp.nome, sistema: camp.sistema, meuPapel: papel as Papel }, combate: lerRegrasCombate(camp.combate),
+    mesa: camp.mesa, cenas: admin ? cenas : ativa ? [ativa] : [], cenaAtiva: ativa, tokens: tokensVivos, desenhos,
     eventos: eventos.reverse(), membros, fichas, eu, musica: camp.musica ?? { tocando: false }, agora: new Date().toISOString(),
     sessao: { aberta: !!camp.sessao_aberta, aberta_em: camp.sessao_aberta_em },
   })
@@ -188,12 +211,15 @@ export const POST = rota<Ctx>(async (req, { params }) => {
     case 'token_criar': {
       const c = await cenaDaCampanha(cid, b.cenaId)
       const nome = typeof b.nome === 'string' ? b.nome.trim().slice(0, 60) : ''
-      let dono: string | null = isUuid(b.donoId) ? b.donoId : null, ficha: string | null = null
+      let dono: string | null = isUuid(b.donoId) ? b.donoId : null, ficha: string | null = null, nomeFicha = ''
       if (isUuid(b.fichaId)) {
         const f = await buscarFicha(b.fichaId)
         if (!f || f.campanha_id !== cid || f.status !== 'ativa') throw new ErroApi(400, 'Ficha inválida para esta campanha.')
         if (!admin && f.dono_id !== eu) throw new ErroApi(403, 'Você só pode colocar o seu personagem na mesa.')
         ficha = f.id; dono = f.npc ? null : f.dono_id
+        // Token importado da ficha: nome e imagem vêm dela (a vida é lida da ficha ao vivo).
+        if (!nomeFicha) nomeFicha = f.nome
+        if (!b.imagem_url && typeof f.dados?.retrato === 'string' && f.dados.retrato.startsWith('https://')) b.imagem_url = f.dados.retrato
       } else if (!admin) {
         // Jogador pode colocar o próprio token mesmo sem ficha aprovada (até 3 por cena).
         const meus = await rest<unknown[]>(`prg_tokens?select=id&cena_id=eq.${q(c.id)}&dono_id=eq.${q(eu)}&limit=4`)
@@ -201,14 +227,14 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         dono = eu
       }
       if (dono && !(await papelNaCampanha(cid, dono))) dono = null
-      if (!nome) throw new ErroApi(400, 'Dê um nome ao token.')
+      if (!nome && !nomeFicha) throw new ErroApi(400, 'Dê um nome ao token.')
       if (b.cor !== undefined && !corValida(b.cor)) throw new ErroApi(400, 'Cor inválida.')
       if (!urlValida(b.imagem_url ?? null)) throw new ErroApi(400, 'Imagem inválida (use https://).')
       const total = await rest<unknown[]>(`prg_tokens?select=id&cena_id=eq.${q(c.id)}&limit=201`)
       if (total.length >= 200) throw new ErroApi(429, 'Limite de 200 tokens por cena.')
       const hp = inteiro(b.hp_max, 0, 100000)
       const [t] = await rest<unknown[]>('prg_tokens', { method: 'POST', prefer: 'return=representation', body: JSON.stringify({
-        campanha_id: cid, cena_id: c.id, ficha_id: ficha, dono_id: dono, nome, cor: b.cor ?? '#a78bfa', imagem_url: b.imagem_url || null,
+        campanha_id: cid, cena_id: c.id, ficha_id: ficha, dono_id: dono, nome: nome || nomeFicha.slice(0, 60) || 'Personagem', cor: b.cor ?? '#a78bfa', imagem_url: b.imagem_url || null,
         x: inteiro(b.x, 0, c.grid_cols - 1) ?? Math.floor(c.grid_cols / 2), y: inteiro(b.y, 0, c.grid_rows - 1) ?? Math.floor(c.grid_rows / 2), npc: admin && b.npc === true,
         visivel: !(admin && b.visivel === false), hp_max: hp, hp_atual: hp,
         tamanho: inteiro(b.tamanho, 1, 4) ?? 1, movimento: admin && (b.movimento === 'todos' || b.movimento === 'mestre') ? b.movimento : 'dono',
@@ -227,7 +253,13 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       const dono = t.dono_id === eu
       if (!admin && !dono) throw new ErroApi(403, 'Sem permissão para este token.')
       const m: Record<string, unknown> = {}
-      if (b.hp_atual !== undefined) m.hp_atual = inteiro(b.hp_atual, -1000, 100000)
+      if (b.hp_atual !== undefined) {
+        const novo = inteiro(b.hp_atual, -1000, 100000)
+        const fc = t.ficha_id && novo !== null ? await fichaDeCombate(t.ficha_id) : null
+        // Token ligado a ficha: o dano/cura vai para a vida da ficha.
+        if (fc?.r.vida) { const v = fc.r.vida; await aplicarDano({ ...(t as unknown as Parameters<typeof aplicarDano>[0]), hp_atual: v.atual, hp_max: v.max }, v.atual - (novo as number)) }
+        else m.hp_atual = novo
+      }
       if (b.condicoes !== undefined) m.condicoes = normalizarCondicoes(b.condicoes)
       if (admin || dono) {
         if (b.imagem_url !== undefined) { if (!urlValida(b.imagem_url)) throw new ErroApi(400, 'Imagem inválida.'); m.imagem_url = b.imagem_url || null }
@@ -240,7 +272,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         if (typeof b.visivel === 'boolean') m.visivel = b.visivel
         if (b.hp_max !== undefined) m.hp_max = inteiro(b.hp_max, 0, 100000)
       }
-      if (!Object.keys(m).length) throw new ErroApi(400, 'Nada para alterar.')
+      if (!Object.keys(m).length) { if (b.hp_atual !== undefined) return ok({ ok: true }); throw new ErroApi(400, 'Nada para alterar.') }
       await rest(`prg_tokens?id=eq.${q(t.id)}`, { method: 'PATCH', body: JSON.stringify(m) })
       return ok({ ok: true })
     }
@@ -262,6 +294,81 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       const c = await cenaDaCampanha(cid, b.cenaId)
       await rest(`prg_desenhos?cena_id=eq.${q(c.id)}`, { method: 'DELETE' })
       return ok({ ok: true })
+    }
+    case 'combate_config': {
+      exigirAdmin(admin)
+      const combate = lerRegrasCombate({ acerto: b.acerto })
+      await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify({ combate }) })
+      await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica',
+        texto: combate.acerto === 'automatico' ? '⚔️ Combate: o dano dos ataques agora sai automaticamente.' : '⚔️ Combate: o mestre confirma cada dano antes de aplicar.' }) }).catch(() => {})
+      return ok({ combate })
+    }
+    case 'ataque': {
+      const at = await tokenCombate(cid, b.atacante), al = await tokenCombate(cid, b.alvo)
+      if (at.id === al.id) throw new ErroApi(400, 'Escolha outro alvo.')
+      if (at.cena_id !== al.cena_id) throw new ErroApi(400, 'Atacante e alvo precisam estar na mesma cena.')
+      if (!admin && at.dono_id !== eu) throw new ErroApi(403, 'Você só ataca com o seu personagem.')
+      const [camp] = await rest<{ combate: unknown }[]>(`prg_campanhas?select=combate&id=eq.${q(cid)}`)
+      const regras = lerRegrasCombate(camp?.combate)
+      const fa = await fichaDeCombate(at.ficha_id)
+      const fonte = b.fonte && typeof b.fonte === 'object' ? b.fonte as { tipo?: unknown; id?: unknown } : null
+      const opcao = fonte ? fa?.r.ataques.find(a => a.tipo === fonte.tipo && a.id === fonte.id) : undefined
+      if (fonte && !opcao) throw new ErroApi(400, 'Arma ou poder não encontrado na ficha.')
+      const danoExpr = opcao?.dano ?? (typeof b.dano === 'string' ? b.dano.trim().toLowerCase().slice(0, 40) : '')
+      if (!danoExpr || !rolarExpressao(danoExpr)) throw new ErroApi(400, 'Informe o dano (ex.: 1d8+3).')
+      const alcance = opcao?.alcance ?? ALCANCE_CORPO
+      const dist = distancia(at, al)
+      if (opcao && dist > alcance && !admin) throw new ErroApi(400, `Fora de alcance: o alvo está a ${dist} m e ${opcao.nome} alcança ${alcance} m.`)
+      // Bônus do teste escolhido (perícia/atributo da ficha); sem ficha, o bônus informado.
+      // Teste escolhido > bônus informado > teste sugerido da ficha.
+      const teste = fa?.r.testes.find(t => t.id === b.teste) ?? (b.bonus === undefined ? fa?.r.testes.find(t => t.id === fa.r.testePadrao) : undefined)
+      const bonus = teste?.valor ?? (inteiro(b.bonus, -50, 100) ?? 0)
+      // Custo do poder sai antes de rolar.
+      if (opcao?.tipo === 'poder' && opcao.recurso && (opcao.custo ?? 0) > 0 && fa) {
+        const rec = fa.r.recursos.find(r => r.id === opcao.recurso)
+        if (!(await mudarFicha(fa.f.id, d => gastarCusto(d, opcao.recurso!, opcao.custo!)))) throw new ErroApi(400, `Sem ${rec?.nome ?? 'recurso'} suficiente (precisa de ${opcao.custo}).`)
+      }
+      const regra = regraDeAtaque(fa?.s, bonus)
+      const rolagem = rolarExpressao(regra.expressao)!
+      const fal = await fichaDeCombate(al.ficha_id)
+      const defesa = fal?.r.defesa?.valor ?? (admin ? inteiro(b.defesa, 0, 100) : null) ?? 10
+      const hit = acertou(regra, rolagem.total, defesa, bonus)
+      const dano = hit ? rolarDano(danoExpr) : null
+      const status: 'errou' | 'pendente' | 'aplicado' = hit ? (regras.acerto === 'automatico' ? 'aplicado' : 'pendente') : 'errou'
+      let vida: Awaited<ReturnType<typeof aplicarDano>> | null = null
+      if (status === 'aplicado' && dano) vida = await aplicarDano(al, dano.total)
+      const arma = opcao?.nome ?? 'Ataque'
+      const texto = `⚔️ ${at.nome} atacou ${al.nome} com ${arma}: ${rolagem.total}${regra.comparar === 'maior_igual' ? ` contra Defesa ${defesa}` : regra.comparar === 'menor_igual' ? ` (precisava ≤ ${bonus})` : ' sucesso(s)'} → `
+        + (!hit ? 'errou.' : status === 'aplicado' ? `acertou! ${dano?.total ?? 0} de dano.` : `acertou! ${dano?.total ?? 0} de dano (aguardando o mestre).`)
+      const dados = { atacante: { id: at.id, nome: at.nome }, alvo: { id: al.id, nome: al.nome }, arma, defesa, comparar: regra.comparar, acerto: hit,
+        dano: dano ? { expressao: dano.expressao, resultados: dano.resultados.slice(0, 60), total: dano.total } : null, status, aplicado: status === 'aplicado' ? dano?.total ?? 0 : 0,
+        vida: vida ? { depois: vida.depois, max: vida.max } : null, distancia: dist }
+      const [ev] = await rest<unknown[]>(`prg_mesa_eventos?select=${EVENTO}`, { method: 'POST', prefer: 'return=representation', body: JSON.stringify({
+        campanha_id: cid, autor_id: eu, tipo: 'ataque', visibilidade: 'publica', personagem: at.nome.slice(0, 90), texto: texto.slice(0, 1000),
+        expressao: rolagem.expressao, resultados: rolagem.resultados.slice(0, 100), total: rolagem.total, dados }) })
+      return ok({ evento: ev }, 201)
+    }
+    case 'ataque_decidir': {
+      exigirAdmin(admin)
+      const id = Number(b.eventoId)
+      if (!Number.isInteger(id) || id <= 0) throw new ErroApi(400, 'Ataque inválido.')
+      const [ev] = await rest<{ id: number; dados: Record<string, unknown> | null; texto: string }[]>(`prg_mesa_eventos?select=id,dados,texto&id=eq.${id}&campanha_id=eq.${q(cid)}&tipo=eq.ataque`)
+      const d = ev?.dados
+      if (!d || (d.status !== 'pendente' && d.status !== 'errou')) throw new ErroApi(409, 'Este ataque já foi resolvido.')
+      const fator = b.fator === 0.5 ? 0.5 : b.fator === 0 ? 0 : 1
+      const dano = d.dano as { total: number } | null
+      // “Errou” também pode virar acerto, se o mestre quiser (ex.: regra especial do sistema).
+      let total = dano?.total ?? 0
+      if (!dano && fator > 0) total = inteiro(b.dano, 0, 100000) ?? 0
+      const aplicado = Math.floor(total * fator)
+      let vida: Awaited<ReturnType<typeof aplicarDano>> | null = null
+      if (aplicado > 0) { const al = await tokenCombate(cid, (d.alvo as { id: string }).id); vida = await aplicarDano(al, aplicado) }
+      const novo = { ...d, status: fator === 0 ? 'ignorado' : 'aplicado', aplicado, vida: vida ? { depois: vida.depois, max: vida.max } : null }
+      await rest(`prg_mesa_eventos?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ dados: novo }) })
+      const alvo = (d.alvo as { nome: string }).nome
+      await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica',
+        texto: fator === 0 ? `🛡️ O mestre anulou o dano em ${alvo}.` : `💥 ${alvo} recebeu ${aplicado} de dano${fator === 0.5 ? ' (metade)' : ''}.` }) }).catch(() => {})
+      return ok({ ok: true, aplicado })
     }
     case 'iniciativa': {
       exigirAdmin(admin)

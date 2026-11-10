@@ -7,7 +7,7 @@ import { VERSOES } from '@/lib/versoes'
 export const metadata: Metadata = { title: 'Guia da plataforma · PRG System', description: 'Tudo o que o PRG System tem e como usar cada parte.' }
 
 /** Tópicos do guia que têm lição prática no /tutorial. */
-const PRATICA: Record<string, string> = { rolagens: 'dados', arvore: 'arvore', construtor: 'rolagem', fichas: 'imagens', campanhas: 'imagens', mesa: 'mesa', sessao: 'mesa' }
+const PRATICA: Record<string, string> = { rolagens: 'dados', arvore: 'arvore', construtor: 'rolagem', fichas: 'imagens', campanhas: 'imagens', mesa: 'mesa', sessao: 'mesa', combate: 'mesa' }
 
 const SELO = { mestre: '🎩 Para o mestre', admin: '🔒 Administrador', todos: '' } as const
 

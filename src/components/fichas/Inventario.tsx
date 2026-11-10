@@ -172,8 +172,11 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
         <label className="block">Tipo<select value={it.categoria} onChange={e => setIt({ ...it, categoria: e.target.value as Item['categoria'] })} className={input + ' mt-1'}>{CATEGORIAS_ITEM.map(c => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></label>
         <label className="block">Peso{s?.carga ? ` (${s.carga.unidade})` : ''}<input type="number" min={0} step="0.1" value={it.peso} onChange={e => setIt({ ...it, peso: Number(e.target.value) || 0 })} className={input + ' mt-1'} /></label>
       </div>
-      <label className="block">{it.categoria === 'consumivel' ? 'Rolagem ao usar (ex.: cura 2d4+2)' : 'Dano ou rolagem (ex.: 1d8+3)'}
-        <input value={it.dano ?? ''} maxLength={40} onChange={e => setIt({ ...it, dano: e.target.value })} className={input + ' mt-1'} placeholder="Opcional" /></label>
+      <div className="grid grid-cols-[2fr_1fr] gap-2">
+        <label className="block">{it.categoria === 'consumivel' ? 'Rolagem ao usar (ex.: cura 2d4+2)' : 'Dano ou rolagem (ex.: 1d8+3)'}
+          <input value={it.dano ?? ''} maxLength={40} onChange={e => setIt({ ...it, dano: e.target.value })} className={input + ' mt-1'} placeholder="Opcional" /></label>
+        <label className="block">Alcance (m)<input type="number" min={0} max={1000} step="1.5" value={it.alcance ?? ''} onChange={e => setIt({ ...it, alcance: Number(e.target.value) || undefined })} className={input + ' mt-1'} placeholder="1,5" /></label>
+      </div>
       {alvos.length > 0 && <fieldset className="rounded-xl border border-[#55456e] p-3">
         <legend className="px-1 text-xs text-[#d3adf0]">Bônus quando equipado</legend>
         {it.bonus.map((b, i) => <div key={i} className="mb-2 flex gap-2">
@@ -207,6 +210,7 @@ export function EditorPoder({ s, inicial, salvar, fechar }: { s?: Sistema; inici
         <label className="block">Usos até descansar<input type="number" min={0} max={99} value={p.usosMax ?? ''} onChange={e => setP({ ...p, usosMax: Number(e.target.value) || undefined })} className={input + ' mt-1'} placeholder="Sem limite" /></label>
         <label className="block">Rolagem<input value={p.expressao ?? ''} maxLength={40} onChange={e => setP({ ...p, expressao: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: 8d6" /></label>
       </div>
+      <label className="block">Alcance na mesa (metros)<input type="number" min={0} max={1000} step="1.5" value={p.alcance ?? ''} onChange={e => setP({ ...p, alcance: Number(e.target.value) || undefined })} className={input + ' mt-1'} placeholder="Corpo a corpo (1,5 m)" /></label>
       <label className="block">Descrição<textarea rows={4} value={p.descricao ?? ''} maxLength={2000} onChange={e => setP({ ...p, descricao: e.target.value })} className={input + ' mt-1'} placeholder="Alcance, duração, efeito…" /></label>
       <div className="flex gap-2"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-[#62527e] p-2.5">Cancelar</button>
         <button type="submit" className="flex-1 rounded-lg bg-[#7654bb] p-2.5 font-semibold">Salvar</button></div>

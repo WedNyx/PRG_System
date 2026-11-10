@@ -1,0 +1,106 @@
+/**
+ * Combate na mesa: lê de uma ficha o que importa para lutar (vida, defesa, armas, poderes, bônus de teste)
+ * e decide a rolagem de ataque conforme o sistema. Funções puras (testadas em combate.test.ts),
+ * usadas no servidor (rota da mesa) e na tela (aba Fichas e janela de ataque).
+ */
+import { calcular, normalizarFicha } from './calculo'
+import { lerItens, lerPoderes } from './inventario'
+import { montarRolagem, rolarExpressao } from '../dice'
+import type { DadosFicha, Sistema } from './tipos'
+
+export const METROS_POR_CELULA = 1.5
+export const ALCANCE_CORPO = 1.5
+
+export type OpcaoAtaque = { tipo: 'item' | 'poder'; id: string; nome: string; dano: string; alcance: number; recurso?: string; custo?: number }
+export type Teste = { id: string; nome: string; valor: number }
+export type ResumoCombate = {
+  vida: { id: string; nome: string; atual: number; max: number | null } | null
+  defesa: { nome: string; valor: number } | null
+  ataques: OpcaoAtaque[]
+  testes: Teste[]
+  /** Teste sugerido para atacar (perícia de luta/pontaria, ou o melhor atributo). */
+  testePadrao: string | null
+  recursos: { id: string; nome: string; atual: number; max: number | null }[]
+}
+
+const ATAQUE = /luta|briga|corpo|combate|ataque|armas|pontaria|tiro|arco|arremess|atletismo|esgrima|lamina|fuzil/i
+
+export function resumoCombate(s: Sistema, bruto: unknown): ResumoCombate {
+  const d: DadosFicha = normalizarFicha(s, bruto as Partial<DadosFicha>)
+  const c = calcular(s, d)
+  const maxDe = (id: string) => c.recursosMax[id] ?? (d.recursos[id]?.max !== undefined ? Number(d.recursos[id]?.max) : null)
+    ?? (/^(pv|vida|hp)/.test(id) ? (c.derivados.pv_max ?? c.derivados.pv_sugerido ?? null) : null)
+  const recursos = s.recursos.map(r => ({ id: r.id, nome: r.nome, atual: Number(d.recursos[r.id]?.atual ?? 0) || 0, max: maxDe(r.id) }))
+  const vidaDef = s.recursos.find(r => /^(pv|vida|hp|pontos_de_vida)$/i.test(r.id)) ?? s.recursos.find(r => /^(pv|vida|hp)/i.test(r.id)) ?? s.recursos[0]
+  const vida = vidaDef ? recursos.find(r => r.id === vidaDef.id)! : null
+
+  let defesa: ResumoCombate['defesa'] = null
+  const der = s.derivados.find(x => /^(ca|defesa|def|esquiva|aparar|defesa_passiva)$/i.test(x.id))
+  if (der && typeof c.derivados[der.id] === 'number') defesa = { nome: der.nome.split(' (')[0], valor: c.derivados[der.id] as number }
+  else {
+    const campo = s.campos.find(x => x.tipo === 'numero' && /^(ca|defesa)$/i.test(x.id))
+    if (campo && Number.isFinite(Number(d.campos[campo.id]))) defesa = { nome: campo.nome, valor: Number(d.campos[campo.id]) }
+  }
+
+  const ataques: OpcaoAtaque[] = [
+    ...lerItens(d.itens).filter(i => i.dano).map(i => ({ tipo: 'item' as const, id: i.id, nome: i.nome, dano: i.dano!, alcance: i.alcance ?? ALCANCE_CORPO })),
+    ...lerPoderes(d.poderes).filter(p => p.expressao).map(p => ({ tipo: 'poder' as const, id: p.id, nome: p.nome, dano: p.expressao!, alcance: p.alcance ?? ALCANCE_CORPO,
+      ...(p.recurso ? { recurso: p.recurso, custo: p.custo ?? 0 } : {}) })),
+  ]
+
+  const testes: Teste[] = [
+    ...(s.pericias?.lista ?? []).map(p => ({ id: 'pericia:' + p.id, nome: p.nome, valor: Number(c.pericias[p.id] ?? 0) || 0 })),
+    ...s.atributos.map(a => ({ id: 'atributo:' + a.id, nome: a.nome, valor: Number(s.formulaModificador ? c.mods[a.id] : c.vars[a.id]) || 0 })),
+  ]
+  // Sugestão: o maior entre as perícias de luta/pontaria e os atributos (empate: a perícia).
+  const candidatos = testes.filter(t => !t.id.startsWith('pericia:') || ATAQUE.test(t.nome))
+  const melhor = candidatos.sort((a, b) => b.valor - a.valor || (a.id.startsWith('pericia:') ? -1 : 1))[0]
+  return { vida, defesa, ataques, testes, testePadrao: melhor?.id ?? null, recursos }
+}
+
+export type RegraAtaque = { expressao: string; comparar: 'maior_igual' | 'menor_igual' | 'sucessos' }
+/** Como rolar o ataque neste sistema, com o bônus do teste escolhido. */
+export function regraDeAtaque(s: Sistema | undefined, bonus: number): RegraAtaque {
+  const b = Math.round(bonus) || 0
+  if (s?.rolagem === 'personalizada' && s.regraRolagem) {
+    const expressao = montarRolagem(s.regraRolagem.formula, b)
+    return { expressao, comparar: /s\d/.test(expressao) ? 'sucessos' : 'maior_igual' }
+  }
+  if (s && (s.rolagem === 'd100' || s.id === 'brp')) return { expressao: '1d100', comparar: 'menor_igual' }
+  return { expressao: '1d20' + (b >= 0 ? '+' + b : String(b)), comparar: 'maior_igual' }
+}
+
+/** Acertou? d20: total ≥ defesa. d100: total ≤ valor do teste. Sucessos: pelo menos 1 (ou a defesa, se for maior). */
+export function acertou(regra: RegraAtaque, total: number, defesa: number, bonus: number): boolean {
+  if (regra.comparar === 'menor_igual') return total <= bonus
+  if (regra.comparar === 'sucessos') return total >= Math.max(1, defesa)
+  return total >= defesa
+}
+
+/** Distância em metros entre duas casas (igual à régua da mesa: a diagonal conta como 1 casa). */
+export const distancia = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+  Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) * METROS_POR_CELULA
+
+/** Dano: rola a expressão (sem dano negativo). */
+export function rolarDano(expressao: string) {
+  const r = rolarExpressao(expressao)
+  return r ? { ...r, total: Math.max(0, r.total) } : null
+}
+
+/** Aplica dano (ou cura, se negativo) no recurso de vida da ficha. Não passa do máximo nem fica abaixo de 0. */
+export function aplicarNaVida(d: Record<string, unknown>, vidaId: string, dano: number, max: number | null): Record<string, unknown> {
+  const recursos = { ...((d.recursos as Record<string, { atual: number; max?: number }>) ?? {}) }
+  const atual = Number(recursos[vidaId]?.atual ?? 0) || 0
+  let novo = Math.max(0, atual - dano)
+  if (max !== null && max !== undefined) novo = Math.min(novo, Math.max(max, atual))
+  recursos[vidaId] = { ...(recursos[vidaId] ?? {}), atual: novo }
+  return { ...d, recursos }
+}
+/** Gasta o custo de um poder (recurso e uso). */
+export function gastarCusto(d: Record<string, unknown>, recurso: string, custo: number): Record<string, unknown> | null {
+  const recursos = { ...((d.recursos as Record<string, { atual: number; max?: number }>) ?? {}) }
+  const atual = Number(recursos[recurso]?.atual ?? 0) || 0
+  if (atual < custo) return null
+  recursos[recurso] = { ...(recursos[recurso] ?? {}), atual: atual - custo }
+  return { ...d, recursos }
+}

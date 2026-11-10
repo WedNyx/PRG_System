@@ -79,6 +79,7 @@ const MISSOES: Record<string, Missao[]> = {
     { id: 'cena', texto: 'Mestre: na aba “Mestre”, crie uma cena com um mapa; na aba “Tokens”, coloque os personagens.' },
     { id: 'mover', texto: 'Com a mãozinha ✋, arraste o seu token. Com o lápis ✏️, desenhe no mapa.' },
     { id: 'rolar', texto: 'Na aba “Chat”, toque em um dado (d20, d6…): todos veem os dados no meio da tela.' },
+    { id: 'atacar', texto: 'Na aba “📜 Fichas”, coloque um personagem na mesa. Toque no token dele, em “⚔️ Atacar”, escolha a arma, o alvo e ataque.' },
     { id: 'fechar', texto: 'Mestre: no fim, toque em “Encerrar sessão”.' },
   ],
 }

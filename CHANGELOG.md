@@ -2,6 +2,12 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.17.0 — Tutoriais práticos (2026-11-10)
+- Tutoriais práticos (/tutorial): 5 lições com missões que se marcam sozinhas: rolar dados, árvore de habilidades, rolagem personalizada, retrato e capa, mesa virtual.
+- Campo de treino dentro do tutorial: dá para rolar dados, montar e liberar uma árvore e criar uma regra de rolagem sem mexer nas suas fichas.
+- Barra de progresso e “lição concluída” com atalho para a próxima. O progresso fica guardado neste navegador.
+- Atalhos: botão “🎓 Tutoriais práticos” no Guia e no menu da Central, e “Praticar no tutorial” nos tópicos do Guia.
+
 ## v0.16.1 — Dado 3D mostra o número certo (2026-11-10)
 - Dados 3D agora caem exatamente no número sorteado: a face de cima do dado é a mesma do resultado (antes o 3D rolava por conta própria e podia mostrar outro número).
 - O cartão com o total aparece quando os dados param de rolar.

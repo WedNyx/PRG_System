@@ -20,7 +20,7 @@ import TocadorMesa from './TocadorMesa'
 import type { EstadoMusica } from '@/lib/nuvem/musica'
 import RecorteImagem from './RecorteImagem'
 import { btn, input, msg } from './estilos'
-import { CartaoAtaque, ConfigCombate, JanelaAtaque, PainelFichas, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque } from './Combate'
+import { CartaoAtaque, ConfigCombate, JanelaAtaque, PainelFichas, PrepararCombate, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type FichaMesa } from './Combate'
 
 type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean }
 type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; dono_id: string | null; ficha_id: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number }
@@ -173,6 +173,17 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   // Fichas da campanha (aba Fichas e ataques): recarrega quando a mesa muda de tokens/eventos.
   const { fichas: fichasMesa, carregar: carregarFichas } = useFichasMesa(campanhaId, e ? `${e.tokens.length}:${e.eventos.at(-1)?.id ?? 0}` : 0)
 
+  // Quando chega a vez de um token meu, avisa (uma vez por turno).
+  const avisoVez = useRef('')
+  useEffect(() => {
+    const v = e?.mesa?.iniciativa?.[e.mesa.turno]
+    const chave = v ? `${v.id}:${e?.mesa?.rodada}` : ''
+    if (!v?.tokenId || chave === avisoVez.current) return
+    avisoVez.current = chave
+    const t = e?.tokens.find(x => x.id === v.tokenId)
+    if (t && t.dono_id === e?.eu && e?.campanha.meuPapel !== 'espectador') toast(`⚔️ É a sua vez, ${t.nome}!`, { description: 'Mova o token e use “Sua vez: atacar”.' })
+  }, [e])
+
   const nomes = useMemo(() => Object.fromEntries((e?.membros ?? []).map(m => [m.aventureiro_id, m.aventureiro?.apelido ?? '?'])), [e?.membros])
   if (!e && fechada) return <main className="fundo-tema flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center text-[#e8dff7]">
     <p className="text-5xl" aria-hidden="true">🌙</p>
@@ -197,6 +208,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     setAtaque({ atacante: tokenId, fonte: c?.ataques[0] ? chaveFonte(c.ataques[0]) : 'livre', teste: c?.testePadrao ?? '', dano: '', bonus: '', defesa: '', alvo: null, mirando: false })
   }
   const vez = e.mesa?.iniciativa?.[e.mesa.turno]
+  const minhaVez = !espectador && vez?.tokenId ? e.tokens.find(t => t.id === vez.tokenId && t.dono_id === e.eu) ?? null : null
   const salvarCamadas = (camadas: Camada[]) => cena && acao({ acao: 'cena_editar', cenaId: cena.id, camadas }).catch(() => {})
 
   /** Solta o token: aparece na hora para mim e para os outros; o servidor confirma em seguida. */
@@ -231,6 +243,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       <Link href="/central" className="inline-flex items-center gap-1 text-sm text-[#b99bff] hover:underline"><ArrowLeft size={16} /> Início</Link>
       <h1 className="min-w-0 flex-1 truncate font-bold">🗺️ {e.campanha.nome}{cena ? ' · ' + cena.nome : ''}</h1>
       {vez && <span className="hidden rounded-full bg-[#34294f] px-3 py-1 text-xs sm:inline">⚔️ Vez de <strong>{vez.nome}</strong> · rodada {e.mesa.rodada}</span>}
+      {minhaVez && <button type="button" onClick={() => iniciarAtaque(minhaVez.id)} className="prg-sua-vez rounded-full bg-gradient-to-r from-[#b91c1c] to-[#7c3aed] px-3 py-1 text-xs font-bold">⚔️ Sua vez: atacar</button>}
       {travada && <span className="rounded-full bg-[#4b253a] px-2 py-1 text-xs" title="O mestre travou os tokens">🔒 Tokens travados</span>}
       {espectador && <span className="rounded-full bg-[#1f3a2c] px-2 py-1 text-xs text-emerald-200" title="Você está assistindo">👁️ Espectador</span>}
       {admin && <button type="button" onClick={() => void alternarSessao()} className={'rounded-full px-3 py-1 text-xs font-semibold ' + (sessaoAberta ? 'bg-[#4b253a] text-red-100 hover:bg-[#5e2d48]' : 'bg-emerald-700 text-white hover:bg-emerald-600')}>
@@ -265,6 +278,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           onNevoa={(celulas, revelar) => void acao({ acao: 'nevoa', cenaId: cena.id, celulas, revelar }).catch(() => {})}
           onPing={(x, y) => { const p = { id: crypto.randomUUID(), x, y, autor: nomes[e.eu] ?? '' }; setPings(s => [...s, p]); setTimeout(() => setPings(s => s.filter(q => q.id !== p.id)), 2500); void canal.current?.send({ type: 'broadcast', event: 'ping', payload: p }) }}
           onTokenClick={espectador ? () => {} : id => { if (ataque?.mirando) { if (id !== ataque.atacante) setAtaque({ ...ataque, alvo: id, mirando: false }) } else setTokenAberto(id) }}
+          vez={vez?.tokenId ?? null}
           alcance={ataque ? { tokenId: ataque.atacante, metros: fichaDoToken(ataque.atacante)?.combate?.ataques.find(a => chaveFonte(a) === ataque.fonte)?.alcance ?? null, alvo: ataque.alvo } : null}
           onDesenhar={desenhar}
           onArrastando={(id, x, y) => aoVivo('token:' + id, 60, 'token', { id, x, y })}
@@ -286,7 +300,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           {aba === 'chat' && <Chat e={e} nomes={nomes} papelDe={papelDe} admin={admin} espectador={espectador} acao={acao} destacar={destacar} abrirHistorico={() => setHistorico(true)} />}
           {aba === 'fichas' && <PainelFichas fichas={fichasMesa} carregar={() => void carregarFichas()} tokens={e.tokens} admin={admin} cenaId={cena?.id ?? null} acao={acao} atacarCom={iniciarAtaque} />}
           {aba === 'tokens' && <PainelTokens e={e} admin={admin} acao={acao} campanhaId={campanhaId} abrir={setTokenAberto} />}
-          {aba === 'iniciativa' && <PainelIniciativa e={e} admin={admin} acao={acao} />}
+          {aba === 'iniciativa' && <PainelIniciativa e={e} admin={admin} acao={acao} fichas={fichasMesa} atacar={iniciarAtaque} />}
           {aba === 'musica' && <PainelMusica campanhaId={campanhaId} eu={e.eu} admin={admin} espectador={espectador} tocando={e.musica} aoMudar={avisarMudanca} />}
           {aba === 'campanha' && <PainelCampanha campanhaId={campanhaId} e={e} admin={admin} />}
           {aba === 'mestre' && admin && <><ConfigCombate acerto={e.combate?.acerto ?? 'mestre'} acao={acao} /><div className="h-3" /><PainelMestre e={e} acao={acao} campanhaId={campanhaId} setModo={setModo} /></>}
@@ -548,30 +562,39 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
   </div>
 }
 
-function PainelIniciativa({ e, admin, acao }: { e: Estado; admin: boolean; acao: Acao }) {
+function PainelIniciativa({ e, admin, acao, fichas, atacar }: { e: Estado; admin: boolean; acao: Acao; fichas: FichaMesa[] | null; atacar: (tokenId: string) => void }) {
   const lista = e.mesa?.iniciativa ?? [], turno = e.mesa?.turno ?? 0, rodada = e.mesa?.rodada ?? 1
   const [nome, setNome] = useState(''), [valor, setValor] = useState('')
+  const [preparando, setPreparando] = useState(false)
   const salvar = (iniciativa: Iniciativa[], t = turno, r = rodada) => acao({ acao: 'iniciativa', iniciativa, turno: t, rodada: r }).catch(() => {})
-  const proximo = () => { if (!lista.length) return; const n = turno + 1; void salvar(lista, n >= lista.length ? 0 : n, n >= lista.length ? rodada + 1 : rodada) }
-  const anterior = () => { if (!lista.length) return; const n = turno - 1; void salvar(lista, n < 0 ? lista.length - 1 : n, n < 0 ? Math.max(1, rodada - 1) : rodada) }
+  const passar = (direcao: 1 | -1) => { if (lista.length) void acao({ acao: 'turno', direcao }).catch(() => {}) }
+  const tokenDe = (x: Iniciativa) => x.tokenId ? e.tokens.find(t => t.id === x.tokenId) : undefined
   return <div className="space-y-3">
-    <p className="text-sm">Rodada <strong>{rodada}</strong></p>
-    <ol className="space-y-1">{lista.map((x, i) => <li key={x.id} className={'flex items-center gap-2 rounded-lg p-2 text-sm ' + (i === turno ? 'bg-[#5b4380] font-semibold' : 'bg-[#1e1a30]')}>
-      <span className="w-8 text-center tabular-nums">{x.valor}</span><span className="flex-1 truncate">{x.nome}</span>{i === turno && '⚔️'}
-      {admin && <button type="button" aria-label={'Remover ' + x.nome} onClick={() => salvar(lista.filter(y => y.id !== x.id))} className="rounded p-1 hover:bg-[#4b253a]"><X size={14} /></button>}
-    </li>)}</ol>
-    {lista.length === 0 && <p className="text-sm text-[#b4aeca]">Ninguém na iniciativa.</p>}
+    {admin && <div className="flex flex-wrap gap-2">
+      <button type="button" onClick={() => setPreparando(true)} className="flex-1 rounded-xl bg-gradient-to-r from-[#b91c1c] to-[#7c3aed] px-3 py-2.5 font-bold shadow-[0_0_14px_#b91c1c44]">⚔️ {lista.length ? 'Preparar de novo' : 'Preparar combate'}</button>
+      {lista.length > 0 && <button type="button" onClick={() => { if (confirm('Encerrar o combate e limpar a ordem de turnos?')) void acao({ acao: 'combate_encerrar' }).catch(() => {}) }} className={btn}>🏳️ Encerrar</button>}
+    </div>}
+    {lista.length > 0 && <p className="text-sm">Rodada <strong>{rodada}</strong> · vez de <strong className="text-amber-200">{lista[turno]?.nome}</strong></p>}
+    <ol className="space-y-1">{lista.map((x, i) => { const t = tokenDe(x), minha = !!t && t.dono_id === e.eu
+      return <li key={x.id} className={'flex items-center gap-2 rounded-lg p-2 text-sm ' + (i === turno ? 'bg-gradient-to-r from-[#5b4380] to-[#7c2d4a] font-semibold ring-1 ring-amber-300/60' : 'bg-[#1e1a30]')}>
+        <span className="w-8 text-center tabular-nums">{x.valor}</span>
+        {t && <span aria-hidden className="h-6 w-6 shrink-0 rounded-full border border-black/40 bg-cover bg-center" style={{ backgroundColor: t.cor, backgroundImage: t.imagem_url ? `url("${t.imagem_url}")` : undefined }} />}
+        <span className="min-w-0 flex-1 truncate">{x.nome}{t?.hp_max ? <span className="ml-1 text-[11px] font-normal text-[#c4b6d4]">❤️ {t.hp_atual ?? 0}/{t.hp_max}</span> : null}</span>
+        {i === turno && <>⚔️{(admin || minha) && t && <button type="button" onClick={() => atacar(t.id)} className="rounded-md bg-[#b91c1c] px-2 py-0.5 text-[11px] font-semibold text-white">Atacar</button>}</>}
+        {admin && <button type="button" aria-label={'Remover ' + x.nome} onClick={() => salvar(lista.filter(y => y.id !== x.id), Math.min(turno, Math.max(0, lista.length - 2)))} className="rounded p-1 hover:bg-[#4b253a]"><X size={14} /></button>}
+      </li> })}</ol>
+    {lista.length === 0 && <p className="text-sm text-[#b4aeca]">{admin ? 'Ninguém na iniciativa. Toque em “Preparar combate” para rolar a iniciativa de todos os tokens.' : 'Ainda não há combate.'}</p>}
     {admin && <>
-      <div className="flex gap-2"><button type="button" onClick={anterior} className={btn}><ChevronLeft size={14} /> Anterior</button><button type="button" onClick={proximo} className={btn}>Próximo <ChevronRight size={14} /></button>
-        <button type="button" onClick={() => salvar([], 0, 1)} className={btn + ' ml-auto'}><Trash2 size={14} /> Limpar</button></div>
-      <form onSubmit={x => { x.preventDefault(); if (!nome.trim()) return; void salvar([...lista, { id: crypto.randomUUID(), nome, valor: Number(valor) || 0 }]); setNome(''); setValor('') }} className="flex gap-2">
-        <input aria-label="Nome" value={nome} onChange={x => setNome(x.target.value)} placeholder="Nome" className={input} />
-        <input aria-label="Valor" value={valor} onChange={x => setValor(x.target.value)} inputMode="numeric" placeholder="Valor" className={input + ' w-20'} />
-        <button type="submit" aria-label="Adicionar" className={btn}><Plus size={14} /></button></form>
-      <button type="button" className={btn} onClick={() => salvar([...lista, ...e.tokens.filter(t => !lista.some(l => l.tokenId === t.id)).map(t => ({ id: crypto.randomUUID(), nome: t.nome, valor: 1 + Math.floor(Math.random() * 20), tokenId: t.id }))])}>
-        <Dices size={14} /> Adicionar todos os tokens (rola 1d20)</button>
-      <p className="text-xs text-[#b4aeca]">Some o bônus de iniciativa de cada um e ajuste o valor se precisar.</p>
+      {lista.length > 0 && <div className="flex gap-2"><button type="button" onClick={() => passar(-1)} className={btn}><ChevronLeft size={14} /> Anterior</button>
+        <button type="button" onClick={() => passar(1)} className={'flex-1 justify-center rounded-lg bg-[#5b4380] px-3 py-2 text-sm font-semibold hover:bg-[#6b5190] inline-flex items-center gap-1'}>Próximo turno <ChevronRight size={14} /></button></div>}
+      <details className="text-sm"><summary className="cursor-pointer text-xs text-[#c7a8ff]">Adicionar alguém à mão</summary>
+        <form onSubmit={x => { x.preventDefault(); if (!nome.trim()) return; void salvar([...lista, { id: crypto.randomUUID(), nome, valor: Number(valor) || 0 }]); setNome(''); setValor('') }} className="mt-2 flex gap-2">
+          <input aria-label="Nome" value={nome} onChange={x => setNome(x.target.value)} placeholder="Nome" className={input} />
+          <input aria-label="Valor" value={valor} onChange={x => setValor(x.target.value)} inputMode="numeric" placeholder="Valor" className={input + ' w-20'} />
+          <button type="submit" aria-label="Adicionar" className={btn}><Plus size={14} /></button></form>
+      </details>
     </>}
+    {preparando && <PrepararCombate tokens={e.tokens} fichas={fichas} acao={acao} fechar={() => setPreparando(false)} />}
   </div>
 }
 

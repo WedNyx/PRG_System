@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { acertou, aplicarNaVida, distancia, gastarCusto, regraDeAtaque, resumoCombate } from './combate'
+import { acertou, aplicarNaVida, distancia, gastarCusto, ordenarIniciativa, regraDeAtaque, regraDeIniciativa, resumoCombate } from './combate'
 import { sistemaPorId } from './catalogo'
 import type { Sistema } from './tipos'
 
@@ -40,5 +40,16 @@ describe('combate na mesa', () => {
     expect(aplicarNaVida({ recursos: { pv: { atual: 9 } } }, 'pv', -10, 12)).toEqual({ recursos: { pv: { atual: 12 } } })
     expect(gastarCusto({ recursos: { pm: { atual: 2 } } }, 'pm', 3)).toBeNull()
     expect(gastarCusto({ recursos: { pm: { atual: 5 } } }, 'pm', 3)).toEqual({ recursos: { pm: { atual: 2 } } })
+  })
+  it('iniciativa: bônus da ficha, regra do sistema e ordem', () => {
+    expect(resumoCombate(dnd, { atributos: { DES: 16 } }).iniciativa).toBe(3)
+    const ordem = sistemaPorId('ordem-paranormal') ?? sistemaPorId('tormenta20')
+    if (ordem) expect(typeof resumoCombate(ordem, {}).iniciativa).toBe('number')
+    expect(regraDeIniciativa(dnd, 3)).toBe('1d20+3')
+    expect(regraDeIniciativa({ ...dnd, rolagem: 'personalizada', regraRolagem: { nome: 'x', formula: 'VALORd6' } } as Sistema, 2)).toBe('2d6')
+    const l = ordenarIniciativa([
+      { tokenId: 'a', nome: 'A', valor: 12, bonus: 1, dados: [] }, { tokenId: 'b', nome: 'B', valor: 18, bonus: 0, dados: [] },
+      { tokenId: 'c', nome: 'C', valor: 12, bonus: 4, dados: [] }])
+    expect(l.map(x => x.tokenId)).toEqual(['b', 'c', 'a'])
   })
 })

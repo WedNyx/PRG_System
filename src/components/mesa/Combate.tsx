@@ -172,3 +172,50 @@ export function ConfigCombate({ acerto, acao }: { acerto: 'automatico' | 'mestre
     </div>
   </section>
 }
+
+type TokenPrep = TokenBase & { imagem_url: string | null; cor: string; npc: boolean; visivel: boolean; hp_atual: number | null; hp_max: number | null }
+/** Preparar combate: escolher quem luta, conferir o bônus de iniciativa e rolar para todos de uma vez. */
+export function PrepararCombate({ tokens, fichas, acao, fechar }: { tokens: TokenPrep[]; fichas: FichaMesa[] | null; acao: Acao; fechar: () => void }) {
+  const [sel, setSel] = useState<Record<string, boolean>>(() => Object.fromEntries(tokens.map(t => [t.id, t.visivel])))
+  const [bonus, setBonus] = useState<Record<string, string>>({})
+  const [enviando, setEnviando] = useState(false)
+  const iniDaFicha = (t: TokenPrep) => t.ficha_id ? fichas?.find(f => f.id === t.ficha_id)?.combate?.iniciativa ?? null : null
+  const marcar = (fn: (t: TokenPrep) => boolean) => setSel(Object.fromEntries(tokens.map(t => [t.id, fn(t)])))
+  const escolhidos = tokens.filter(t => sel[t.id])
+  async function comecar() {
+    setEnviando(true)
+    try {
+      const r = await acao({ acao: 'combate_preparar', tokens: escolhidos.map(t => ({ tokenId: t.id, ...(bonus[t.id]?.trim() ? { bonus: Number(bonus[t.id]) || 0 } : {}) })) })
+      const ordem = (r.rolagens as { nome: string; valor: number }[] | undefined) ?? []
+      toast.success('⚔️ Combate começou!', { description: ordem.map((o, i) => `${i + 1}. ${o.nome} (${o.valor})`).join(' · ') })
+      fechar()
+    } catch { /* aviso já aparece */ } finally { setEnviando(false) }
+  }
+  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="Preparar combate" onClick={fechar}>
+    <div className="flex max-h-[90vh] w-full max-w-md flex-col rounded-2xl border border-[#62527e] bg-[#19172c] p-4 text-sm" onClick={x => x.stopPropagation()}>
+      <div className="flex items-center gap-2"><Swords size={18} className="text-[#f2a9c3]" /><h2 className="flex-1 font-bold">Preparar combate</h2>
+        <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-[#34294f]"><X size={18} /></button></div>
+      <p className="mt-1 text-xs text-[#b4aeca]">Marque quem entra na luta. A iniciativa é rolada para todos de uma vez, com o bônus da ficha (ou o que você escrever).</p>
+      <div className="mt-2 flex flex-wrap gap-1">
+        {([['Todos', () => true], ['Jogadores', (t: TokenPrep) => !t.npc && !!t.dono_id], ['NPCs', (t: TokenPrep) => t.npc || !t.dono_id], ['Ninguém', () => false]] as [string, (t: TokenPrep) => boolean][]).map(([n, fn]) =>
+          <button key={n} type="button" onClick={() => marcar(fn)} className="rounded-full bg-[#1e1a30] px-3 py-1 text-xs text-[#c4b6d4] hover:bg-[#2b2140]">{n}</button>)}
+      </div>
+      <ul className="mt-3 min-h-0 flex-1 space-y-1.5 overflow-y-auto">{tokens.map(t => {
+        const ini = iniDaFicha(t)
+        return <li key={t.id} className={'flex items-center gap-2 rounded-xl border p-2 ' + (sel[t.id] ? 'border-[#8b6cba] bg-[#241c38]' : 'border-[#3d3152] bg-[#151123] opacity-70')}>
+          <input type="checkbox" checked={!!sel[t.id]} onChange={x => setSel(s => ({ ...s, [t.id]: x.target.checked }))} aria-label={'Incluir ' + t.nome} className="h-4 w-4 accent-[#b99bff]" />
+          <span aria-hidden className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/40 bg-cover bg-center text-xs font-bold text-[#0b0a14]"
+            style={{ backgroundColor: t.cor, backgroundImage: t.imagem_url ? `url("${t.imagem_url}")` : undefined }}>{t.imagem_url ? '' : t.nome[0]?.toUpperCase()}</span>
+          <span className="min-w-0 flex-1"><span className="block truncate font-semibold">{t.nome}</span>
+            <span className="text-[11px] text-[#a99bbb]">{t.npc || !t.dono_id ? '👹 NPC' : '🛡️ Jogador'}{t.hp_max ? ` · ❤️ ${t.hp_atual ?? 0}/${t.hp_max}` : ''}{!t.visivel ? ' · 🙈 escondido' : ''}</span></span>
+          <label className="text-[11px] text-[#c4b6d4]">Bônus<input value={bonus[t.id] ?? ''} onChange={x => setBonus(b => ({ ...b, [t.id]: x.target.value }))} inputMode="numeric"
+            placeholder={ini !== null ? (ini >= 0 ? '+' + ini : String(ini)) : '+0'} aria-label={'Bônus de iniciativa de ' + t.nome} className={input + ' mt-0.5 !w-16 !p-1.5 text-center'} /></label>
+        </li>
+      })}</ul>
+      {tokens.length === 0 && <p className="mt-3 text-center text-[#b4aeca]">Não há tokens nesta cena. Coloque as fichas na mesa pela aba “Fichas”.</p>}
+      <button type="button" disabled={!escolhidos.length || enviando} onClick={() => void comecar()}
+        className="mt-3 w-full rounded-xl bg-gradient-to-r from-[#b91c1c] to-[#7c3aed] p-3 font-bold shadow-[0_0_18px_#b91c1c55] disabled:opacity-40 disabled:shadow-none">
+        {enviando ? 'Rolando…' : `🎲 Rolar iniciativa e começar (${escolhidos.length})`}</button>
+    </div>
+  </div>
+}

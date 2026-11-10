@@ -4,7 +4,7 @@ import { isUuid, podeAdministrar, type Papel } from '@/lib/nuvem/validacao'
 import { aplicarNevoa, corValida, filtroVisibilidade, normalizarCamadas, normalizarCondicoes, normalizarIniciativa, normalizarPontos, podeMoverToken, todasCelulas, urlValida, type Movimento, type Visibilidade } from '@/lib/nuvem/mesa'
 import { rolarExpressao } from '@/lib/dice'
 import { aplicarDano, fichaDeCombate, lerRegrasCombate, mudarFicha, tokenCombate, vidaDasFichas } from '@/lib/nuvem/combateServidor'
-import { acertou, ALCANCE_CORPO, distancia, gastarCusto, regraDeAtaque, rolarDano, resumoCombate } from '@/lib/sistemas/combate'
+import { acertou, ALCANCE_CORPO, distancia, gastarCusto, ordenarIniciativa, regraDeAtaque, regraDeIniciativa, rolarDano, resumoCombate, type EntradaOrdem } from '@/lib/sistemas/combate'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { ehV8 } from '@/lib/nuvem/categorias'
 
@@ -39,6 +39,11 @@ async function tokenDaCampanha(cid: string, tokenId: unknown): Promise<Token> {
   const [t] = await rest<Token[]>(`prg_tokens?select=id,cena_id,ficha_id,dono_id,visivel,npc,movimento&id=eq.${q(tokenId)}&campanha_id=eq.${q(cid)}`)
   if (!t) throw new ErroApi(404, 'Token não encontrado.')
   return t
+}
+/** Lê a ordem salva sem reordenar (a ordem da rodada é a que já está na mesa). */
+const normalizarIniciativaSemOrdenar = (v: unknown) => {
+  const l = normalizarIniciativa(v), ids = Array.isArray(v) ? (v as { id?: unknown }[]).map(x => x?.id) : []
+  return [...l].sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id))
 }
 const inteiro = (v: unknown, min: number, max: number) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : null }
 
@@ -347,6 +352,46 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         campanha_id: cid, autor_id: eu, tipo: 'ataque', visibilidade: 'publica', personagem: at.nome.slice(0, 90), texto: texto.slice(0, 1000),
         expressao: rolagem.expressao, resultados: rolagem.resultados.slice(0, 100), total: rolagem.total, dados }) })
       return ok({ evento: ev }, 201)
+    }
+    case 'combate_preparar': {
+      exigirAdmin(admin)
+      // Rola a iniciativa de cada token escolhido (bônus da ficha, ou o informado pelo mestre) e começa o combate.
+      const pedidos = (Array.isArray(b.tokens) ? b.tokens : []).slice(0, 60) as { tokenId?: unknown; bonus?: unknown }[]
+      if (!pedidos.length) throw new ErroApi(400, 'Escolha quem entra no combate.')
+      const ordem: EntradaOrdem[] = []
+      for (const ped of pedidos) {
+        const t = await tokenCombate(cid, ped.tokenId)
+        if (ordem.some(o => o.tokenId === t.id)) continue
+        const fc = await fichaDeCombate(t.ficha_id)
+        const bonus = ped.bonus !== undefined && ped.bonus !== null && ped.bonus !== '' ? (inteiro(ped.bonus, -50, 100) ?? 0) : (fc?.r.iniciativa ?? 0)
+        const r = rolarExpressao(regraDeIniciativa(fc?.s, bonus)) ?? rolarExpressao('1d20')!
+        ordem.push({ tokenId: t.id, nome: t.nome, valor: r.total, bonus, dados: r.resultados.slice(0, 20) })
+      }
+      const ord = ordenarIniciativa(ordem)
+      const iniciativa = ord.map(o => ({ id: crypto.randomUUID(), nome: o.nome, valor: o.valor, tokenId: o.tokenId }))
+      await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify({ mesa: { iniciativa, turno: 0, rodada: 1 } }) })
+      await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica',
+        texto: ('⚔️ O combate começou! Ordem: ' + ord.map((o, i) => `${i + 1}. ${o.nome} (${o.valor})`).join(' · ') + `\n▶️ Vez de ${ord[0].nome}.`).slice(0, 1000) }) }).catch(() => {})
+      return ok({ mesa: { iniciativa, turno: 0, rodada: 1 }, rolagens: ord })
+    }
+    case 'turno': {
+      exigirAdmin(admin)
+      const [c] = await rest<{ mesa: { iniciativa?: unknown; turno?: number; rodada?: number } }[]>(`prg_campanhas?select=mesa&id=eq.${q(cid)}`)
+      const lista = normalizarIniciativaSemOrdenar(c?.mesa?.iniciativa)
+      if (!lista.length) throw new ErroApi(400, 'Ninguém na iniciativa.')
+      let turno = Math.min(Math.max(0, Number(c.mesa.turno) || 0), lista.length - 1), rodada = Math.max(1, Number(c.mesa.rodada) || 1)
+      if (b.direcao === -1) { turno--; if (turno < 0) { turno = lista.length - 1; rodada = Math.max(1, rodada - 1) } }
+      else { turno++; if (turno >= lista.length) { turno = 0; rodada++ } }
+      await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify({ mesa: { iniciativa: lista, turno, rodada } }) })
+      if (b.direcao !== -1) await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica',
+        texto: `▶️ Vez de ${lista[turno].nome}${turno === 0 ? ` · rodada ${rodada}` : ''}.` }) }).catch(() => {})
+      return ok({ mesa: { iniciativa: lista, turno, rodada } })
+    }
+    case 'combate_encerrar': {
+      exigirAdmin(admin)
+      await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify({ mesa: { iniciativa: [], turno: 0, rodada: 1 } }) })
+      await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica', texto: '🏳️ Fim do combate.' }) }).catch(() => {})
+      return ok({ ok: true })
     }
     case 'ataque_decidir': {
       exigirAdmin(admin)

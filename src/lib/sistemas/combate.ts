@@ -20,6 +20,8 @@ export type ResumoCombate = {
   testes: Teste[]
   /** Teste sugerido para atacar (perícia de luta/pontaria, ou o melhor atributo). */
   testePadrao: string | null
+  /** Bônus de iniciativa (campo/valor/perícia “Iniciativa”, ou Destreza/Agilidade/Reflexos). */
+  iniciativa: number
   recursos: { id: string; nome: string; atual: number; max: number | null }[]
 }
 
@@ -55,7 +57,16 @@ export function resumoCombate(s: Sistema, bruto: unknown): ResumoCombate {
   // Sugestão: o maior entre as perícias de luta/pontaria e os atributos (empate: a perícia).
   const candidatos = testes.filter(t => !t.id.startsWith('pericia:') || ATAQUE.test(t.nome))
   const melhor = candidatos.sort((a, b) => b.valor - a.valor || (a.id.startsWith('pericia:') ? -1 : 1))[0]
-  return { vida, defesa, ataques, testes, testePadrao: melhor?.id ?? null, recursos }
+  // Iniciativa: algo chamado “iniciativa” na ficha; senão o atributo de agilidade.
+  let iniciativa = 0
+  const derIni = s.derivados.find(x => /iniciativa/i.test(x.id + x.nome)), perIni = (s.pericias?.lista ?? []).find(x => /iniciativa/i.test(x.id + x.nome))
+  const campoIni = s.campos.find(x => x.tipo === 'numero' && /iniciativa/i.test(x.id + x.nome))
+  const atrIni = s.atributos.find(x => /^(DES|DEX|AGI|REF)/i.test(x.id) || /destreza|agilidade|reflexo/i.test(x.nome))
+  if (derIni && typeof c.derivados[derIni.id] === 'number') iniciativa = c.derivados[derIni.id] as number
+  else if (perIni) iniciativa = Number(c.pericias[perIni.id] ?? 0) || 0
+  else if (campoIni) iniciativa = Number(d.campos[campoIni.id]) || 0
+  else if (atrIni) iniciativa = testes.find(t => t.id === 'atributo:' + atrIni.id)?.valor ?? 0
+  return { vida, defesa, ataques, testes, testePadrao: melhor?.id ?? null, recursos, iniciativa }
 }
 
 export type RegraAtaque = { expressao: string; comparar: 'maior_igual' | 'menor_igual' | 'sucessos' }
@@ -103,4 +114,18 @@ export function gastarCusto(d: Record<string, unknown>, recurso: string, custo: 
   if (atual < custo) return null
   recursos[recurso] = { ...(recursos[recurso] ?? {}), atual: atual - custo }
   return { ...d, recursos }
+}
+
+/** Rolagem de iniciativa no sistema: d20 + bônus (regra própria nos sistemas personalizados). Maior começa. */
+export function regraDeIniciativa(s: Sistema | undefined, bonus: number): string {
+  const b = Math.round(bonus) || 0
+  if (s?.rolagem === 'personalizada' && s.regraRolagem) return montarRolagem(s.regraRolagem.formula, b)
+  if (s && (s.rolagem === 'd100' || s.id === 'brp')) return '1d100'
+  return '1d20' + (b >= 0 ? '+' + b : String(b))
+}
+
+export type EntradaOrdem = { tokenId: string; nome: string; valor: number; bonus: number; dados: number[] }
+/** Ordena a iniciativa: maior valor primeiro; empate → maior bônus; depois sorteio. */
+export function ordenarIniciativa(l: EntradaOrdem[], sorteio: () => number = Math.random): EntradaOrdem[] {
+  return l.map(e => ({ e, r: sorteio() })).sort((a, b) => b.e.valor - a.e.valor || b.e.bonus - a.e.bonus || a.r - b.r).map(x => x.e)
 }

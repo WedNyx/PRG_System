@@ -28,6 +28,7 @@ Simulam três aventureiros (mestre, jogador e intruso) contra um banco real.
    PRG_BASE=http://localhost:3000 node scripts/e2e/v15-arvore.mjs
    PRG_BASE=http://localhost:3000 node scripts/e2e/v16-rolagem-personalizada.mjs
    PRG_BASE=http://localhost:3000 node scripts/e2e/v18-combate.mjs   # migração 016
+   PRG_BASE=http://localhost:3000 node scripts/e2e/v19-preparar-combate.mjs
    ```
 Nunca rode contra o banco de produção: os testes criam campanhas e fichas.
 

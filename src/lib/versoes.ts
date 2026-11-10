@@ -6,6 +6,16 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.19.0', data: '2026-11-11', titulo: 'Preparar combate',
+    itens: [
+      'Preparar combate (aba Iniciativa → ⚔️ Preparar combate): marque quem luta (todos, só jogadores, só NPCs) e role a iniciativa de todos de uma vez, com o bônus da ficha (Destreza, Agilidade ou “Iniciativa”) ou o que o mestre escrever.',
+      'A ordem de turnos já vem organizada (maior primeiro; empate: maior bônus) e o chat anuncia o começo do combate e de quem é a vez.',
+      '“Próximo turno” passa a vez e conta as rodadas; “🏳️ Encerrar” termina o combate.',
+      'O token da vez ganha um anel dourado no mapa. O jogador recebe um aviso quando chega a vez dele e um botão “⚔️ Sua vez: atacar” no topo.',
+      'A lista de iniciativa mostra a imagem e a vida de cada um, com atalho para atacar na vez.',
+    ],
+  },
+  {
     versao: '0.18.0', data: '2026-11-11', titulo: 'Combate na mesa',
     itens: [
       'Combate na mesa: toque no seu token e em “⚔️ Atacar”, escolha a arma ou o poder da ficha, mire no alvo (o alcance aparece no mapa) e ataque. O ataque é rolado contra a Defesa do alvo e o dano aparece em seguida, com os dados no meio da tela.',

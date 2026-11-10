@@ -26,6 +26,8 @@ type Props = {
   onArrastando?: (id: string, x: number, y: number) => void; onTracando?: (id: string, pontos: number[]) => void
   /** Ataque: círculo de alcance em volta do atacante e alvo marcado. */
   alcance?: { tokenId: string; metros: number | null; alvo: string | null } | null
+  /** Token da vez no combate (ganha um anel dourado). */
+  vez?: string | null
 }
 
 const pts = (a: number[]) => { const r: string[] = []; for (let i = 0; i + 1 < a.length; i += 2) r.push(`${a[i]},${a[i + 1]}`); return r.join(' ') }
@@ -198,6 +200,8 @@ export default function MapaMesa(p: Props) {
                 style={{ backgroundColor: t.cor, backgroundImage: t.imagem_url ? `url(${t.imagem_url})` : undefined }}>
                 {morto ? '💀' : !t.imagem_url && t.nome[0]?.toUpperCase()}
               </div>
+              {p.vez === t.id && <><span aria-hidden className="prg-vez pointer-events-none absolute -inset-1.5 rounded-full border-[3px] border-amber-300" />
+                <span className="pointer-events-none absolute -left-2 -top-2 rounded-full bg-amber-400 px-1 text-[10px] font-bold text-[#1a1230] shadow" title="Vez deste token">⚔️</span></>}
               {!t.podeMover && <span className="pointer-events-none absolute -right-1 -top-1 text-[10px]" title="Travado">🔒</span>}
               {t.condicoes.length > 0 && <div className="pointer-events-none absolute -top-3 left-1/2 flex -translate-x-1/2 gap-px whitespace-nowrap rounded-full bg-black/70 px-1 text-[9px]">{t.condicoes.slice(0, 4).map(c => <span key={c}>{emojiCondicao[c] ?? '❓'}</span>)}</div>}
               {pct !== null && <div className="absolute -bottom-1.5 left-1 right-1 h-1.5 overflow-hidden rounded-full bg-black/80"><div className="h-full rounded-full" style={{ width: pct * 100 + '%', background: pct > 0.5 ? '#10b981' : pct > 0.25 ? '#f59e0b' : '#ef4444' }} /></div>}

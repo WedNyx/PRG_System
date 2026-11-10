@@ -2,6 +2,14 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.15.0 — Árvore de habilidades (2026-11-10)
+- Árvore de habilidades em todas as fichas (menu da ficha → 🌠 Árvore de habilidades): hexágonos ligados num céu estrelado, com custo em pontos e pré-requisitos.
+- Liberar um hexágono gasta pontos e acende o caminho; os que já podem ser liberados piscam a borda. “Devolver pontos” desfaz (se nenhum outro depender dele).
+- Efeitos automáticos: bônus (atributo, valor calculado, perícia ou máximo de recurso) e habilidades novas, com dados, custo de uso e descrição, que aparecem sozinhas em “Poderes e habilidades”.
+- “Montar árvore”: criar hexágonos, arrastar para organizar, ligar um ao outro e editar. Dá para começar com um exemplo pronto.
+- Recompensas do mestre agora podem dar pontos de habilidade, que vão direto para a árvore das fichas.
+- Nas campanhas, a árvore segue a regra da área “Habilidades” (livre, com aprovação ou só o mestre).
+
 ## v0.14.0 — Dados no centro e cartões com imagem (2026-11-10)
 - Dados 3D no meio da tela: os dados caem numa área central e, quando param, aparece um cartão com o total bem grande e cada dado que caiu (crítico em dourado, falha em vermelho). Toque para fechar.
 - Vale na mesa e também nas fichas: rolar um atributo, perícia, poder ou item mostra a rolagem no centro.

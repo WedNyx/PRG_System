@@ -10,6 +10,7 @@ import { enviarImagemNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 import GuiaSistema from '@/components/sistemas/GuiaSistema'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import { InventarioFicha, PoderesFicha } from './Inventario'
+import ArvoreHabilidades from './Arvore'
 import { GUIAS } from '@/lib/sistemas/guias'
 
 const card = 'rounded-2xl border border-[#55456e] bg-[#201a32] p-4 sm:p-5'
@@ -62,6 +63,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade e recursos', ok: true },
     { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? 'Atributos e perícias' : s.pericias.titulo ?? 'Perícias') : 'Atributos', sub: 'Testes e rolagens', ok: s.atributos.length > 0 || !!s.pericias },
     { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ok: true },
+    { id: 'arvore', icone: '🌠', nome: 'Árvore de habilidades', sub: 'Hexágonos, pontos e caminhos', ok: true },
     { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ok: true },
     { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ok: true },
     { id: 'guia', icone: '📖', nome: 'Guia de criação', sub: 'Passo a passo deste sistema', ok: !!GUIAS[s.id] },
@@ -181,6 +183,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       </div>)}
     </section>}
         </>}
+        {secao === 'arvore' && <ArvoreHabilidades s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={(x, r) => void rolarExpr(x, r)} />}
         {secao === 'habilidades' && <>
     <PoderesFicha {...propsInv} />
     {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-[#d3adf0]">Anotações livres</h3>}

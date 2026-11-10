@@ -19,7 +19,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
     biblioteca = bibIds.flatMap(x => { const l = linhas.find(y => y.id === x); const e = l && entradaDaBiblioteca(l); return e ? [e] : [] })
   }
   const r = validarRecompensa(b, biblioteca)
-  if (!r) throw new ErroApi(400, 'Informe XP, um item, um poder ou moedas.')
+  if (!r) throw new ErroApi(400, 'Informe XP, pontos de habilidade, um item, um poder ou moedas.')
   const ids = (Array.isArray(b.fichaIds) ? b.fichaIds : []).filter(isUuid).slice(0, 30)
   if (!ids.length) throw new ErroApi(400, 'Escolha quem recebe.')
   const nomes: string[] = []

@@ -41,6 +41,7 @@ function categoriaGenerica(caminho: string): Campo {
   // quantidade, equipado, usos gastos e carteira mudam no jogo (área de PV e recursos).
   if (caminho === 'itens') return 'equipamentos'
   if (caminho === 'poderes') return 'habilidades'
+  if (caminho === 'arvore') return 'habilidades'
   if (caminho === 'uso') return 'pv'
   if (caminho.startsWith('campos.')) {
     const k = caminho.slice(7)

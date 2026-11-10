@@ -55,6 +55,12 @@ export const GUIA: TopicoGuia[] = [
     dica: 'O mestre monta itens e poderes na “Biblioteca” (aba Diário da mesa) e entrega em “Recompensas”: eles chegam prontos na ficha.',
   },
   {
+    id: 'arvore', icone: '🌠', titulo: 'Árvore de habilidades',
+    resumo: 'Hexágonos ligados que o personagem libera com pontos, cada um com bônus ou habilidades novas.',
+    passos: ['Na ficha, abra “🌠 Árvore de habilidades”. Para começar rápido, toque em “Começar com um exemplo”.', 'Toque em “Montar árvore” para criar hexágonos: nome, descrição, custo em pontos, cor, o que precisa liberar antes e os efeitos automáticos (bônus ou habilidade nova com dados).', 'No modo montar, arraste os hexágonos para organizar. Para ligar, escolha um, toque em “Ligar” e depois no hexágono que depende dele.', 'Fora do modo montar, toque num hexágono e em “Liberar”: gasta os pontos, acende o caminho e a habilidade aparece em “Poderes e habilidades”.', 'Ganhou pontos? Use + no modo montar, ou o mestre entrega em “Recompensas” (campo 🌠 Pontos da árvore).'],
+    dica: 'Os hexágonos com a borda piscando já podem ser liberados. “Devolver pontos” desfaz, desde que nenhum outro dependa dele.',
+  },
+  {
     id: 'campanhas', icone: '🏰', titulo: 'Criar campanha e convidar o grupo', foto: 'campanha.jpg', legenda: 'Painel da campanha do mestre', quem: 'mestre',
     resumo: 'O mestre cria a campanha, gera um convite e aprova quem entra.',
     passos: ['Em “Campanhas”, toque em “Criar campanha”, dê um nome e escolha o sistema.', 'Dentro da campanha, toque em “🖼️ Colocar capa” para escolher a imagem do cartão.', 'Abra a campanha e toque em “Gerar convite (7 dias)”. Envie o link ou o código para o grupo.', 'Quem usar o convite aparece em pedidos: toque em “Aceitar”.', 'Em “Permissões por área da ficha”, escolha o que os jogadores podem mudar sozinhos e o que precisa da sua aprovação.'],

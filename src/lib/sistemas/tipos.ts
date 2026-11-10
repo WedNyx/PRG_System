@@ -66,4 +66,6 @@ export type DadosFicha = {
   itens?: unknown[]
   poderes?: unknown[]
   uso?: unknown
+  /** Árvore de habilidades (ver arvore.ts). */
+  arvore?: unknown
 }

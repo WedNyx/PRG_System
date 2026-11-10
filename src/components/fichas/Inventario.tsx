@@ -133,6 +133,7 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar }: Props
         <div className="flex flex-wrap items-center gap-2">
           <span className="min-w-0 flex-1 font-semibold">{tipo.icone} {p.nome}</span>
           <span className="rounded bg-[#2b2140] px-1.5 py-0.5 text-[10px] text-[#d6c8e8]">{tipo.nome}</span>
+          {p.id.startsWith('arv-') && <span className="rounded bg-[#3b2b57] px-1.5 py-0.5 text-[10px] text-amber-200" title="Vem de um hexágono liberado; muda na Árvore de habilidades">🌠 Árvore</span>}
         </div>
         <p className="mt-1 text-xs text-[#c9bcd9]">
           {[p.recurso && p.custo ? `Custo: ${p.custo} ${nomeRecurso[p.recurso] ?? p.recurso}` : '', p.usosMax ? `Usos: ${p.usosMax - gastos}/${p.usosMax}` : '', p.expressao ? `Rolagem: ${p.expressao}` : ''].filter(Boolean).join(' · ')}
@@ -141,7 +142,7 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar }: Props
         <div className="mt-2 flex flex-wrap gap-1.5">
           <button type="button" className={botao} disabled={somenteLeitura || !ok} onClick={() => void usar(p)}><Sparkles size={13} /> Usar</button>
           {p.expressao && <button type="button" className={botao} onClick={() => void rolar(p.expressao!, p.nome)}><Dice5 size={13} /> Só rolar</button>}
-          {!somenteLeitura && <><button type="button" className={botao} onClick={() => setEditando(p)} aria-label={'Editar ' + p.nome}><Pencil size={13} /></button>
+          {!somenteLeitura && !p.id.startsWith('arv-') && <><button type="button" className={botao} onClick={() => setEditando(p)} aria-label={'Editar ' + p.nome}><Pencil size={13} /></button>
             <button type="button" className={botao} onClick={() => remover(p)} aria-label={'Remover ' + p.nome}><Trash2 size={13} /></button></>}
         </div>
       </li>

@@ -6,6 +6,15 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.12.1', data: '2026-11-09', titulo: 'Importar sistemas e créditos do criador',
+    itens: [
+      'Importar sistema por arquivo: baixe o modelo de texto, escreva o sistema no bloco de notas (atributos, fórmulas, perícias, recursos…) e importe no construtor. Linhas que ele não entender aparecem com o número da linha.',
+      'Exportar o sistema em .txt ou .json (para guardar, editar fora ou mandar para alguém) e importar de volta.',
+      '“✍️ Criado por” com o nome de quem fez o sistema, em destaque na lista de sistemas, na escolha de sistema e dentro das fichas.',
+      'Lunethernnyis (ficha automática e Ficha V8) saiu da plataforma por enquanto, para revisão do autor. Fichas que já existiam continuam abrindo normalmente; não dá para criar novas.',
+    ],
+  },
+  {
     versao: '0.12.0', data: '2026-11-09', titulo: 'Construtor de sistemas autorais',
     itens: [
       'Construtor de sistemas autorais: monte seu próprio RPG com identidade, atributos, valores calculados por fórmula, perícias (por graus ou por número), recursos, espaços de texto, limites de criação, carga e lembretes de regras.',

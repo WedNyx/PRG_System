@@ -45,7 +45,10 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   const erros: string[] = [], avisos: string[] = []
   const nome = txt(e.nome, 80)
   if (nome.length < 2) erros.push('Dê um nome ao sistema (pelo menos 2 letras).')
-  const usados = new Set<string>()
+  // Cada grupo tem seus próprios nomes: campos/atributos/valores viram variáveis (não podem repetir entre si);
+  // perícias (per_/tot_), recursos e espaços de texto têm listas separadas.
+  const usadosVars = new Set<string>(), usadosPer = new Set<string>(), usadosRec = new Set<string>(), usadosListas = new Set<string>()
+  let usados = usadosVars
   const pegarId = (bruto: unknown, nomeItem: string, maiusculo = false) => {
     const id = typeof bruto === 'string' && ID_OK.test(bruto) && !usados.has(bruto) && !RESERVADO.test(bruto) ? bruto : idUnico(slug(nomeItem, maiusculo), usados)
     usados.add(id); return id
@@ -61,6 +64,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
     const min = num(a.min, -100, 1000, 0), max = Math.max(min, num(a.max, -100, 1000, 10))
     return [{ id: pegarId(a.id, n, true), nome: n, min, max, padrao: num(a.padrao, min, max, min) }]
   })
+  usados = usadosVars
   const derivados = lista(e.derivados, LIMITES.derivados).flatMap(d => {
     const n = txt(d.nome, LIMITES.nome); if (!n) return []
     const dica = txt(d.dica, 120)
@@ -77,6 +81,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
       return [{ id, nome: n, formula: txt(t.formula, LIMITES.formula) || '0', ...(Number(t.custo) ? { custo: num(t.custo, 0, 100, 0) } : {}) }]
     }) : undefined
     const idsAtr = new Set(atributos.map(a => a.id))
+    usados = usadosPer
     const listaP = lista(p.lista, LIMITES.pericias).flatMap(x => {
       const n = txt(x.nome, LIMITES.nome); if (!n) return []
       const atr = typeof x.atributo === 'string' ? x.atributo.split('/').filter(a => idsAtr.has(a)).slice(0, 2).join('/') : ''
@@ -86,12 +91,14 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
     if (modo === 'treino' && !treinos?.length) erros.push('Perícias por treino precisam de pelo menos um grau (ex.: Destreinado +0).')
     if (listaP.length) pericias = { titulo: txt(p.titulo, 40) || undefined, modo, lista: listaP, ...(treinos ? { treinos } : {}), total: txt(p.total, LIMITES.formula) || (modo === 'valor' ? 'VALOR' : 'MOD + TREINO') }
   }
+  usados = usadosRec
   const recursos = lista(e.recursos, LIMITES.recursos).flatMap(r => {
     const n = txt(r.nome, LIMITES.nome); if (!n) return []
     const formula = txt(r.formula, LIMITES.formula)
     const maxFixo = !formula && Number(r.maxFixo) > 0 ? num(r.maxFixo, 1, 99999, 1) : undefined
     return [{ id: pegarId(r.id, n), nome: n, ...(formula ? { formula } : {}), ...(maxFixo ? { maxFixo } : {}) }]
   })
+  usados = usadosListas
   const listas = lista(e.listas, LIMITES.listas).flatMap(l => {
     const n = txt(l.nome, LIMITES.nome); if (!n) return []
     return [{ id: pegarId(l.id, n), nome: n }]

@@ -19,7 +19,7 @@ export const POST = rota(async req => {
   const eu = await ator(req)
   const body = await lerJson(req, 600_000) as { dados?: unknown; sistema?: unknown }
   const sistema = body.sistema === undefined ? SISTEMA_V8 : body.sistema
-  if (!(await sistemaPermitido(sistema, eu))) throw new ErroApi(400, 'Sistema de RPG desconhecido.')
+  if (!(await sistemaPermitido(sistema, eu, body.dados !== undefined))) throw new ErroApi(400, 'Este sistema não está disponível para fichas novas.')
   const v = validarFichaDados(body.dados ?? (sistema === SISTEMA_V8 ? { version: 2, fields: {} } : { sistema, nome: '' }))
   if (!v.ok) throw new ErroApi(400, v.erro)
   const atuais = await rest<unknown[]>(`prg_fichas?select=id&dono_id=eq.${q(eu)}&limit=${MAX_FICHAS}`)

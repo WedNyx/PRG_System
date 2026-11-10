@@ -10,5 +10,5 @@ export const GET = rota<Ctx>(async (req, { params }) => {
   const eu = await ator(req)
   const l = await linhaAutoral(id)
   if (!l) throw new ErroApi(404, 'Sistema não encontrado.')
-  return ok({ sistema: { ...l.definicao, id }, uuid: l.id, publicado: l.publicado, meu: l.dono_id === eu })
+  return ok({ sistema: { ...l.definicao, id, autor: l.dono?.apelido ?? 'Alguém' }, uuid: l.id, publicado: l.publicado, meu: l.dono_id === eu })
 })

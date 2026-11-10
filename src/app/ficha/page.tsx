@@ -107,7 +107,7 @@ function Conteudo() {
   return <main className="min-h-screen fundo-tema text-[#f2ebff]">
     <header className="sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b border-[#373251] bg-[#19172c]/95 px-4 py-3 backdrop-blur">
       <Link href="/central" className="text-sm text-[#b99bff] hover:underline">← Início</Link>
-      <h1 className="min-w-0 flex-1 truncate font-bold">{sistema?.nome ?? 'Ficha'}</h1>
+      <h1 className="min-w-0 flex-1 truncate font-bold">{sistema?.nome ?? 'Ficha'}{sistema?.autor && <span className="block truncate text-xs font-normal text-[#ed9cd8]">✍️ Sistema criado por {sistema.autor}</span>}</h1>
       <span className="text-xs text-[#b4aeca]" aria-live="polite">{ROTULO[estado]}</span>
     </header>
     <div className="mx-auto max-w-5xl px-3 py-5 sm:px-6">

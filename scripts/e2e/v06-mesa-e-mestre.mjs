@@ -55,7 +55,9 @@ r=await call(M,'GET',`campanhas/${cid}/notas`); check('mestre vê as suas + a do
 r=await call(M,'POST',`campanhas/${cid}/notas`,{id:nj,titulo:'hack'}); check('não edita nota de outro', r.s===403, r)
 r=await call(X,'GET',`campanhas/${cid}/notas`); check('estranho não vê notas', r.s===404, r)
 // recompensas
-r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sistema:'lunethernnyis-v8',nome:'Lyra'}); const f1=r.d.ficha.id
+// v0.12.1: Ficha V8 não é mais criada do zero; uma V8 antiga (trazida do navegador) entra na campanha e continua recebendo recompensas.
+r=await call(J,'POST','fichas',{sistema:'lunethernnyis-v8',dados:{version:2,fields:{name:'Lyra'}}}); r=await call(J,'POST',`fichas/${r.d.ficha.id}/enviar`,{campanhaId:cid}); const f1=r.d.ficha.id
+await call(M,'POST',`campanhas/${cid}/fichas/${f1}`,{decisao:'aprovar'})
 r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sistema:'dnd5e-srd',nome:'Thorin'}); const f2=r.d.ficha.id
 r=await call(J,'POST',`campanhas/${cid}/recompensas`,{fichaIds:[f1],xp:100}); check('jogador não dá recompensa', r.s===403, r)
 r=await call(M,'POST',`campanhas/${cid}/recompensas`,{fichaIds:[f1,f2],xp:300,item:'Revólver',motivo:'Salvaram a vila'}); check('mestre recompensa 2 fichas', r.d.recompensados?.length===2, r)

@@ -6,7 +6,7 @@ import { BookOpen, Loader2, Pencil, Plus, Sparkles } from 'lucide-react'
 import { useSistemasAutorais } from '@/lib/sistemas/cliente'
 import { NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 import GuiaSistema from '@/components/sistemas/GuiaSistema'
-import { SISTEMAS, SISTEMA_V8 } from '@/lib/sistemas/catalogo'
+import { SISTEMAS_VISIVEIS } from '@/lib/sistemas/catalogo'
 import { ErroNuvem } from '@/lib/nuvem/cliente'
 import { criarEAbrirFicha, GRUPOS_SISTEMA, type GrupoSistema } from '@/lib/sistemas/criar'
 
@@ -17,11 +17,8 @@ const SELO: Record<string, { texto: string; cor: string }> = {
 }
 type Cartao = { id: string; guia: string; nome: string; tipo: string; dados: string; resumo: string; autor?: string; meu?: boolean; rascunho?: boolean }
 
-const PUBLICADOS: Cartao[] = SISTEMAS.filter(s => s.tipo !== 'autoral').map(s => ({ id: s.id, guia: s.id, nome: s.nome, tipo: s.tipo, dados: s.dados, resumo: s.resumo }))
-const AUTORAIS: Cartao[] = [
-  { id: SISTEMA_V8, guia: 'lunethernnyis', nome: 'Lunethernnyis — Opositores (Ficha V8)', tipo: 'autoral', dados: 'd20', autor: 'Wed', resumo: 'A ficha original do sistema, com todas as seções da Ficha V8.' },
-  ...SISTEMAS.filter(s => s.tipo === 'autoral').map(s => ({ id: s.id, guia: s.id, nome: s.nome, tipo: s.tipo, dados: s.dados, resumo: s.resumo, autor: s.id === 'lunethernnyis' ? 'Wed' : undefined })),
-]
+const PUBLICADOS: Cartao[] = SISTEMAS_VISIVEIS.filter(s => s.tipo !== 'autoral').map(s => ({ id: s.id, guia: s.id, nome: s.nome, tipo: s.tipo, dados: s.dados, resumo: s.resumo }))
+const AUTORAIS: Cartao[] = SISTEMAS_VISIVEIS.filter(s => s.tipo === 'autoral').map(s => ({ id: s.id, guia: s.id, nome: s.nome, tipo: s.tipo, dados: s.dados, resumo: s.resumo }))
 
 /** Sistemas separados em publicados (RPGs existentes) e autorais (criados por jogadores). */
 export default function SistemasGaleria({ aventureiroId }: { aventureiroId: string }) {
@@ -53,8 +50,9 @@ export default function SistemasGaleria({ aventureiroId }: { aventureiroId: stri
         <div className="flex items-start gap-3"><BookOpen className="mt-1 shrink-0 text-[#c5a7ff]" size={22} />
           <div className="min-w-0 flex-1"><h2 className="font-semibold">{s.nome}</h2>
             <div className="mt-1 flex flex-wrap gap-1 text-xs"><span className={'rounded-full px-2 py-0.5 ' + SELO[s.tipo].cor}>{SELO[s.tipo].texto}</span><span className="rounded-full bg-[#2b2140] px-2 py-0.5 text-[#c4b6d4]">{s.dados}</span>
-              {s.autor && <span className="rounded-full bg-[#2b2140] px-2 py-0.5 text-[#c4b6d4]">por {s.autor}</span>}
+
               {s.rascunho && <span className="rounded-full bg-[#4b3a14] px-2 py-0.5 text-amber-200">Rascunho (só você vê)</span>}</div></div></div>
+        {s.autor && <p className="mt-3 rounded-xl border border-[#8b6cba]/60 bg-gradient-to-r from-[#3b2a5c] to-[#2a1f40] px-3 py-2 text-sm">✍️ Criado por <strong className="text-[#ffd77a]">{s.autor}</strong>{s.meu && <span className="text-xs text-[#c4b6d4]"> (você)</span>}</p>}
         <p className="mt-3 flex-1 text-sm text-[#d1c4df]">{s.resumo}</p>
         {guia === s.id && <div className="mt-4 border-t border-[#55456e] pt-4"><GuiaSistema sistemaId={s.guia} compacto /></div>}
         <div className="mt-4 flex gap-2">

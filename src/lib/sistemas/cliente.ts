@@ -35,7 +35,7 @@ export function useSistemasAutorais(): { lista: ResumoAutoral[] | null; recarreg
 /** Opções para escolher sistema: catálogo + autorais (publicados e meus rascunhos). */
 export function useOpcoesSistema() {
   const { lista } = useSistemasAutorais()
-  const autorais = (lista ?? []).map(a => ({ id: a.id, nome: `${a.nome} · por ${a.autor}${a.publicado ? '' : ' (rascunho)'}`, grupo: 'autoral' as const }))
+  const autorais = (lista ?? []).map(a => ({ id: a.id, nome: `${a.nome} · criado por ${a.autor}${a.publicado ? '' : ' (rascunho)'}`, grupo: 'autoral' as const }))
   const opcoes = [...OPCOES_SISTEMA, ...autorais]
   const nomes: Record<string, string> = Object.fromEntries([...OPCOES_SISTEMA.map(o => [o.id, o.nome]), ...(lista ?? []).map(a => [a.id, a.nome])])
   return { opcoes, nomeDe: (id: string) => nomes[id] ?? sistemaPorId(id)?.nome ?? (ehAutoral(id) ? 'Sistema autoral' : id), carregando: lista === null }

@@ -28,6 +28,7 @@ export const SISTEMAS: Sistema[] = [
   {
     id: 'lunethernnyis',
     nome: 'Lunethernnyis — Opositores (ficha automática)',
+    oculto: true, // em revisão pelo autor: fora da plataforma por enquanto
     resumo: 'Versão automática do sistema autoral, com as regras aprovadas calculadas: pontos de atributo, limites por nível, perícias, PV, Defesa e XP.',
     tipo: 'autoral', licenca: 'Sistema autoral do PRG System', dados: 'd20',
     campos: [
@@ -414,11 +415,14 @@ export const sistemaPorId = (id: string) => SISTEMAS.find(s => s.id === id)
 export function sistemaDaCampanha(nome: string): string {
   const n = (nome ?? '').toLowerCase()
   if (/^autoral-[0-9a-f]{32}$/.test(n)) return n
-  if (n.includes('lunethernnyis') || n.includes('opositores')) return 'lunethernnyis-v8'
+  if (n.includes('lunethernnyis') || n.includes('opositores')) return 'livre' // sistema em revisão: fichas novas vão para a ficha livre
   const exato = SISTEMAS.find(s => s.nome.toLowerCase() === n || s.id === n)
   if (exato) return exato.id
   return SISTEMAS.find(s => n && n.includes(s.nome.toLowerCase().split(' ')[0]))?.id ?? 'livre'
 }
 /** O sistema Lunethernnyis original continua usando a Ficha V8. */
 export const SISTEMA_V8 = 'lunethernnyis-v8'
+/** Sistemas fora da plataforma por enquanto (o autor está revisando): sem fichas novas; as antigas continuam abrindo. */
+export const SISTEMAS_OCULTOS = new Set([SISTEMA_V8, ...SISTEMAS.filter(s => s.oculto).map(s => s.id)])
+export const SISTEMAS_VISIVEIS = SISTEMAS.filter(s => !s.oculto)
 export const sistemaValido = (id: unknown): id is string => typeof id === 'string' && (id === SISTEMA_V8 || SISTEMAS.some(s => s.id === id))

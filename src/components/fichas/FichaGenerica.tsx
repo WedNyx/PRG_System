@@ -201,6 +201,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         <textarea rows={6} value={d.listas[l.id] ?? ''} disabled={somenteLeitura} maxLength={20000} onChange={e => set('listas', { ...d.listas, [l.id]: e.target.value })} className={input + ' mt-2'} />
       </label>)}
     </section>
+    {s.autor && <section className={card + ' text-sm'}><p>✍️ <strong className="text-[#ed9cd8]">{s.nome}</strong> é um sistema autoral criado por <strong className="text-[#e4d3ff]">{s.autor}</strong>.</p></section>}
     {(s.observacoes?.length || s.creditos) && <section className={card + ' text-xs text-[#bfb2cf]'}>
       {s.observacoes?.map(o => <p key={o} className="mb-2 flex gap-2"><Info size={14} className="mt-0.5 shrink-0" /> {o}</p>)}
       {s.creditos && <p className="mt-2 border-t border-[#3d3152] pt-2 text-[11px] leading-relaxed text-[#9d8db0]">{s.creditos}</p>}

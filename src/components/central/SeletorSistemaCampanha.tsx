@@ -12,7 +12,7 @@ const NOMES = OPCOES.map(o => o.nome)
 export default function SeletorSistemaCampanha({ valor, onChange, classe }: { valor: string; onChange: (v: string) => void; classe: string }) {
   // Sistemas autorais ficam guardados pelo id (o nome pode mudar).
   const { lista } = useSistemasAutorais()
-  const autorais = (lista ?? []).map(a => ({ id: a.id, nome: `${a.nome} · por ${a.autor}${a.publicado ? '' : ' (rascunho)'}`, valor: a.id }))
+  const autorais = (lista ?? []).map(a => ({ id: a.id, nome: `${a.nome} · criado por ${a.autor}${a.publicado ? '' : ' (rascunho)'}`, valor: a.id }))
   const conhecido = NOMES.includes(valor) || /^autoral-[0-9a-f]{32}$/.test(valor)
   const [outro, setOutro] = useState(!conhecido && !!valor)
   return <div className="mt-2 space-y-2">

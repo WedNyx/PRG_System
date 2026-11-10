@@ -1,6 +1,6 @@
 'use client'
 import { api, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
-import { SISTEMAS, SISTEMA_V8 } from './catalogo'
+import { SISTEMAS, SISTEMAS_VISIVEIS, SISTEMA_V8 } from './catalogo'
 import { fichaVazia } from './calculo'
 
 export type GrupoSistema = 'publicado' | 'autoral'
@@ -10,9 +10,8 @@ export const GRUPOS_SISTEMA: { id: GrupoSistema; nome: string; descricao: string
 ]
 /** Opções de sistema para escolher: primeiro os publicados, depois os autorais. */
 export const OPCOES_SISTEMA: { id: string; nome: string; grupo: GrupoSistema }[] = [
-  ...SISTEMAS.filter(s => s.tipo !== 'autoral').map(s => ({ id: s.id, nome: s.nome, grupo: 'publicado' as const })),
-  { id: SISTEMA_V8, nome: 'Lunethernnyis — Opositores (Ficha V8)', grupo: 'autoral' },
-  ...SISTEMAS.filter(s => s.tipo === 'autoral').map(s => ({ id: s.id, nome: s.nome, grupo: 'autoral' as const })),
+  ...SISTEMAS_VISIVEIS.filter(s => s.tipo !== 'autoral').map(s => ({ id: s.id, nome: s.nome, grupo: 'publicado' as const })),
+  ...SISTEMAS_VISIVEIS.filter(s => s.tipo === 'autoral').map(s => ({ id: s.id, nome: s.nome, grupo: 'autoral' as const })),
 ]
 export const nomeDoSistema = (id: string) => OPCOES_SISTEMA.find(o => o.id === id)?.nome ?? id
 

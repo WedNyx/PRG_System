@@ -19,6 +19,10 @@ export type Sistema = {
   dados: string
   /** Como a ficha rola: d20 + bônus, d100 abaixo do valor, ou sem rolagem. Sem isso, deduz por `dados`. */
   rolagem?: 'd20' | 'd100' | 'nenhuma'
+  /** Fora das listas (não dá para criar fichas novas); fichas antigas continuam abrindo. */
+  oculto?: boolean
+  /** Quem criou (sistemas autorais). */
+  autor?: string
   campos: CampoDef[]
   atributos: AtributoDef[]
   /** Modificador do atributo; `X` é o valor do atributo. Sem isso, o modificador é o próprio valor. */

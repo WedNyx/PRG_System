@@ -2,6 +2,12 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.12.1 — Importar sistemas e créditos do criador (2026-11-09)
+- Importar sistema por arquivo: baixe o modelo de texto, escreva o sistema no bloco de notas (atributos, fórmulas, perícias, recursos…) e importe no construtor. Linhas que ele não entender aparecem com o número da linha.
+- Exportar o sistema em .txt ou .json (para guardar, editar fora ou mandar para alguém) e importar de volta.
+- “✍️ Criado por” com o nome de quem fez o sistema, em destaque na lista de sistemas, na escolha de sistema e dentro das fichas.
+- Lunethernnyis (ficha automática e Ficha V8) saiu da plataforma por enquanto, para revisão do autor. Fichas que já existiam continuam abrindo normalmente; não dá para criar novas.
+
 ## v0.12.0 — Construtor de sistemas autorais (2026-11-09)
 - Construtor de sistemas autorais: monte seu próprio RPG com identidade, atributos, valores calculados por fórmula, perícias (por graus ou por número), recursos, espaços de texto, limites de criação, carga e lembretes de regras.
 - Comece com um exemplo simples ou copiando a estrutura de um sistema da plataforma (os créditos de licença aberta vão junto).

@@ -33,11 +33,10 @@ r=await call(M,'POST','sistemas',{acao:'salvar',uuid,definicao:{...def,derivados
 r=await call(M,'GET','sistemas'); check('versão nova registrada', r.d.sistemas.find(s=>s.id===sid).versao===2, r.d)
 r=await call(M,'POST','sistemas',{acao:'excluir',uuid}); check('não exclui sistema com fichas', r.s===409, r)
 r=await call(M,'POST','sistemas',{acao:'criar',definicao:{...def,nome:'Descartável'}}); r=await call(M,'POST','sistemas',{acao:'excluir',uuid:r.d.uuid}); check('exclui sistema sem fichas', r.s===200, r)
-// v0.12.1: Lunethernnyis e Ficha V8 saíram da plataforma (fichas antigas continuam abrindo)
+// v0.12.1/v0.13.0: Lunethernnyis e Ficha V8 saíram da plataforma
 r=await call(J,'POST','fichas',{sistema:'lunethernnyis'}); check('não cria ficha nova de Lunethernnyis automático', r.s===400, r)
 r=await call(J,'POST','fichas',{sistema:'lunethernnyis-v8'}); check('não cria Ficha V8 nova', r.s===400, r)
-r=await call(J,'POST','fichas',{sistema:'lunethernnyis-v8',dados:{version:2,fields:{name:'Antiga'}}}); check('ainda dá para trazer uma Ficha V8 que estava só no navegador', r.s===201, r)
-r=await call(J,'GET','fichas/'+r.d.ficha.id); check('ficha antiga continua abrindo', r.s===200, r)
+r=await call(J,'POST','fichas',{sistema:'lunethernnyis-v8',dados:{version:2,fields:{name:'Antiga'}}}); check('também não entra Ficha V8 trazida do navegador', r.s===400, r)
 r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'npc',sistema:'lunethernnyis'}); check('campanha não cria NPC em sistema fora da plataforma', r.s===400, r)
 r=await call(J,'GET','sistemas/'+sid); check('a ficha recebe o nome de quem criou o sistema', r.d.sistema.autor==='Mestra Lua', r.d.sistema)
 console.log(falhas ? `\n${falhas} FALHA(S)` : '\nTudo certo!'); process.exit(falhas ? 1 : 0)

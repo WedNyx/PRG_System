@@ -4,14 +4,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, Download, Eye, FileUp, Globe, Loader2, Lock, Plus, Save, Trash2, X } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, Eye, Globe, Loader2, Lock, Plus, Save, Trash2 } from 'lucide-react'
 import FichaGenerica from '@/components/fichas/FichaGenerica'
 import { api } from '@/lib/nuvem/cliente'
 import { SISTEMAS } from '@/lib/sistemas/catalogo'
 import { fichaVazia } from '@/lib/sistemas/calculo'
 import { idUnico, sistemaEmBranco, slug, validarSistema } from '@/lib/sistemas/autoral'
 import { esquecerSistema } from '@/lib/sistemas/cliente'
-import { jsonDoSistema, lerJsonSistema, lerTextoSistema, MODELO_TEXTO, textoDoSistema } from '@/lib/sistemas/texto'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 
 /* Linhas editáveis: `auto` = o nome na fórmula ainda acompanha o nome (até salvar pela 1ª vez). */
@@ -57,31 +56,6 @@ function paraEnvio(d: Def) {
   }
 }
 
-/** Completa os nomes de fórmula que faltarem (arquivo importado) do mesmo jeito que o construtor faz. */
-function completarIds(def: Def): Def {
-  const fixa = (ls: Linha[], maiusculo = false, usados = new Set<string>()) => ls.map(x => {
-    const id = typeof x.id === 'string' && x.id && !usados.has(x.id) ? x.id : idUnico(slug(x.nome || 'item', maiusculo), usados)
-    usados.add(id); return { ...x, id, auto: false }
-  })
-  const vars = new Set<string>()
-  return { ...def, campos: fixa(def.campos, false, vars), atributos: fixa(def.atributos, true, vars), derivados: fixa(def.derivados, false, vars),
-    pericias: { ...def.pericias, lista: fixa(def.pericias.lista), treinos: fixa(def.pericias.treinos) }, recursos: fixa(def.recursos), listas: fixa(def.listas) }
-}
-/** Lê um arquivo .txt (formato de texto) ou .json (exportado) e devolve a definição + avisos. */
-async function lerArquivo(f: File): Promise<{ def: Def; avisos: string[] } | null> {
-  if (f.size > 300_000) { toast.error('Arquivo grande demais (máximo 300 KB).'); return null }
-  const texto = await f.text()
-  const ehJson = /\.json$/i.test(f.name) || texto.trimStart().startsWith('{')
-  const r = ehJson ? lerJsonSistema(texto) : lerTextoSistema(texto)
-  return { def: completarIds(paraDef(r.definicao as Partial<Sistema> & Record<string, unknown>)), avisos: r.avisos }
-}
-function baixar(nome: string, conteudo: string, tipo: string) {
-  const url = URL.createObjectURL(new Blob([conteudo], { type: tipo + ';charset=utf-8' }))
-  const a = document.createElement('a'); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
-const nomeArquivo = (nome: string) => (slug(nome || 'sistema') || 'sistema').replace(/_/g, '-')
-
 /** Construtor de sistemas autorais: edita, testa com prévia ao vivo, salva e publica. */
 export default function Construtor({ idInicial }: { idInicial: string | null }) {
   const router = useRouter()
@@ -94,8 +68,6 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
   const [previa, setPrevia] = useState(false)
   const [aberta, setAberta] = useState<string>('sobre')
   const [errosServidor, setErrosServidor] = useState<string[]>([])
-  const [avisosImport, setAvisosImport] = useState<string[]>([])
-  const arquivo = useRef<HTMLInputElement>(null)
   const ultimoCampo = useRef<{ set: (v: string) => void; valor: string } | null>(null)
 
   useEffect(() => {
@@ -114,7 +86,7 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
 
   if (erroCarga) return <Tela><p role="alert" className="text-red-200">{erroCarga}</p><Link href="/central" className="mt-3 inline-block underline">Voltar</Link></Tela>
   if (!def && idInicial) return <Tela><p className="flex items-center gap-2"><Loader2 className="animate-spin" /> Abrindo…</p></Tela>
-  if (!def) return <EscolherModelo escolher={(d, avisos = []) => { setDef(d); setAlterado(true); setAvisosImport(avisos) }} />
+  if (!def) return <EscolherModelo escolher={d => { setDef(d); setAlterado(true) }} />
 
   // Variáveis que as fórmulas podem usar (com explicação), para tocar e inserir.
   const variaveis: { v: string; d: string }[] = [
@@ -159,12 +131,6 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
     try { await api('sistemas', { method: 'POST', body: { acao: 'publicar', uuid, publicado: v } }); setPublicado(v); toast.success(v ? 'Publicado! Agora aparece em “Sistemas autorais” para todo mundo.' : 'Voltou a ser rascunho (só você vê).') }
     catch (e) { toast.error(e instanceof Error ? e.message : 'Falha.') }
   }
-  async function importarAqui(f: File) {
-    if (!confirm('Trocar o conteúdo deste sistema pelo do arquivo? (Só vale depois de salvar.)')) return
-    const r = await lerArquivo(f); if (!r) return
-    setDef(r.def); setAvisosImport(r.avisos); setAlterado(true); setErrosServidor([])
-    toast.success('Arquivo importado! Confira e toque em Salvar.')
-  }
   async function excluir() {
     if (!uuid || !confirm('Excluir este sistema? Isso não pode ser desfeito.')) return
     try { await api('sistemas', { method: 'POST', body: { acao: 'excluir', uuid } }); toast.success('Sistema excluído.'); router.push('/central') }
@@ -184,10 +150,6 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
     </header>
 
     <div className="mx-auto max-w-3xl space-y-3 px-3 pt-4">
-      {avisosImport.length > 0 && <section className="rounded-2xl border border-[#6d5690] bg-[#241c38]/95 p-4 text-sm">
-        <div className="flex items-start gap-2"><p className="flex-1 font-semibold">📄 Do arquivo importado, {avisosImport.length === 1 ? '1 linha precisa' : avisosImport.length + ' linhas precisam'} de atenção:</p>
-          <button type="button" onClick={() => setAvisosImport([])} aria-label="Fechar avisos do arquivo" className="rounded p-1 hover:bg-[#34294f]"><X size={16} /></button></div>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-[#d6c9e4]">{avisosImport.slice(0, 15).map(a => <li key={a}>{a}</li>)}</ul></section>}
       {erros.length > 0
         ? <section id="problemas" role="alert" className="rounded-2xl border border-[#c98b3a] bg-[#3a2a14]/95 p-4 text-sm text-[#f6dca8]">
           <p className="flex items-center gap-2 font-semibold"><AlertTriangle size={18} /> Falta corrigir {erros.length === 1 ? '1 coisa' : erros.length + ' coisas'}</p>
@@ -321,16 +283,6 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
             {uuid && <button type="button" className={botao + ' text-red-200'} onClick={() => void excluir()}><Trash2 size={14} /> Excluir sistema</button>}
           </div>
         </section>
-        <section className="rounded-2xl border border-[#55456e] bg-[#201a32]/95 p-4 text-sm">
-          <h2 className="font-semibold">📄 Arquivo do sistema</h2>
-          <p className="mt-1 text-xs text-[#c4b6d4]">Baixe para guardar uma cópia, editar no bloco de notas ou mandar para alguém. Também dá para trazer um arquivo e trocar o conteúdo.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className={botao} onClick={() => baixar(nomeArquivo(def.nome) + '.txt', textoDoSistema(paraEnvio(def) as unknown as Partial<Sistema>), 'text/plain')}><Download size={14} /> Baixar .txt (texto)</button>
-            <button type="button" className={botao} onClick={() => baixar(nomeArquivo(def.nome) + '.json', jsonDoSistema(paraEnvio(def) as unknown as Partial<Sistema>), 'application/json')}><Download size={14} /> Baixar .json</button>
-            <button type="button" className={botao} onClick={() => arquivo.current?.click()}><FileUp size={14} /> Importar arquivo</button>
-            <input ref={arquivo} type="file" accept=".txt,.md,.json,text/plain,application/json" className="sr-only" aria-label="Importar arquivo do sistema" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void importarAqui(f) }} />
-          </div>
-        </section>
       </>}
     </div>
   </main>
@@ -378,8 +330,7 @@ function Previa({ def, validacao }: { def: Def; validacao: ReturnType<typeof val
   </div>
 }
 
-function EscolherModelo({ escolher }: { escolher: (d: Def, avisos?: string[]) => void }) {
-  const arquivo = useRef<HTMLInputElement>(null)
+function EscolherModelo({ escolher }: { escolher: (d: Def) => void }) {
   const modelos = SISTEMAS.filter(s => !s.progressoes && !s.oculto)
   return <Tela>
     <div className="w-full max-w-lg rounded-3xl border border-[#655079] bg-[#1d1733]/95 p-6 text-left shadow-xl">
@@ -391,16 +342,6 @@ function EscolherModelo({ escolher }: { escolher: (d: Def, avisos?: string[]) =>
         <select defaultValue="" onChange={e => { const s = modelos.find(m => m.id === e.target.value); if (s) escolher({ ...paraDef({ ...s, nome: s.nome + ' (minha versão)' } as unknown as Partial<Sistema> & Record<string, unknown>), creditos: s.creditos }) }} className={input + ' mt-1'}>
           <option value="">Escolha…</option>{modelos.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}</select></label>
       <p className="mt-3 text-xs text-[#a998bd]">Ao copiar um sistema de licença aberta, os créditos exigidos vão junto.</p>
-      <div className="mt-5 rounded-xl border border-dashed border-[#8b6cba] p-3">
-        <p className="font-semibold">📄 Já tem o sistema escrito?</p>
-        <p className="mt-1 text-xs text-[#cfc0df]">Baixe o modelo de texto, preencha no bloco de notas (ou no celular) e importe. Arquivos .json baixados do construtor também funcionam.</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" onClick={() => baixar('modelo-sistema-prg.txt', MODELO_TEXTO, 'text/plain')} className="inline-flex items-center gap-1 rounded-lg border border-[#8b6cba] px-3 py-2 text-sm hover:bg-[#2b2140]"><Download size={15} /> Baixar modelo</button>
-          <button type="button" onClick={() => arquivo.current?.click()} className="inline-flex items-center gap-1 rounded-lg bg-[#5b4380] px-3 py-2 text-sm font-semibold hover:bg-[#6b5190]"><FileUp size={15} /> Importar arquivo</button>
-          <input ref={arquivo} type="file" accept=".txt,.md,.json,text/plain,application/json" className="sr-only" aria-label="Importar arquivo do sistema"
-            onChange={async e => { const f = e.target.files?.[0]; e.target.value = ''; if (!f) return; const r = await lerArquivo(f); if (r) { escolher(r.def, r.avisos); toast.success('Arquivo importado! Confira as seções e toque em Salvar.') } }} />
-        </div>
-      </div>
       <Link href="/central?secao=sistemas" className="mt-5 inline-block text-sm text-[#c7a8ff] underline">Voltar</Link>
     </div>
   </Tela>

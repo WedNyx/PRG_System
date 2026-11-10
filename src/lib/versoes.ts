@@ -6,10 +6,19 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
-    versao: '0.12.1', data: '2026-11-09', titulo: 'Importar sistemas e créditos do criador',
+    versao: '0.13.0', data: '2026-11-09', titulo: 'Segurança, cópias de segurança e saúde da plataforma',
     itens: [
-      'Importar sistema por arquivo: baixe o modelo de texto, escreva o sistema no bloco de notas (atributos, fórmulas, perícias, recursos…) e importe no construtor. Linhas que ele não entender aparecem com o número da linha.',
-      'Exportar o sistema em .txt ou .json (para guardar, editar fora ou mandar para alguém) e importar de volta.',
+      'O login antigo por e-mail saiu de vez (telas, código e banco de dados). A entrada é só pelo portal de perfis.',
+      'Três funções antigas do banco que ficavam abertas foram removidas, junto com as tabelas vazias do sistema antigo.',
+      'Cópia de segurança automática todos os dias, numa pasta privada (ficam as últimas 14). O administrador também pode guardar ou baixar uma cópia na hora.',
+      'Saúde da plataforma (área do administrador): banco no ar, versão publicada e os erros inesperados registrados, com detalhes.',
+      'Se uma tela quebrar, aparece um aviso amigável com “Tentar de novo”, e o erro é registrado automaticamente.',
+      'O importar/exportar sistemas por arquivo foi retirado, e a Ficha V8 não entra mais na plataforma nem por importação.',
+    ],
+  },
+  {
+    versao: '0.12.1', data: '2026-11-09', titulo: 'Créditos do criador',
+    itens: [
       '“✍️ Criado por” com o nome de quem fez o sistema, em destaque na lista de sistemas, na escolha de sistema e dentro das fichas.',
       'Lunethernnyis (ficha automática e Ficha V8) saiu da plataforma por enquanto, para revisão do autor. Fichas que já existiam continuam abrindo normalmente; não dá para criar novas.',
     ],

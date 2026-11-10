@@ -6,6 +6,8 @@ async function call(quem, metodo, caminho, body, origem=true){
   let d={}; try{d=await r.json()}catch{}; return {s:r.status,d}
 }
 function check(nome, cond, extra){ console.log((cond?'✔':'✘')+' '+nome+(cond?'':'  '+JSON.stringify(extra))); if(!cond) falhas++ }
+// v0.13.0: a Ficha V8 não entra mais pela API; estes testes usam uma V8 que "já existia" no banco (inserida direto, precisa de KEY).
+async function fichaAntigaV8(dono, dados){ const r=await fetch((process.env.PRG_REST || 'http://localhost:3001/rest/v1') + '/prg_fichas',{method:'POST',headers:{'content-type':'application/json',apikey:process.env.KEY,Authorization:'Bearer '+process.env.KEY,Prefer:'return=representation'},body:JSON.stringify({dono_id:dono,sistema:'lunethernnyis-v8',nome:dados.fields?.name??'',dados})}); const j=await r.json(); return {s:r.ok?201:r.status,d:{ficha:Array.isArray(j)?j[0]:undefined}} }
 
 let r=await call(M,'POST','campanhas',{nome:'Ecos da Lua',descricao:'Teste',sistema:'Lunethernnyis — Opositores',modeloPadrao:'B'})
 check('mestre cria campanha',r.s===201,r); const cid=r.d.campanha?.id
@@ -41,7 +43,8 @@ r=await call(J,'PATCH',`campanhas/${cid}/membros/${J}`,{papel:'comestre'}); chec
 r=await call(J,'DELETE',`campanhas/${cid}/membros/${M}`); check('ninguém remove o mestre',r.s===400,r)
 
 // Fichas
-r=await call(J,'POST','fichas',{dados:{version:2,fields:{name:'Lyra'}}}); check('cria ficha na nuvem',r.s===201&&r.d.ficha.nome==='Lyra',r); const fid=r.d.ficha?.id
+r=await call(J,'POST','fichas',{dados:{version:2,fields:{name:'Lyra'}}}); check('Ficha V8 nova é recusada (saiu da plataforma)',r.s===400,r)
+r=await fichaAntigaV8(J,{version:2,fields:{name:'Lyra'}}); check('ficha V8 antiga está na nuvem',r.s===201&&r.d.ficha.nome==='Lyra',r); const fid=r.d.ficha?.id
 r=await call(J,'GET','fichas/'+fid); check('dono lê ficha',r.d.podeEditar===true&&r.d.ficha.versao===1,r)
 r=await call(X,'GET','fichas/'+fid); check('outro não lê ficha',r.s===404,r)
 r=await call(X,'PUT','fichas/'+fid,{versao:1,dados:{fields:{name:'hack'}}}); check('outro não salva ficha',r.s===403,r)

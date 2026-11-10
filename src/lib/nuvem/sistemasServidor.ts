@@ -19,9 +19,9 @@ export async function carregarSistema(id: string): Promise<Sistema | undefined> 
   return l ? { ...l.definicao, id, autor: l.dono?.apelido } : undefined
 }
 /** Pode criar ficha neste sistema? Catálogo: sempre. Autoral: publicado, ou rascunho do próprio autor. */
-export async function sistemaPermitido(id: unknown, eu: string, importando = false): Promise<boolean> {
-  // Sistemas em revisão: só aceita trazer fichas que já existiam (importar do navegador para a nuvem).
-  if (typeof id === 'string' && SISTEMAS_OCULTOS.has(id)) return importando
+export async function sistemaPermitido(id: unknown, eu: string): Promise<boolean> {
+  // Sistemas em revisão (Lunethernnyis e Ficha V8) ficam fora da plataforma: nada novo entra neles.
+  if (typeof id === 'string' && SISTEMAS_OCULTOS.has(id)) return false
   if (sistemaValido(id)) return true
   if (!ehAutoral(id)) return false
   const l = await linhaAutoral(id)

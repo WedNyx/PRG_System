@@ -84,11 +84,31 @@ export function rota<C>(fn: (req: NextRequest, ctx: C) => Promise<NextResponse>)
   return async (req: NextRequest, ctx: C) => {
     if (!configurado()) return NextResponse.json({ erro: 'Sincronização na nuvem ainda não configurada.' }, { status: 503 })
     try { return await fn(req, ctx) } catch (e) {
-      if (e instanceof ErroApi) return NextResponse.json({ erro: e.message }, { status: e.status })
-      console.error('[prg-api]', e instanceof Error ? e.message : 'erro desconhecido')
+      const local = `${req.method} ${localDaRota(req.nextUrl.pathname)}`
+      if (e instanceof ErroApi) {
+        if (e.status >= 500 && e.status !== 503) await registrarErro('servidor', local, e.message)
+        return NextResponse.json({ erro: e.message }, { status: e.status })
+      }
+      const msg = e instanceof Error ? e.message : 'erro desconhecido'
+      console.error('[prg-api]', msg)
+      await registrarErro('servidor', local, msg || 'erro desconhecido', e instanceof Error ? (e.stack ?? '') : '')
       return NextResponse.json({ erro: 'Erro inesperado. Tente novamente.' }, { status: 500 })
     }
   }
+}
+
+/** Caminho sem ids (assim erros iguais aparecem juntos e nenhum id vai para o registro). */
+export const localDaRota = (p: string) => p.replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, ':id').slice(0, 200)
+
+/** Guarda um erro inesperado para o administrador ver em “Saúde da plataforma”. Nunca derruba a requisição. */
+export async function registrarErro(origem: 'servidor' | 'navegador', local: string, mensagem: string, detalhe = '') {
+  try {
+    await fetch(url() + '/rest/v1/prg_erros', {
+      method: 'POST', cache: 'no-store',
+      headers: { apikey: chave()!, Authorization: 'Bearer ' + chave()!, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ origem, local: local.slice(0, 200), mensagem: (mensagem || '?').slice(0, 500), detalhe: detalhe.slice(0, 2000) }),
+    })
+  } catch { /* sem banco: só fica no log da Vercel */ }
 }
 export const ok = (dados: unknown, status = 200) => NextResponse.json(dados, { status, headers: { 'Cache-Control': 'no-store' } })
 

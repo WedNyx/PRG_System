@@ -39,7 +39,7 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'construtor', icone: '✍️', titulo: 'Criar o seu próprio sistema', foto: 'construtor.jpg', legenda: 'Construtor com a prévia da ficha',
     resumo: 'Monte um sistema de RPG do zero (ou a partir de um da plataforma) e use nas suas campanhas.',
-    passos: ['Em “Sistemas de RPG” → “Sistemas autorais”, toque em “Abrir o construtor”.', 'Comece com o exemplo simples, copie a estrutura de um sistema da plataforma ou importe um arquivo: toque em “Baixar modelo”, preencha o texto no bloco de notas e use “Importar arquivo” (o construtor avisa as linhas que não entendeu).', 'Monte as seções: identidade, atributos, valores calculados (com fórmulas), perícias, recursos, espaços de texto e regras.', 'As fórmulas usam os nomes que aparecem em “na fórmula” (ex.: 10 + FOR * 2). Toque numa fórmula e depois numa variável para inserir. Se algo estiver errado, o aviso amarelo explica o quê.', 'Use “Prévia” para testar a ficha na hora. Toque em “Salvar”: já dá para criar fichas (só você, enquanto for rascunho).', 'Quando estiver pronto, “Publicar para todos”: ele aparece nos Sistemas autorais com “✍️ Criado por” e o seu nome, e pode ser escolhido nas campanhas.', 'Em “Arquivo do sistema”, baixe o sistema em .txt ou .json para guardar uma cópia ou mandar para alguém.'],
+    passos: ['Em “Sistemas de RPG” → “Sistemas autorais”, toque em “Abrir o construtor”.', 'Comece com o exemplo simples ou copie a estrutura de um sistema da plataforma.', 'Monte as seções: identidade, atributos, valores calculados (com fórmulas), perícias, recursos, espaços de texto e regras.', 'As fórmulas usam os nomes que aparecem em “na fórmula” (ex.: 10 + FOR * 2). Toque numa fórmula e depois numa variável para inserir. Se algo estiver errado, o aviso amarelo explica o quê.', 'Use “Prévia” para testar a ficha na hora. Toque em “Salvar”: já dá para criar fichas (só você, enquanto for rascunho).', 'Quando estiver pronto, “Publicar para todos”: ele aparece nos Sistemas autorais com “✍️ Criado por” e o seu nome, e pode ser escolhido nas campanhas.'],
     dica: 'Dá para editar depois: as fichas existentes passam a usar a versão nova. Um sistema com fichas não pode ser excluído, só voltar a rascunho.',
   },
   {
@@ -92,8 +92,8 @@ export const GUIA: TopicoGuia[] = [
   },
   {
     id: 'admin', icone: '🔒', titulo: 'Gerenciar perfis (administrador)', foto: 'portal-admin.jpg', legenda: 'Senha do administrador', quem: 'admin',
-    resumo: 'Só quem sabe a senha de administrador pode remover perfis da plataforma.',
-    passos: ['No portal, toque em “🔒 Gerenciar perfis” e digite a senha.', 'Toque na 🗑 de um perfil para removê-lo. As fichas e playlists dele também são apagadas.', 'Um perfil que é mestre de alguma campanha só pode ser removido depois que essas campanhas forem excluídas.'],
+    resumo: 'Só quem sabe a senha de administrador pode remover perfis e ver a saúde da plataforma.',
+    passos: ['No portal, toque em “🔒 Gerenciar perfis” e digite a senha.', 'Toque na 🗑 de um perfil para removê-lo. As fichas e playlists dele também são apagadas.', 'Um perfil que é mestre de alguma campanha só pode ser removido depois que essas campanhas forem excluídas.', 'Em “🩺 Saúde da plataforma e cópias de segurança” você vê se o banco está no ar, os erros inesperados registrados e as cópias diárias. Dá para guardar uma cópia na hora ou baixar o arquivo para guardar no seu computador.'],
     dica: 'A senha fica na Vercel, na variável PRG_ADMIN_SENHA. Para trocar, mude a variável e faça um Redeploy.',
   },
   {

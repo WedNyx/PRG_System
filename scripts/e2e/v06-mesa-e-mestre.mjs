@@ -55,13 +55,12 @@ r=await call(M,'GET',`campanhas/${cid}/notas`); check('mestre vê as suas + a do
 r=await call(M,'POST',`campanhas/${cid}/notas`,{id:nj,titulo:'hack'}); check('não edita nota de outro', r.s===403, r)
 r=await call(X,'GET',`campanhas/${cid}/notas`); check('estranho não vê notas', r.s===404, r)
 // recompensas
-// v0.12.1: Ficha V8 não é mais criada do zero; uma V8 antiga (trazida do navegador) entra na campanha e continua recebendo recompensas.
-r=await call(J,'POST','fichas',{sistema:'lunethernnyis-v8',dados:{version:2,fields:{name:'Lyra'}}}); r=await call(J,'POST',`fichas/${r.d.ficha.id}/enviar`,{campanhaId:cid}); const f1=r.d.ficha.id
-await call(M,'POST',`campanhas/${cid}/fichas/${f1}`,{decisao:'aprovar'})
+// v0.13.0: a Ficha V8 saiu da plataforma; a recompensa é testada com duas fichas D&D.
+r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sistema:'dnd5e-srd',nome:'Lyra'}); const f1=r.d.ficha.id
 r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sistema:'dnd5e-srd',nome:'Thorin'}); const f2=r.d.ficha.id
 r=await call(J,'POST',`campanhas/${cid}/recompensas`,{fichaIds:[f1],xp:100}); check('jogador não dá recompensa', r.s===403, r)
 r=await call(M,'POST',`campanhas/${cid}/recompensas`,{fichaIds:[f1,f2],xp:300,item:'Revólver',motivo:'Salvaram a vila'}); check('mestre recompensa 2 fichas', r.d.recompensados?.length===2, r)
-r=await call(J,'GET','fichas/'+f1); check('V8: XP somado e item no inventário', r.d.ficha.dados.fields.xp==='300' && r.d.ficha.dados.fields.inventory.includes('Revólver'), r.d.ficha.dados)
+r=await call(J,'GET','fichas/'+f1); check('primeira ficha também recebe XP e item', r.d.ficha.dados.listas.anotacoes.includes('+300 XP') && r.d.ficha.dados.itens.some(i=>i.nome.includes('Revólver')), r.d.ficha.dados)
 r=await call(J,'GET','fichas/'+f2); check('D&D: XP anotado e item no inventário estruturado (v0.9.0)', r.d.ficha.dados.listas.anotacoes.includes('+300 XP') && r.d.ficha.dados.itens.some(i=>i.nome.includes('Revólver')), r.d.ficha.dados)
 r=await call(J,'GET','mesa/'+cid); check('recompensa anunciada no chat', r.d.eventos.some(e=>e.tipo==='sistema' && e.texto.includes('Revólver')), r.d.eventos.map(e=>e.texto))
 r=await call(J,'GET',`fichas/${f1}/historico`); check('recompensa no histórico da ficha', r.d.historico.some(h=>h.tipo==='recompensa' && h.descricao.includes('Salvaram')), r.d.historico)

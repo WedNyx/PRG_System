@@ -8,6 +8,7 @@ export const metadata: Metadata = { title: 'Guia da plataforma · PRG System', d
 
 /** Tópicos do guia que têm lição prática no /tutorial. */
 const PRATICA: Record<string, string> = { rolagens: 'dados', arvore: 'arvore', construtor: 'rolagem', fichas: 'imagens', campanhas: 'imagens', mesa: 'mesa', sessao: 'mesa', combate: 'mesa' }
+const ABRIR: Record<string, { href: string; rotulo: string }> = { 'primeiro-sistema': { href: '/sistemas/criar', rotulo: '✍️ Abrir o construtor' } }
 
 const SELO = { mestre: '🎩 Para o mestre', admin: '🔒 Administrador', todos: '' } as const
 
@@ -43,6 +44,7 @@ export default function GuiaPlataforma() {
           </figure>}
           <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-[#e6dbf2]">{t.passos.map(p => <li key={p}>{p}</li>)}</ol>
           {t.dica && <p className="mt-4 rounded-xl border border-[#6d5690] bg-[#2a2142] p-3 text-sm text-[#e4d3ff]">💡 {t.dica}</p>}
+          {ABRIR[t.id] && <Link href={ABRIR[t.id].href} className="mr-2 mt-4 inline-flex items-center gap-2 rounded-xl bg-[#5b4380] px-4 py-2 text-sm font-semibold hover:bg-[#6b5190]">{ABRIR[t.id].rotulo}</Link>}
           {PRATICA[t.id] && <Link href={'/tutorial?licao=' + PRATICA[t.id]} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#5b4380] px-4 py-2 text-sm font-semibold hover:bg-[#6b5190]">🎓 Praticar no tutorial</Link>}
           <a href="#topo" className="sr-only">Voltar ao topo</a>
         </section>)}

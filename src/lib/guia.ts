@@ -8,7 +8,7 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'perfil', icone: '🌙', titulo: 'Entrar com o seu perfil', foto: 'portal.jpg', legenda: 'Portal dos aventureiros',
     resumo: 'O portal é a porta de entrada: cada pessoa do grupo tem um perfil com nome e foto.',
-    passos: ['Toque na sua foto para entrar.', 'Ainda não tem perfil? Toque em “+ Criar perfil”, escolha um nome e uma foto (dá para arrastar e dar zoom).', 'Para trocar de perfil depois, use “Trocar aventureiro” no menu.'],
+    passos: ['Primeiro escolha o seu grupo: 🌙 Lunethernnyis (quem é do servidor) ou 🧭 De Fora (convidados e outros grupos). O aparelho lembra a escolha; “Trocar grupo” volta aos cartões.', 'Toque na sua foto para entrar.', 'Ainda não tem perfil? Toque em “+ Criar perfil”, escolha um nome, uma foto (dá para arrastar e dar zoom) e o seu grupo.', 'Para trocar de perfil depois, use “Trocar aventureiro” no menu.'],
   },
   {
     id: 'central', icone: '🏠', titulo: 'A Central e o menu', foto: 'central.jpg', legenda: 'Menu lateral da Central',
@@ -18,7 +18,7 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'editar-perfil', icone: '✏️', titulo: 'Mudar nome e foto', foto: 'editar-perfil.jpg', legenda: 'Janela “Editar perfil”',
     resumo: 'Cada pessoa muda o próprio nome e a própria foto.',
-    passos: ['No menu, toque em “Editar perfil” (ou na sua foto, no canto de cima).', 'Toque em “📷 Trocar foto”, ajuste o recorte e toque em “Usar esta foto”.', 'Mude o nome se quiser e toque em “Salvar”. Todo mundo verá a mudança.'],
+    passos: ['No menu, toque em “Editar perfil” (ou na sua foto, no canto de cima).', 'Toque em “📷 Trocar foto”, ajuste o recorte e toque em “Usar esta foto”.', 'Mude o nome se quiser e toque em “Salvar”. Todo mundo verá a mudança.', 'Ali também dá para trocar de grupo (Lunethernnyis ou De Fora). Os perfis antigos começaram em Lunethernnyis.'],
   },
   {
     id: 'avisos', icone: '🔔', titulo: 'Avisos (sininho)', foto: 'avisos.jpg', legenda: 'Lista de avisos',
@@ -39,8 +39,24 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'construtor', icone: '✍️', titulo: 'Criar o seu próprio sistema', foto: 'construtor.jpg', legenda: 'Construtor com a prévia da ficha',
     resumo: 'Monte um sistema de RPG do zero (ou a partir de um da plataforma) e use nas suas campanhas.',
-    passos: ['Em “Sistemas de RPG” → “Sistemas autorais”, toque em “Abrir o construtor”.', 'Comece com o exemplo simples ou copie a estrutura de um sistema da plataforma.', 'Monte as seções: identidade, atributos, valores calculados (com fórmulas), perícias, recursos, espaços de texto e regras.', 'Em “Como se rola”, escolha 🎲 Rolagem personalizada para usar um modelo pronto (vantagem, pool de dados, sucessos, Fate…) ou montar a fórmula com VALOR (o número do atributo/perícia). Use “Rolar teste” para conferir.', 'Em “📈 Progressão por nível”, toque em “Ativar” e diga quanto se ganha em cada nível (ex.: +1 ponto da árvore e +5 de vida por nível). Cada coluna vira a variável prog_nome nas fórmulas, como Vida máxima = 10 + prog_vida.', 'Em “🌠 Árvore de habilidades padrão”, monte os hexágonos (custo, requisitos, bônus e habilidades). Toda ficha nova do sistema já começa com essa árvore; os pontos do nível entram sozinhos.', 'As fórmulas usam os nomes que aparecem em “na fórmula” (ex.: 10 + FOR * 2). Toque numa fórmula e depois numa variável para inserir. Se algo estiver errado, o aviso amarelo explica o quê.', 'Use “Prévia” para testar a ficha na hora. Toque em “Salvar”: já dá para criar fichas (só você, enquanto for rascunho).', 'Quando estiver pronto, “Publicar para todos”: ele aparece nos Sistemas autorais com “✍️ Criado por” e o seu nome, e pode ser escolhido nas campanhas.'],
+    passos: ['Em “Sistemas de RPG” → “Sistemas autorais”, toque em “Abrir o construtor”.', 'Comece com o exemplo simples ou copie a estrutura de um sistema da plataforma.', 'Em “Campos de identidade”, use o tipo “Lista de opções” para Classe, Espécie, Origem…: cada opção tem descrição e bônus automáticos (ex.: Guerreiro dá +1 Força).', 'Monte as seções: identidade, atributos, valores calculados (com fórmulas), perícias, recursos, espaços de texto e regras.', 'Em “Como se rola”, escolha 🎲 Rolagem personalizada para usar um modelo pronto (vantagem, pool de dados, sucessos, Fate…) ou montar a fórmula com VALOR (o número do atributo/perícia). Use “Rolar teste” para conferir.', 'Em “📈 Progressão por nível”, toque em “Ativar” e diga quanto se ganha em cada nível (ex.: +1 ponto da árvore e +5 de vida por nível). Cada coluna vira a variável prog_nome nas fórmulas, como Vida máxima = 10 + prog_vida.', 'Em “🌠 Árvore de habilidades padrão”, monte os hexágonos (custo, requisitos, bônus e habilidades). Toda ficha nova do sistema já começa com essa árvore; os pontos do nível entram sozinhos.', 'As fórmulas usam os nomes que aparecem em “na fórmula” (ex.: 10 + FOR * 2). Toque numa fórmula e depois numa variável para inserir. Se algo estiver errado, o aviso amarelo explica o quê.', 'Use “Prévia” para testar a ficha na hora. Toque em “Salvar”: já dá para criar fichas (só você, enquanto for rascunho).', 'Quando estiver pronto, “Publicar para todos”: ele aparece nos Sistemas autorais com “✍️ Criado por” e o seu nome, e pode ser escolhido nas campanhas.'],
     dica: 'Dá para editar depois: as fichas existentes passam a usar a versão nova. Um sistema com fichas não pode ser excluído, só voltar a rascunho.',
+  },
+  {
+    id: 'primeiro-sistema', icone: '🧪', titulo: 'Exemplo: o seu primeiro sistema',
+    resumo: 'Um exemplo completo, do zero, para quem nunca montou um sistema. Siga os passos e copie os valores.',
+    passos: [
+      '1. Abra “Sistemas de RPG” → “Sistemas autorais” → “Abrir o construtor” e escolha “Exemplo simples”. Dê o nome “Lâminas da Névoa”.',
+      '2. Atributos: deixe Força, Agilidade e Mente, de 0 a 5. Na fórmula, eles viram FOR, AGI e MEN.',
+      '3. Campos de identidade: o exemplo já traz “Classe” (Guerreiro, Batedor, Sábio) e “Espécie” (Humano, Elfo) como Lista de opções. Toque numa opção para mudar a descrição ou o bônus. Ex.: Guerreiro → +1 em Força e +2 em Luta.',
+      '4. Valores calculados: Vida máxima = 10 + FOR * 2 + nivel * 3. Defesa = 10 + AGI. Toque na fórmula e depois numa variável da lista para não errar o nome.',
+      '5. Perícias: Luta (Força), Furtividade (Agilidade) e Conhecimento (Mente). Graus: Destreinado 0, Treinado 2, Mestre 4. Total = MOD + TREINO.',
+      '6. Recursos: Vida, com máximo “vida_max”. Assim a vida da ficha acompanha a Vida máxima.',
+      '7. Opcional: “📈 Progressão por nível” → Ativar. Cada nível dá +1 ponto da árvore e +5 de vida. Troque a Vida máxima para 10 + FOR * 2 + prog_vida.',
+      '8. Opcional: “🌠 Árvore padrão” → “+ Hexágono”: “Golpe Pesado”, custo 1, efeito habilidade 1d8. Ligue outros hexágonos a ele.',
+      '9. Toque em “Prévia”: escolha a classe Guerreiro e veja a Força e a Luta subirem sozinhas. Depois “Salvar” e “Criar ficha” para testar de verdade.',
+    ],
+    dica: 'Travou? O aviso amarelo no topo diz exatamente o que está errado (por exemplo, um nome de variável que não existe).',
   },
   {
     id: 'fichas', icone: '📜', titulo: 'Criar e preencher fichas', foto: 'ficha.jpg', legenda: 'Ficha com menu por seções',

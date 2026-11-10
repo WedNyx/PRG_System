@@ -15,7 +15,7 @@ export const ehAutoral = (id: unknown): id is string => typeof id === 'string' &
 export const idAutoral = (uuid: string) => PREFIXO_AUTORAL + uuid.replace(/-/g, '').toLowerCase()
 export const uuidDoAutoral = (id: string) => { const h = id.slice(PREFIXO_AUTORAL.length); return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}` }
 
-export const LIMITES = { campos: 30, atributos: 20, derivados: 30, pericias: 80, treinos: 8, recursos: 12, listas: 12, limites: 12, observacoes: 12, formula: 600, nome: 60, classes: 6, colunas: 12 }
+export const LIMITES = { campos: 30, atributos: 20, derivados: 30, pericias: 80, treinos: 8, recursos: 12, listas: 12, limites: 12, observacoes: 12, formula: 600, nome: 60, classes: 6, colunas: 12, opcoes: 30, bonusOpcao: 6 }
 const RESERVADO = /^(mod_|per_|tot_|qtd_|prog_)|^(soma_atributos|atributos_zero|maior_atributo|custo_pericias|maior_valor_pericia|carga_total|nivel_total|X|MOD|ATR|TREINO|VALOR)$/
 
 /** Transforma um nome em identificador de fórmula: "Pontos de Mana" → pontos_de_mana. */
@@ -59,8 +59,17 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
 
   const campos = lista(e.campos, LIMITES.campos).flatMap(c => {
     const n = txt(c.nome, LIMITES.nome); if (!n) return []
-    const tipo = c.tipo === 'numero' || c.tipo === 'area' ? c.tipo : 'texto'
-    return [{ id: pegarId(c.id, n), nome: n, tipo: tipo as 'texto' | 'numero' | 'area', ...(tipo === 'numero' ? { padrao: num(c.padrao, -99999, 99999, 0) } : {}) }]
+    const tipo = c.tipo === 'numero' || c.tipo === 'area' || c.tipo === 'escolha' ? c.tipo : 'texto'
+    const vistas = new Set<string>()
+    const opcoes = tipo === 'escolha' ? lista(c.opcoes, LIMITES.opcoes).flatMap(o => {
+      const on = txt(o.nome, LIMITES.nome); if (!on || vistas.has(on.toLowerCase())) return []
+      vistas.add(on.toLowerCase())
+      const descricao = txt(o.descricao, 400)
+      const bonus = lista(o.bonus, LIMITES.bonusOpcao).flatMap(b => typeof b.alvo === 'string' && Number(b.valor) ? [{ alvo: b.alvo.slice(0, 60), valor: num(b.valor, -99, 99, 0) }] : [])
+      return [{ nome: on, ...(descricao ? { descricao } : {}), ...(bonus.length ? { bonus } : {}) }]
+    }) : []
+    if (tipo === 'escolha' && !opcoes.length) erros.push(`Campo “${n}”: adicione pelo menos uma opção para escolher.`)
+    return [{ id: pegarId(c.id, n), nome: n, tipo: tipo as 'texto' | 'numero' | 'area' | 'escolha', ...(tipo === 'numero' ? { padrao: num(c.padrao, -99999, 99999, 0) } : {}), ...(tipo === 'escolha' ? { opcoes } : {}) }]
   })
   const atributos = lista(e.atributos, LIMITES.atributos).flatMap(a => {
     const n = txt(a.nome, LIMITES.nome); if (!n) return []
@@ -159,10 +168,16 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
     recursos, ...(limites.length ? { limites } : {}), listas: listas.length ? listas : [{ id: 'anotacoes', nome: 'Anotações' }],
     ...(observacoes.length ? { observacoes } : {}), ...(carga ? { carga } : {}), ...(progressoes ? { progressoes } : {}),
   }
-  // ---- Árvore padrão: bônus só em alvos que existem neste sistema ----
+  // ---- Bônus das opções (classe, espécie…) e da árvore: só em alvos que existem neste sistema ----
+  const alvos = new Set(alvosDeBonus(sistema).map(a => a.id))
+  let semAlvo = 0
+  for (const c of campos) for (const o of c.opcoes ?? []) if (o.bonus) {
+    o.bonus = o.bonus.filter(b => alvos.has(b.alvo) || (semAlvo++, false))
+    if (!o.bonus.length) delete o.bonus
+  }
+  if (semAlvo) avisos.push(`${semAlvo} bônus de opções apontavam para algo que não existe mais e foram tirados.`)
   const arv = lerArvore(e.arvore)
   if (arv.nos.length) {
-    const alvos = new Set(alvosDeBonus(sistema).map(a => a.id))
     let tirados = 0
     for (const n of arv.nos) n.efeitos = n.efeitos.filter(ef => ef.tipo !== 'bonus' || alvos.has(ef.alvo) || (tirados++, false))
     if (tirados) avisos.push(`${tirados} bônus da árvore apontavam para algo que não existe mais e foram tirados.`)
@@ -209,7 +224,14 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
 export function sistemaEmBranco(): Record<string, unknown> {
   return {
     nome: '', resumo: '', dados: 'd20', rolagem: 'd20',
-    campos: [{ id: 'conceito', nome: 'Conceito', tipo: 'texto' }, { id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 }],
+    campos: [{ id: 'conceito', nome: 'Conceito', tipo: 'texto' }, { id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 },
+      { id: 'classe', nome: 'Classe', tipo: 'escolha', opcoes: [
+        { nome: 'Guerreiro', descricao: 'Luta na linha de frente.', bonus: [{ alvo: 'atributo:FOR', valor: 1 }, { alvo: 'pericia:luta', valor: 2 }] },
+        { nome: 'Batedor', descricao: 'Rápido e silencioso.', bonus: [{ alvo: 'atributo:AGI', valor: 1 }, { alvo: 'pericia:furtividade', valor: 2 }] },
+        { nome: 'Sábio', descricao: 'Estuda os segredos do mundo.', bonus: [{ alvo: 'atributo:MEN', valor: 1 }, { alvo: 'pericia:conhecimento', valor: 2 }] }] },
+      { id: 'especie', nome: 'Espécie', tipo: 'escolha', opcoes: [
+        { nome: 'Humano', descricao: 'Versátil.', bonus: [{ alvo: 'recurso:vida', valor: 2 }] },
+        { nome: 'Elfo', descricao: 'Olhos afiados e passos leves.', bonus: [{ alvo: 'derivado:defesa', valor: 1 }] }] }],
     atributos: [{ id: 'FOR', nome: 'Força', min: 0, max: 5, padrao: 1 }, { id: 'AGI', nome: 'Agilidade', min: 0, max: 5, padrao: 1 }, { id: 'MEN', nome: 'Mente', min: 0, max: 5, padrao: 1 }],
     derivados: [{ id: 'vida_max', nome: 'Vida máxima', formula: '10 + FOR * 2 + nivel * 3' }, { id: 'defesa', nome: 'Defesa', formula: '10 + AGI' }],
     pericias: { modo: 'treino', total: 'MOD + TREINO', treinos: [{ id: 'nenhum', nome: 'Destreinado', formula: '0' }, { id: 'treinado', nome: 'Treinado', formula: '2' }, { id: 'mestre', nome: 'Mestre', formula: '4' }],

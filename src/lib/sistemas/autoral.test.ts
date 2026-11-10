@@ -64,3 +64,25 @@ describe('rolagem personalizada (v0.16)', () => {
     for (const m of MODELOS_ROLAGEM) expect(erroDaFormula(m.formula), m.id).toBeNull()
   })
 })
+
+describe('campos de escolha (classe, espécie)', () => {
+  it('valida opções, tira bônus sem alvo e soma o bônus da opção escolhida', async () => {
+    const { validarSistema, sistemaEmBranco } = await import('./autoral')
+    const { calcular, fichaVazia } = await import('./calculo')
+    const base = sistemaEmBranco() as Record<string, unknown> & { campos: Record<string, unknown>[] }
+    const def = { ...base, nome: 'Escolhas', campos: [...base.campos, { id: 'origem', nome: 'Origem', tipo: 'escolha', opcoes: [{ nome: 'Nobre', bonus: [{ alvo: 'atributo:NADA', valor: 3 }] }, { nome: 'nobre' }] }] }
+    const r = validarSistema(def, { id: ID })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    const origem = r.sistema.campos.find(c => c.id === 'origem')!
+    expect(origem.opcoes).toEqual([{ nome: 'Nobre' }])
+    expect(r.avisos.some(a => /opções/.test(a))).toBe(true)
+    const d = fichaVazia(r.sistema)
+    const antes = calcular(r.sistema, d)
+    const depois = calcular(r.sistema, { ...d, campos: { ...d.campos, classe: 'guerreiro', especie: 'Elfo' } })
+    expect(depois.vars.FOR).toBe(Number(antes.vars.FOR) + 1)
+    expect(depois.pericias.luta).toBe(Number(antes.pericias.luta) + 3) // +1 do FOR e +2 direto
+    expect(depois.derivados.defesa).toBe(Number(antes.derivados.defesa) + 1)
+    expect(validarSistema({ ...def, campos: [{ nome: "Classe", tipo: "escolha", opcoes: [] }] }, { id: ID }).ok).toBe(false)
+  })
+})

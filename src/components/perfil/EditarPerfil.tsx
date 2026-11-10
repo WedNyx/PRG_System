@@ -3,13 +3,16 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { X } from 'lucide-react'
 import { validarApelidoAventureiro } from '@/lib/auth/aventureiro'
+import EscolherGrupo from './EscolherGrupo'
+import { ehGrupo, GRUPO_PADRAO, type GrupoId } from '@/lib/grupos'
 
-type Perfil = { id: string; apelido: string; avatar?: string | null }
+type Perfil = { id: string; apelido: string; avatar?: string | null; grupo?: string }
 const CROP = 256, SAIDA = 320
 
 /** Janela para o aventureiro mudar o próprio nome e foto (salva na nuvem). */
 export default function EditarPerfil({ perfil, fechar, salvo }: { perfil: Perfil; fechar: () => void; salvo: (p: Perfil) => void }) {
   const [apelido, setApelido] = useState(perfil.apelido)
+  const [grupo, setGrupo] = useState<GrupoId>(ehGrupo(perfil.grupo) ? perfil.grupo : GRUPO_PADRAO)
   const [avatar, setAvatar] = useState<string | null>(perfil.avatar ?? null)
   const [crop, setCrop] = useState<string | null>(null)
   const [tam, setTam] = useState({ w: 1, h: 1 })
@@ -62,11 +65,11 @@ export default function EditarPerfil({ perfil, fechar, salvo }: { perfil: Perfil
     try {
       const r = await fetch('/api/aventureiros/' + perfil.id, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-prg-aventureiro': perfil.id },
-        body: JSON.stringify({ apelido: v.apelido, avatar }),
+        body: JSON.stringify({ apelido: v.apelido, avatar, ...(grupo !== (perfil.grupo ?? GRUPO_PADRAO) ? { grupo } : {}) }),
       })
       const d = await r.json().catch(() => ({}))
       if (!r.ok) throw new Error(d.erro || 'Não foi possível salvar.')
-      salvo(d.perfil); fechar()
+      salvo({ ...d.perfil, grupo: d.perfil.grupo ?? perfil.grupo }); fechar()
     } catch (er) { setErro(er instanceof Error ? er.message : 'Falha ao salvar.') } finally { setOcupado(false) }
   }
 
@@ -103,6 +106,7 @@ export default function EditarPerfil({ perfil, fechar, salvo }: { perfil: Perfil
       </div>
       <label className="block text-sm text-[#b4aeca]">Nome do aventureiro
         <input value={apelido} onChange={e => setApelido(e.target.value)} maxLength={40} required className="mt-2 w-full rounded-lg border border-[#4a4267] bg-[#100f20] p-3 text-white outline-none focus:border-[#b99bff]" /></label>
+      <EscolherGrupo valor={grupo} mudar={setGrupo} />
       {erro && <p role="alert" className="rounded-lg border border-red-500/40 p-3 text-sm text-red-200">{erro}</p>}
       <div className="flex gap-2">
         <button type="button" onClick={fechar} className="flex-1 rounded-lg border border-[#62527e] px-3 py-3">Cancelar</button>

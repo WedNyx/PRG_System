@@ -51,10 +51,22 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
   }
 }
 
+/** Opção escolhida num campo “escolha” (pelo nome, sem diferenciar maiúsculas). */
+export function opcaoEscolhida(c: Sistema['campos'][number], valor: unknown) {
+  const v = typeof valor === 'string' ? valor.trim().toLowerCase() : ''
+  return v ? c.opcoes?.find(o => o.nome.toLowerCase() === v) : undefined
+}
+/** Bônus das opções escolhidas (classe, espécie…), por alvo, no mesmo formato dos itens e da árvore. */
+export function bonusDasEscolhas(s: Sistema, d: Pick<DadosFicha, 'campos'>): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const c of s.campos) if (c.tipo === 'escolha') for (const b of opcaoEscolhida(c, d.campos?.[c.id])?.bonus ?? []) out[b.alvo] = (out[b.alvo] ?? 0) + b.valor
+  return out
+}
+
 export function calcular(s: Sistema, d: DadosFicha): Calculo {
   const vars: Variaveis = {}
   const itens = lerItens(d.itens), uso = lerUso(d.uso)
-  const bonus = somarBonus(bonusEquipados(itens, uso), bonusDaArvore(lerArvore(d.arvore)))
+  const bonus = somarBonus(bonusEquipados(itens, uso), bonusDaArvore(lerArvore(d.arvore)), bonusDasEscolhas(s, d))
   const b = (alvo: string) => bonus[alvo] ?? 0
   for (const c of s.campos) if (c.tipo === 'numero') vars[c.id] = num(d.campos[c.id])
   const mods: Record<string, number> = {}

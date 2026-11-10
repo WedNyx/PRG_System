@@ -2,6 +2,7 @@ import { lerJson, ok, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { exigirAdmin } from '@/lib/nuvem/admin'
 import { isUuid } from '@/lib/nuvem/validacao'
 import { validarApelidoAventureiro } from '@/lib/auth/aventureiro'
+import { ehGrupo } from '@/lib/grupos'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
@@ -23,9 +24,13 @@ export const PATCH = rota<Ctx>(async (req, { params }) => {
     if (b.avatar !== null && (typeof b.avatar !== 'string' || b.avatar.length > 120_000 || !AVATAR.test(b.avatar))) throw new ErroApi(400, 'Foto inválida ou muito grande.')
     mud.avatar = b.avatar
   }
+  if (b.grupo !== undefined) {
+    if (!ehGrupo(b.grupo)) throw new ErroApi(400, 'Escolha um grupo: Lunethernnyis ou De Fora.')
+    mud.grupo = b.grupo
+  }
   if (!Object.keys(mud).length) throw new ErroApi(400, 'Nada para alterar.')
-  let r: { id: string; apelido: string; avatar: string | null }[]
-  try { r = await rest(`prg_public_adventurers?id=eq.${q(id)}&select=id,apelido,avatar`, { method: 'PATCH', prefer: 'return=representation', body: JSON.stringify(mud) }) }
+  let r: { id: string; apelido: string; avatar: string | null; grupo?: string }[]
+  try { r = await rest(`prg_public_adventurers?id=eq.${q(id)}&select=id,apelido,avatar${mud.grupo ? ',grupo' : ''}`, { method: 'PATCH', prefer: 'return=representation', body: JSON.stringify(mud) }) }
   catch (e) { if (e instanceof ErroApi && e.status === 409) throw new ErroApi(409, 'Esse apelido já está em uso.'); throw e }
   if (!r.length) throw new ErroApi(404, 'Aventureiro não encontrado.')
   return ok({ perfil: r[0] })

@@ -2,6 +2,15 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.21.0 — Grupos de perfis e classes para escolher (2026-11-10)
+- Portal com grupos: antes dos perfis aparecem dois cartões, 🧭 De Fora e 🌙 Lunethernnyis. Cada um mostra só os perfis do seu grupo, e o aparelho lembra a escolha (“Trocar grupo” volta aos cartões).
+- Todos os perfis que já existiam estão em Lunethernnyis. Cada pessoa pode trocar o próprio grupo em “Editar perfil”; perfis novos escolhem o grupo ao serem criados.
+- Construtor: novo tipo de campo “Lista de opções” para Classe, Espécie, Origem… Cada opção tem descrição e bônus automáticos (ex.: Guerreiro → +1 Força, +2 Luta).
+- Na ficha, o jogador escolhe a opção numa lista, vê a descrição e os bônus, e eles já entram nos cálculos.
+- O “Exemplo simples” do construtor agora vem com Classe (Guerreiro, Batedor, Sábio) e Espécie (Humano, Elfo).
+- Guia: novo tópico “🧪 Exemplo: o seu primeiro sistema”, um passo a passo com valores prontos para quem está começando.
+- Migração 017: coluna “grupo” nos perfis.
+
 ## v0.20.0 — Árvore padrão e progressão por nível (2026-11-10)
 - Construtor de sistemas: nova seção “🌠 Árvore de habilidades padrão”. Monte os hexágonos uma vez e toda ficha nova do sistema já começa com eles.
 - Fichas que já existem trazem a árvore com “🌠 Usar a árvore do sistema”, ou “🔄 Atualizar” quando o autor mudar algo (o que já foi liberado continua).

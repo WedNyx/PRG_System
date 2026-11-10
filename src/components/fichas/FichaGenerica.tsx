@@ -3,7 +3,8 @@
 import { useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { AlertTriangle, Dice5, Info } from 'lucide-react'
-import { calcular } from '@/lib/sistemas/calculo'
+import { calcular, opcaoEscolhida } from '@/lib/sistemas/calculo'
+import { alvosDeBonus } from '@/lib/sistemas/inventario'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { montarRolagem, rolarExpressao } from '@/lib/dice'
 import { enviarImagemNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
@@ -112,7 +113,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
           <input value={d.nome} maxLength={90} disabled={somenteLeitura} onChange={e => set('nome', e.target.value)} className={input + ' mt-1 text-lg font-bold'} placeholder="Ex.: Lyra Nyx" /></label>
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {s.campos.map(f => <label key={f.id} className={'block text-sm ' + (f.tipo === 'area' ? 'sm:col-span-2 lg:col-span-3' : '')}>{f.nome}
+        {s.campos.map(f => f.tipo === 'escolha' ? <CampoEscolha key={f.id} s={s} f={f} valor={d.campos[f.id]} somenteLeitura={somenteLeitura} mudar={v => set('campos', { ...d.campos, [f.id]: v })} /> : <label key={f.id} className={'block text-sm ' + (f.tipo === 'area' ? 'sm:col-span-2 lg:col-span-3' : '')}>{f.nome}
           {f.tipo === 'area'
             ? <textarea rows={3} value={String(d.campos[f.id] ?? '')} disabled={somenteLeitura} onChange={e => set('campos', { ...d.campos, [f.id]: e.target.value.slice(0, 4000) })} className={input + ' mt-1'} />
             : <input type={f.tipo === 'numero' ? 'number' : 'text'} value={d.campos[f.id] ?? ''} disabled={somenteLeitura} maxLength={120}
@@ -249,5 +250,24 @@ function Retrato({ url, nome, somenteLeitura, onChange }: { url?: string; nome: 
       {podeEnviar && <input type="file" accept="image/png,image/jpeg,image/webp" disabled={enviando} className="sr-only" aria-label="Imagem do personagem" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void escolher(f) }} />}
     </label>
     {url && podeEnviar && <button type="button" onClick={() => onChange(null)} className="mt-1 text-[11px] text-[#c4b6d4] hover:underline">Remover</button>}
+  </div>
+}
+
+/** Campo de escolha (classe, espécie…): lista de opções com descrição e os bônus que a opção dá. */
+function CampoEscolha({ s, f, valor, mudar, somenteLeitura }: { s: Sistema; f: Sistema['campos'][number]; valor: unknown; mudar: (v: string) => void; somenteLeitura: boolean }) {
+  const op = opcaoEscolhida(f, valor)
+  const nomes = useMemo(() => Object.fromEntries(alvosDeBonus(s).map(a => [a.id, a.nome])), [s])
+  const texto = typeof valor === 'string' ? valor : ''
+  return <div className="block text-sm">
+    <label className="block">{f.nome}
+      <select value={op?.nome ?? (texto ? '__outro' : '')} disabled={somenteLeitura} onChange={e => mudar(e.target.value === '__outro' ? texto : e.target.value)} className={input + ' mt-1'}>
+        <option value="">Escolha…</option>
+        {f.opcoes?.map(o => <option key={o.nome} value={o.nome}>{o.nome}</option>)}
+        {texto && !op && <option value="__outro">{texto} (não está na lista)</option>}
+      </select></label>
+    {op && (op.descricao || op.bonus?.length) && <div className="mt-1.5 rounded-lg bg-[#171325] p-2 text-xs text-[#d6c8e8]">
+      {op.descricao && <p className="whitespace-pre-line">{op.descricao}</p>}
+      {!!op.bonus?.length && <p className="mt-1 flex flex-wrap gap-1">{op.bonus.map(b => <span key={b.alvo} className="rounded-full bg-[#2f2547] px-2 py-0.5 text-[#c9f5d8]">{b.valor > 0 ? '+' : ''}{b.valor} {nomes[b.alvo] ?? b.alvo}</span>)}</p>}
+    </div>}
   </div>
 }

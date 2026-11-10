@@ -13,6 +13,7 @@ import { idUnico, sistemaEmBranco, slug, validarSistema } from '@/lib/sistemas/a
 import { esquecerSistema } from '@/lib/sistemas/cliente'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import EditorRolagem from './EditorRolagem'
+import EditorOpcoes, { type OpcaoDef } from './EditorOpcoes'
 import EditorProgressao, { type DefProgressao } from './EditorProgressao'
 import ArvoreHabilidades from '@/components/fichas/Arvore'
 import { lerArvore } from '@/lib/sistemas/arvore'
@@ -184,11 +185,12 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
           {def.campos.map((c, i) => <div key={i} className="space-y-1 rounded-xl bg-[#171325] p-2">
             <div className="flex gap-2">
               <input aria-label="Nome do campo" value={c.nome} onChange={e => mudar(d => ({ ...d, campos: renomear(d.campos, i, e.target.value) }))} className={input} placeholder="Nome do campo" />
-              <select aria-label="Tipo" value={String(c.tipo ?? 'texto')} onChange={e => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, tipo: e.target.value } : x) }))} className={pequeno}>
-                <option value="texto">Texto</option><option value="numero">Número</option><option value="area">Texto longo</option></select>
+              <select aria-label="Tipo" value={String(c.tipo ?? 'texto')} onChange={e => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, tipo: e.target.value, ...(e.target.value === 'escolha' && !Array.isArray(x.opcoes) ? { opcoes: [{ nome: '' }] } : {}) } : x) }))} className={pequeno}>
+                <option value="texto">Texto</option><option value="numero">Número</option><option value="area">Texto longo</option><option value="escolha">Lista de opções</option></select>
               <Remover rotulo="Remover campo" onClick={() => mudar(d => ({ ...d, campos: d.campos.filter((_, k) => k !== i) }))} />
             </div>
             {c.tipo === 'numero' && <div className="flex items-center gap-2"><label className="text-xs">Começa em <input type="number" value={Number(c.padrao ?? 0)} onChange={e => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, padrao: Number(e.target.value) } : x) }))} className={pequeno + ' w-20'} /></label><Var id={c.id} /></div>}
+            {c.tipo === 'escolha' && <EditorOpcoes opcoes={(c.opcoes as OpcaoDef[]) ?? []} alvos={alvosDoDef(def)} mudar={o => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, opcoes: o } : x) }))} />}
           </div>)}
           <button type="button" className={botao} onClick={() => mudar(d => ({ ...d, campos: [...d.campos, novo(d.campos, { tipo: 'texto' })] }))}><Plus size={14} /> Campo</button>
         </SecaoBase>
@@ -312,6 +314,15 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
   </main>
 }
 
+/** Onde um bônus pode entrar (igual a alvosDeBonus, mas direto do que está sendo editado). */
+function alvosDoDef(d: Def) {
+  return [
+    ...d.atributos.map(a => ({ id: 'atributo:' + a.id, nome: a.nome })),
+    ...d.derivados.map(x => ({ id: 'derivado:' + x.id, nome: x.nome })),
+    ...(d.pericias.modo === 'nenhuma' ? [] : d.pericias.lista.map(p => ({ id: 'pericia:' + p.id, nome: 'Perícia ' + p.nome }))),
+    ...d.recursos.map(x => ({ id: 'recurso:' + x.id, nome: x.nome + ' (máximo)' })),
+  ].filter(a => a.nome)
+}
 function SecaoBase({ id, titulo, sub, aberta, alternar, children }: { id: string; titulo: string; sub?: string; aberta: boolean; alternar: () => void; children: React.ReactNode }) {
   return <section id={'secao-' + id} className="rounded-2xl border border-[#55456e] bg-[#201a32]/95">
     <button type="button" onClick={alternar} aria-expanded={aberta} className="flex w-full items-center gap-2 px-4 py-3 text-left">

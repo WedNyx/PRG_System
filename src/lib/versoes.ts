@@ -6,6 +6,14 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.16.1', data: '2026-11-10', titulo: 'Dado 3D mostra o número certo',
+    itens: [
+      'Dados 3D agora caem exatamente no número sorteado: a face de cima do dado é a mesma do resultado (antes o 3D rolava por conta própria e podia mostrar outro número).',
+      'O cartão com o total aparece quando os dados param de rolar.',
+      'Dados que não existem em 3D (ex.: d1000) ou rolagens com mais de 20 dados aparecem só no cartão, sem dado “errado” na tela.',
+    ],
+  },
+  {
     versao: '0.16.0', data: '2026-11-10', titulo: 'Rolagem personalizada',
     itens: [
       'Rolagem personalizada no construtor de sistemas: em “Como se rola”, escolha 🎲 Rolagem personalizada e use um dos 12 modelos (vantagem, 2d6, pool de dados, contar sucessos, rola e mantém, Fate…) ou monte a sua fórmula.',

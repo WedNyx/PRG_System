@@ -57,3 +57,42 @@ describe('árvore de habilidades', () => {
     expect(poderesDaArvore({ ...a, liberados: ['raiz', 'fogo'] })[0].nome).toBe('Centelha')
   })
 })
+
+describe('árvore padrão do sistema e pontos do nível (v0.20)', () => {
+  it('pontos extras da progressão contam para liberar', async () => {
+    const { lerArvore, podeLiberar, disponiveis } = await import('./arvore')
+    const a = lerArvore({ pontos: 0, nos: [{ id: 'a', nome: 'A', custo: 2 }] })
+    expect(podeLiberar(a, 'a').ok).toBe(false)
+    expect(podeLiberar(a, 'a', 2).ok).toBe(true)
+    expect(disponiveis({ ...a, liberados: ['a'] }, 3)).toBe(1)
+  })
+  it('mescla a árvore do sistema sem perder o que a ficha tem', async () => {
+    const { lerArvore, mesclarArvore, difereDoSistema } = await import('./arvore')
+    const ficha = lerArvore({ pontos: 4, nos: [{ id: 'a', nome: 'Velho', custo: 1 }, { id: 'meu', nome: 'Só meu', custo: 1 }], liberados: ['a', 'meu'] })
+    const sis = { nos: [{ id: 'a', nome: 'Novo nome', custo: 1 }, { id: 'b', nome: 'Novo', custo: 2, requer: ['a'] }] }
+    expect(difereDoSistema(ficha, sis)).toBe(true)
+    const m = mesclarArvore(ficha, sis)
+    expect(m.nos.map(n => n.nome)).toEqual(['Novo nome', 'Novo', 'Só meu'])
+    expect(m.liberados).toEqual(['a', 'meu']); expect(m.pontos).toBe(4)
+    expect(difereDoSistema(m, sis)).toBe(false)
+  })
+  it('sistema autoral com árvore e progressão: ficha nova nasce com a árvore e ganha pontos por nível', async () => {
+    const { validarSistema } = await import('./autoral')
+    const { calcular, fichaVazia } = await import('./calculo')
+    const r = validarSistema({
+      nome: 'Com Nível', campos: [{ id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 }], atributos: [{ id: 'FOR', nome: 'Força', min: 0, max: 5, padrao: 1 }],
+      derivados: [{ id: 'vida_max', nome: 'Vida', formula: '10 + prog_vida' }],
+      progressoes: { classes: [{ nome: 'Nível', campoNivel: 'nivel', tabela: { arvore: [1, 2, 3], vida: [0, 5, 10] } }], colunas: { arvore: 'Pontos da árvore', vida: 'Vida' } },
+      arvore: { pontos: 0, nos: [{ id: 'r', nome: 'Raiz', custo: 1, efeitos: [{ tipo: 'bonus', alvo: 'atributo:FOR', valor: 1 }, { tipo: 'bonus', alvo: 'atributo:NAOEXISTE', valor: 1 }] }] },
+    }, { id: 'autoral-' + '0'.repeat(32) })
+    expect(r.ok, !r.ok ? r.erros.join() : '').toBe(true); if (!r.ok) return
+    expect(r.avisos.join()).toMatch(/bônus da árvore/)
+    expect(r.sistema.progressoes?.classes[0].tabela.arvore).toHaveLength(20)
+    const d = fichaVazia(r.sistema)
+    expect((d.arvore as { nos: unknown[] }).nos).toHaveLength(1)
+    const c1 = calcular(r.sistema, d), c3 = calcular(r.sistema, { ...d, campos: { ...d.campos, nivel: 3 } })
+    expect([c1.vars.prog_arvore, c3.vars.prog_arvore, c3.derivados.vida_max]).toEqual([1, 3, 20])
+    const sem = validarSistema({ nome: 'X', atributos: [{ nome: 'A' }], progressoes: { classes: [{ nome: 'Classe', campoNivel: 'inexistente', tabela: {} }] } }, { id: 'autoral-' + '0'.repeat(32) })
+    expect(!sem.ok && sem.erros.join()).toMatch(/campo do nível/)
+  })
+})

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validarApelidoAventureiro } from '@/lib/auth/aventureiro'
+import { ehGrupo, GRUPO_PADRAO } from '@/lib/grupos'
 
 export const dynamic = 'force-dynamic'
 const enabled = () => process.env.PRG_SHARED_PROFILES === 'true'
@@ -13,9 +14,12 @@ const unavailable = () => NextResponse.json({ erro: 'Catálogo compartilhado ain
 export async function GET() {
   if (!enabled() || !url() || !key()) return unavailable()
   try {
-    const response = await fetch(url() + '/rest/v1/prg_public_adventurers?select=id,apelido,avatar&order=created_at.asc&limit=200', { headers: headers(), cache: 'no-store' })
+    const buscar = (sel: string) => fetch(url() + '/rest/v1/prg_public_adventurers?select=' + sel + '&order=created_at.asc&limit=300', { headers: headers(), cache: 'no-store' })
+    let response = await buscar('id,apelido,avatar,grupo')
+    // Antes da migração 017 a coluna “grupo” não existe: todos ficam em Lunethernnyis.
+    if (response.status === 400) response = await buscar('id,apelido,avatar')
     if (!response.ok) throw new Error('Falha no catálogo')
-    const perfis = await response.json()
+    const perfis = (await response.json() as { grupo?: string }[]).map(p => ({ ...p, grupo: ehGrupo(p.grupo) ? p.grupo : GRUPO_PADRAO }))
     return NextResponse.json({ perfis }, { headers: { 'Cache-Control': 'no-store' } })
   } catch { return NextResponse.json({ erro: 'Não foi possível carregar os aventureiros.' }, { status: 502 }) }
 }
@@ -36,13 +40,15 @@ export async function POST(request: NextRequest) {
   const body = payload as Record<string, unknown>
   const valid = validarApelidoAventureiro(body.apelido)
   if (!valid.ok) return NextResponse.json({ erro: valid.erro }, { status: 400 })
+  if (body.grupo !== undefined && !ehGrupo(body.grupo)) return NextResponse.json({ erro: 'Escolha um grupo: Lunethernnyis ou De Fora.' }, { status: 400 })
+  const grupo = ehGrupo(body.grupo) ? body.grupo : GRUPO_PADRAO
   const avatar = body.avatar === undefined || body.avatar === null ? null : body.avatar
   if (avatar !== null && (typeof avatar !== 'string' || avatar.length > 120_000 || !/^data:image\/jpeg;base64,[a-zA-Z0-9+/=]+$/.test(avatar)))
     return NextResponse.json({ erro: 'Foto inválida ou muito grande.' }, { status: 400 })
   try {
-    const response = await fetch(url() + '/rest/v1/prg_public_adventurers?select=id,apelido,avatar', {
+    const response = await fetch(url() + '/rest/v1/prg_public_adventurers?select=id,apelido,avatar,grupo', {
       method: 'POST', headers: { ...headers(), Prefer: 'return=representation' },
-      body: JSON.stringify({ apelido: valid.apelido, avatar }),
+      body: JSON.stringify({ apelido: valid.apelido, avatar, grupo }),
       cache: 'no-store',
     })
     if (response.status === 409) return NextResponse.json({ erro: 'Esse apelido já está em uso.' }, { status: 409 })

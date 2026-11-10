@@ -5,6 +5,8 @@
  */
 import { calcular, fichaVazia } from './calculo'
 import { erroDaFormula } from './regrasRolagem'
+import { lerArvore } from './arvore'
+import { alvosDeBonus } from './inventario'
 import { avaliar, variaveisDaFormula } from './formula'
 import type { Sistema } from './tipos'
 
@@ -13,7 +15,7 @@ export const ehAutoral = (id: unknown): id is string => typeof id === 'string' &
 export const idAutoral = (uuid: string) => PREFIXO_AUTORAL + uuid.replace(/-/g, '').toLowerCase()
 export const uuidDoAutoral = (id: string) => { const h = id.slice(PREFIXO_AUTORAL.length); return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}` }
 
-export const LIMITES = { campos: 30, atributos: 20, derivados: 30, pericias: 80, treinos: 8, recursos: 12, listas: 12, limites: 12, observacoes: 12, formula: 600, nome: 60 }
+export const LIMITES = { campos: 30, atributos: 20, derivados: 30, pericias: 80, treinos: 8, recursos: 12, listas: 12, limites: 12, observacoes: 12, formula: 600, nome: 60, classes: 6, colunas: 12, opcoes: 30, bonusOpcao: 6 }
 const RESERVADO = /^(mod_|per_|tot_|qtd_|prog_)|^(soma_atributos|atributos_zero|maior_atributo|custo_pericias|maior_valor_pericia|carga_total|nivel_total|X|MOD|ATR|TREINO|VALOR)$/
 
 /** Transforma um nome em identificador de fórmula: "Pontos de Mana" → pontos_de_mana. */
@@ -57,8 +59,18 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
 
   const campos = lista(e.campos, LIMITES.campos).flatMap(c => {
     const n = txt(c.nome, LIMITES.nome); if (!n) return []
-    const tipo = c.tipo === 'numero' || c.tipo === 'area' ? c.tipo : 'texto'
-    return [{ id: pegarId(c.id, n), nome: n, tipo: tipo as 'texto' | 'numero' | 'area', ...(tipo === 'numero' ? { padrao: num(c.padrao, -99999, 99999, 0) } : {}) }]
+    const tipo = c.tipo === 'numero' || c.tipo === 'area' || c.tipo === 'escolha' ? c.tipo : 'texto'
+    const vistas = new Set<string>()
+    const opcoes = tipo === 'escolha' ? lista(c.opcoes, LIMITES.opcoes).flatMap(o => {
+      const on = txt(o.nome, LIMITES.nome); if (!on || vistas.has(on.toLowerCase())) return []
+      vistas.add(on.toLowerCase())
+      const descricao = txt(o.descricao, 400)
+      const bonus = lista(o.bonus, LIMITES.bonusOpcao).flatMap(b => typeof b.alvo === 'string' && Number(b.valor) ? [{ alvo: b.alvo.slice(0, 60), valor: num(b.valor, -99, 99, 0) }] : [])
+      const progressao = typeof o.progressao === 'string' && /^[a-z][a-z0-9_]{0,24}$/.test(o.progressao) ? o.progressao : ''
+      return [{ nome: on, ...(descricao ? { descricao } : {}), ...(bonus.length ? { bonus } : {}), ...(progressao ? { progressao } : {}) }]
+    }) : []
+    if (tipo === 'escolha' && !opcoes.length) erros.push(`Campo “${n}”: adicione pelo menos uma opção para escolher.`)
+    return [{ id: pegarId(c.id, n), nome: n, tipo: tipo as 'texto' | 'numero' | 'area' | 'escolha', ...(tipo === 'numero' ? { padrao: num(c.padrao, -99999, 99999, 0) } : {}), ...(tipo === 'escolha' ? { opcoes, ...(typeof c.nivel === 'string' && c.nivel ? { nivel: c.nivel.slice(0, 40) } : {}) } : {}) }]
   })
   const atributos = lista(e.atributos, LIMITES.atributos).flatMap(a => {
     const n = txt(a.nome, LIMITES.nome); if (!n) return []
@@ -122,13 +134,68 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   const carga = cargaF && txt(cargaF.formula, LIMITES.formula) ? { formula: txt(cargaF.formula, LIMITES.formula), unidade: txt(cargaF.unidade, 16) || 'kg' } : undefined
   const creditos = txt(e.creditos, 1500) || undefined
 
+  // ---- Progressão por nível (tabelas por classe): cada coluna vira a variável prog_<coluna> ----
+  let progressoes: Sistema['progressoes']
+  const pe = e.progressoes && typeof e.progressoes === 'object' ? e.progressoes as Record<string, unknown> : null
+  if (pe && Array.isArray(pe.classes) && pe.classes.length) {
+    const numericos = new Set(campos.filter(c => c.tipo === 'numero').map(c => c.id))
+    const idsCl = new Set<string>(), colunasNomes: Record<string, string> = {}
+    const nomesIn = pe.colunas && typeof pe.colunas === 'object' ? pe.colunas as Record<string, unknown> : {}
+    const classes = (pe.classes as unknown[]).slice(0, LIMITES.classes).flatMap(x => {
+      const c = x && typeof x === 'object' ? x as Record<string, unknown> : {}
+      const nomeCl = txt(c.nome, 40).trim(); if (!nomeCl) return []
+      const id = idUnico(typeof c.id === 'string' && /^[a-z][a-z0-9_]{0,24}$/.test(c.id) ? c.id : slug(nomeCl) || 'classe', idsCl); idsCl.add(id)
+      const campoNivel = typeof c.campoNivel === 'string' ? c.campoNivel : ''
+      if (!numericos.has(campoNivel)) { erros.push(`Progressão “${nomeCl}”: escolha o campo do nível (um campo de número, ex.: Nível).`); return [] }
+      const tabela: Record<string, number[]> = {}
+      const t = c.tabela && typeof c.tabela === 'object' ? c.tabela as Record<string, unknown> : {}
+      for (const [col, valores] of Object.entries(t).slice(0, LIMITES.colunas)) {
+        if (!/^[a-z][a-z0-9_]{0,24}$/.test(col) || !Array.isArray(valores)) continue
+        const v = valores.slice(0, 20).map(n => Math.round(Math.max(-10000, Math.min(10000, Number(n) || 0)) * 100) / 100)
+        while (v.length < 20) v.push(v.at(-1) ?? 0)
+        tabela[col] = v
+        const nomeCol = txt(nomesIn[col], 40).trim(); if (nomeCol) colunasNomes[col] = nomeCol
+      }
+      return [{ id, nome: nomeCl, campoNivel, tabela }]
+    })
+    if (classes.length) progressoes = { classes, ...(Object.keys(colunasNomes).length ? { colunas: colunasNomes } : {}) }
+  }
+
+  // ---- Escolhas ligadas às tabelas de níveis (Classe → tabela do Guerreiro) ----
+  {
+    const idsProg = new Set(progressoes?.classes.map(c => c.id) ?? [])
+    const numeros = new Set(campos.filter(c => c.tipo === 'numero').map(c => c.id))
+    let soltas = 0
+    for (const c of campos) {
+      if (c.tipo !== 'escolha') continue
+      for (const o of c.opcoes ?? []) if (o.progressao && !idsProg.has(o.progressao)) { delete o.progressao; soltas++ }
+      if (c.nivel && (!numeros.has(c.nivel) || !c.opcoes?.some(o => o.progressao))) delete c.nivel
+    }
+    if (soltas) avisos.push(`${soltas} opção(ões) apontavam para uma tabela de níveis que não existe mais e foram desligadas.`)
+  }
+
   const sistema: Sistema = {
     id: meta.id, nome, resumo: txt(e.resumo, 400), tipo: 'autoral',
     licenca: 'Sistema autoral' + (meta.autor ? ' de ' + meta.autor : ''), ...(creditos ? { creditos } : {}),
     dados: txt(e.dados, 40) || (rolagem === 'd100' ? 'd100' : rolagem === 'd20' ? 'd20' : regraRolagem ? regraRolagem.formula.replace(/VALOR/gi, 'X') : 'Livre'), rolagem, ...(regraRolagem ? { regraRolagem } : {}),
     campos, atributos, ...(formulaModificador ? { formulaModificador } : {}), derivados, ...(pericias ? { pericias } : {}),
     recursos, ...(limites.length ? { limites } : {}), listas: listas.length ? listas : [{ id: 'anotacoes', nome: 'Anotações' }],
-    ...(observacoes.length ? { observacoes } : {}), ...(carga ? { carga } : {}),
+    ...(observacoes.length ? { observacoes } : {}), ...(carga ? { carga } : {}), ...(progressoes ? { progressoes } : {}),
+  }
+  // ---- Bônus das opções (classe, espécie…) e da árvore: só em alvos que existem neste sistema ----
+  const alvos = new Set(alvosDeBonus(sistema).map(a => a.id))
+  let semAlvo = 0
+  for (const c of campos) for (const o of c.opcoes ?? []) if (o.bonus) {
+    o.bonus = o.bonus.filter(b => alvos.has(b.alvo) || (semAlvo++, false))
+    if (!o.bonus.length) delete o.bonus
+  }
+  if (semAlvo) avisos.push(`${semAlvo} bônus de opções apontavam para algo que não existe mais e foram tirados.`)
+  const arv = lerArvore(e.arvore)
+  if (arv.nos.length) {
+    let tirados = 0
+    for (const n of arv.nos) n.efeitos = n.efeitos.filter(ef => ef.tipo !== 'bonus' || alvos.has(ef.alvo) || (tirados++, false))
+    if (tirados) avisos.push(`${tirados} bônus da árvore apontavam para algo que não existe mais e foram tirados.`)
+    sistema.arvore = { pontos: arv.pontos, nos: arv.nos }
   }
 
   // ---- Fórmulas: só podem usar variáveis que existem ----
@@ -137,6 +204,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
     ...derivados.map(d => d.id), ...(pericias?.lista ?? []).flatMap(x => ['per_' + x.id, 'tot_' + x.id]),
     ...(pericias?.treinos ?? []).map(t => 'qtd_' + t.id),
     'soma_atributos', 'atributos_zero', 'maior_atributo', 'custo_pericias', 'maior_valor_pericia', 'carga_total',
+    ...(progressoes ? ['nivel_total', ...new Set(progressoes.classes.flatMap(c => Object.keys(c.tabela).map(k => 'prog_' + k)))] : []),
   ])
   const conferir = (rotulo: string, f: string | undefined, extras: string[] = []) => {
     if (!f) return
@@ -170,7 +238,14 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
 export function sistemaEmBranco(): Record<string, unknown> {
   return {
     nome: '', resumo: '', dados: 'd20', rolagem: 'd20',
-    campos: [{ id: 'conceito', nome: 'Conceito', tipo: 'texto' }, { id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 }],
+    campos: [{ id: 'conceito', nome: 'Conceito', tipo: 'texto' }, { id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 },
+      { id: 'classe', nome: 'Classe', tipo: 'escolha', opcoes: [
+        { nome: 'Guerreiro', descricao: 'Luta na linha de frente.', bonus: [{ alvo: 'atributo:FOR', valor: 1 }, { alvo: 'pericia:luta', valor: 2 }] },
+        { nome: 'Batedor', descricao: 'Rápido e silencioso.', bonus: [{ alvo: 'atributo:AGI', valor: 1 }, { alvo: 'pericia:furtividade', valor: 2 }] },
+        { nome: 'Sábio', descricao: 'Estuda os segredos do mundo.', bonus: [{ alvo: 'atributo:MEN', valor: 1 }, { alvo: 'pericia:conhecimento', valor: 2 }] }] },
+      { id: 'especie', nome: 'Espécie', tipo: 'escolha', opcoes: [
+        { nome: 'Humano', descricao: 'Versátil.', bonus: [{ alvo: 'recurso:vida', valor: 2 }] },
+        { nome: 'Elfo', descricao: 'Olhos afiados e passos leves.', bonus: [{ alvo: 'derivado:defesa', valor: 1 }] }] }],
     atributos: [{ id: 'FOR', nome: 'Força', min: 0, max: 5, padrao: 1 }, { id: 'AGI', nome: 'Agilidade', min: 0, max: 5, padrao: 1 }, { id: 'MEN', nome: 'Mente', min: 0, max: 5, padrao: 1 }],
     derivados: [{ id: 'vida_max', nome: 'Vida máxima', formula: '10 + FOR * 2 + nivel * 3' }, { id: 'defesa', nome: 'Defesa', formula: '10 + AGI' }],
     pericias: { modo: 'treino', total: 'MOD + TREINO', treinos: [{ id: 'nenhum', nome: 'Destreinado', formula: '0' }, { id: 'treinado', nome: 'Treinado', formula: '2' }, { id: 'mestre', nome: 'Mestre', formula: '4' }],

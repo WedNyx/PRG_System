@@ -5,9 +5,12 @@ import Link from 'next/link'
 import { validarApelidoAventureiro } from '@/lib/auth/aventureiro'
 import { useRouter } from 'next/navigation'
 import TransicaoPerfil from '@/components/perfil/TransicaoPerfil'
+import EscolherGrupo from '@/components/perfil/EscolherGrupo'
+import { GRUPOS, GRUPO_PADRAO, ehGrupo, grupoDe, type GrupoId } from '@/lib/grupos'
 import SaudePlataforma from '@/components/admin/SaudePlataforma'
 
-type Perfil = { id: string; apelido: string; avatar?: string }
+type Perfil = { id: string; apelido: string; avatar?: string; grupo?: string }
+const GRUPO_KEY = 'prg-grupo-v1'
 const KEY = 'prg-aventureiros-demo-v1'
 const SELECTED_KEY = 'prg-aventureiro-selecionado-v1'
 const CLOUD_ENABLED = process.env.NEXT_PUBLIC_PRG_SHARED_PROFILES === 'true'
@@ -41,6 +44,12 @@ function lerImagem(file: File): Promise<string> {
 
 export default function PortalAventureiros() {
   const [perfis, setPerfis] = useState<Perfil[]>([])
+  // Grupo escolhido nos cartões (lembrado neste aparelho). null = mostrar os cartões.
+  const [grupo, setGrupoState] = useState<GrupoId | null>(null)
+  const [grupoNovo, setGrupoNovo] = useState<GrupoId | null>(null)
+  const setGrupo = (g: GrupoId | null) => { setGrupoState(g); try { if (g) localStorage.setItem(GRUPO_KEY, g); else localStorage.removeItem(GRUPO_KEY) } catch {} }
+  const grupoDoPerfil = (p: Perfil): GrupoId => ehGrupo(p.grupo) ? p.grupo : GRUPO_PADRAO
+  const visiveis = grupo ? perfis.filter(p => grupoDoPerfil(p) === grupo) : []
   const [versao, setVersao] = useState<{ version: string; revision: string | null } | null>(null)
   const [modal, setModal] = useState<'criar' | 'editar' | null>(null)
   const [gerenciando, setGerenciando] = useState(false)
@@ -66,6 +75,7 @@ export default function PortalAventureiros() {
 
   useEffect(() => {
     setPerfis(lerPerfis())
+    try { const g = localStorage.getItem(GRUPO_KEY); if (ehGrupo(g)) setGrupoState(g) } catch {}
     if (!CLOUD_ENABLED) return
     let active = true
     fetch('/api/aventureiros', { cache: 'no-store' })
@@ -142,6 +152,7 @@ export default function PortalAventureiros() {
     setApelido('')
     setAvatar(undefined)
     setErro('')
+    setGrupoNovo(grupo)
     setModal('criar')
   }
 
@@ -187,17 +198,19 @@ export default function PortalAventureiros() {
       return
     }
     if (!CLOUD_ENABLED && modal === 'criar' && perfis.length >= 50) { setErro('Limite de 50 perfis neste navegador.'); return }
+    if (modal === 'criar' && !grupoNovo) { setErro('Escolha o seu grupo: De Fora ou Lunethernnyis.'); return }
     if (CLOUD_ENABLED) {
       if (modal !== 'criar') { setErro('A edição de perfis da nuvem será liberada após definirmos a proteção.'); return }
       setProcessando(true)
       try {
         const response = await fetch('/api/aventureiros', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ apelido: validacao.apelido, avatar }),
+          body: JSON.stringify({ apelido: validacao.apelido, avatar, grupo: grupoNovo }),
         })
         const result = await response.json()
         if (!response.ok) throw new Error(result.erro || 'Não foi possível salvar na nuvem.')
-        setPerfis(current => [...current, result.perfil])
+        setPerfis(current => [...current, { ...result.perfil, grupo: result.perfil.grupo ?? grupoNovo }])
+        setGrupo(grupoNovo)
         fechar()
       } catch (error) { setErro(error instanceof Error ? error.message : 'Falha ao salvar.') }
       finally { setProcessando(false) }
@@ -205,7 +218,7 @@ export default function PortalAventureiros() {
     }
     const novos = modal === 'editar'
       ? perfis.map(p => p.id === editandoId ? { ...p, apelido: validacao.apelido, avatar } : p)
-      : [...perfis, { id: crypto.randomUUID(), apelido: validacao.apelido, avatar }]
+      : [...perfis, { id: crypto.randomUUID(), apelido: validacao.apelido, avatar, grupo: grupoNovo ?? GRUPO_PADRAO }]
     if (persistir(novos)) fechar()
   }
 
@@ -263,11 +276,34 @@ export default function PortalAventureiros() {
 
         <section className="flex min-h-[65vh] flex-col items-center justify-center py-12">
           <p className="text-xs uppercase tracking-[.24em] text-[#ed9cd8]">🌙 Portal dos Aventureiros</p>
+          {!grupo ? <>
+            <h1 className="mt-4 text-center text-2xl font-bold sm:text-4xl">De onde você vem?</h1>
+            <p className="mt-3 text-center text-sm text-[#b4aeca]">Escolha o seu grupo para ver os perfis dele.</p>
+            <div aria-label="Escolha o grupo" className="mt-10 grid w-full max-w-2xl gap-4 sm:grid-cols-2">
+              {GRUPOS.map(g => {
+                const doGrupo = perfis.filter(p => grupoDoPerfil(p) === g.id)
+                return <button key={g.id} type="button" onClick={() => setGrupo(g.id)} style={{ ['--cor' as string]: g.cor }}
+                  className="group rounded-2xl border-2 border-[#51466a] bg-[#201a32]/90 p-6 text-left shadow-xl transition hover:-translate-y-1 hover:border-[var(--cor)] hover:shadow-[0_0_28px_#7654bb55] focus-visible:outline-2 focus-visible:outline-[#b99bff]">
+                  <span className="block text-4xl">{g.icone}</span>
+                  <span className="mt-3 block text-2xl font-bold" style={{ color: g.cor }}>{g.nome}</span>
+                  <span className="mt-1 block text-sm text-[#b4aeca]">{g.descricao}</span>
+                  <span className="mt-4 flex items-center gap-2">
+                    <span className="flex -space-x-2">{doGrupo.slice(0, 5).map(p => <span key={p.id} className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-[#201a32] bg-[#28233e] text-xs font-bold text-[#b99bff]">
+                      {p.avatar ? <img src={p.avatar} alt="" className="h-full w-full object-cover" /> : p.apelido[0].toUpperCase()}</span>)}</span>
+                    <span className="text-xs text-[#b4aeca]">{doGrupo.length === 1 ? '1 perfil' : doGrupo.length + ' perfis'}</span>
+                  </span>
+                </button>
+              })}
+            </div>
+          </> : <>
           <h1 className="mt-4 text-center text-2xl font-bold sm:text-4xl">Quem vai se aventurar hoje?</h1>
-          <p className="mt-3 text-center text-sm text-[#b4aeca]">Escolha um perfil para continuar sua jornada.</p>
+          <p className="mt-3 flex flex-wrap items-center justify-center gap-2 text-center text-sm text-[#b4aeca]">
+            <span className="rounded-full border px-3 py-1 font-semibold" style={{ borderColor: grupoDe(grupo).cor, color: grupoDe(grupo).cor }}>{grupoDe(grupo).icone} {grupoDe(grupo).nome}</span>
+            <button type="button" onClick={() => setGrupo(null)} className="underline underline-offset-2 hover:text-white">Trocar grupo</button>
+          </p>
 
           <div aria-label="Escolha um aventureiro" className="mt-10 flex w-full max-w-4xl flex-wrap justify-center gap-5 sm:gap-8">
-            {perfis.map(perfil => (
+            {visiveis.map(perfil => (
               <div key={perfil.id} className="group relative flex w-28 flex-col items-center gap-3 sm:w-36">
                 {gerenciando && !CLOUD_ENABLED && (
                   <button onClick={() => abrirEdicao(perfil)} aria-label={'Editar perfil ' + perfil.apelido}
@@ -297,12 +333,13 @@ export default function PortalAventureiros() {
                 </Link>
               </div>
             ))}
-            {perfis.length === 0 && (
+            {visiveis.length === 0 && (
               <div className="rounded-xl border border-dashed border-[#51466a] px-8 py-10 text-center text-[#b4aeca]">
-                {CLOUD_ENABLED ? 'Ainda não há aventureiros compartilhados.' : 'Ainda não há aventureiros neste dispositivo.'}<br />Crie o primeiro perfil para começar!
+                Ainda não há perfis em {grupoDe(grupo).nome}.<br />Toque em “+ Criar perfil” para começar!
               </div>
             )}
           </div>
+          </>}
           {erro && !modal && <p role="alert" className="mt-6 max-w-md rounded-lg border border-red-500/40 p-3 text-center text-sm text-red-200">{erro}</p>}
           {gerenciando && CLOUD_ENABLED && <p className="mt-6 text-center text-sm text-[#ed9cd8]">Modo administrador: toque na 🗑 para remover um perfil.</p>}
           {gerenciando && CLOUD_ENABLED && senhaAdmin && <button type="button" onClick={() => setVendoSaude(true)}
@@ -314,7 +351,7 @@ export default function PortalAventureiros() {
           {CLOUD_ENABLED && <p className="mt-2 text-center text-xs text-[#8f86a8]">Para mudar seu nome ou foto, entre no seu perfil e use “Editar perfil” no menu.</p>}
         </section>
         <div className="flex flex-wrap items-center justify-center gap-3 pb-3 text-xs text-[#b4aeca]">
-          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.19.0'}</Link>
+          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.22.0'}</Link>
           {versao?.revision && <span title="Identificador da implantação">Build {versao.revision}</span>}
           <button type="button" onClick={() => window.location.reload()}
             className="rounded-md border border-[#62527e] px-2 py-1 text-[#b99bff] hover:bg-[#34294f]">
@@ -416,6 +453,7 @@ export default function PortalAventureiros() {
                   maxLength={40} required placeholder="Ex.: Wed Nyx"
                   className="w-full rounded-lg border border-[#4a4267] bg-[#100f20] p-3 text-white outline-none focus:border-[#b99bff]" />
               </div>
+              {modal === 'criar' && <EscolherGrupo valor={grupoNovo} mudar={setGrupoNovo} />}
               {erro && <p role="alert" className="rounded-lg border border-red-500/40 p-3 text-sm text-red-200">{erro}</p>}
               <div className="flex gap-2">
                 <button type="button" onClick={fechar} className="flex-1 rounded-lg border border-[#62527e] px-3 py-3">Cancelar</button>

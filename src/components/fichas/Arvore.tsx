@@ -6,7 +6,7 @@ import { Dice5, Link2, Minus, Pencil, Plus, Sparkles, Trash2, Undo2, X } from 'l
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { alvosDeBonus, lerPoderes, TIPOS_PODER, type TipoPoder } from '@/lib/sistemas/inventario'
 import {
-  arvoreExemplo, CORES_NO, disponiveis, gastos, lerArvore, LIM_ARVORE, novoIdNo, podeDevolver, podeLiberar, sincronizarPoderes,
+  arvoreExemplo, CORES_NO, difereDoSistema, disponiveis, gastos, lerArvore, LIM_ARVORE, mesclarArvore, novoIdNo, podeDevolver, podeLiberar, sincronizarPoderes,
   type Arvore, type EfeitoNo, type NoArvore,
 } from '@/lib/sistemas/arvore'
 
@@ -16,13 +16,19 @@ const hex = (r: number) => Array.from({ length: 6 }, (_, i) => { const a = Math.
 const input = 'w-full rounded-lg border border-[#5e4b78] bg-[#151123] p-2 text-white'
 const btn = 'inline-flex items-center gap-1.5 rounded-lg border border-[#70588c] px-3 py-2 text-sm hover:bg-[#38294d] disabled:opacity-40'
 
-type Props = { s: Sistema; d: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura: boolean; rolar: (expressao: string, rotulo: string) => void }
+type Props = {
+  s: Sistema; d: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura: boolean; rolar: (expressao: string, rotulo: string) => void
+  /** Pontos que vêm da progressão por nível (somam aos ganhos). */
+  extra?: number
+  /** Construtor: edita a árvore padrão do sistema (sem liberar nada). */
+  editorSistema?: boolean
+}
 
 /** Árvore de habilidades: hexágonos ligados, liberados com pontos. Modo “Montar” para criar/ligar/arrastar. */
-export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rolar }: Props) {
+export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rolar, extra = 0, editorSistema = false }: Props) {
   const a = useMemo(() => lerArvore(d.arvore), [d.arvore])
   const alvos = useMemo(() => alvosDeBonus(s), [s])
-  const [montando, setMontando] = useState(false)
+  const [montando, setMontando] = useState(editorSistema)
   const [sel, setSel] = useState<string | null>(null)
   const [editor, setEditor] = useState<NoArvore | null>(null)
   const [ligando, setLigando] = useState<string | null>(null)
@@ -37,7 +43,9 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
 
   const salvar = (nova: Arvore) => onChange({ ...d, arvore: nova, poderes: sincronizarPoderes(lerPoderes(d.poderes), nova) })
   const no = a.nos.find(n => n.id === sel) ?? null
-  const livres = disponiveis(a)
+  const livres = disponiveis(a, extra)
+  const doSistema = !editorSistema && s.arvore?.nos?.length ? s.arvore : null
+  const sistemaMudou = !!doSistema && a.nos.length > 0 && difereDoSistema(a, doSistema)
 
   // Área do desenho: cabe todos os hexágonos com folga.
   const xs = a.nos.map(n => n.id === arrasto?.id ? arrasto.x : n.x), ys = a.nos.map(n => n.id === arrasto?.id ? arrasto.y : n.y)
@@ -73,7 +81,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
     setArrasto(null)
   }
 
-  function liberar(n: NoArvore) { if (podeLiberar(a, n.id).ok) salvar({ ...a, liberados: [...a.liberados, n.id] }) }
+  function liberar(n: NoArvore) { if (podeLiberar(a, n.id, extra).ok) salvar({ ...a, liberados: [...a.liberados, n.id] }) }
   function devolver(n: NoArvore) { if (podeDevolver(a, n.id).ok) salvar({ ...a, liberados: a.liberados.filter(l => l !== n.id) }) }
   function novoNo() {
     if (a.nos.length >= LIM_ARVORE.nos) return
@@ -90,17 +98,20 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
     salvar(lerArvore({ ...a, nos: a.nos.filter(x => x.id !== n.id), liberados: a.liberados.filter(l => l !== n.id) })); setSel(null)
   }
 
-  const estado = (n: NoArvore) => a.liberados.includes(n.id) ? 'liberado' : podeLiberar(a, n.id).ok ? 'disponivel' : n.requer.every(r => a.liberados.includes(r)) ? 'sem-pontos' : 'bloqueado'
+  const estado = (n: NoArvore) => a.liberados.includes(n.id) ? 'liberado' : !editorSistema && podeLiberar(a, n.id, extra).ok ? 'disponivel' : n.requer.every(r => a.liberados.includes(r)) ? 'sem-pontos' : 'bloqueado'
 
   return <section className="overflow-hidden rounded-2xl border border-[#55456e] bg-[#0c0a16]">
     <div className="flex flex-wrap items-center gap-3 border-b border-[#2b2140] bg-[#14111f] px-4 py-3">
-      <h2 className="flex-1 bg-gradient-to-b from-[#fde68a] to-[#d4a23a] bg-clip-text font-serif text-lg font-bold uppercase tracking-[.18em] text-transparent sm:text-xl">Árvore de habilidades</h2>
-      <span className="rounded-full border border-[#62527e] bg-[#201a32] px-3 py-1 text-sm" title={`${gastos(a)} gasto(s) de ${a.pontos}`}>
-        🌠 <strong className={livres > 0 ? 'text-amber-200' : ''}>{livres}</strong> livre{livres === 1 ? '' : 's'} <span className="text-xs text-[#b4aeca]">de {a.pontos}</span></span>
+      <h2 className="flex-1 bg-gradient-to-b from-[#fde68a] to-[#d4a23a] bg-clip-text font-serif text-lg font-bold uppercase tracking-[.18em] text-transparent sm:text-xl">{editorSistema ? 'Árvore padrão do sistema' : 'Árvore de habilidades'}</h2>
+      {editorSistema ? <span className="rounded-full border border-[#62527e] bg-[#201a32] px-3 py-1 text-sm">🌠 Pontos iniciais: <strong>{a.pontos}</strong></span>
+        : <span className="rounded-full border border-[#62527e] bg-[#201a32] px-3 py-1 text-sm" title={`${gastos(a)} gasto(s) · ${a.pontos} ganhos${extra ? ` + ${extra} do nível` : ''}`}>
+        🌠 <strong className={livres > 0 ? 'text-amber-200' : ''}>{livres}</strong> livre{livres === 1 ? '' : 's'} <span className="text-xs text-[#b4aeca]">de {a.pontos + extra}{extra ? ` (${extra} do nível)` : ''}</span></span>}
+      {sistemaMudou && !somenteLeitura && <button type="button" onClick={() => { if (confirm('Trazer as mudanças da árvore do sistema? Hexágonos novos entram e os iguais são atualizados; o que você liberou continua.')) salvar(mesclarArvore(a, doSistema!)) }}
+        className={btn + ' !border-amber-300/60 !text-amber-200'}>🔄 Atualizar com a árvore do sistema</button>}
       {montando && !somenteLeitura && <span className="flex items-center gap-1" aria-label="Pontos ganhos">
         <button type="button" className={btn + ' !px-2'} aria-label="Menos um ponto" disabled={a.pontos <= gastos(a)} onClick={() => salvar({ ...a, pontos: a.pontos - 1 })}><Minus size={14} /></button>
         <button type="button" className={btn + ' !px-2'} aria-label="Mais um ponto" onClick={() => salvar({ ...a, pontos: Math.min(9999, a.pontos + 1) })}><Plus size={14} /></button></span>}
-      {!somenteLeitura && <button type="button" onClick={() => { setMontando(m => !m); setLigando(null) }} className={btn + (montando ? ' !border-[#b99bff] !bg-[#3b2b57]' : '')}>
+      {!somenteLeitura && !editorSistema && <button type="button" onClick={() => { setMontando(m => !m); setLigando(null) }} className={btn + (montando ? ' !border-[#b99bff] !bg-[#3b2b57]' : '')}>
         <Pencil size={14} /> {montando ? 'Concluir' : 'Montar árvore'}</button>}
     </div>
 
@@ -116,8 +127,9 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
     <div className="relative h-[62vh] min-h-[380px] touch-none select-none" style={{ background: 'radial-gradient(ellipse at 50% 40%, #2a1d4a 0%, #120d22 55%, #07060d 100%)' }}>
       {a.nos.length === 0 ? <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
         <p className="text-5xl" aria-hidden>🌌</p>
-        <p className="max-w-sm text-[#d6c8e8]">Esta ficha ainda não tem árvore. Monte os hexágonos com os poderes do personagem e libere com pontos.</p>
+        <p className="max-w-sm text-[#d6c8e8]">{editorSistema ? 'Monte a árvore que toda ficha nova deste sistema vai receber. Os jogadores liberam os hexágonos com pontos.' : 'Esta ficha ainda não tem árvore. Monte os hexágonos com os poderes do personagem e libere com pontos.'}</p>
         {!somenteLeitura && <div className="flex flex-wrap justify-center gap-2">
+          {doSistema && <button type="button" className="rounded-xl bg-gradient-to-r from-[#7652ac] to-[#b45309] px-4 py-2.5 font-semibold" onClick={() => salvar(mesclarArvore(a, doSistema))}>🌠 Usar a árvore do sistema</button>}
           <button type="button" className="rounded-xl bg-[#7652ac] px-4 py-2.5 font-semibold hover:bg-[#8b68c4]" onClick={() => { setMontando(true); novoNo() }}><Plus size={16} className="mr-1 inline" />Criar o primeiro hexágono</button>
           <button type="button" className={btn} onClick={() => { salvar(arvoreExemplo(alvos)); setMontando(true) }}><Sparkles size={14} /> Começar com um exemplo</button></div>}
       </div>
@@ -160,7 +172,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
         </TransformWrapper>}
     </div>
 
-    {no && !editor && <DetalheNo no={no} a={a} alvos={alvos} recursos={s.recursos} somenteLeitura={somenteLeitura || montando}
+    {no && !editor && <DetalheNo no={no} a={a} extra={extra} alvos={alvos} recursos={s.recursos} somenteLeitura={somenteLeitura || montando || editorSistema}
       liberar={() => liberar(no)} devolver={() => devolver(no)} rolar={rolar} fechar={() => setSel(null)} />}
     {!no && a.nos.length > 0 && <p className="px-4 py-3 text-xs text-[#a998bd]">Toque num hexágono para ver o que ele faz. {somenteLeitura ? '' : 'Os que brilham na borda já podem ser liberados.'}</p>}
     {editor && <EditorNo inicial={editor} a={a} alvos={alvos} recursos={s.recursos} gravar={gravarNo} fechar={() => setEditor(null)} />}
@@ -186,11 +198,11 @@ function textoEfeito(e: EfeitoNo, alvos: { id: string; nome: string }[], recurso
   return [`${TIPOS_PODER.find(t => t.id === p.tipo)?.icone ?? '🌀'} ${p.nome}`, p.expressao, rec && `${p.custo ?? 0} ${rec}`, p.usosMax && `${p.usosMax}× até descansar`].filter(Boolean).join(' · ')
 }
 
-function DetalheNo({ no, a, alvos, recursos, somenteLeitura, liberar, devolver, rolar, fechar }: {
-  no: NoArvore; a: Arvore; alvos: { id: string; nome: string }[]; recursos: Sistema['recursos']; somenteLeitura: boolean
+function DetalheNo({ no, a, extra, alvos, recursos, somenteLeitura, liberar, devolver, rolar, fechar }: {
+  no: NoArvore; a: Arvore; extra: number; alvos: { id: string; nome: string }[]; recursos: Sistema['recursos']; somenteLeitura: boolean
   liberar: () => void; devolver: () => void; rolar: (expressao: string, rotulo: string) => void; fechar: () => void
 }) {
-  const liberado = a.liberados.includes(no.id), pode = podeLiberar(a, no.id), volta = podeDevolver(a, no.id)
+  const liberado = a.liberados.includes(no.id), pode = podeLiberar(a, no.id, extra), volta = podeDevolver(a, no.id)
   return <div className="border-t border-[#2b2140] bg-[#14111f] p-4">
     <div className="flex items-start gap-3">
       <span aria-hidden className="mt-0.5 h-5 w-5 shrink-0 rotate-90" style={{ background: no.cor, clipPath: 'polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)', opacity: liberado ? 1 : 0.5 }} />

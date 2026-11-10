@@ -13,6 +13,10 @@ import { idUnico, sistemaEmBranco, slug, validarSistema } from '@/lib/sistemas/a
 import { esquecerSistema } from '@/lib/sistemas/cliente'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import EditorRolagem from './EditorRolagem'
+import EditorOpcoes, { type OpcaoDef } from './EditorOpcoes'
+import EditorProgressao, { type DefProgressao } from './EditorProgressao'
+import ArvoreHabilidades from '@/components/fichas/Arvore'
+import { lerArvore } from '@/lib/sistemas/arvore'
 
 /* Linhas editáveis: `auto` = o nome na fórmula ainda acompanha o nome (até salvar pela 1ª vez). */
 type Linha = Record<string, unknown> & { id: string; nome: string; auto?: boolean }
@@ -21,6 +25,7 @@ type Def = {
   campos: Linha[]; atributos: Linha[]; formulaModificador: string; derivados: Linha[]
   pericias: { modo: 'treino' | 'valor' | 'nenhuma'; titulo?: string; total: string; treinos: Linha[]; lista: Linha[] }
   recursos: Linha[]; listas: Linha[]; limites: { nome: string; uso: string; max: string }[]; observacoes: string; carga: { formula: string; unidade: string }
+  arvore: { pontos: number; nos: unknown[] }; progressao: DefProgressao | null
 }
 const ID_TESTE = 'autoral-00000000000000000000000000000000'
 const input = 'w-full rounded-lg border border-[#5e4b78] bg-[#151123] p-2 text-sm text-white'
@@ -45,6 +50,8 @@ function paraDef(s: Partial<Sistema> & Record<string, unknown>, auto = false): D
     pericias: p ? { modo: p.modo, titulo: p.titulo, total: p.total, treinos: l(p.treinos), lista: l(p.lista) } : { modo: 'nenhuma', total: 'MOD + TREINO', treinos: [], lista: [] },
     recursos: l(s.recursos), listas: l(s.listas), limites: (s.limites as Def['limites']) ?? [], observacoes: ((s.observacoes as string[]) ?? []).join('\n'),
     carga: { formula: (s.carga as Sistema['carga'])?.formula ?? '', unidade: (s.carga as Sistema['carga'])?.unidade ?? 'kg' },
+    arvore: { pontos: Number((s.arvore as Sistema['arvore'])?.pontos) || 0, nos: (s.arvore as Sistema['arvore'])?.nos ?? [] },
+    progressao: (s.progressoes as Sistema['progressoes'])?.classes?.length ? { classes: (s.progressoes as NonNullable<Sistema['progressoes']>).classes, colunas: (s.progressoes as NonNullable<Sistema['progressoes']>).colunas ?? {} } : null,
   }
 }
 function paraEnvio(d: Def) {
@@ -55,6 +62,8 @@ function paraEnvio(d: Def) {
     pericias: d.pericias.modo === 'nenhuma' ? undefined : { modo: d.pericias.modo, titulo: d.pericias.titulo, total: d.pericias.total, treinos: tira(d.pericias.treinos), lista: tira(d.pericias.lista) },
     recursos: tira(d.recursos), listas: tira(d.listas), limites: d.limites, observacoes: d.observacoes.split('\n').map(x => x.trim()).filter(Boolean),
     carga: d.carga.formula ? d.carga : undefined,
+    ...(d.arvore.nos.length ? { arvore: d.arvore } : {}),
+    ...(d.progressao ? { progressoes: d.progressao } : {}),
   }
 }
 
@@ -97,6 +106,7 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
     ...def.derivados.map(x => ({ v: x.id, d: x.nome })),
     ...(def.pericias.modo !== 'nenhuma' ? def.pericias.lista.map(p => ({ v: 'tot_' + p.id, d: 'Total de ' + p.nome })) : []),
     { v: 'soma_atributos', d: 'Soma dos atributos' }, { v: 'maior_atributo', d: 'Maior atributo' },
+    ...(def.progressao ? [...new Set(def.progressao.classes.flatMap(c => Object.keys(c.tabela)))].map(c => ({ v: 'prog_' + c, d: (def.progressao!.colunas[c] ?? c).replace(/^\S+\s/, '') + ' (do nível)' })) : []),
   ]
   const inserir = (v: string) => { const u = ultimoCampo.current; if (!u) { toast('Toque primeiro numa fórmula.'); return } u.set((u.valor.trim() ? u.valor.trim() + ' + ' : '') + v) }
   const formula = (valor: string, set: (v: string) => void, extra = '') => <input value={valor} onChange={e => { set(e.target.value); ultimoCampo.current = { set, valor: e.target.value } }} onFocus={() => { ultimoCampo.current = { set, valor } }}
@@ -175,11 +185,16 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
           {def.campos.map((c, i) => <div key={i} className="space-y-1 rounded-xl bg-[#171325] p-2">
             <div className="flex gap-2">
               <input aria-label="Nome do campo" value={c.nome} onChange={e => mudar(d => ({ ...d, campos: renomear(d.campos, i, e.target.value) }))} className={input} placeholder="Nome do campo" />
-              <select aria-label="Tipo" value={String(c.tipo ?? 'texto')} onChange={e => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, tipo: e.target.value } : x) }))} className={pequeno}>
-                <option value="texto">Texto</option><option value="numero">Número</option><option value="area">Texto longo</option></select>
+              <select aria-label="Tipo" value={String(c.tipo ?? 'texto')} onChange={e => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, tipo: e.target.value, ...(e.target.value === 'escolha' && !Array.isArray(x.opcoes) ? { opcoes: [{ nome: '' }] } : {}) } : x) }))} className={pequeno}>
+                <option value="texto">Texto</option><option value="numero">Número</option><option value="area">Texto longo</option><option value="escolha">Lista de opções</option></select>
               <Remover rotulo="Remover campo" onClick={() => mudar(d => ({ ...d, campos: d.campos.filter((_, k) => k !== i) }))} />
             </div>
             {c.tipo === 'numero' && <div className="flex items-center gap-2"><label className="text-xs">Começa em <input type="number" value={Number(c.padrao ?? 0)} onChange={e => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, padrao: Number(e.target.value) } : x) }))} className={pequeno + ' w-20'} /></label><Var id={c.id} /></div>}
+            {c.tipo === 'escolha' && <EditorOpcoes opcoes={(c.opcoes as OpcaoDef[]) ?? []} alvos={alvosDoDef(def)} tabelas={def.progressao?.classes.map(t => ({ id: t.id, nome: t.nome })) ?? []} mudar={o => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, opcoes: o } : x) }))} />}
+            {c.tipo === 'escolha' && ((c.opcoes as OpcaoDef[]) ?? []).some(o => o.progressao) && <label className="flex flex-wrap items-center gap-2 text-xs">O nível desta escolha fica em
+              <select aria-label="Campo do nível desta escolha" value={String(c.nivel ?? '')} onChange={e => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, nivel: e.target.value || undefined } : x) }))} className={pequeno}>
+                <option value="">o campo da tabela</option>{def.campos.filter(x => x.tipo === 'numero').map(x => <option key={x.id} value={x.id}>{x.nome}</option>)}</select>
+              <span className="text-[#a998bd]">(para multiclasse: “Segunda classe” usa “Nível 2”)</span></label>}
           </div>)}
           <button type="button" className={botao} onClick={() => mudar(d => ({ ...d, campos: [...d.campos, novo(d.campos, { tipo: 'texto' })] }))}><Plus size={14} /> Campo</button>
         </SecaoBase>
@@ -276,6 +291,20 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
             <textarea rows={4} value={def.observacoes} onChange={e => mudar(d => ({ ...d, observacoes: e.target.value }))} className={input + ' mt-1'} placeholder="Ex.: 20 natural é crítico." /></label>
         </SecaoBase>
 
+        <SecaoBase id="progressao" titulo="📈 Progressão por nível" sub="O que o personagem ganha a cada nível" aberta={aberta === 'progressao'} alternar={() => setAberta(a => a === 'progressao' ? '' : 'progressao')}>
+          <EditorProgressao valor={def.progressao} mudar={v => mudar(d => ({ ...d, progressao: v }))}
+            camposNumero={def.campos.filter(c => c.tipo === 'numero').map(c => ({ id: c.id, nome: c.nome }))}
+            criarCampoNivel={() => { mudar(d => d.campos.some(c => c.id === 'nivel') ? d : { ...d, campos: [...d.campos, { id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 }] }); return 'nivel' }}
+            listas={def.campos.filter(c => c.tipo === 'escolha' && c.nome).map(c => ({ id: c.id, nome: c.nome }))}
+            ligadas={ligadasDoDef(def)} ligar={id => mudar(d => ligarTabelas(d, id))} />
+        </SecaoBase>
+        <SecaoBase id="arvore" titulo="🌠 Árvore de habilidades padrão" sub="Toda ficha nova do sistema começa com ela" aberta={aberta === 'arvore'} alternar={() => setAberta(a => a === 'arvore' ? '' : 'arvore')}>
+          {validacao?.ok ? <ArvoreHabilidades s={validacao.sistema} d={{ ...fichaVazia(validacao.sistema), arvore: { ...def.arvore, liberados: [] } }} somenteLeitura={false} rolar={() => {}} editorSistema
+            onChange={nd => { const a = lerArvore(nd.arvore); mudar(d => ({ ...d, arvore: { pontos: a.pontos, nos: a.nos } })) }} />
+            : <p className="rounded-lg bg-[#3a2a14]/90 p-3 text-xs text-[#f6dca8]">Corrija os problemas acima para montar a árvore (ela usa os atributos e recursos do sistema).</p>}
+          <p className="text-xs text-[#a998bd]">Fichas que já existem podem trazer a árvore com o botão “Usar a árvore do sistema” (ou “Atualizar”, se você mudar depois).</p>
+        </SecaoBase>
+
         <section className="rounded-2xl border border-[#55456e] bg-[#201a32]/95 p-4 text-sm">
           <h2 className="font-semibold">🌍 Publicar</h2>
           <p className="mt-1 text-xs text-[#c4b6d4]">Rascunho: só você vê e pode criar fichas para testar. Publicado: aparece em “Sistemas autorais” para todo mundo, com o seu nome.</p>
@@ -291,6 +320,45 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
   </main>
 }
 
+/** Quem escolhe cada tabela de níveis: { guerreiro: ['Guerreiro (Classe)'] }. */
+function ligadasDoDef(d: Def): Record<string, string[]> {
+  const out: Record<string, string[]> = {}
+  for (const c of d.campos) for (const o of (c.opcoes as OpcaoDef[] | undefined) ?? []) if (o.progressao) (out[o.progressao] ??= []).push(`${o.nome} (${c.nome})`)
+  return out
+}
+/** Cria uma tabela de níveis para cada opção da lista (copiando a primeira) e liga as opções a elas. */
+function ligarTabelas(d: Def, campoId: string): Def {
+  const campo = d.campos.find(c => c.id === campoId)
+  if (!d.progressao || !campo) return d
+  const classes = [...d.progressao.classes], base = classes[0], ids = new Set(classes.map(c => c.id))
+  const opcoes = ((campo.opcoes as OpcaoDef[] | undefined) ?? []).map(o => {
+    const nome = o.nome.trim(); if (!nome) return o
+    let cl = classes.find(c => c.nome.trim().toLowerCase() === nome.toLowerCase())
+    if (!cl) {
+      if (classes.length >= 6) return o
+      const raiz = slug(nome).slice(0, 20); let id = raiz, k = 2
+      while (ids.has(id)) id = raiz + '_' + k++
+      ids.add(id)
+      cl = { id, nome: nome.slice(0, 40), campoNivel: base.campoNivel, tabela: JSON.parse(JSON.stringify(base.tabela)) }
+      classes.push(cl)
+    }
+    return { ...o, progressao: cl.id }
+  })
+  const campos = d.campos.map(c => c.id === campoId ? { ...c, opcoes } : c)
+  // A tabela geral que serviu de modelo sai, se ninguém a escolhe (senão somaria duas vezes).
+  const usadas = new Set(campos.flatMap(c => ((c.opcoes as OpcaoDef[] | undefined) ?? []).flatMap(o => o.progressao ? [o.progressao] : [])))
+  const finais = classes.filter(c => c !== base || usadas.has(c.id))
+  return { ...d, campos, progressao: { ...d.progressao, classes: finais.length ? finais : classes } }
+}
+/** Onde um bônus pode entrar (igual a alvosDeBonus, mas direto do que está sendo editado). */
+function alvosDoDef(d: Def) {
+  return [
+    ...d.atributos.map(a => ({ id: 'atributo:' + a.id, nome: a.nome })),
+    ...d.derivados.map(x => ({ id: 'derivado:' + x.id, nome: x.nome })),
+    ...(d.pericias.modo === 'nenhuma' ? [] : d.pericias.lista.map(p => ({ id: 'pericia:' + p.id, nome: 'Perícia ' + p.nome }))),
+    ...d.recursos.map(x => ({ id: 'recurso:' + x.id, nome: x.nome + ' (máximo)' })),
+  ].filter(a => a.nome)
+}
 function SecaoBase({ id, titulo, sub, aberta, alternar, children }: { id: string; titulo: string; sub?: string; aberta: boolean; alternar: () => void; children: React.ReactNode }) {
   return <section id={'secao-' + id} className="rounded-2xl border border-[#55456e] bg-[#201a32]/95">
     <button type="button" onClick={alternar} aria-expanded={aberta} className="flex w-full items-center gap-2 px-4 py-3 text-left">
@@ -334,7 +402,7 @@ function Previa({ def, validacao }: { def: Def; validacao: ReturnType<typeof val
 }
 
 function EscolherModelo({ escolher }: { escolher: (d: Def) => void }) {
-  const modelos = SISTEMAS.filter(s => !s.progressoes && !s.oculto)
+  const modelos = SISTEMAS.filter(s => !s.oculto)
   return <Tela>
     <div className="w-full max-w-lg rounded-3xl border border-[#655079] bg-[#1d1733]/95 p-6 text-left shadow-xl">
       <h1 className="text-2xl font-bold">✍️ Criar sistema autoral</h1>

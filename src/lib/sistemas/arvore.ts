@@ -62,15 +62,16 @@ export function lerArvore(v: unknown): Arvore {
 }
 
 export const gastos = (a: Arvore) => a.nos.reduce((t, n) => t + (a.liberados.includes(n.id) ? n.custo : 0), 0)
-export const disponiveis = (a: Arvore) => a.pontos - gastos(a)
+/** Pontos livres. `extra` = pontos que vêm da progressão por nível (coluna “arvore”). */
+export const disponiveis = (a: Arvore, extra = 0) => a.pontos + extra - gastos(a)
 
-export function podeLiberar(a: Arvore, id: string): { ok: boolean; motivo?: string } {
+export function podeLiberar(a: Arvore, id: string, extra = 0): { ok: boolean; motivo?: string } {
   const n = a.nos.find(x => x.id === id)
   if (!n) return { ok: false, motivo: 'Hexágono não encontrado.' }
   if (a.liberados.includes(id)) return { ok: false, motivo: 'Já liberado.' }
   const faltam = n.requer.filter(r => !a.liberados.includes(r))
   if (faltam.length) return { ok: false, motivo: 'Precisa antes: ' + faltam.map(r => a.nos.find(x => x.id === r)?.nome ?? '?').join(', ') }
-  if (disponiveis(a) < n.custo) return { ok: false, motivo: `Faltam ${n.custo - disponiveis(a)} ponto(s).` }
+  if (disponiveis(a, extra) < n.custo) return { ok: false, motivo: `Faltam ${n.custo - disponiveis(a, extra)} ponto(s).` }
   return { ok: true }
 }
 export function podeDevolver(a: Arvore, id: string): { ok: boolean; motivo?: string } {
@@ -121,3 +122,18 @@ export function arvoreExemplo(alvos: { id: string; nome: string }[]): Arvore {
   return lerArvore({ pontos: 3, nos: nos.map(n => ({ ...n, efeitos: n.efeitos.map(e => e.tipo === 'poder' ? { tipo: 'poder', poder: e.poder } : e) })), liberados: [] })
 }
 
+
+/**
+ * Traz a árvore do sistema para a ficha: hexágonos novos entram, os que já existem são atualizados
+ * (nome, custo, efeitos, posição), os criados só na ficha ficam. O que já foi liberado e os pontos continuam.
+ */
+export function mesclarArvore(ficha: Arvore, doSistema: { pontos?: number; nos: unknown[] }): Arvore {
+  const sis = lerArvore({ pontos: 0, nos: doSistema.nos })
+  const ids = new Set(sis.nos.map(n => n.id))
+  return lerArvore({ pontos: ficha.pontos, nos: [...sis.nos, ...ficha.nos.filter(n => !ids.has(n.id))], liberados: ficha.liberados })
+}
+/** A árvore da ficha está diferente da do sistema (algo novo ou mudado)? */
+export function difereDoSistema(ficha: Arvore, doSistema: { nos: unknown[] }): boolean {
+  const sis = lerArvore({ nos: doSistema.nos })
+  return sis.nos.some(n => { const f = ficha.nos.find(x => x.id === n.id); return !f || JSON.stringify(f) !== JSON.stringify(n) })
+}

@@ -1,5 +1,8 @@
 /** Formato de um sistema de RPG. Os modelos prontos e os sistemas autorais usam o mesmo formato. */
-export type CampoDef = { id: string; nome: string; tipo: 'texto' | 'numero' | 'area'; padrao?: string | number }
+/** Opção de um campo “escolha” (classe, espécie, origem…): o que o jogador escolhe pode dar bônus automáticos. */
+/** `progressao`: id da tabela de níveis (progressoes.classes) que passa a valer quando esta opção é escolhida. */
+export type OpcaoCampo = { nome: string; descricao?: string; bonus?: { alvo: string; valor: number }[]; progressao?: string }
+export type CampoDef = { id: string; nome: string; tipo: 'texto' | 'numero' | 'area' | 'escolha'; padrao?: string | number; opcoes?: OpcaoCampo[]; /** Escolha de classe: campo de número com o nível dela (multiclasse). */ nivel?: string }
 export type AtributoDef = { id: string; nome: string; min: number; max: number; padrao: number }
 export type TreinoDef = { id: string; nome: string; formula: string; custo?: number }
 /** atributo pode ser 'FOR/DES': usa o melhor modificador dos dois. */
@@ -45,7 +48,9 @@ export type Sistema = {
    * valores de todas as classes no nível informado em `campoNivel` (multiclasse).
    * Gera as variáveis prog_<coluna> e nivel_total.
    */
-  progressoes?: { classes: { id: string; nome: string; campoNivel: string; tabela: Record<string, number[]> }[] }
+  progressoes?: { classes: { id: string; nome: string; campoNivel: string; tabela: Record<string, number[]> }[]; colunas?: Record<string, string> }
+  /** Árvore de habilidades padrão: toda ficha nova do sistema começa com ela (ver arvore.ts). */
+  arvore?: { pontos: number; nos: unknown[] }
   /** Avisos de criação/evolução (não bloqueiam; mostram quando passa do limite). */
   limites?: LimiteDef[]
   listas: { id: string; nome: string }[]

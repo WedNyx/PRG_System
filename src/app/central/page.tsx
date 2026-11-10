@@ -15,7 +15,7 @@ import { CHAVE_ENTRADA } from '@/components/perfil/TransicaoPerfil'
 import { aplicarTema, temaAtual, TEMAS, type Tema } from '@/lib/tema'
 import { VERSOES } from '@/lib/versoes'
 
-type Perfil = { id: string; apelido: string; avatar?: string }
+type Perfil = { id: string; apelido: string; avatar?: string; grupo?: string }
 type Section = 'inicio' | 'fichas' | 'campanhas' | 'sistemas' | 'historico'
 const SELECTED_KEY = 'prg-aventureiro-selecionado-v1'
 const LOCAL_KEY = 'prg-aventureiros-demo-v1'
@@ -141,7 +141,7 @@ function CentralContent() {
           {section === 'historico' && <><h1 className="text-3xl font-bold">Histórico de rolagens</h1><p className="mt-2 text-[#bfb2cf]">Onde encontrar suas rolagens.</p><div className="mt-6 rounded-2xl border border-[#55456e] bg-[#201a32] p-6 text-sm text-[#c4b6d4]">As rolagens das campanhas ficam salvas no histórico da mesa: abra a campanha, entre na mesa e toque em “Histórico” no chat (dá para filtrar por pessoa, personagem e tipo). Rolagens feitas em fichas fora de campanha não entram nesse histórico.</div></>}
         </div>
       </div>
-      {editando && <EditarPerfil perfil={perfil} fechar={() => setEditando(false)} salvo={p => setPerfil({ id: p.id, apelido: p.apelido, avatar: p.avatar ?? undefined })} />}
+      {editando && <EditarPerfil perfil={perfil} fechar={() => setEditando(false)} salvo={p => setPerfil({ id: p.id, apelido: p.apelido, avatar: p.avatar ?? undefined, grupo: p.grupo })} />}
     </main>
   )
 }

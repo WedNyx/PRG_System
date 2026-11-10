@@ -1,7 +1,8 @@
 import { ator, lerJson, ok, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { validarFichaDados } from '@/lib/nuvem/validacao'
 import { SISTEMA_V8 } from '@/lib/sistemas/catalogo'
-import { sistemaPermitido } from '@/lib/nuvem/sistemasServidor'
+import { carregarSistema, sistemaPermitido } from '@/lib/nuvem/sistemasServidor'
+import { fichaVazia } from '@/lib/sistemas/calculo'
 
 export const dynamic = 'force-dynamic'
 const MAX_FICHAS = 100
@@ -20,7 +21,9 @@ export const POST = rota(async req => {
   const body = await lerJson(req, 600_000) as { dados?: unknown; sistema?: unknown }
   const sistema = body.sistema === undefined ? SISTEMA_V8 : body.sistema
   if (!(await sistemaPermitido(sistema, eu))) throw new ErroApi(400, 'Este sistema não está disponível para fichas novas.')
-  const v = validarFichaDados(body.dados ?? (sistema === SISTEMA_V8 ? { version: 2, fields: {} } : { sistema, nome: '' }))
+  // Ficha nova sem dados: começa do modelo do sistema (inclui a árvore padrão, se houver).
+  const s = body.dados === undefined && sistema !== SISTEMA_V8 ? await carregarSistema(sistema as string) : null
+  const v = validarFichaDados(body.dados ?? (sistema === SISTEMA_V8 ? { version: 2, fields: {} } : s ? fichaVazia(s) : { sistema, nome: '' }))
   if (!v.ok) throw new ErroApi(400, v.erro)
   const atuais = await rest<unknown[]>(`prg_fichas?select=id&dono_id=eq.${q(eu)}&limit=${MAX_FICHAS}`)
   if (atuais.length >= MAX_FICHAS) throw new ErroApi(429, `Limite de ${MAX_FICHAS} fichas por aventureiro.`)

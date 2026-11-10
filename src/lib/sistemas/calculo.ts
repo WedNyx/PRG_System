@@ -26,6 +26,8 @@ export function fichaVazia(s: Sistema, nome = ''): DadosFicha {
     pericias: Object.fromEntries((s.pericias?.lista ?? []).map(p => [p.id, s.pericias?.modo === 'valor' ? 0 : s.pericias?.treinos?.[0]?.id ?? ''])),
     recursos: Object.fromEntries(s.recursos.map(r => [r.id, { atual: 0 }])),
     listas: Object.fromEntries(s.listas.map(l => [l.id, ''])),
+    // Árvore padrão do sistema (sem nada liberado).
+    ...(s.arvore?.nos?.length ? { arvore: { pontos: s.arvore.pontos ?? 0, nos: s.arvore.nos, liberados: [] } } : {}),
   }
 }
 
@@ -49,10 +51,44 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
   }
 }
 
+/** Opção escolhida num campo “escolha” (pelo nome, sem diferenciar maiúsculas). */
+export function opcaoEscolhida(c: Sistema['campos'][number], valor: unknown) {
+  const v = typeof valor === 'string' ? valor.trim().toLowerCase() : ''
+  return v ? c.opcoes?.find(o => o.nome.toLowerCase() === v) : undefined
+}
+/**
+ * Tabelas de níveis que valem nesta ficha. Tabelas ligadas a uma opção (ex.: Classe → Guerreiro) só valem
+ * quando a opção é escolhida, no nível do campo da escolha; as que não estão ligadas a nada valem sempre.
+ */
+export function progressaoAtiva(s: Sistema, d: Pick<DadosFicha, 'campos'>) {
+  const p = s.progressoes
+  if (!p?.classes.length) return []
+  const ligadas = new Set(s.campos.flatMap(c => c.tipo === 'escolha' ? (c.opcoes ?? []).flatMap(o => o.progressao ? [o.progressao] : []) : []))
+  const out: { chave: string; cl: NonNullable<Sistema['progressoes']>['classes'][number]; campoNivel: string; nome: string; escolha?: string }[] =
+    p.classes.filter(cl => !ligadas.has(cl.id)).map(cl => ({ chave: cl.id, cl, campoNivel: cl.campoNivel, nome: cl.nome }))
+  for (const c of s.campos) {
+    if (c.tipo !== 'escolha') continue
+    const op = opcaoEscolhida(c, d.campos?.[c.id])
+    const cl = op?.progressao ? p.classes.find(x => x.id === op.progressao) : undefined
+    if (op && cl) out.push({ chave: c.id + ':' + cl.id, cl, campoNivel: c.nivel ?? cl.campoNivel, nome: op.nome, escolha: c.nome })
+  }
+  return out
+}
+/** Campos de escolha que definem a tabela de níveis e ainda estão sem escolha. */
+export const escolhasDeClassePendentes = (s: Sistema, d: Pick<DadosFicha, 'campos'>) =>
+  s.campos.filter(c => c.tipo === 'escolha' && c.opcoes?.some(o => o.progressao) && !opcaoEscolhida(c, d.campos?.[c.id]))
+
+/** Bônus das opções escolhidas (classe, espécie…), por alvo, no mesmo formato dos itens e da árvore. */
+export function bonusDasEscolhas(s: Sistema, d: Pick<DadosFicha, 'campos'>): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const c of s.campos) if (c.tipo === 'escolha') for (const b of opcaoEscolhida(c, d.campos?.[c.id])?.bonus ?? []) out[b.alvo] = (out[b.alvo] ?? 0) + b.valor
+  return out
+}
+
 export function calcular(s: Sistema, d: DadosFicha): Calculo {
   const vars: Variaveis = {}
   const itens = lerItens(d.itens), uso = lerUso(d.uso)
-  const bonus = somarBonus(bonusEquipados(itens, uso), bonusDaArvore(lerArvore(d.arvore)))
+  const bonus = somarBonus(bonusEquipados(itens, uso), bonusDaArvore(lerArvore(d.arvore)), bonusDasEscolhas(s, d))
   const b = (alvo: string) => bonus[alvo] ?? 0
   for (const c of s.campos) if (c.tipo === 'numero') vars[c.id] = num(d.campos[c.id])
   const mods: Record<string, number> = {}
@@ -68,8 +104,8 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
   if (s.progressoes) {
     let total = 0
     const somas: Record<string, number> = {}
-    for (const cl of s.progressoes.classes) {
-      const n = Math.max(0, Math.min(20, Math.floor(vars[cl.campoNivel] ?? 0)))
+    for (const { cl, campoNivel } of progressaoAtiva(s, d)) {
+      const n = Math.max(0, Math.min(20, Math.floor(vars[campoNivel] ?? 0)))
       total += n
       for (const [col, valores] of Object.entries(cl.tabela)) somas[col] = (somas[col] ?? 0) + (n > 0 ? valores[n - 1] ?? 0 : 0)
     }

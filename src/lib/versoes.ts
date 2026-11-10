@@ -6,6 +6,38 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.22.0', data: '2026-11-10', titulo: 'Classe com a sua tabela de níveis',
+    itens: [
+      'A classe escolhida define a tabela de níveis: numa “Lista de opções” (Classe), cada opção pode ter a sua “📈 Tabela de níveis”. Na ficha, só vale a tabela da classe escolhida.',
+      'Construtor, em “Progressão por nível”: botão “🔗 Uma tabela para cada opção de…”. Ele cria uma tabela para Guerreiro, Mago… (começando igual à atual) e já liga tudo.',
+      'Multiclasse: crie “Segunda classe” e “Nível 2” e diga que o nível dessa escolha fica em “Nível 2”. A ficha soma as duas tabelas.',
+      'Na ficha, o cartão de progressão mostra a classe escolhida e o nível dela, e avisa quando ainda falta escolher a classe.',
+    ],
+  },
+  {
+    versao: '0.21.0', data: '2026-11-10', titulo: 'Grupos de perfis e classes para escolher',
+    itens: [
+      'Portal com grupos: antes dos perfis aparecem dois cartões, 🧭 De Fora e 🌙 Lunethernnyis. Cada um mostra só os perfis do seu grupo, e o aparelho lembra a escolha (“Trocar grupo” volta aos cartões).',
+      'Todos os perfis que já existiam estão em Lunethernnyis. Cada pessoa pode trocar o próprio grupo em “Editar perfil”; perfis novos escolhem o grupo ao serem criados.',
+      'Construtor: novo tipo de campo “Lista de opções” para Classe, Espécie, Origem… Cada opção tem descrição e bônus automáticos (ex.: Guerreiro → +1 Força, +2 Luta).',
+      'Na ficha, o jogador escolhe a opção numa lista, vê a descrição e os bônus, e eles já entram nos cálculos.',
+      'O “Exemplo simples” do construtor agora vem com Classe (Guerreiro, Batedor, Sábio) e Espécie (Humano, Elfo).',
+      'Guia: novo tópico “🧪 Exemplo: o seu primeiro sistema”, um passo a passo com valores prontos para quem está começando.',
+      'Migração 017: coluna “grupo” nos perfis.',
+    ],
+  },
+  {
+    versao: '0.20.0', data: '2026-11-10', titulo: 'Árvore padrão e progressão por nível',
+    itens: [
+      'Construtor de sistemas: nova seção “🌠 Árvore de habilidades padrão”. Monte os hexágonos uma vez e toda ficha nova do sistema já começa com eles.',
+      'Fichas que já existem trazem a árvore com “🌠 Usar a árvore do sistema”, ou “🔄 Atualizar” quando o autor mudar algo (o que já foi liberado continua).',
+      'Construtor: nova seção “📈 Progressão por nível”. Diga quanto se ganha em cada nível (pontos da árvore, vida, pontos de atributo ou o que quiser) e a ficha soma sozinha.',
+      'Na ficha: botão “Subir de nível” mostra o que o personagem ganhou; os pontos do nível entram direto na árvore.',
+      'Cada coluna da progressão vira a variável prog_nome nas fórmulas (ex.: Vida máxima = 10 + prog_vida). Dá para ter mais de uma classe (multiclasse).',
+      'Sistemas do catálogo com progressão (como D&D 5e) agora podem ser usados como modelo no construtor.',
+    ],
+  },
+  {
     versao: '0.19.0', data: '2026-11-11', titulo: 'Preparar combate',
     itens: [
       'Preparar combate (aba Iniciativa → ⚔️ Preparar combate): marque quem luta (todos, só jogadores, só NPCs) e role a iniciativa de todos de uma vez, com o bônus da ficha (Destreza, Agilidade ou “Iniciativa”) ou o que o mestre escrever.',

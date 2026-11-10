@@ -38,7 +38,6 @@ describe('sistemas autorais', () => {
   })
   it('todos os sistemas do catálogo podem servir de modelo inicial', () => {
     for (const s of SISTEMAS) {
-      if (s.progressoes) continue // tabelas por classe ainda não são editáveis no construtor
       const r = validarSistema({ ...s, nome: s.nome.slice(0, 80) }, { id: ID })
       expect(r.ok, s.id + ': ' + (!r.ok ? r.erros.join(' | ') : '')).toBe(true)
     }
@@ -63,5 +62,62 @@ describe('rolagem personalizada (v0.16)', () => {
   it('todos os modelos prontos funcionam', async () => {
     const { MODELOS_ROLAGEM, erroDaFormula } = await import('./regrasRolagem')
     for (const m of MODELOS_ROLAGEM) expect(erroDaFormula(m.formula), m.id).toBeNull()
+  })
+})
+
+describe('campos de escolha (classe, espécie)', () => {
+  it('valida opções, tira bônus sem alvo e soma o bônus da opção escolhida', async () => {
+    const { validarSistema, sistemaEmBranco } = await import('./autoral')
+    const { calcular, fichaVazia } = await import('./calculo')
+    const base = sistemaEmBranco() as Record<string, unknown> & { campos: Record<string, unknown>[] }
+    const def = { ...base, nome: 'Escolhas', campos: [...base.campos, { id: 'origem', nome: 'Origem', tipo: 'escolha', opcoes: [{ nome: 'Nobre', bonus: [{ alvo: 'atributo:NADA', valor: 3 }] }, { nome: 'nobre' }] }] }
+    const r = validarSistema(def, { id: ID })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    const origem = r.sistema.campos.find(c => c.id === 'origem')!
+    expect(origem.opcoes).toEqual([{ nome: 'Nobre' }])
+    expect(r.avisos.some(a => /opções/.test(a))).toBe(true)
+    const d = fichaVazia(r.sistema)
+    const antes = calcular(r.sistema, d)
+    const depois = calcular(r.sistema, { ...d, campos: { ...d.campos, classe: 'guerreiro', especie: 'Elfo' } })
+    expect(depois.vars.FOR).toBe(Number(antes.vars.FOR) + 1)
+    expect(depois.pericias.luta).toBe(Number(antes.pericias.luta) + 3) // +1 do FOR e +2 direto
+    expect(depois.derivados.defesa).toBe(Number(antes.derivados.defesa) + 1)
+    expect(validarSistema({ ...def, campos: [{ nome: "Classe", tipo: "escolha", opcoes: [] }] }, { id: ID }).ok).toBe(false)
+  })
+})
+
+describe('classe escolhida define a tabela de níveis', () => {
+  const soma = (g: number[]) => { let t = 0; return g.map(x => (t += x)) }
+  const tab = (vida: number) => ({ vida: soma(Array(20).fill(vida)), arvore: soma(Array(20).fill(1)) })
+  const def = {
+    nome: 'Classes', dados: 'd20', rolagem: 'd20',
+    campos: [{ id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 }, { id: 'nivel2', nome: 'Nível 2', tipo: 'numero', padrao: 0 },
+      { id: 'classe', nome: 'Classe', tipo: 'escolha', opcoes: [{ nome: 'Guerreiro', progressao: 'guerreiro' }, { nome: 'Mago', progressao: 'mago' }, { nome: 'Fantasma', progressao: 'nao_existe' }] },
+      { id: 'classe2', nome: 'Segunda classe', tipo: 'escolha', nivel: 'nivel2', opcoes: [{ nome: 'Guerreiro', progressao: 'guerreiro' }, { nome: 'Mago', progressao: 'mago' }] }],
+    atributos: [{ id: 'FOR', nome: 'Força', min: 0, max: 5, padrao: 1 }],
+    derivados: [{ id: 'vida_max', nome: 'Vida máxima', formula: '5 + prog_vida' }], recursos: [{ id: 'vida', nome: 'Vida', formula: 'vida_max' }],
+    progressoes: { classes: [
+      { id: 'guerreiro', nome: 'Guerreiro', campoNivel: 'nivel', tabela: tab(10) },
+      { id: 'mago', nome: 'Mago', campoNivel: 'nivel', tabela: tab(4) }] },
+  }
+  it('só a tabela da classe escolhida vale, no nível do campo da escolha', async () => {
+    const { progressaoAtiva, escolhasDeClassePendentes } = await import('./calculo')
+    const r = validarSistema(def, { id: ID })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.avisos.some(a => /tabela de níveis/.test(a))).toBe(true)
+    expect(r.sistema.campos.find(c => c.id === 'classe')!.opcoes!.find(o => o.nome === 'Fantasma')!.progressao).toBeUndefined()
+    const d = fichaVazia(r.sistema)
+    expect(calcular(r.sistema, { ...d, campos: { ...d.campos, nivel: 3 } }).derivados.vida_max).toBe(5)
+    expect(escolhasDeClassePendentes(r.sistema, d).map(c => c.id)).toEqual(['classe', 'classe2'])
+    const g = { ...d, campos: { ...d.campos, nivel: 3, classe: 'Guerreiro' } }
+    expect(calcular(r.sistema, g).derivados.vida_max).toBe(35)
+    expect(calcular(r.sistema, { ...g, campos: { ...g.campos, classe: 'Mago' } }).derivados.vida_max).toBe(17)
+    // multiclasse: Guerreiro 3 + Mago 2 (campo Nível 2)
+    const m = { ...g, campos: { ...g.campos, classe2: 'Mago', nivel2: 2 } }
+    expect(calcular(r.sistema, m).derivados.vida_max).toBe(5 + 30 + 8)
+    expect(calcular(r.sistema, m).vars.nivel_total).toBe(5)
+    expect(progressaoAtiva(r.sistema, m).map(x => x.nome + '@' + x.campoNivel)).toEqual(['Guerreiro@nivel', 'Mago@nivel2'])
   })
 })

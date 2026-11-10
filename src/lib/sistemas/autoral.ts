@@ -66,10 +66,11 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
       vistas.add(on.toLowerCase())
       const descricao = txt(o.descricao, 400)
       const bonus = lista(o.bonus, LIMITES.bonusOpcao).flatMap(b => typeof b.alvo === 'string' && Number(b.valor) ? [{ alvo: b.alvo.slice(0, 60), valor: num(b.valor, -99, 99, 0) }] : [])
-      return [{ nome: on, ...(descricao ? { descricao } : {}), ...(bonus.length ? { bonus } : {}) }]
+      const progressao = typeof o.progressao === 'string' && /^[a-z][a-z0-9_]{0,24}$/.test(o.progressao) ? o.progressao : ''
+      return [{ nome: on, ...(descricao ? { descricao } : {}), ...(bonus.length ? { bonus } : {}), ...(progressao ? { progressao } : {}) }]
     }) : []
     if (tipo === 'escolha' && !opcoes.length) erros.push(`Campo “${n}”: adicione pelo menos uma opção para escolher.`)
-    return [{ id: pegarId(c.id, n), nome: n, tipo: tipo as 'texto' | 'numero' | 'area' | 'escolha', ...(tipo === 'numero' ? { padrao: num(c.padrao, -99999, 99999, 0) } : {}), ...(tipo === 'escolha' ? { opcoes } : {}) }]
+    return [{ id: pegarId(c.id, n), nome: n, tipo: tipo as 'texto' | 'numero' | 'area' | 'escolha', ...(tipo === 'numero' ? { padrao: num(c.padrao, -99999, 99999, 0) } : {}), ...(tipo === 'escolha' ? { opcoes, ...(typeof c.nivel === 'string' && c.nivel ? { nivel: c.nivel.slice(0, 40) } : {}) } : {}) }]
   })
   const atributos = lista(e.atributos, LIMITES.atributos).flatMap(a => {
     const n = txt(a.nome, LIMITES.nome); if (!n) return []
@@ -158,6 +159,19 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
       return [{ id, nome: nomeCl, campoNivel, tabela }]
     })
     if (classes.length) progressoes = { classes, ...(Object.keys(colunasNomes).length ? { colunas: colunasNomes } : {}) }
+  }
+
+  // ---- Escolhas ligadas às tabelas de níveis (Classe → tabela do Guerreiro) ----
+  {
+    const idsProg = new Set(progressoes?.classes.map(c => c.id) ?? [])
+    const numeros = new Set(campos.filter(c => c.tipo === 'numero').map(c => c.id))
+    let soltas = 0
+    for (const c of campos) {
+      if (c.tipo !== 'escolha') continue
+      for (const o of c.opcoes ?? []) if (o.progressao && !idsProg.has(o.progressao)) { delete o.progressao; soltas++ }
+      if (c.nivel && (!numeros.has(c.nivel) || !c.opcoes?.some(o => o.progressao))) delete c.nivel
+    }
+    if (soltas) avisos.push(`${soltas} opção(ões) apontavam para uma tabela de níveis que não existe mais e foram desligadas.`)
   }
 
   const sistema: Sistema = {

@@ -3,6 +3,7 @@
 import { toast } from 'sonner'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
+import { escolhasDeClassePendentes, progressaoAtiva } from '@/lib/sistemas/calculo'
 
 const NOMES_PADRAO: Record<string, string> = {
   arvore: '🌠 Pontos da árvore', vida: '❤️ Vida', atributos: '💪 Pontos de atributo', pericias: '🎯 Pontos de perícia',
@@ -21,6 +22,7 @@ export function ganhoNoNivel(tabela: number[], n: number) {
 export default function Progressao({ s, d, onChange, somenteLeitura }: { s: Sistema; d: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura: boolean }) {
   const p = s.progressoes
   if (!p?.classes.length) return null
+  const ativas = progressaoAtiva(s, d), pendentes = escolhasDeClassePendentes(s, d)
   const mudarNivel = (campo: string, nomeCl: string, tabela: Record<string, number[]>, novo: number) => {
     const antes = Math.max(0, Math.min(20, Math.floor(Number(d.campos[campo]) || 0)))
     const n = Math.max(0, Math.min(20, novo))
@@ -33,15 +35,16 @@ export default function Progressao({ s, d, onChange, somenteLeitura }: { s: Sist
   }
   return <section className="rounded-2xl border border-[#6d5690] bg-gradient-to-br from-[#241a3a] to-[#1a1428] p-4 sm:p-5">
     <h2 className="font-semibold text-[#f2ebff]">📈 Progressão por nível</h2>
-    <div className="mt-3 space-y-3">{p.classes.map(cl => {
-      const n = Math.max(0, Math.min(20, Math.floor(Number(d.campos[cl.campoNivel]) || 0)))
+    {pendentes.length > 0 && <p className="mt-2 rounded-lg bg-[#3a2a14]/80 p-2 text-sm text-[#f6dca8]">Escolha {pendentes.map(c => '“' + c.nome + '”').join(' e ')} lá em cima para a ficha usar a tabela de níveis certa.</p>}
+    <div className="mt-3 space-y-3">{ativas.map(({ chave, cl, campoNivel, nome, escolha }) => {
+      const n = Math.max(0, Math.min(20, Math.floor(Number(d.campos[campoNivel]) || 0)))
       const cols = Object.keys(cl.tabela)
-      return <div key={cl.id} className="rounded-xl border border-[#3d3152] bg-[#151123] p-3">
+      return <div key={chave} className="rounded-xl border border-[#3d3152] bg-[#151123] p-3">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="flex-1 font-semibold">{cl.nome}</span>
-          {!somenteLeitura && <button type="button" aria-label={'Descer nível de ' + cl.nome} disabled={n <= 0} onClick={() => mudarNivel(cl.campoNivel, cl.nome, cl.tabela, n - 1)} className="rounded-lg border border-[#5e4b78] p-1.5 disabled:opacity-30"><ChevronDown size={16} /></button>}
+          <span className="flex-1 font-semibold">{nome}{escolha && !/^classe$/i.test(escolha) && <span className="ml-2 text-xs font-normal text-[#a998bd]">{escolha}</span>}</span>
+          {!somenteLeitura && <button type="button" aria-label={'Descer nível de ' + nome} disabled={n <= 0} onClick={() => mudarNivel(campoNivel, nome, cl.tabela, n - 1)} className="rounded-lg border border-[#5e4b78] p-1.5 disabled:opacity-30"><ChevronDown size={16} /></button>}
           <span className="min-w-20 text-center text-sm">Nível <strong className="text-2xl tabular-nums text-amber-200">{n}</strong></span>
-          {!somenteLeitura && <button type="button" disabled={n >= 20} onClick={() => mudarNivel(cl.campoNivel, cl.nome, cl.tabela, n + 1)} className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-[#7652ac] to-[#b45309] px-3 py-1.5 text-sm font-semibold disabled:opacity-30"><ChevronUp size={16} /> Subir de nível</button>}
+          {!somenteLeitura && <button type="button" disabled={n >= 20} onClick={() => mudarNivel(campoNivel, nome, cl.tabela, n + 1)} className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-[#7652ac] to-[#b45309] px-3 py-1.5 text-sm font-semibold disabled:opacity-30"><ChevronUp size={16} /> Subir de nível</button>}
         </div>
         {cols.length > 0 && <div className="mt-3 grid gap-2 sm:grid-cols-2">{cols.map(col => {
           const total = n > 0 ? cl.tabela[col][n - 1] ?? 0 : 0, prox = n < 20 ? ganhoNoNivel(cl.tabela[col], n) : 0
@@ -52,6 +55,6 @@ export default function Progressao({ s, d, onChange, somenteLeitura }: { s: Sist
         })}</div>}
       </div>
     })}</div>
-    {p.classes.some(c => 'arvore' in c.tabela) && <p className="mt-2 text-xs text-[#a998bd]">Os pontos da árvore do nível já aparecem em “🌠 Árvore de habilidades”.</p>}
+    {ativas.some(a => 'arvore' in a.cl.tabela) && <p className="mt-2 text-xs text-[#a998bd]">Os pontos da árvore do nível já aparecem em “🌠 Árvore de habilidades”.</p>}
   </section>
 }

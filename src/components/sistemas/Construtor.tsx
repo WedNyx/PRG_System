@@ -190,7 +190,11 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
               <Remover rotulo="Remover campo" onClick={() => mudar(d => ({ ...d, campos: d.campos.filter((_, k) => k !== i) }))} />
             </div>
             {c.tipo === 'numero' && <div className="flex items-center gap-2"><label className="text-xs">Começa em <input type="number" value={Number(c.padrao ?? 0)} onChange={e => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, padrao: Number(e.target.value) } : x) }))} className={pequeno + ' w-20'} /></label><Var id={c.id} /></div>}
-            {c.tipo === 'escolha' && <EditorOpcoes opcoes={(c.opcoes as OpcaoDef[]) ?? []} alvos={alvosDoDef(def)} mudar={o => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, opcoes: o } : x) }))} />}
+            {c.tipo === 'escolha' && <EditorOpcoes opcoes={(c.opcoes as OpcaoDef[]) ?? []} alvos={alvosDoDef(def)} tabelas={def.progressao?.classes.map(t => ({ id: t.id, nome: t.nome })) ?? []} mudar={o => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, opcoes: o } : x) }))} />}
+            {c.tipo === 'escolha' && ((c.opcoes as OpcaoDef[]) ?? []).some(o => o.progressao) && <label className="flex flex-wrap items-center gap-2 text-xs">O nível desta escolha fica em
+              <select aria-label="Campo do nível desta escolha" value={String(c.nivel ?? '')} onChange={e => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, nivel: e.target.value || undefined } : x) }))} className={pequeno}>
+                <option value="">o campo da tabela</option>{def.campos.filter(x => x.tipo === 'numero').map(x => <option key={x.id} value={x.id}>{x.nome}</option>)}</select>
+              <span className="text-[#a998bd]">(para multiclasse: “Segunda classe” usa “Nível 2”)</span></label>}
           </div>)}
           <button type="button" className={botao} onClick={() => mudar(d => ({ ...d, campos: [...d.campos, novo(d.campos, { tipo: 'texto' })] }))}><Plus size={14} /> Campo</button>
         </SecaoBase>
@@ -290,7 +294,9 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
         <SecaoBase id="progressao" titulo="📈 Progressão por nível" sub="O que o personagem ganha a cada nível" aberta={aberta === 'progressao'} alternar={() => setAberta(a => a === 'progressao' ? '' : 'progressao')}>
           <EditorProgressao valor={def.progressao} mudar={v => mudar(d => ({ ...d, progressao: v }))}
             camposNumero={def.campos.filter(c => c.tipo === 'numero').map(c => ({ id: c.id, nome: c.nome }))}
-            criarCampoNivel={() => { mudar(d => d.campos.some(c => c.id === 'nivel') ? d : { ...d, campos: [...d.campos, { id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 }] }); return 'nivel' }} />
+            criarCampoNivel={() => { mudar(d => d.campos.some(c => c.id === 'nivel') ? d : { ...d, campos: [...d.campos, { id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 }] }); return 'nivel' }}
+            listas={def.campos.filter(c => c.tipo === 'escolha' && c.nome).map(c => ({ id: c.id, nome: c.nome }))}
+            ligadas={ligadasDoDef(def)} ligar={id => mudar(d => ligarTabelas(d, id))} />
         </SecaoBase>
         <SecaoBase id="arvore" titulo="🌠 Árvore de habilidades padrão" sub="Toda ficha nova do sistema começa com ela" aberta={aberta === 'arvore'} alternar={() => setAberta(a => a === 'arvore' ? '' : 'arvore')}>
           {validacao?.ok ? <ArvoreHabilidades s={validacao.sistema} d={{ ...fichaVazia(validacao.sistema), arvore: { ...def.arvore, liberados: [] } }} somenteLeitura={false} rolar={() => {}} editorSistema
@@ -314,6 +320,36 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
   </main>
 }
 
+/** Quem escolhe cada tabela de níveis: { guerreiro: ['Guerreiro (Classe)'] }. */
+function ligadasDoDef(d: Def): Record<string, string[]> {
+  const out: Record<string, string[]> = {}
+  for (const c of d.campos) for (const o of (c.opcoes as OpcaoDef[] | undefined) ?? []) if (o.progressao) (out[o.progressao] ??= []).push(`${o.nome} (${c.nome})`)
+  return out
+}
+/** Cria uma tabela de níveis para cada opção da lista (copiando a primeira) e liga as opções a elas. */
+function ligarTabelas(d: Def, campoId: string): Def {
+  const campo = d.campos.find(c => c.id === campoId)
+  if (!d.progressao || !campo) return d
+  const classes = [...d.progressao.classes], base = classes[0], ids = new Set(classes.map(c => c.id))
+  const opcoes = ((campo.opcoes as OpcaoDef[] | undefined) ?? []).map(o => {
+    const nome = o.nome.trim(); if (!nome) return o
+    let cl = classes.find(c => c.nome.trim().toLowerCase() === nome.toLowerCase())
+    if (!cl) {
+      if (classes.length >= 6) return o
+      const raiz = slug(nome).slice(0, 20); let id = raiz, k = 2
+      while (ids.has(id)) id = raiz + '_' + k++
+      ids.add(id)
+      cl = { id, nome: nome.slice(0, 40), campoNivel: base.campoNivel, tabela: JSON.parse(JSON.stringify(base.tabela)) }
+      classes.push(cl)
+    }
+    return { ...o, progressao: cl.id }
+  })
+  const campos = d.campos.map(c => c.id === campoId ? { ...c, opcoes } : c)
+  // A tabela geral que serviu de modelo sai, se ninguém a escolhe (senão somaria duas vezes).
+  const usadas = new Set(campos.flatMap(c => ((c.opcoes as OpcaoDef[] | undefined) ?? []).flatMap(o => o.progressao ? [o.progressao] : [])))
+  const finais = classes.filter(c => c !== base || usadas.has(c.id))
+  return { ...d, campos, progressao: { ...d.progressao, classes: finais.length ? finais : classes } }
+}
 /** Onde um bônus pode entrar (igual a alvosDeBonus, mas direto do que está sendo editado). */
 function alvosDoDef(d: Def) {
   return [

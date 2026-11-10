@@ -6,6 +6,15 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.22.0', data: '2026-11-10', titulo: 'Classe com a sua tabela de níveis',
+    itens: [
+      'A classe escolhida define a tabela de níveis: numa “Lista de opções” (Classe), cada opção pode ter a sua “📈 Tabela de níveis”. Na ficha, só vale a tabela da classe escolhida.',
+      'Construtor, em “Progressão por nível”: botão “🔗 Uma tabela para cada opção de…”. Ele cria uma tabela para Guerreiro, Mago… (começando igual à atual) e já liga tudo.',
+      'Multiclasse: crie “Segunda classe” e “Nível 2” e diga que o nível dessa escolha fica em “Nível 2”. A ficha soma as duas tabelas.',
+      'Na ficha, o cartão de progressão mostra a classe escolhida e o nível dela, e avisa quando ainda falta escolher a classe.',
+    ],
+  },
+  {
     versao: '0.21.0', data: '2026-11-10', titulo: 'Grupos de perfis e classes para escolher',
     itens: [
       'Portal com grupos: antes dos perfis aparecem dois cartões, 🧭 De Fora e 🌙 Lunethernnyis. Cada um mostra só os perfis do seu grupo, e o aparelho lembra a escolha (“Trocar grupo” volta aos cartões).',

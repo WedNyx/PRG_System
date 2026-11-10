@@ -28,10 +28,13 @@ export function progressaoNova(campoNivel: string): DefProgressao {
 }
 
 /** Editor da progressão por nível: uma tabela (ou várias, uma por classe) com o que se ganha em cada nível. */
-export default function EditorProgressao({ valor, mudar, camposNumero, criarCampoNivel }: {
+export default function EditorProgressao({ valor, mudar, camposNumero, criarCampoNivel, listas = [], ligadas = {}, ligar }: {
   valor: DefProgressao | null; mudar: (v: DefProgressao | null) => void; camposNumero: { id: string; nome: string }[]; criarCampoNivel: () => string
+  /** Campos “Lista de opções” (Classe…) e quem escolhe cada tabela. */
+  listas?: { id: string; nome: string }[]; ligadas?: Record<string, string[]>; ligar?: (campoId: string) => void
 }) {
   const [aba, setAba] = useState(0)
+  const [lista, setLista] = useState('')
   const [ate, setAte] = useState(10)
   const [novaCol, setNovaCol] = useState('')
   if (!valor) return <div className="space-y-2 rounded-xl border border-dashed border-[#6d5690] p-3">
@@ -59,6 +62,14 @@ export default function EditorProgressao({ valor, mudar, camposNumero, criarCamp
       <button type="button" className={botao} onClick={addClasse} disabled={valor.classes.length >= 6} title="Para multiclasse: cada classe tem o seu nível e a sua tabela; a ficha soma tudo."><Plus size={12} /> Classe</button>
       <button type="button" className={botao + ' ml-auto text-red-200'} onClick={() => { if (confirm('Desligar a progressão por nível?')) mudar(null) }}><Trash2 size={12} /> Desligar</button>
     </div>
+    {listas.length > 0 && ligar && <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-[#6d5690] p-2 text-xs">
+      <span>🔗 Uma tabela para cada opção de</span>
+      <select aria-label="Lista que escolhe a tabela" value={lista || listas[0].id} onChange={e => setLista(e.target.value)} className={input + ' !w-auto'}>
+        {listas.map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}</select>
+      <button type="button" className={botao} onClick={() => { ligar(lista || listas[0].id); setAba(0) }}>Criar e ligar</button>
+      <span className="w-full text-[#a998bd]">Cada opção (ex.: Guerreiro, Mago) ganha a sua tabela, começando igual a esta. Na ficha, só vale a tabela da opção escolhida. Até 6 tabelas.</span>
+    </div>}
+    <p className="text-xs text-[#c9f5d8]">{ligadas[cl.id]?.length ? 'Vale para quem escolher: ' + ligadas[cl.id].join(', ') : 'Vale para todos os personagens.'}</p>
     <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
       <label className="block text-xs">Nome<input value={cl.nome} maxLength={40} onChange={e => setClasse(c => ({ ...c, nome: e.target.value }))} className={input + ' mt-1'} placeholder="Ex.: Nível, Guerreiro" /></label>
       <label className="block text-xs">Campo que guarda o nível<select value={cl.campoNivel} onChange={e => setClasse(c => ({ ...c, campoNivel: e.target.value }))} className={input + ' mt-1'}>

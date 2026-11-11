@@ -6,6 +6,17 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.33.0', data: '2026-11-11', titulo: 'Fichas de acordo com as regras (parte 2)',
+    itens: [
+      '📜 Fichas de acordo com as regras, parte 2: Fate, Blades in the Dark, BRP e Faroeste Arcano.',
+      '🎲 Fate: agora rola 4dF + perícia ao tocar no valor. Escada até Fantástico (+6), recarga que desconta as façanhas extras, consequência suave extra com Vigor ou Vontade Excepcional e caixas de estresse que começam vazias.',
+      '🗡️ Blades in the Dark: cartilha, herança e antecedente em lista. As ações rolam um d6 por ponto e a ficha diz o resultado (sucesso total, com custo, falha ou crítico); a resistência mostra quanto custa de estresse. Escolha da carga da missão, armaduras e estresse, trauma e XP começando em zero.',
+      '🔎 BRP: a ficha nova já vem com o valor-base de cada perícia (50 perícias, por categoria), Carisma no lugar de Aparência, Educação, ferimento grave, bônus de experiência, Charme e Saber. O teste mostra crítico, especial, sucesso, falha e desastre, e o nível de poder avisa o máximo das perícias.',
+      '🤠 Faroeste Arcano: XP para o próximo nível e dano contusivo que some no descanso.',
+      'Marcadores (estresse, exaustão, trauma, Morrendo…) agora começam vazios e não mostram aviso de “zerado”.',
+    ],
+  },
+  {
     versao: '0.32.10', data: '2026-11-11', titulo: 'Fichas de acordo com as regras (parte 1)',
     itens: [
       '📜 Fichas revisadas sistema por sistema, seguindo as regras de cada um (parte 1 de 2): Tormenta20, Ordem Paranormal, D&D 5e e Pathfinder 2e.',

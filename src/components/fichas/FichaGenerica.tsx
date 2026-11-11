@@ -17,7 +17,7 @@ import ArvoreHabilidades from './Arvore'
 import Progressao from './Progressao'
 import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
 import { GUIAS } from '@/lib/sistemas/guias'
-import { expressaoParada } from '@/lib/sistemas/combate'
+import { expressaoParada, leituraBlades, leituraD100 } from '@/lib/sistemas/combate'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
@@ -54,13 +54,15 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     onChange(novo)
   }
 
-  async function rolar(nome: string, bonus: number | null, dados?: number) {
+  async function rolar(nome: string, bonus: number | null, dados?: number, resistencia = false) {
     const b = bonus ?? 0
     if (parada) {
       const n = Math.max(0, dados ?? 1), expr = expressaoParada(parada, n, b)
       const r = rolarNaCampanha ? await rolarNaCampanha(expr, nome) : rolarExpressao(expr)
       if (!r) return
-      central.current?.mostrar({ rotulo: `${nome} (${n > 0 ? n + 'd' + parada + ', o maior' : '2d' + parada + ', o menor'}${b ? ' ' + sinal(b) : ''})`, expressao: expr, resultados: r.resultados, total: r.total, nota: naMesa })
+      const leitura = s.parada?.leitura === 'blades' ? leituraBlades(n, r.resultados, resistencia) : null
+      central.current?.mostrar({ rotulo: `${nome} (${n > 0 ? n + 'd' + parada + ', o maior' : '2d' + parada + ', o menor'}${b ? ' ' + sinal(b) : ''})`, expressao: expr, resultados: r.resultados, total: r.total,
+        nota: [leitura, naMesa].filter(Boolean).join(' · ') || null })
       return
     }
     if (regra) {
@@ -75,7 +77,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       const alvo = bonus ?? 0
       const r = rolarNaCampanha ? await rolarNaCampanha('1d100', nome + ' (' + alvo + '%)') : rolarExpressao('1d100')
       if (!r) return
-      central.current?.mostrar({ rotulo: `${nome} (${alvo}%)`, expressao: '1d100', resultados: r.resultados, total: r.total, nota: r.total <= Math.floor(alvo / 5) ? '🌟 Sucesso especial!' : r.total <= alvo ? '✅ Sucesso' : '❌ Falha' })
+      central.current?.mostrar({ rotulo: `${nome} (${alvo}%)`, expressao: '1d100', resultados: r.resultados, total: r.total, nota: leituraD100(alvo, r.total) })
       return
     }
     const expr = '1d20' + (b >= 0 ? '+' + b : String(b))
@@ -108,7 +110,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
   const listasDe = (sec: string) => s.listas.filter(l => secaoDeLista(l.id) === sec)
   const SECOES = ([
     { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade e recursos', ajuda: 'Nome, imagem e os dados básicos do personagem. Mais abaixo ficam os valores calculados e as barras de vida e recursos (use − e +).', ok: true },
-    { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? 'Atributos e perícias' : s.pericias.titulo ?? 'Perícias') : 'Atributos', sub: 'Testes e rolagens', ajuda: 'Digite os valores dos atributos; os bônus se calculam sozinhos. Toque no bônus de um teste ou perícia para rolar.', ok: s.atributos.length > 0 || !!s.pericias },
+    { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? 'Atributos e perícias' : s.pericias.titulo ?? 'Perícias') : 'Atributos', sub: 'Testes e rolagens', ajuda: s.atributos.length ? 'Digite os valores dos atributos; os bônus se calculam sozinhos. Toque no bônus de um teste ou perícia para rolar.' : s.pericias?.modo === 'valor' ? 'Digite a porcentagem de cada perícia e toque nela para rolar.' : 'Escolha o grau de cada uma e toque no valor para rolar.', ok: s.atributos.length > 0 || !!s.pericias },
     { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ajuda: 'Adicione poderes com custo, usos e dano. Toque no dado do poder para rolar; os usos gastos voltam no descanso.', ok: true },
     { id: 'arvore', icone: '🌠', nome: 'Árvore de habilidades', sub: 'Hexágonos, pontos e caminhos', ajuda: 'Gaste pontos para liberar habilidades. Uma habilidade só abre quando a anterior do caminho já foi liberada.', ok: true },
     { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou desenho, separados em abas por tipo. Itens equipados contam nos bônus; os mágicos ficam numa ala própria.', ok: true },
@@ -217,21 +219,27 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       <div className="flex flex-wrap gap-2">{s.atributos.map(a => <button key={a.id} type="button" onClick={() => parada ? rolar(a.nome, 0, Number(c.vars[a.id]) || 0) : rolar(a.nome, s.formulaModificador ? c.mods[a.id] : c.vars[a.id])}
         className="rounded-lg border border-(--a-5e4b78) px-3 py-2 text-sm hover:bg-(--s-34294f)">{a.id} {parada ? `(${Math.max(0, Number(c.vars[a.id]) || 0) || 2}d${parada})` : sinal(s.formulaModificador ? c.mods[a.id] : c.vars[a.id])}</button>)}</div>
     </section>}
+    {parada && !!s.resistencias?.length && <section className={card}>
+      <h2 className="mb-1 flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Dice5 size={18} /> Resistência</h2>
+      <p className="mb-2 text-xs text-(--a-a998bd)">Para evitar ou reduzir uma consequência: rola um d{parada} por ponto e o estresse custa 6 − o maior dado.</p>
+      <div className="flex flex-wrap gap-2">{s.resistencias.map(id => { const x = s.derivados.find(y => y.id === id); if (!x) return null; const n = Number(c.derivados[id]) || 0
+        return <button key={id} type="button" disabled={somenteLeitura} onClick={() => rolar(x.nome.split(' (')[0], 0, n, true)} className="rounded-lg border border-(--a-5e4b78) px-3 py-2 text-sm hover:bg-(--s-34294f)">{x.nome.split(' (')[0]} ({n || 2}d{parada})</button> })}</div>
+    </section>}
     {s.pericias && <section className={card}>
       <h2 className="mb-1 font-bold text-(--a-ed9cd8)">{s.pericias.titulo ?? 'Perícias'}</h2>
-      {podeRolar && <p className="mb-3 text-xs text-(--a-a998bd)">Toque no valor para rolar.{parada && ' Rola um dado por ponto do atributo da perícia e soma o bônus.'}{regra && <> Regra: <strong className="text-(--a-e4d3ff)">{regra.nome}</strong> (<span className="font-mono">{regra.formula}</span>, VALOR = o número tocado).</>}</p>}
+      {podeRolar && <p className="mb-3 text-xs text-(--a-a998bd)">Toque no valor para rolar.{parada && (s.atributos.length ? ' Rola um dado por ponto do atributo da perícia e soma o bônus.' : ' Rola um dado por ponto e fica com o maior (0 pontos: dois dados, o menor).')}{regra && (s.tipo === 'autoral' ? <> Regra: <strong className="text-(--a-e4d3ff)">{regra.nome}</strong> (<span className="font-mono">{regra.formula}</span>, VALOR = o número tocado).</> : <> Rola <strong className="text-(--a-e4d3ff)">{regra.nome}</strong> + o valor.</>)}</p>}
       {[...grupos].map(([g, lista]) => <div key={g} className="mb-4">
         {g && <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{g}</h3>}
         <div className="grid gap-2 sm:grid-cols-2">
           {lista.map(p => <div key={p.id} className="flex items-center gap-2 rounded-lg bg-(--s-171325) px-3 py-2">
             <span className="min-w-0 flex-1 truncate text-sm">{p.nome}{p.atributo && <span className="ml-1 text-[10px] text-(--a-a998bd)">({p.atributo})</span>}</span>
             {s.pericias!.modo === 'valor'
-              ? <input type="number" aria-label={p.nome} min={0} max={200} value={d.pericias[p.id] ?? 0} disabled={somenteLeitura} onChange={e => set('pericias', { ...d.pericias, [p.id]: Number(e.target.value) || 0 })} className={input + ' w-16 text-center'} />
+              ? <input type="number" aria-label={p.nome} min={0} max={200} value={d.pericias[p.id] ?? 0} disabled={somenteLeitura} onChange={e => set('pericias', { ...d.pericias, [p.id]: Number(e.target.value) || 0 })} className={input + ' !w-16 shrink-0 text-center'} />
               : <select aria-label={'Treino em ' + p.nome} value={String(d.pericias[p.id] ?? '')} disabled={somenteLeitura} onChange={e => set('pericias', { ...d.pericias, [p.id]: e.target.value })} className="max-w-[9.5rem] rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-1 text-xs text-white">
                 {s.pericias!.treinos!.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select>}
-            <button type="button" disabled={!podeRolar} onClick={() => rolar(p.nome, c.pericias[p.id], dadosDe(p.atributo))} aria-label={'Rolar ' + p.nome} title={parada ? `${dadosDe(p.atributo) || 2}d${parada} ${dadosDe(p.atributo) ? '(o maior)' : '(o menor)'} ${sinal(c.pericias[p.id])}` : undefined}
+            <button type="button" disabled={!podeRolar} onClick={() => p.atributo || !parada ? rolar(p.nome, c.pericias[p.id], dadosDe(p.atributo)) : rolar(p.nome, 0, Number(c.pericias[p.id]) || 0)} aria-label={'Rolar ' + p.nome} title={parada && p.atributo ? `${dadosDe(p.atributo) || 2}d${parada} ${dadosDe(p.atributo) ? '(o maior)' : '(o menor)'} ${sinal(c.pericias[p.id])}` : undefined}
               className="w-14 shrink-0 rounded-lg bg-(--s-34294f) py-1 text-center font-bold tabular-nums hover:bg-(--s-4b3a6e) disabled:cursor-default disabled:hover:bg-(--s-34294f)">
-              {s.pericias!.modo === 'valor' ? (c.pericias[p.id] ?? 0) + '%' : sinal(c.pericias[p.id])}</button>
+              {s.pericias!.modo === 'valor' ? (c.pericias[p.id] ?? 0) + '%' : parada && !p.atributo ? (Number(c.pericias[p.id]) || 0) + 'd' + parada : sinal(c.pericias[p.id])}</button>
           </div>)}
         </div>
       </div>)}

@@ -66,3 +66,23 @@ describe('parada de dados (Ordem Paranormal)', () => {
     expect(regraDeIniciativa(s, 10, 3)).toBe('3d20kh1+10')
   })
 })
+
+describe('leituras (v0.33.0)', () => {
+  it('Blades: 6, 4–5, falha, crítico e custo de estresse', async () => {
+    const { leituraBlades } = await import('./combate')
+    expect(leituraBlades(2, [6, 3])).toMatch(/Sucesso total/); expect(leituraBlades(2, [5, 2])).toMatch(/custo/); expect(leituraBlades(1, [2])).toMatch(/Falha/)
+    expect(leituraBlades(3, [6, 6, 1])).toMatch(/Crítico/); expect(leituraBlades(0, [6, 2])).toMatch(/Falha/) // 0 dados: vale o menor
+    expect(leituraBlades(2, [5, 1], true)).toBe('Custa 1 de estresse')
+  })
+  it('BRP: crítico, especial, sucesso, falha e desastre', async () => {
+    const { leituraD100 } = await import('./combate')
+    expect(leituraD100(50, 3)).toMatch(/crítico/); expect(leituraD100(50, 10)).toMatch(/especial/); expect(leituraD100(50, 50)).toBe('✅ Sucesso')
+    expect(leituraD100(50, 60)).toBe('❌ Falha'); expect(leituraD100(50, 98)).toMatch(/Desastre/); expect(leituraD100(100, 100)).toMatch(/Desastre/); expect(leituraD100(3, 5)).toBe('✅ Sucesso')
+  })
+  it('Blades na mesa: ações rolam um d6 por ponto', () => {
+    const s = sistemaPorId('blades')!
+    const r = resumoCombate(s, { pericias: { escaramucar: 'd2' } })
+    expect(r.testes.find(t => t.id === 'pericia:escaramucar')).toMatchObject({ valor: 0, dados: 2 })
+    expect(regraDeAtaque(s, 0, 2).expressao).toBe('2d6kh1')
+  })
+})

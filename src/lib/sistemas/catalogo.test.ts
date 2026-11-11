@@ -212,3 +212,31 @@ describe('fichas revisadas (v0.32.10)', () => {
     expect(c.derivados.cd_classe).toBe(10 + 4 + 2 + 2); expect(c.derivados.cd_magia).toBe(18); expect(c.derivados.ataque_magia).toBe(8)
   })
 })
+
+describe('fichas revisadas, parte 2 (v0.33.0)', () => {
+  it('Fate: estresse começa vazio; Vigor Bom = 4 caixas; façanhas extras tiram recarga', () => {
+    const s = sistemaPorId('fate-core')!; const d = fichaVazia(s)
+    expect(d.recursos.estresse_fisico.atual).toBe(0)
+    d.pericias.vigor = 'bom'; d.campos.facanhas_extras = 1
+    const c = calcular(s, d)
+    expect(c.recursosMax.estresse_fisico).toBe(4); expect(c.derivados.recarga_atual).toBe(2); expect(c.recursosMax.pontos_destino).toBe(2)
+    d.pericias.vigor = 'excepcional'; expect(calcular(s, d).derivados.consequencia_extra).toBe(1)
+  })
+  it('Blades: estresse e trauma começam em 0; resistência pelo número de ações; carga escolhida', () => {
+    const s = sistemaPorId('blades')!; const d = fichaVazia(s)
+    expect(d.recursos.estresse.atual).toBe(0); expect(d.recursos.trauma.atual).toBe(0)
+    d.pericias.escaramucar = 'd2'; d.pericias.rondar = 'd1'; d.campos.carga_escolhida = 'Leve (3)'
+    const c = calcular(s, d)
+    expect(c.derivados.proeza).toBe(2); expect(c.carga.max).toBe(3); expect(c.pericias.escaramucar).toBe(2)
+  })
+  it('BRP: ficha nova já vem com o valor-base; APA antigo vira CAR; ferimento grave', async () => {
+    const { normalizarFicha } = await import('./calculo')
+    const s = sistemaPorId('brp')!; const d = fichaVazia(s)
+    expect(d.pericias.escalar).toBe(40); expect(d.pericias.esquivar).toBe(20); expect(d.pericias.idioma_proprio).toBe(65); expect(d.pericias.primeiros_socorros).toBe(30)
+    expect(s.pericias!.lista.find(p => p.id === 'escalar')!.nome).toBe('Escalar (40%)')
+    const n = normalizarFicha(s, { atributos: { APA: 14, CON: 12, TAM: 15 } } as never)
+    expect(n.atributos.CAR).toBe(14); expect(n.atributos.APA).toBeUndefined()
+    const c = calcular(s, n)
+    expect(c.derivados.pv_max).toBe(14); expect(c.derivados.ferimento_grave).toBe(7); expect(c.derivados.charme).toBe(70)
+  })
+})

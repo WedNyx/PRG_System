@@ -7,7 +7,8 @@ export type CampoDef = { id: string; nome: string; tipo: 'texto' | 'numero' | 'a
 export type AtributoDef = { id: string; nome: string; min: number; max: number; padrao: number }
 export type TreinoDef = { id: string; nome: string; formula: string; custo?: number }
 /** atributo pode ser 'FOR/DES': usa o melhor modificador dos dois. */
-export type PericiaDef = { id: string; nome: string; atributo?: string; grupo?: string }
+/** `base`: valor inicial das perícias em porcentagem (fórmula, ex.: '25' ou 'DES * 2'): fichas novas já começam com ele. */
+export type PericiaDef = { id: string; nome: string; atributo?: string; grupo?: string; base?: string }
 export type DerivadoDef = { id: string; nome: string; formula: string; dica?: string }
 /** `sugerido`: id de um valor calculado usado como máximo enquanto a pessoa não digitar outro (ex.: PV pela classe). */
 /** `contador`: marcador que começa em 0 e não enche no descanso (Morrendo, Exaustão, Estresse…); `baixaNoDescanso`: quanto cai no descanso longo. */
@@ -26,7 +27,11 @@ export type Sistema = {
   /** Como a ficha rola: d20 + bônus, d100 abaixo do valor, ou sem rolagem. Sem isso, deduz por `dados`. */
   rolagem?: 'd20' | 'd100' | 'nenhuma' | 'personalizada' | 'parada'
   /** Com rolagem 'parada': rola tantos dados quanto o atributo e fica com o maior (0 = rola 2 e fica com o menor). Ex.: Ordem Paranormal (d20), Blades (d6). */
-  parada?: { lados: number }
+  parada?: { lados: number; /** Como ler o resultado (Blades: 6 = sucesso, 4–5 = parcial, dois 6 = crítico). */ leitura?: 'blades' }
+  /** Valores calculados que também se rolam como parada (ex.: atributos de resistência do Blades). */
+  resistencias?: string[]
+  /** Atributos que mudaram de sigla (antiga → nova): fichas antigas são convertidas ao abrir. */
+  apelidosAtributos?: Record<string, string>
   /** Com rolagem 'personalizada': a fórmula do teste, com VALOR no lugar do atributo/perícia (ver regrasRolagem.ts). */
   regraRolagem?: { nome: string; formula: string }
   /** Fora das listas (não dá para criar fichas novas); fichas antigas continuam abrindo. */

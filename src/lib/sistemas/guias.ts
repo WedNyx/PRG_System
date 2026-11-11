@@ -40,32 +40,33 @@ export const GUIAS: Record<string, GuiaSistema> = {
   },
   'fate-core': {
     passos: [
-      'Escreva o Conceito (aspecto principal) e a Dificuldade. Depois, mais três aspectos (a “fase das aventuras”).',
+      'Escreva o Conceito (aspecto principal) e a Dificuldade. Depois, mais três aspectos: a sua aventura e dois caminhos cruzados com outros personagens.',
       'Monte a pirâmide de perícias: 1 Ótima (+4), 2 Boas (+3), 3 Razoáveis (+2) e 4 Regulares (+1). O resto fica Medíocre (+0).',
-      'Escolha 3 façanhas. Recarga começa em 3; cada façanha extra custa 1 de recarga (mínimo 1).',
-      'Comece a sessão com Pontos de Destino iguais à Recarga.',
+      'Escolha 3 façanhas grátis. Quer mais? Anote em “Façanhas além das 3 grátis”: cada uma tira 1 da recarga (mínimo 1).',
+      'Comece a sessão com Pontos de Destino iguais à recarga.',
     ],
-    automatico: ['Caixas de estresse físico (Vigor) e mental (Vontade)', 'Avisos se a pirâmide passar do limite', 'Pontos de destino iguais à recarga'],
-    dicas: ['Consequências: suave absorve 2, moderada 4, severa 6.', 'Rolagem: 4dF + perícia contra a oposição.'],
+    automatico: ['Rolagem 4dF + perícia tocando no valor', 'Caixas de estresse físico (Vigor) e mental (Vontade), começando vazias', 'Recarga com as façanhas extras e consequência suave extra com perícia Excepcional', 'Avisos se a pirâmide passar do limite'],
+    dicas: ['Consequências: suave absorve 2, moderada 4, severa 6.', 'As caixas de estresse se limpam no fim do conflito (ou no descanso da ficha).'],
   },
   blades: {
     passos: [
-      'Escolha a cartilha (playbook), a herança e o antecedente, o vício e a aparência.',
+      'Escolha a cartilha (a descrição mostra as ações que ela dá), a herança e o antecedente; escreva apelido, bando, vício e aparência.',
       'Distribua 7 pontos de ação: 3 vêm da cartilha, 4 são livres. Nenhuma ação passa de 2 pontos na criação.',
-      'Escolha uma habilidade especial da cartilha e anote nos amigos/rivais.',
-      'Combine com o grupo a facção da tripulação e anote na lista de anotações.',
+      'Escolha uma habilidade especial da cartilha e anote amigos e rivais.',
+      'Antes de cada golpe, escolha a carga (Leve 3, Normal 5, Pesada 6).',
     ],
-    automatico: ['Dados de resistência de Perspicácia, Proeza e Determinação', 'Avisos de pontos de ação na criação', 'Estresse 9, Trauma 4, XP, cura e moedas com limites'],
-    dicas: ['Rolagem: tantos d6 quanto os pontos na ação; vale o maior (6 sucesso, 4–5 sucesso parcial).', 'Sem pontos: role 2d6 e fique com o MENOR.'],
+    automatico: ['Ação: toque no número de dados; a ficha rola, fica com o maior e diz se foi sucesso total, com custo, falha ou crítico', 'Resistência por Perspicácia, Proeza e Determinação, com o custo de estresse', 'Estresse, trauma, armadura, XP, cura e moedas começam vazios', 'Avisos de pontos de ação na criação'],
+    dicas: ['Sem pontos na ação: role 2d6 e fique com o MENOR (a ficha já faz).', 'Estresse passa de 9? Ganhe 1 trauma e o estresse zera.'],
   },
   brp: {
     passos: [
-      'Role as características: FOR, CON, POD, DES e APA com 3d6; TAM e INT com 2d6+6 (EDU se a campanha usar).',
-      'Escolha a ocupação. Distribua os pontos de perícia da ocupação e os pontos pessoais (consulte o seu livro para as porcentagens iniciais).',
-      'Anote armas e equipamento nas listas.',
+      'Role as características: FOR, CON, POD, DES e CAR com 3d6; TAM e INT com 2d6+6 (EDU com 2d6+6, se a campanha usar). Dá para trocar até 3 pontos entre elas.',
+      'Escolha o nível de poder da campanha (Normal, Heroico, Épico ou Super-humano) e a ocupação.',
+      'As perícias já começam no valor-base. Some os pontos da ocupação (250 no nível Normal) e os pessoais (INT × 10).',
+      'Anote armas (porcentagem, dano e alcance) e equipamento.',
     ],
-    automatico: ['PV = (CON + TAM) ÷ 2, para cima', 'Pontos de Poder = POD', 'Esforço, Vigor, Ideia, Sorte e Agilidade (×5)', 'FOR + TAM com a tabela de modificador de dano'],
-    dicas: ['Rolagem: d100 igual ou abaixo da porcentagem. Um quinto do valor = sucesso especial.', 'Sanidade é opcional; use em campanhas de horror.'],
+    automatico: ['PV = (CON + TAM) ÷ 2 e ferimento grave (metade dos PV)', 'Pontos de Poder = POD', 'Esforço, Vigor, Ideia, Sorte, Agilidade, Charme e Saber (×5)', 'FOR + TAM com a tabela de modificador de dano', 'Teste com crítico (1/20), especial (1/5) e desastre', 'Aviso de perícia acima do máximo do nível de poder'],
+    dicas: ['Sanidade é opcional; use em campanhas de horror.', 'Fichas antigas com APA (Aparência) passam a usar CAR (Carisma) com o mesmo valor.'],
   },
   'faroeste-arcano': {
     passos: [
@@ -76,7 +77,7 @@ export const GUIAS: Record<string, GuiaSistema> = {
       'Preencha armadura, deflexão e bônus de tamanho; anote armas, talentos, magias e equipamentos.',
     ],
     automatico: ['Bônus base de ataque, CA de classe, iniciativa e resistências pelas tabelas (somando multiclasse)', 'Ataques corpo a corpo, à distância e agarrar', 'CA normal, de toque e surpresa', 'Perícias com o melhor atributo quando há dois'],
-    dicas: ['Reputação dá bônus em Conversar e Intimidação (veja as observações no fim da ficha).', 'PV: anote o máximo manualmente (dado de vida da classe + CON por nível).'],
+    dicas: ['Reputação dá bônus em Conversar e Intimidação (veja as observações no fim da ficha).', 'PV: anote o máximo manualmente (dado de vida da classe + CON por nível).', 'A ficha mostra o XP necessário para o próximo nível; dano contusivo some no descanso.'],
   },
   'ordem-paranormal': {
     passos: [

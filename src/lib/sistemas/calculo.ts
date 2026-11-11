@@ -32,12 +32,19 @@ export function fichaVazia(s: Sistema, nome = ''): DadosFicha {
   return base
 }
 
+/** Valor inicial de uma perícia em porcentagem (com os atributos no valor padrão). */
+function baseDaPericia(s: Sistema, base?: string) {
+  if (!base) return 0
+  const v = avaliarSeguro(base, Object.fromEntries(s.atributos.map(a => [a.id, a.padrao])))
+  return v === null ? 0 : Math.max(0, Math.round(v))
+}
+
 function fichaBase(s: Sistema, nome: string): DadosFicha {
   return {
     sistema: s.id, nome,
     campos: Object.fromEntries(s.campos.map(c => [c.id, c.padrao ?? (c.tipo === 'numero' ? 0 : '')])),
     atributos: Object.fromEntries(s.atributos.map(a => [a.id, a.padrao])),
-    pericias: Object.fromEntries((s.pericias?.lista ?? []).map(p => [p.id, s.pericias?.modo === 'valor' ? 0 : s.pericias?.treinos?.[0]?.id ?? ''])),
+    pericias: Object.fromEntries((s.pericias?.lista ?? []).map(p => [p.id, s.pericias?.modo === 'valor' ? baseDaPericia(s, p.base) : s.pericias?.treinos?.[0]?.id ?? ''])),
     recursos: Object.fromEntries(s.recursos.map(r => [r.id, { atual: 0 }])),
     listas: Object.fromEntries(s.listas.map(l => [l.id, ''])),
     // Árvore padrão do sistema (sem nada liberado).
@@ -49,6 +56,12 @@ function fichaBase(s: Sistema, nome: string): DadosFicha {
 export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | undefined): DadosFicha {
   const base = fichaVazia(s)
   if (!d || typeof d !== 'object') return base
+  // Siglas antigas de atributos (ex.: BRP: APA → CAR).
+  if (s.apelidosAtributos && d.atributos) {
+    const a = { ...d.atributos } as Record<string, number>
+    for (const [velho, novo] of Object.entries(s.apelidosAtributos)) if (a[velho] !== undefined && a[novo] === undefined) { a[novo] = a[velho]; delete a[velho] }
+    d = { ...d, atributos: a }
+  }
   return {
     sistema: s.id, nome: typeof d.nome === 'string' ? d.nome.slice(0, 90) : '',
     ...(imagemDaPlataforma(d.retrato) ? { retrato: d.retrato } : {}),

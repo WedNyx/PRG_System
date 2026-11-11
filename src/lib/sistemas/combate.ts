@@ -56,7 +56,10 @@ export function resumoCombate(s: Sistema, bruto: unknown): ResumoCombate {
 
   const parada = s.rolagem === 'parada'
   const testes: Teste[] = [
-    ...(s.pericias?.lista ?? []).map(p => ({ id: 'pericia:' + p.id, nome: p.nome, valor: Number(c.pericias[p.id] ?? 0) || 0, ...(parada ? { dados: dadosDaPericia(s, c.vars, p.atributo) } : {}) })),
+    ...(s.pericias?.lista ?? []).map(p => parada && !p.atributo
+      // Parada sem atributo (Blades): o próprio valor da ação é a quantidade de dados.
+      ? { id: 'pericia:' + p.id, nome: p.nome, valor: 0, dados: Number(c.pericias[p.id] ?? 0) || 0 }
+      : { id: 'pericia:' + p.id, nome: p.nome, valor: Number(c.pericias[p.id] ?? 0) || 0, ...(parada ? { dados: dadosDaPericia(s, c.vars, p.atributo) } : {}) }),
     ...s.atributos.map(a => parada ? { id: 'atributo:' + a.id, nome: a.nome, valor: 0, dados: Number(c.vars[a.id]) || 0 } : { id: 'atributo:' + a.id, nome: a.nome, valor: Number(s.formulaModificador ? c.mods[a.id] : c.vars[a.id]) || 0 }),
   ]
   // Sugestão: o maior entre as perícias de luta/pontaria e os atributos (empate: a perícia).
@@ -83,6 +86,31 @@ function dadosDaPericia(s: Sistema, vars: Record<string, number>, atributo?: str
 export function expressaoParada(lados: number, dados: number, bonus = 0) {
   const n = Math.max(0, Math.min(20, Math.floor(dados))), b = Math.round(bonus) || 0
   return (n > 0 ? `${n}d${lados}kh1` : `2d${lados}kl1`) + (b ? (b > 0 ? '+' + b : String(b)) : '')
+}
+
+/**
+ * Leitura do resultado de uma parada (Blades in the Dark). `resultados` = todos os dados rolados.
+ * Ação: 6 = sucesso total, 4–5 = sucesso com custo, 1–3 = falha, dois 6 = crítico (com 0 dados, vale o menor).
+ * Resistência: o estresse custa 6 − o maior dado; crítico recupera 1 de estresse.
+ */
+export function leituraBlades(dados: number, resultados: number[], resistencia = false): string {
+  if (!resultados.length) return ''
+  const valor = dados > 0 ? Math.max(...resultados) : Math.min(...resultados)
+  const critico = dados > 0 && resultados.filter(r => r === 6).length >= 2
+  if (resistencia) return critico ? '✨ Crítico: recupera 1 de estresse' : `Custa ${6 - valor} de estresse`
+  return critico ? '✨ Crítico! Efeito maior' : valor === 6 ? '✅ Sucesso total' : valor >= 4 ? '⚖️ Sucesso com custo' : '❌ Falha (com consequência)'
+}
+
+/** Leitura do d100 (BRP): crítico (1/20 do valor), especial (1/5), sucesso, falha e desastre (os 5% de cima da falha). */
+export function leituraD100(valor: number, rolado: number): string {
+  const v = Math.max(0, valor)
+  const critico = Math.max(1, Math.round(v / 20)), especial = Math.max(1, Math.round(v / 5))
+  const desastre = 100 - Math.max(0, Math.round((100 - Math.min(100, v)) / 20)) + 1
+  if (rolado <= critico) return '🌟 Sucesso crítico!'
+  if (rolado <= especial) return '✨ Sucesso especial'
+  if ((rolado <= v || rolado <= 5) && rolado < 96) return '✅ Sucesso'
+  if (rolado >= Math.min(100, desastre)) return '💀 Desastre'
+  return '❌ Falha'
 }
 
 export type RegraAtaque = { expressao: string; comparar: 'maior_igual' | 'menor_igual' | 'sucessos' }

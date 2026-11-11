@@ -6,6 +6,17 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.32.10', data: '2026-11-11', titulo: 'Fichas de acordo com as regras (parte 1)',
+    itens: [
+      '📜 Fichas revisadas sistema por sistema, seguindo as regras de cada um (parte 1 de 2): Tormenta20, Ordem Paranormal, D&D 5e e Pathfinder 2e.',
+      '⚔️ Tormenta20: escolha raça e classe na lista. A ficha calcula PV e PM pela classe e pelo nível, Defesa (armadura pesada não soma Destreza), CD das magias e espaços de carga, e avisa se passar das perícias treinadas.',
+      '🩸 Ordem Paranormal: escolha a classe e o NEX. PV, PE, Sanidade, limite de PE por turno, DT dos rituais e Defesa (também com Esquiva) saem sozinhos. Os testes agora rolam um d20 por ponto do atributo e ficam com o maior, inclusive ataques e iniciativa na mesa.',
+      '🐉 D&D 5e (regras de 2024): classe, espécie e antecedente em lista com o que cada um dá; Dado de Vida pela classe, CD e ataque de magia, XP, Inspiração Heroica e Exaustão.',
+      '🗡️ Pathfinder 2e: ancestralidade e classe em lista (16 ancestralidades e 23 classes) com PV automáticos, atributo-chave, CD de classe, CD e ataque de magia, Pontos de Foco, Morrendo e Ferido.',
+      'PV, PM, PE e Sanidade calculados são só a sugestão: se você digitar outro máximo na barra, ele passa a valer.',
+    ],
+  },
+  {
     versao: '0.32.9', data: '2026-11-11', titulo: 'Plataforma mais bonita e do seu jeito',
     itens: [
       '🎨 Cada tema agora muda as cores da plataforma inteira, não só o fundo: Lua cheia fica azul, Céu carmesim fica vermelho, Nuvens de algodão fica rosa, Grimório celestial fica anil e Prisma fica prateado.',

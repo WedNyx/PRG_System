@@ -227,7 +227,7 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
             <Var id={x.id} />
           </div>)}
           <button type="button" className={botao} onClick={() => mudar(d => ({ ...d, derivados: [...d.derivados, novo(d.derivados, { formula: '0' })] }))}><Plus size={14} /> Valor calculado</button>
-          <p className="text-[11px] text-(--a-a998bd)">Funções: piso(), teto(), arred(), min(a, b), max(a, b). Ex.: piso(nivel / 2) + FOR</p>
+          <p className="text-[11px] text-(--a-a998bd)">Funções: piso(), teto(), arred(), min(a, b), max(a, b), se(x, a, b) (x diferente de 0 → a; senão b). Ex.: piso(nivel / 2) + FOR</p>
         </SecaoBase>
 
         <SecaoBase id="pericias" titulo="🎯 Perícias" sub="Lista, atributo de cada uma e graus de treino" aberta={aberta === 'pericias'} alternar={() => setAberta(a => a === 'pericias' ? '' : 'pericias')}>

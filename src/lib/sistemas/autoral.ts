@@ -68,7 +68,10 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
       const descricao = txt(o.descricao, 400)
       const bonus = lista(o.bonus, LIMITES.bonusOpcao).flatMap(b => typeof b.alvo === 'string' && Number(b.valor) ? [{ alvo: b.alvo.slice(0, 60), valor: num(b.valor, -99, 99, 0) }] : [])
       const progressao = typeof o.progressao === 'string' && /^[a-z][a-z0-9_]{0,24}$/.test(o.progressao) ? o.progressao : ''
-      return [{ nome: on, ...(descricao ? { descricao } : {}), ...(bonus.length ? { bonus } : {}), ...(progressao ? { progressao } : {}) }]
+      // Números que a opção define para as fórmulas (ex.: pv_ini). Nomes simples, sem colidir com os reservados.
+      const vars = Object.fromEntries(Object.entries(o.vars && typeof o.vars === 'object' ? o.vars as Record<string, unknown> : {}).slice(0, 8)
+        .filter(([k, v]) => /^[a-z][A-Za-z0-9_]{0,24}$/.test(k) && !RESERVADO.test(k) && Number.isFinite(Number(v))).map(([k, v]) => [k, num(v, -9999, 9999, 0)]))
+      return [{ nome: on, ...(descricao ? { descricao } : {}), ...(bonus.length ? { bonus } : {}), ...(progressao ? { progressao } : {}), ...(Object.keys(vars).length ? { vars } : {}) }]
     }) : []
     if (tipo === 'escolha' && !opcoes.length) erros.push(`Campo “${n}”: adicione pelo menos uma opção para escolher.`)
     return [{ id: pegarId(c.id, n), nome: n, tipo: tipo as 'texto' | 'numero' | 'area' | 'escolha', ...(tipo === 'numero' ? { padrao: num(c.padrao, -99999, 99999, 0) } : {}), ...(tipo === 'escolha' ? { opcoes, ...(typeof c.nivel === 'string' && c.nivel ? { nivel: c.nivel.slice(0, 40) } : {}) } : {}) }]
@@ -110,7 +113,9 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
     const n = txt(r.nome, LIMITES.nome); if (!n) return []
     const formula = txt(r.formula, LIMITES.formula)
     const maxFixo = !formula && Number(r.maxFixo) > 0 ? num(r.maxFixo, 1, 99999, 1) : undefined
-    return [{ id: pegarId(r.id, n), nome: n, ...(formula ? { formula } : {}), ...(maxFixo ? { maxFixo } : {}) }]
+    const sugerido = !formula && typeof r.sugerido === 'string' && /^[a-z][a-z0-9_]{0,40}$/.test(r.sugerido) ? r.sugerido : ''
+    const baixa = r.contador === true ? num(r.baixaNoDescanso, 0, 999, 0) : 0
+    return [{ id: pegarId(r.id, n), nome: n, ...(formula ? { formula } : {}), ...(maxFixo ? { maxFixo } : {}), ...(sugerido ? { sugerido } : {}), ...(r.contador === true ? { contador: true } : {}), ...(baixa ? { baixaNoDescanso: baixa } : {}) }]
   })
   usados = usadosListas
   const listas = lista(e.listas, LIMITES.listas).flatMap(l => {
@@ -202,6 +207,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   // ---- Fórmulas: só podem usar variáveis que existem ----
   const vars = new Set<string>([
     ...campos.filter(c => c.tipo === 'numero').map(c => c.id), ...atributos.flatMap(a => [a.id, 'mod_' + a.id]),
+    ...campos.flatMap(c => (c.opcoes ?? []).flatMap(o => Object.keys(o.vars ?? {}))),
     ...derivados.map(d => d.id), ...(pericias?.lista ?? []).flatMap(x => ['per_' + x.id, 'tot_' + x.id]),
     ...(pericias?.treinos ?? []).map(t => 'qtd_' + t.id),
     'soma_atributos', 'atributos_zero', 'maior_atributo', 'custo_pericias', 'maior_valor_pericia', 'carga_total',

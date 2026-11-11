@@ -37,6 +37,8 @@ export function aplicarDescanso(s: Sistema, bruto: Partial<DadosFicha>, tipo: Ti
     for (const r of s.recursos) {
       const atual = Number(recursos[r.id]?.atual ?? 0) || 0
       if (TEMP.test(r.id) || TEMP.test(r.nome)) { if (atual) { recursos[r.id] = { ...recursos[r.id], atual: 0 }; mudancas.push(`${r.nome}: ${atual} → 0`) } continue }
+      // Marcadores (Exaustão, Morrendo, Estresse…) não enchem: só baixam o quanto a regra manda.
+      if (r.contador) { const novo = Math.max(0, atual - (r.baixaNoDescanso ?? 0)); if (novo !== atual) { recursos[r.id] = { ...recursos[r.id], atual: novo }; mudancas.push(`${r.nome}: ${atual} → ${novo}`) } continue }
       const m = max[r.id]
       if (m !== null && m > 0 && atual < m) { recursos[r.id] = { ...recursos[r.id], atual: m }; mudancas.push(`${r.nome}: ${atual} → ${m}`) }
     }

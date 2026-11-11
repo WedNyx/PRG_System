@@ -53,3 +53,16 @@ describe('combate na mesa', () => {
     expect(l.map(x => x.tokenId)).toEqual(['b', 'c', 'a'])
   })
 })
+
+describe('parada de dados (Ordem Paranormal)', () => {
+  it('rola um d20 por ponto do atributo da perícia; 0 = dois, o menor', async () => {
+    const { expressaoParada } = await import('./combate')
+    expect(expressaoParada(20, 3, 5)).toBe('3d20kh1+5'); expect(expressaoParada(20, 0)).toBe('2d20kl1'); expect(expressaoParada(6, 2, -1)).toBe('2d6kh1-1')
+    const s = sistemaPorId('ordem-paranormal')!
+    const r = resumoCombate(s, { atributos: { AGI: 3, FOR: 2, INT: 1, PRE: 1, VIG: 1 }, pericias: { luta: 'treinado', iniciativa: 'veterano' } })
+    const luta = r.testes.find(t => t.id === 'pericia:luta')!
+    expect(luta).toMatchObject({ valor: 5, dados: 2 }); expect(r.iniciativa).toBe(10); expect(r.iniciativaDados).toBe(3)
+    expect(regraDeAtaque(s, 5, 2)).toEqual({ expressao: '2d20kh1+5', comparar: 'maior_igual' })
+    expect(regraDeIniciativa(s, 10, 3)).toBe('3d20kh1+10')
+  })
+})

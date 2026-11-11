@@ -24,6 +24,7 @@ export function fichaVazia(s: Sistema, nome = ''): DadosFicha {
   try {
     const c = calcular(s, base), max = c.recursosMax
     for (const r of s.recursos) {
+      if (r.contador) continue // marcadores começam em 0
       // Vida sem fórmula: usa o PV sugerido do sistema (igual ao combate da mesa).
       const m = max[r.id] ?? (/^(pv|vida|hp)$/i.test(r.id) ? (c.derivados.pv_max ?? c.derivados.pv_sugerido ?? null) : null)
       if (m !== null && m !== undefined && Number.isFinite(m) && m > 0) base.recursos[r.id] = { atual: m } }
@@ -104,6 +105,11 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
   const bonus = somarBonus(bonusEquipados(itens, uso), bonusDaArvore(lerArvore(d.arvore)), bonusDasEscolhas(s, d))
   const b = (alvo: string) => bonus[alvo] ?? 0
   for (const c of s.campos) if (c.tipo === 'numero') vars[c.id] = num(d.campos[c.id])
+  // Números das opções escolhidas (ex.: classe → PV iniciais). Sem escolha, as variáveis do campo valem 0.
+  for (const c of s.campos) if (c.tipo === 'escolha') {
+    for (const o of c.opcoes ?? []) for (const k of Object.keys(o.vars ?? {})) vars[k] ??= 0
+    Object.assign(vars, opcaoEscolhida(c, d.campos?.[c.id])?.vars ?? {})
+  }
   const mods: Record<string, number> = {}
   let soma = 0, zeros = 0, maior = -Infinity
   for (const a of s.atributos) {
@@ -162,7 +168,9 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
   const recursosMax: Record<string, number | null> = {}
   for (const r of s.recursos) {
     const manual = d.recursos[r.id]?.max
-    const m = r.formula ? avaliarSeguro(r.formula, vars) : r.maxFixo ?? (manual === undefined ? null : num(manual))
+    // Sem máximo digitado, usa o valor sugerido (ex.: PV pela classe), se der mais que 0.
+    const sug = r.sugerido ? derivados[r.sugerido] ?? null : null
+    const m = r.formula ? avaliarSeguro(r.formula, vars) : r.maxFixo ?? (manual === undefined ? (sug !== null && sug > 0 ? sug : null) : num(manual))
     recursosMax[r.id] = m === null ? null : m + b('recurso:' + r.id)
   }
   vars.carga_total = pesoTotal(itens, uso)

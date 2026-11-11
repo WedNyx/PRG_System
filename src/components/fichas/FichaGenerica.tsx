@@ -17,6 +17,7 @@ import ArvoreHabilidades from './Arvore'
 import Progressao from './Progressao'
 import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
 import { GUIAS } from '@/lib/sistemas/guias'
+import { expressaoParada } from '@/lib/sistemas/combate'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
@@ -36,10 +37,32 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
   const regra = s.rolagem === 'personalizada' ? s.regraRolagem : undefined
   const d20 = !regra && (s.rolagem ? s.rolagem === 'd20' : s.dados.startsWith('d20'))
   const d100 = s.id === 'brp' || s.rolagem === 'd100'
-  const set = <K extends keyof DadosFicha>(k: K, v: DadosFicha[K]) => onChange({ ...d, [k]: v })
+  const parada = s.rolagem === 'parada' ? s.parada?.lados ?? 20 : null
+  /** Parada: quantos dados a perícia rola (o maior dos atributos dela). */
+  const dadosDe = (atributo?: string) => Math.max(0, ...(atributo ? atributo.split('/') : []).map(a => Number(c.vars[a]) || 0))
+  const set = <K extends keyof DadosFicha>(k: K, v: DadosFicha[K]) => {
+    const novo = { ...d, [k]: v }
+    // Escolheu a classe (ou mudou o nível) e a vida/mana ganhou um máximo agora? Começa cheia, se estava zerada.
+    if (k === 'campos') {
+      const depois = calcular(s, novo)
+      for (const r of s.recursos) {
+        if (r.contador) continue
+        const antes = c.recursosMax[r.id], max = depois.recursosMax[r.id]
+        if (!(antes && antes > 0) && max && max > 0 && !(Number(novo.recursos[r.id]?.atual) > 0)) novo.recursos = { ...novo.recursos, [r.id]: { ...novo.recursos[r.id], atual: max } }
+      }
+    }
+    onChange(novo)
+  }
 
-  async function rolar(nome: string, bonus: number | null) {
+  async function rolar(nome: string, bonus: number | null, dados?: number) {
     const b = bonus ?? 0
+    if (parada) {
+      const n = Math.max(0, dados ?? 1), expr = expressaoParada(parada, n, b)
+      const r = rolarNaCampanha ? await rolarNaCampanha(expr, nome) : rolarExpressao(expr)
+      if (!r) return
+      central.current?.mostrar({ rotulo: `${nome} (${n > 0 ? n + 'd' + parada + ', o maior' : '2d' + parada + ', o menor'}${b ? ' ' + sinal(b) : ''})`, expressao: expr, resultados: r.resultados, total: r.total, nota: naMesa })
+      return
+    }
     if (regra) {
       // Regra do sistema autoral: VALOR vira o número em que a pessoa tocou.
       const expr = montarRolagem(regra.formula, b)
@@ -60,7 +83,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     if (!r) return
     central.current?.mostrar({ rotulo: `${nome} (d20 ${sinal(b)})`, expressao: expr, resultados: r.resultados, total: r.total, nota: naMesa })
   }
-  const podeRolar = d20 || d100 || !!regra
+  const podeRolar = d20 || d100 || !!regra || !!parada
   /** Rolagem livre (dano, poder, item). Em campanha, vai para o chat da mesa. */
   async function rolarExpr(expressao: string, rotulo: string) {
     const r = rolarNaCampanha ? await rolarNaCampanha(expressao, rotulo) : rolarExpressao(expressao)
@@ -163,7 +186,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
           const calc = !!r.formula || r.maxFixo !== undefined
           const max = c.recursosMax[r.id] ?? (calc ? null : (d.recursos[r.id]?.max ?? null)) ?? (/^(pv|vida|hp)$/.test(r.id) ? (c.derivados.pv_max ?? c.derivados.pv_sugerido ?? null) : null)
           const atual = Number(d.recursos[r.id]?.atual ?? 0) || 0
-          return <BarraRecurso key={r.id} nome={r.nome} cor={corDoRecurso(r.id, r.nome)} atual={atual} max={max} maxEditavel={!calc} somenteLeitura={somenteLeitura}
+          return <BarraRecurso key={r.id} nome={r.nome} cor={corDoRecurso(r.id, r.nome)} atual={atual} max={max} maxEditavel={!calc} somenteLeitura={somenteLeitura} contador={!!r.contador}
             mudar={v => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual: v } })}
             mudarMax={v => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual, max: v } })} />
         })}
@@ -188,14 +211,15 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         </div>)}
       </div>
     </section>}
-    {d20 && s.atributos.length > 0 && <section className={card}>
+    {(d20 || parada) && s.atributos.length > 0 && <section className={card}>
       <h2 className="mb-2 flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Dice5 size={18} /> Teste de atributo</h2>
-      <div className="flex flex-wrap gap-2">{s.atributos.map(a => <button key={a.id} type="button" onClick={() => rolar(a.nome, s.formulaModificador ? c.mods[a.id] : c.vars[a.id])}
-        className="rounded-lg border border-(--a-5e4b78) px-3 py-2 text-sm hover:bg-(--s-34294f)">{a.id} {sinal(s.formulaModificador ? c.mods[a.id] : c.vars[a.id])}</button>)}</div>
+      {parada && <p className="mb-2 text-xs text-(--a-a998bd)">Rola um d{parada} para cada ponto do atributo e fica com o maior. Com 0, rola dois e fica com o menor.</p>}
+      <div className="flex flex-wrap gap-2">{s.atributos.map(a => <button key={a.id} type="button" onClick={() => parada ? rolar(a.nome, 0, Number(c.vars[a.id]) || 0) : rolar(a.nome, s.formulaModificador ? c.mods[a.id] : c.vars[a.id])}
+        className="rounded-lg border border-(--a-5e4b78) px-3 py-2 text-sm hover:bg-(--s-34294f)">{a.id} {parada ? `(${Math.max(0, Number(c.vars[a.id]) || 0) || 2}d${parada})` : sinal(s.formulaModificador ? c.mods[a.id] : c.vars[a.id])}</button>)}</div>
     </section>}
     {s.pericias && <section className={card}>
       <h2 className="mb-1 font-bold text-(--a-ed9cd8)">{s.pericias.titulo ?? 'Perícias'}</h2>
-      {podeRolar && <p className="mb-3 text-xs text-(--a-a998bd)">Toque no valor para rolar.{regra && <> Regra: <strong className="text-(--a-e4d3ff)">{regra.nome}</strong> (<span className="font-mono">{regra.formula}</span>, VALOR = o número tocado).</>}</p>}
+      {podeRolar && <p className="mb-3 text-xs text-(--a-a998bd)">Toque no valor para rolar.{parada && ' Rola um dado por ponto do atributo da perícia e soma o bônus.'}{regra && <> Regra: <strong className="text-(--a-e4d3ff)">{regra.nome}</strong> (<span className="font-mono">{regra.formula}</span>, VALOR = o número tocado).</>}</p>}
       {[...grupos].map(([g, lista]) => <div key={g} className="mb-4">
         {g && <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{g}</h3>}
         <div className="grid gap-2 sm:grid-cols-2">
@@ -205,7 +229,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
               ? <input type="number" aria-label={p.nome} min={0} max={200} value={d.pericias[p.id] ?? 0} disabled={somenteLeitura} onChange={e => set('pericias', { ...d.pericias, [p.id]: Number(e.target.value) || 0 })} className={input + ' w-16 text-center'} />
               : <select aria-label={'Treino em ' + p.nome} value={String(d.pericias[p.id] ?? '')} disabled={somenteLeitura} onChange={e => set('pericias', { ...d.pericias, [p.id]: e.target.value })} className="max-w-[9.5rem] rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-1 text-xs text-white">
                 {s.pericias!.treinos!.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select>}
-            <button type="button" disabled={!podeRolar} onClick={() => rolar(p.nome, c.pericias[p.id])} aria-label={'Rolar ' + p.nome}
+            <button type="button" disabled={!podeRolar} onClick={() => rolar(p.nome, c.pericias[p.id], dadosDe(p.atributo))} aria-label={'Rolar ' + p.nome} title={parada ? `${dadosDe(p.atributo) || 2}d${parada} ${dadosDe(p.atributo) ? '(o maior)' : '(o menor)'} ${sinal(c.pericias[p.id])}` : undefined}
               className="w-14 shrink-0 rounded-lg bg-(--s-34294f) py-1 text-center font-bold tabular-nums hover:bg-(--s-4b3a6e) disabled:cursor-default disabled:hover:bg-(--s-34294f)">
               {s.pericias!.modo === 'valor' ? (c.pericias[p.id] ?? 0) + '%' : sinal(c.pericias[p.id])}</button>
           </div>)}

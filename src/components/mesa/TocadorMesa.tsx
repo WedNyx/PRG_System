@@ -164,11 +164,11 @@ export default function TocadorMesa({ estado, desvio, aoTerminar }: { estado: Es
   }
 
   const ehYt = tocando && estado?.tipo === 'youtube'
-  return <div className={'absolute right-2 top-2 z-20 w-[220px] overflow-hidden rounded-xl border border-[#5e4b78] bg-[#19172c]/95 text-xs shadow-xl ' + (tocando ? '' : 'hidden')} aria-label="Música da mesa">
+  return <div className={'absolute right-2 top-2 z-20 w-[220px] overflow-hidden rounded-xl border border-(--a-5e4b78) bg-(--s-19172c)/95 text-xs shadow-xl ' + (tocando ? '' : 'hidden')} aria-label="Música da mesa">
     <div className="flex items-center gap-1 px-2 py-1.5">
-      <Music2 size={14} className="shrink-0 text-[#b99bff]" />
+      <Music2 size={14} className="shrink-0 text-(--a-b99bff)" />
       <button type="button" onClick={() => setAberto(a => !a)} className="min-w-0 flex-1 truncate text-left" title={estado?.titulo}>{estado?.pausado ? '⏸ ' : estado?.loop ? '🔁 ' : ''}{estado?.titulo ?? 'Música'}</button>
-      <button type="button" onClick={() => setMudo(m => !m)} aria-label={mudo ? 'Ativar som' : 'Silenciar só para mim'} className="rounded p-0.5 hover:bg-[#34294f]">{mudo ? <VolumeX size={14} /> : <Volume2 size={14} />}</button>
+      <button type="button" onClick={() => setMudo(m => !m)} aria-label={mudo ? 'Ativar som' : 'Silenciar só para mim'} className="rounded p-0.5 hover:bg-(--s-34294f)">{mudo ? <VolumeX size={14} /> : <Volume2 size={14} />}</button>
     </div>
     {/* O player do YouTube fica sempre visível enquanto toca (regra do YouTube); “recolher” só esconde o volume. */}
     <div className={ehYt ? 'relative aspect-video w-full' : 'hidden'}>
@@ -178,6 +178,6 @@ export default function TocadorMesa({ estado, desvio, aoTerminar }: { estado: Es
       {estado?.pausado && <span className="absolute inset-x-0 bottom-1 text-center text-[11px] font-semibold text-white drop-shadow">⏸ Pausada pelo mestre</span>}
     </div>
     {aberto && <label className="flex items-center gap-2 px-2 py-1.5">Volume <input type="range" min={0} max={100} value={volume} onChange={x => setVolume(Number(x.target.value))} className="flex-1" aria-label="Volume da música (só para você)" /></label>}
-    {bloqueado && <button type="button" onClick={liberar} className="w-full bg-[#5b4380] px-2 py-2 font-semibold hover:bg-[#6b5190]">🔊 Ouvir a música da mesa</button>}
+    {bloqueado && <button type="button" onClick={liberar} className="w-full bg-(--a-5b4380) px-2 py-2 font-semibold hover:bg-(--a-6b5190)">🔊 Ouvir a música da mesa</button>}
   </div>
 }

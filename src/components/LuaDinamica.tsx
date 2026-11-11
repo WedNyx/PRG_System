@@ -42,14 +42,14 @@ function PainelLua({ t }: { t: number }) {
   return <div className="flex flex-col items-center text-center">
     <DesenhoLua data={data} tamanho={110} />
     <p className="mt-1 text-base font-bold text-[#ffe3a3]">{i.fase.nome}</p>
-    <p className="text-xs text-[#cfc0df]">{Math.round(i.iluminada * 100)}% iluminada · {i.crescendo ? 'crescendo' : 'diminuindo'}</p>
-    {i.fase.id !== 'cheia' && <p className="text-[11px] text-[#a99bbb]">Lua cheia {dias <= 1 ? 'amanhã' : `em ${dias} dias`}</p>}
-    <p className="mt-2 text-xs italic text-[#e9d6ff]">{i.fase.frase}</p>
-    <ul className="mt-3 w-full space-y-1 rounded-xl border border-[#55456e] bg-[#1b1529]/90 p-2 text-left text-xs">
+    <p className="text-xs text-(--a-cfc0df)">{Math.round(i.iluminada * 100)}% iluminada · {i.crescendo ? 'crescendo' : 'diminuindo'}</p>
+    {i.fase.id !== 'cheia' && <p className="text-[11px] text-(--a-a99bbb)">Lua cheia {dias <= 1 ? 'amanhã' : `em ${dias} dias`}</p>}
+    <p className="mt-2 text-xs italic text-(--a-e9d6ff)">{i.fase.frase}</p>
+    <ul className="mt-3 w-full space-y-1 rounded-xl border border-(--a-55456e) bg-(--s-1b1529)/90 p-2 text-left text-xs">
       {i.proximas.map(p => <li key={p.fase.id} className="flex items-center gap-2"><DesenhoLua data={new Date(p.data.getTime() + 3600_000)} tamanho={22} brilho={false} />
-        <span className="flex-1">{p.fase.nome}</span><span className="text-[#b4aeca]">{dataCurta(p.data)}</span></li>)}
+        <span className="flex-1">{p.fase.nome}</span><span className="text-(--a-b4aeca)">{dataCurta(p.data)}</span></li>)}
     </ul>
-    <p className="mt-2 text-[10px] text-[#8f88a8]">Calculada pela data, como se vê no Brasil.</p>
+    <p className="mt-2 text-[10px] text-(--a-8f88a8)">Calculada pela data, como se vê no Brasil.</p>
   </div>
 }
 
@@ -65,14 +65,14 @@ export default function LuaLogo({ tamanho = 30 }: { tamanho?: number }) {
     document.addEventListener('pointerdown', fora); document.addEventListener('keydown', esc)
     return () => { document.removeEventListener('pointerdown', fora); document.removeEventListener('keydown', esc) }
   }, [aberta])
-  if (!t) return <MoonStar className="text-[#c5a7ff] drop-shadow-[0_0_9px_#a76aff]" size={tamanho} aria-hidden="true" />
+  if (!t) return <MoonStar className="text-(--a-c5a7ff) drop-shadow-[0_0_9px_#a76aff]" size={tamanho} aria-hidden="true" />
   const i = infoLua(new Date(t))
   return <div ref={caixa} className="relative inline-flex">
     <button type="button" onClick={() => setAberta(a => !a)} aria-expanded={aberta} aria-label={`Lua de hoje: ${i.fase.nome}. Ver as fases`} title={`${i.fase.nome} · ${Math.round(i.iluminada * 100)}% iluminada`}
-      className="rounded-full transition hover:scale-110 focus-visible:outline-2 focus-visible:outline-[#b99bff]">
+      className="rounded-full transition hover:scale-110 focus-visible:outline-2 focus-visible:outline-(--a-b99bff)">
       <DesenhoLua data={new Date(t)} tamanho={tamanho} contorno />
     </button>
-    {aberta && <div role="dialog" aria-label="Fases da lua" className="absolute left-0 top-full z-50 mt-2 w-64 rounded-2xl text-sm font-normal tracking-normal border border-[#8b6cba] bg-[#19152a]/95 p-4 text-[#f2ebff] shadow-2xl backdrop-blur">
+    {aberta && <div role="dialog" aria-label="Fases da lua" className="absolute left-0 top-full z-50 mt-2 w-64 rounded-2xl text-sm font-normal tracking-normal border border-(--a-8b6cba) bg-(--s-19152a)/95 p-4 text-(--a-f2ebff) shadow-2xl backdrop-blur">
       <PainelLua t={t} />
     </div>}
   </div>

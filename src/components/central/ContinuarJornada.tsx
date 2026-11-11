@@ -26,25 +26,25 @@ export default function ContinuarJornada({ aventureiroId }: { aventureiroId: str
   return <section className="mt-6" aria-label="Continuar">
     <h2 className="mb-3 text-lg font-bold">↩️ Continuar de onde parou</h2>
     <div className="grid gap-3 md:grid-cols-2">
-      {!!camps?.length && <div className="space-y-2">{camps.map(c => <div key={c.id} className="flex items-center gap-3 rounded-2xl border border-[#55456e] bg-[#201a32]/90 p-2.5">
-        <span className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl border border-[#55456e]">{c.capa_url
+      {!!camps?.length && <div className="space-y-2">{camps.map(c => <div key={c.id} className="flex items-center gap-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32)/90 p-2.5">
+        <span className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl border border-(--a-55456e)">{c.capa_url
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={c.capa_url} alt="" className="h-full w-full object-cover" /> : <ImagemCapa id={c.sistema} nome={c.nome} />}</span>
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{c.nome}</p>
-          <p className="truncate text-xs text-[#b4aeca]">{papel(c.meuPapel)} · {sistemaPorId(c.sistema)?.nome ?? 'Sistema'}{c.sessao_aberta ? ' · 🟢 sessão aberta' : ''}{c.pendencias ? ` · 🔔 ${c.pendencias}` : ''}</p>
+          <p className="truncate text-xs text-(--a-b4aeca)">{papel(c.meuPapel)} · {sistemaPorId(c.sistema)?.nome ?? 'Sistema'}{c.sessao_aberta ? ' · 🟢 sessão aberta' : ''}{c.pendencias ? ` · 🔔 ${c.pendencias}` : ''}</p>
         </div>
-        <Link href={'/mesa?campanha=' + c.id} className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-[#7652ac] px-3 py-2 text-xs font-semibold hover:bg-[#8b68c4]">🗺️ Mesa</Link>
+        <Link href={'/mesa?campanha=' + c.id} className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-(--a-7652ac) px-3 py-2 text-xs font-semibold hover:bg-(--a-8b68c4)">🗺️ Mesa</Link>
       </div>)}</div>}
-      {!!fichas?.length && <div className="space-y-2">{fichas.map(f => <Link key={f.id} href={linkFicha(f)} className="flex items-center gap-3 rounded-2xl border border-[#55456e] bg-[#201a32]/90 p-2.5 transition hover:border-[#b79aff] hover:bg-[#2b2143]">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#55456e] bg-[#2a2142] text-xl font-bold text-[#c5a7ff]">{f.retrato
+      {!!fichas?.length && <div className="space-y-2">{fichas.map(f => <Link key={f.id} href={linkFicha(f)} className="flex items-center gap-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32)/90 p-2.5 transition hover:border-(--a-b79aff) hover:bg-(--s-2b2143)">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-(--a-55456e) bg-(--s-2a2142) text-xl font-bold text-(--a-c5a7ff)">{f.retrato
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={f.retrato} alt="" className="h-full w-full object-cover" /> : (f.nome || '?')[0].toUpperCase()}</span>
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{f.nome || 'Personagem sem nome'}</p>
-          <p className="truncate text-xs text-[#b4aeca]">📜 {sistemaPorId(f.sistema)?.nome ?? 'Ficha'}{f.campanha ? ' · 🏰 ' + f.campanha.nome : ''}</p>
+          <p className="truncate text-xs text-(--a-b4aeca)">📜 {sistemaPorId(f.sistema)?.nome ?? 'Ficha'}{f.campanha ? ' · 🏰 ' + f.campanha.nome : ''}</p>
         </div>
-        <ChevronRight size={18} className="shrink-0 text-[#b69ad4]" />
+        <ChevronRight size={18} className="shrink-0 text-(--a-b69ad4)" />
       </Link>)}</div>}
     </div>
   </section>

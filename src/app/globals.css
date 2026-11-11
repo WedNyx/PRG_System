@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./cores.css";
 
 :root {
   --background: #ffffff;
@@ -12,6 +13,47 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* ---- Cores que seguem o tema (v0.32.9) ----
+ * Cada cor roxa da plataforma é uma variável (src/app/cores.css) calculada a partir destas:
+ * --giro: quantos graus o matiz gira (0 = roxo original) · --sat: intensidade das cores
+ * --cartao-*: o mesmo para os fundos dos cartões, mais --cartao-luz (mais claro/escuro) e --cartao-alfa (transparência).
+ * O tema muda essas variáveis em [data-tema]; a personalização do perfil muda no style do <html>.
+ */
+:root {
+  --giro: 0; --sat: 1;
+  --cartao-giro: var(--giro); --cartao-sat: var(--sat); --cartao-luz: 0; --cartao-alfa: 0.84;
+  --vidro: 14px;
+  --fonte-titulo: var(--font-cinzel), Georgia, serif;
+  --fundo-desfoque: 0px;
+}
+[data-tema="algodao"] { --giro: 38; --sat: 1.1; }
+[data-tema="lua"] { --giro: -48; --sat: 1.05; --cartao-alfa: 0.8; }
+[data-tema="carmesim"] { --giro: 62; --sat: 1.15; --cartao-sat: 0.9; }
+[data-tema="celestial"] { --giro: -22; --sat: 1.1; --cartao-alfa: 0.86; }
+[data-tema="prisma"] { --giro: 0; --sat: 0.25; --cartao-alfa: 0.78; }
+[data-tema="classico"] { --cartao-alfa: 1; --vidro: 0px; }
+[data-fonte="elegante"] { --fonte-titulo: var(--font-cormorant), Georgia, serif; }
+[data-fonte="simples"] { --fonte-titulo: var(--font-geist-sans), system-ui, sans-serif; }
+html[data-tamanho="p"] { font-size: 15px; }
+html[data-tamanho="g"] { font-size: 17.5px; }
+
+/* Títulos com a fonte escolhida (fantasia por padrão). */
+h1, h2, .titulo { font-family: var(--fonte-titulo); letter-spacing: 0.01em; }
+[data-fonte="elegante"] :is(h1, h2, .titulo) { font-weight: 700; letter-spacing: 0; }
+
+/* Cartões de vidro: os cartões grandes deixam o fundo do tema aparecer, desfocado. */
+:is([class*="rounded-2xl"], [class*="rounded-3xl"])[class*="bg-(--s-"] {
+  -webkit-backdrop-filter: blur(var(--vidro)) saturate(1.25);
+  backdrop-filter: blur(var(--vidro)) saturate(1.25);
+  box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+/* Botões principais: brilho suave por cima da cor e um leve “halo”. */
+[class*="bg-(--a-7652ac)"], [class*="bg-(--a-7654bb)"], [class*="bg-(--a-7853b4)"] {
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0) 55%);
+  box-shadow: 0 6px 18px -6px var(--a-7652ac), inset 0 1px 0 rgb(255 255 255 / 0.18);
+}
+@media (prefers-reduced-transparency: reduce) { :root { --cartao-alfa: 1; --vidro: 0px; } }
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -22,7 +64,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 /* ---- Temas do PRG System (escolhidos em Central → Temas; lista em src/lib/tema.ts) ----
@@ -56,7 +98,9 @@ body {
   background-size: auto, var(--tema-tam);
   background-repeat: no-repeat, var(--tema-rep);
   background-position: center, var(--tema-pos);
+  filter: blur(var(--fundo-desfoque)); transform: scale(1.04);
 }
+html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transform: none; }
 /* Tela em pé (celular, tablet deitado não): a versão vertical da imagem. */
 @media (max-aspect-ratio: 4/5) {
   .fundo-tema::before { background-image: var(--tema-veu), var(--tema-cel); background-position: center, var(--tema-pos-cel); }

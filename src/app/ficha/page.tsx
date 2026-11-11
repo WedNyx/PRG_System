@@ -29,7 +29,7 @@ const ROTULO: Record<Estado, string> = {
 
 const COR: Partial<Record<Estado, string>> = {
   salvo: 'border-emerald-700/60 bg-emerald-950/40 text-emerald-200', local: 'border-emerald-700/60 bg-emerald-950/40 text-emerald-200',
-  salvando: 'border-[#62527e] bg-[#2b2140] text-[#e4d3ff]', pendente: 'border-amber-700/60 bg-amber-950/40 text-amber-100',
+  salvando: 'border-(--a-62527e) bg-(--s-2b2140) text-(--a-e4d3ff)', pendente: 'border-amber-700/60 bg-amber-950/40 text-amber-100',
   offline: 'border-amber-700/60 bg-amber-950/40 text-amber-100', conflito: 'border-red-800/70 bg-red-950/40 text-red-200', erro: 'border-red-800/70 bg-red-950/40 text-red-200',
   leitura: 'border-sky-800/60 bg-sky-950/40 text-sky-100',
 }
@@ -129,23 +129,23 @@ function Conteudo() {
     timer.current = setTimeout(() => void enviar(), 1200)
   }
 
-  return <main className="min-h-screen fundo-tema text-[#f2ebff]">
-    <header className="sticky top-0 z-20 border-b border-[#373251] bg-[#19172c]/95 backdrop-blur">
+  return <main className="min-h-screen fundo-tema text-(--a-f2ebff)">
+    <header className="sticky top-0 z-20 border-b border-(--a-373251) bg-(--s-19172c)/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-6">
-        <Link href="/central?secao=fichas" aria-label="Voltar para a Central" className="inline-flex shrink-0 items-center gap-1 rounded-lg p-1.5 text-sm text-[#b99bff] hover:bg-[#2b2140]"><ArrowLeft size={18} /><span className="hidden sm:inline">Central</span></Link>
+        <Link href="/central?secao=fichas" aria-label="Voltar para a Central" className="inline-flex shrink-0 items-center gap-1 rounded-lg p-1.5 text-sm text-(--a-b99bff) hover:bg-(--s-2b2140)"><ArrowLeft size={18} /><span className="hidden sm:inline">Central</span></Link>
         <div className="min-w-0 flex-1">
           <h1 className="truncate font-bold leading-tight">{dados?.nome || (sistema ? 'Personagem sem nome' : 'Ficha')}</h1>
-          <p className="truncate text-xs text-[#b4aeca]">{sistema?.nome ?? '…'}{sistema && (campanhaId ? ' · 🏰 Ficha de campanha' : nuvem ? ' · 🧙 Ficha avulsa' : '')}{sistema?.autor && <span className="text-[#ed9cd8]"> · ✍️ {sistema.autor}</span>}</p>
+          <p className="truncate text-xs text-(--a-b4aeca)">{sistema?.nome ?? '…'}{sistema && (campanhaId ? ' · 🏰 Ficha de campanha' : nuvem ? ' · 🧙 Ficha avulsa' : '')}{sistema?.autor && <span className="text-(--a-ed9cd8)"> · ✍️ {sistema.autor}</span>}</p>
         </div>
-        <span className={'shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium ' + (COR[estado] ?? 'border-[#62527e] text-[#b4aeca]')} aria-live="polite">{ROTULO[estado]}</span>
+        <span className={'shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium ' + (COR[estado] ?? 'border-(--a-62527e) text-(--a-b4aeca)')} aria-live="polite">{ROTULO[estado]}</span>
         {sistema && <AjudaTela titulo="Ajuda da ficha" intro="Como usar esta ficha, passo a passo." passos={passosFicha(!!campanhaId, estado === 'leitura')} />}
       </div>
     </header>
     <div className="mx-auto max-w-6xl px-3 py-4 sm:px-6 sm:py-5">
-      {erro && <p role="alert" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#62527e] bg-[#2b2140] p-3 text-sm">
-        <span className="flex-1">{erro}</span>{estado === 'conflito' && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-[#b99bff] px-3 py-1">Recarregar</button>}</p>}
-      {aviso && <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#62527e] bg-[#1f2a40] p-3 text-sm">
-        <span className="flex-1">{aviso.texto}</span>{aviso.desfazer && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-[#b99bff] px-3 py-1">Desfazer (voltar ao salvo)</button>}</p>}
+      {erro && <p role="alert" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-(--a-62527e) bg-(--s-2b2140) p-3 text-sm">
+        <span className="flex-1">{erro}</span>{estado === 'conflito' && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-(--a-b99bff) px-3 py-1">Recarregar</button>}</p>}
+      {aviso && <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-(--a-62527e) bg-(--s-1f2a40) p-3 text-sm">
+        <span className="flex-1">{aviso.texto}</span>{aviso.desfazer && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-(--a-b99bff) px-3 py-1">Desfazer (voltar ao salvo)</button>}</p>}
       {sistema && dados ? <FichaGenerica sistema={sistema} dados={dados} onChange={mudar} somenteLeitura={estado === 'leitura'}
         rolarNaCampanha={campanhaId ? async (expressao, rotulo) => {
           try { const r = await api<{ evento: { resultados: number[]; total: number } }>('mesa/' + campanhaId, { method: 'POST', body: { acao: 'evento', tipo: 'rolagem', expressao, personagem: dados.nome, texto: rotulo } }); return r.evento }
@@ -158,7 +158,7 @@ function Conteudo() {
           if (ultimo.current) { toast.error('Espere salvar a ficha e tente de novo.'); return }
           setPassando({ item, tem })
         } : undefined} />
-        : estado === 'carregando' && <p className="text-center text-[#b4aeca]">Carregando ficha...</p>}
+        : estado === 'carregando' && <p className="text-center text-(--a-b4aeca)">Carregando ficha...</p>}
       {passando && campanhaId && nuvem && sistema && <PassarItem campanhaId={campanhaId} fichaId={nuvem} item={passando.item} tem={passando.tem} fechar={() => setPassando(null)}
         feito={r => {
           versao.current = r.de.versao

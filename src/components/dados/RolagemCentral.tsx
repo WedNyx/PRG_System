@@ -121,20 +121,20 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
       <div id={id} className="relative mb-[22vh] h-[min(88vw,56vh,520px)] w-[min(88vw,56vh,520px)]" />
     </div>
     {fase === 'cartao' && atual && <div className="pointer-events-none fixed inset-0 z-[62] flex items-center justify-center p-4 pt-[34vh]"><div role="status" aria-live="polite" onClick={fechar}
-      className="prg-pop pointer-events-auto w-full max-w-[420px] cursor-pointer rounded-3xl border border-[#8b6cba] bg-[#19172c]/95 p-5 text-center shadow-[0_0_60px_#7654bb88]">
-      {(atual.rotulo || atual.quem) && <p className="text-sm text-[#c4b6d4]">
-        {atual.quem && <span className="font-semibold text-[#e4d3ff]">{atual.quem}</span>}{atual.quem && atual.rotulo && ' · '}{atual.rotulo}{atual.privada && ' 🔒'}</p>}
-      <p className={'mt-1 bg-gradient-to-b bg-clip-text text-7xl font-black tabular-nums text-transparent ' + (critico === 'critico' ? 'from-amber-200 to-amber-500' : critico === 'falha' ? 'from-red-300 to-red-600' : 'from-[#e4d3ff] to-[#9f6bff]')}>{atual.total}</p>
+      className="prg-pop pointer-events-auto w-full max-w-[420px] cursor-pointer rounded-3xl border border-(--a-8b6cba) bg-(--s-19172c)/95 p-5 text-center shadow-[0_0_60px_#7654bb88]">
+      {(atual.rotulo || atual.quem) && <p className="text-sm text-(--a-c4b6d4)">
+        {atual.quem && <span className="font-semibold text-(--a-e4d3ff)">{atual.quem}</span>}{atual.quem && atual.rotulo && ' · '}{atual.rotulo}{atual.privada && ' 🔒'}</p>}
+      <p className={'mt-1 bg-gradient-to-b bg-clip-text text-7xl font-black tabular-nums text-transparent ' + (critico === 'critico' ? 'from-amber-200 to-amber-500' : critico === 'falha' ? 'from-red-300 to-red-600' : 'from-(--a-e4d3ff) to-(--a-9f6bff)')}>{atual.total}</p>
       <div className="mt-3 flex flex-wrap justify-center gap-1.5">
         {atual.resultados.slice(0, MAX_CHIPS).map((n, i) => { const fora = det?.descartados.has(i)
-          return <span key={i} title={fora ? 'Descartado' : undefined} className={'flex h-9 min-w-9 items-center justify-center rounded-lg border px-1.5 text-base font-bold tabular-nums ' + (fora ? 'border-[#3d3152] bg-[#1a1528] text-[#7d6f92] line-through' : 'border-[#62527e] bg-[#2b2140]')}>{n}</span> })}
+          return <span key={i} title={fora ? 'Descartado' : undefined} className={'flex h-9 min-w-9 items-center justify-center rounded-lg border px-1.5 text-base font-bold tabular-nums ' + (fora ? 'border-(--a-3d3152) bg-(--s-1a1528) text-(--a-7d6f92) line-through' : 'border-(--a-62527e) bg-(--s-2b2140)')}>{n}</span> })}
         {!!det?.modificador && <span className="flex h-9 items-center rounded-lg bg-[#1f3a2c] px-2 text-base font-bold tabular-nums text-emerald-200" title="Bônus somado aos dados">{det.modificador > 0 ? '+' : '−'}{Math.abs(det.modificador)}</span>}
-        {extras > 0 && <span className="flex h-9 items-center px-1.5 text-sm text-[#b4aeca]">+{extras}</span>}
+        {extras > 0 && <span className="flex h-9 items-center px-1.5 text-sm text-(--a-b4aeca)">+{extras}</span>}
       </div>
-      <p className="mt-2 text-xs text-[#9d8db0]">{atual.expressao}</p>
+      <p className="mt-2 text-xs text-(--a-9d8db0)">{atual.expressao}</p>
       {critico === 'critico' && <p className="mt-1 font-bold text-amber-300">✨ Acerto crítico!</p>}
       {critico === 'falha' && <p className="mt-1 font-bold text-red-300">💀 Falha crítica</p>}
-      {atual.nota && <p className="mt-1 font-semibold text-[#ed9cd8]">{atual.nota}</p>}
+      {atual.nota && <p className="mt-1 font-semibold text-(--a-ed9cd8)">{atual.nota}</p>}
     </div></div>}
   </>, document.body)
 })

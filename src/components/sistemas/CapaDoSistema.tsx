@@ -22,7 +22,7 @@ export function CapaDoSistema({ nome, capa, mudar }: { nome: string; capa?: stri
   }
   return <div>
     <p className="text-sm">Capa do sistema</p>
-    <div className="relative mt-1 aspect-[16/7] overflow-hidden rounded-xl border border-[#5e4b78] bg-[#151123]">
+    <div className="relative mt-1 aspect-[16/7] overflow-hidden rounded-xl border border-(--a-5e4b78) bg-(--s-151123)">
       <ImagemCapa id="autoral" nome={nome || 'Sistema'} capa={capa} />
       <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-2 pt-6 text-sm font-bold">{nome || 'Nome do sistema'}</span>
       <div className="absolute right-2 top-2 flex gap-1.5">
@@ -32,7 +32,7 @@ export function CapaDoSistema({ nome, capa, mudar }: { nome: string; capa?: stri
         {capa && <button type="button" onClick={() => mudar(undefined)} className="rounded-lg bg-black/65 px-2.5 py-1.5 text-xs backdrop-blur hover:bg-black/80">Tirar</button>}
       </div>
     </div>
-    <p className="mt-1 text-xs text-[#b4aeca]">{capa ? 'Aparece no cartão do sistema.' : 'Sem imagem, o sistema usa uma capa de constelação com uma cor só dele.'} Use uma imagem sua (sem arte de livros ou de outras pessoas).</p>
+    <p className="mt-1 text-xs text-(--a-b4aeca)">{capa ? 'Aparece no cartão do sistema.' : 'Sem imagem, o sistema usa uma capa de constelação com uma cor só dele.'} Use uma imagem sua (sem arte de livros ou de outras pessoas).</p>
     {erro && <p role="alert" className="mt-1 text-xs text-red-200">{erro}</p>}
   </div>
 }

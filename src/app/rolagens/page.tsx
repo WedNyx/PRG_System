@@ -19,10 +19,10 @@ function Conteudo() {
     api<Campanha>('campanhas/' + encodeURIComponent(cid)).then(r => { if (vivo) setC(r) }).catch(e => { if (vivo) setErro(e instanceof ErroNuvem ? e.message : 'Falha de conexão.') })
     return () => { vivo = false }
   }, [cid])
-  return <main className="flex min-h-screen flex-col fundo-tema px-4 py-5 text-[#f2ebff]">
+  return <main className="flex min-h-screen flex-col fundo-tema px-4 py-5 text-(--a-f2ebff)">
     <div className="mx-auto flex w-full max-w-3xl min-h-0 flex-1 flex-col">
-      <div className="flex flex-wrap items-center gap-3"><Link href="/central?secao=historico" className="text-sm text-[#b99bff] hover:underline">← Voltar</Link>
-        {c && <Link href={'/mesa?campanha=' + cid} className="ml-auto text-sm text-[#b99bff] hover:underline">Ir para a mesa →</Link>}
+      <div className="flex flex-wrap items-center gap-3"><Link href="/central?secao=historico" className="text-sm text-(--a-b99bff) hover:underline">← Voltar</Link>
+        {c && <Link href={'/mesa?campanha=' + cid} className="ml-auto text-sm text-(--a-b99bff) hover:underline">Ir para a mesa →</Link>}
         <AjudaTela titulo="Ajuda do histórico" intro="Tudo o que foi rolado nesta campanha, mesmo com a sessão fechada." className={c ? '' : 'ml-auto'} passos={[
           { icone: '📅', titulo: 'Período', texto: '“Esta sessão” mostra desde que o mestre abriu a sessão atual; dá para ver hoje, 7 dias ou tudo.' },
           { icone: '🎲', titulo: 'Tipo', texto: 'Dados, ataques, mensagens do chat ou avisos da mesa. “Tudo” junta todos.' },
@@ -33,8 +33,8 @@ function Conteudo() {
         ]} /></div>
       <h1 className="mt-3 text-2xl font-bold">🎲 Rolagens{c ? ' — ' + c.campanha.nome : ''}</h1>
       {erro && <p role="alert" className="mt-4 text-red-200">{erro}</p>}
-      {!c && !erro && <p className="mt-4 text-[#b4aeca]">Carregando…</p>}
-      {c && <div className="mt-4 flex min-h-[70vh] flex-1 flex-col rounded-2xl border border-[#55456e] bg-[#19172c]/95 p-4"><HistoricoRolagens campanhaId={cid} membros={c.membros} /></div>}
+      {!c && !erro && <p className="mt-4 text-(--a-b4aeca)">Carregando…</p>}
+      {c && <div className="mt-4 flex min-h-[70vh] flex-1 flex-col rounded-2xl border border-(--a-55456e) bg-(--s-19172c)/95 p-4"><HistoricoRolagens campanhaId={cid} membros={c.membros} /></div>}
     </div>
   </main>
 }

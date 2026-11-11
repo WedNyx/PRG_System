@@ -56,25 +56,25 @@ export default function ComecePorAqui({ perfilId, abrirPerfil, irPara }: { perfi
   if (feitos === passos.length) return null
   const esconder = () => { try { localStorage.setItem(chaveEscondido(perfilId), '1') } catch {} ; setEscondido(true) }
 
-  return <section className="mt-6 rounded-3xl border border-[#8b6cba] bg-[#1d1730]/95 p-5 sm:p-6" aria-label="Comece por aqui">
+  return <section className="mt-6 rounded-3xl border border-(--a-8b6cba) bg-(--s-1d1730)/95 p-5 sm:p-6" aria-label="Comece por aqui">
     <div className="flex items-start gap-3">
       <div className="min-w-0 flex-1">
         <h2 className="text-lg font-bold">✨ Comece por aqui</h2>
-        <p className="text-sm text-[#cfc0df]">{feitos} de {passos.length} passos · {feitos === 0 ? 'bem-vindo à plataforma!' : 'falta pouco!'}</p>
+        <p className="text-sm text-(--a-cfc0df)">{feitos} de {passos.length} passos · {feitos === 0 ? 'bem-vindo à plataforma!' : 'falta pouco!'}</p>
       </div>
-      <button type="button" onClick={esconder} aria-label="Esconder “Comece por aqui”" title="Esconder" className="rounded-lg p-1.5 text-[#b4aeca] hover:bg-white/10"><X size={18} /></button>
+      <button type="button" onClick={esconder} aria-label="Esconder “Comece por aqui”" title="Esconder" className="rounded-lg p-1.5 text-(--a-b4aeca) hover:bg-white/10"><X size={18} /></button>
     </div>
-    <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#2b2140]" aria-hidden><div className="h-full rounded-full bg-gradient-to-r from-[#7652ac] to-[#d4a23a] transition-all" style={{ width: `${(feitos / passos.length) * 100}%` }} /></div>
-    <ol className="mt-4 grid gap-2 sm:grid-cols-2">{passos.map(p => <li key={p.id} className={'flex gap-3 rounded-2xl border p-3 ' + (p.feito ? 'border-emerald-800/60 bg-emerald-950/30' : 'border-[#55456e] bg-[#201a32]')}>
-      <span className={'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg ' + (p.feito ? 'bg-emerald-700' : 'bg-[#34294f]')} aria-hidden>{p.feito ? <Check size={18} /> : p.icone}</span>
+    <div className="mt-3 h-2 overflow-hidden rounded-full bg-(--s-2b2140)" aria-hidden><div className="h-full rounded-full bg-gradient-to-r from-(--a-7652ac) to-[#d4a23a] transition-all" style={{ width: `${(feitos / passos.length) * 100}%` }} /></div>
+    <ol className="mt-4 grid gap-2 sm:grid-cols-2">{passos.map(p => <li key={p.id} className={'flex gap-3 rounded-2xl border p-3 ' + (p.feito ? 'border-emerald-800/60 bg-emerald-950/30' : 'border-(--a-55456e) bg-(--s-201a32)')}>
+      <span className={'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg ' + (p.feito ? 'bg-emerald-700' : 'bg-(--s-34294f)')} aria-hidden>{p.feito ? <Check size={18} /> : p.icone}</span>
       <div className="min-w-0 flex-1">
-        <p className="font-semibold">{p.titulo}{p.opcional && <span className="ml-1 text-xs font-normal text-[#a99bbb]">(opcional)</span>}<span className="sr-only">{p.feito ? ' — feito' : ' — falta'}</span></p>
-        <p className="text-xs text-[#cfc0df]">{p.texto}</p>
+        <p className="font-semibold">{p.titulo}{p.opcional && <span className="ml-1 text-xs font-normal text-(--a-a99bbb)">(opcional)</span>}<span className="sr-only">{p.feito ? ' — feito' : ' — falta'}</span></p>
+        <p className="text-xs text-(--a-cfc0df)">{p.texto}</p>
         {p.acao && (p.acao.href
-          ? <Link href={p.acao.href} className="mt-2 inline-flex items-center gap-1 rounded-lg bg-[#7652ac] px-3 py-1.5 text-xs font-semibold hover:bg-[#8b68c4]">{p.acao.rotulo} <ChevronRight size={14} /></Link>
-          : <button type="button" onClick={p.acao.onClick} className="mt-2 inline-flex items-center gap-1 rounded-lg bg-[#7652ac] px-3 py-1.5 text-xs font-semibold hover:bg-[#8b68c4]">{p.acao.rotulo} <ChevronRight size={14} /></button>)}
+          ? <Link href={p.acao.href} className="mt-2 inline-flex items-center gap-1 rounded-lg bg-(--a-7652ac) px-3 py-1.5 text-xs font-semibold hover:bg-(--a-8b68c4)">{p.acao.rotulo} <ChevronRight size={14} /></Link>
+          : <button type="button" onClick={p.acao.onClick} className="mt-2 inline-flex items-center gap-1 rounded-lg bg-(--a-7652ac) px-3 py-1.5 text-xs font-semibold hover:bg-(--a-8b68c4)">{p.acao.rotulo} <ChevronRight size={14} /></button>)}
       </div>
     </li>)}</ol>
-    <p className="mt-3 text-xs text-[#a99bbb]">Dúvidas? O <Link href="/guia" className="underline">Guia</Link> e os <Link href="/tutorial" className="underline">Tutoriais</Link> explicam tudo passo a passo.</p>
+    <p className="mt-3 text-xs text-(--a-a99bbb)">Dúvidas? O <Link href="/guia" className="underline">Guia</Link> e os <Link href="/tutorial" className="underline">Tutoriais</Link> explicam tudo passo a passo.</p>
   </section>
 }

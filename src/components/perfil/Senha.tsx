@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { EVENTO_SENHA } from '@/lib/nuvem/cliente'
 
 type PerfilCurto = { id: string; apelido?: string; avatar?: string | null }
-const campo = 'w-full rounded-lg border border-[#4a4267] bg-[#100f20] p-3 text-white outline-none focus:border-[#b99bff]'
+const campo = 'w-full rounded-lg border border-(--a-4a4267) bg-(--s-100f20) p-3 text-white outline-none focus:border-(--a-b99bff)'
 
 async function chamar(id: string, corpo: Record<string, unknown>) {
   const r = await fetch('/api/prg/perfil/' + id, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json', 'x-prg-aventureiro': id }, body: JSON.stringify(corpo) })
@@ -22,10 +22,10 @@ export async function situacaoSenha(id: string): Promise<{ protegido: boolean; c
 
 function CampoSenha({ valor, mudar, rotulo, auto, foco }: { valor: string; mudar: (v: string) => void; rotulo: string; auto: string; foco?: boolean }) {
   const [ver, setVer] = useState(false)
-  return <label className="block text-sm text-[#b4aeca]">{rotulo}
+  return <label className="block text-sm text-(--a-b4aeca)">{rotulo}
     <span className="relative mt-1 block">
       <input type={ver ? 'text' : 'password'} value={valor} onChange={e => mudar(e.target.value)} autoComplete={auto} autoFocus={foco} maxLength={72} className={campo + ' pr-11'} />
-      <button type="button" onClick={() => setVer(v => !v)} aria-label={ver ? 'Esconder senha' : 'Mostrar senha'} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-[#b4aeca] hover:bg-white/10">{ver ? <EyeOff size={18} /> : <Eye size={18} />}</button>
+      <button type="button" onClick={() => setVer(v => !v)} aria-label={ver ? 'Esconder senha' : 'Mostrar senha'} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1.5 text-(--a-b4aeca) hover:bg-white/10">{ver ? <EyeOff size={18} /> : <Eye size={18} />}</button>
     </span>
   </label>
 }
@@ -43,18 +43,18 @@ export function JanelaSenha({ perfil, aoEntrar, fechar }: { perfil: PerfilCurto;
   }
   return <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/75 p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
     <form onSubmit={entrar} role="dialog" aria-modal="true" aria-labelledby="senha-perfil-titulo" onKeyDown={e => { if (e.key === 'Escape') fechar() }}
-      className="w-full max-w-sm rounded-2xl border border-[#62527e] bg-[#19172c] p-5 text-[#f4f0ff] shadow-2xl">
+      className="w-full max-w-sm rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-5 text-(--a-f4f0ff) shadow-2xl">
       <div className="flex items-center gap-3">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-[#62527e] bg-[#28233e] text-xl font-bold text-[#b99bff]">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-(--a-62527e) bg-(--s-28233e) text-xl font-bold text-(--a-b99bff)">
           {perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : (perfil.apelido?.[0] ?? '?').toUpperCase()}</span>
         <div className="min-w-0 flex-1"><h2 id="senha-perfil-titulo" className="flex items-center gap-1.5 text-lg font-bold"><Lock size={16} /> {perfil.apelido ?? 'Perfil protegido'}</h2>
-          <p className="text-xs text-[#b4aeca]">Este perfil tem senha.</p></div>
-        <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 text-[#b4aeca] hover:bg-white/10"><X size={18} /></button>
+          <p className="text-xs text-(--a-b4aeca)">Este perfil tem senha.</p></div>
+        <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 text-(--a-b4aeca) hover:bg-white/10"><X size={18} /></button>
       </div>
       <div className="mt-4"><CampoSenha valor={senha} mudar={setSenha} rotulo="Senha" auto="current-password" foco /></div>
       {erro && <p role="alert" className="mt-3 text-sm text-red-200">{erro}</p>}
-      <button type="submit" disabled={ocupado || !senha} className="mt-4 w-full rounded-lg bg-[#7654bb] p-2.5 font-semibold disabled:opacity-50">{ocupado ? 'Conferindo…' : 'Entrar'}</button>
-      <p className="mt-3 text-center text-[11px] text-[#8f88a8]">Este aparelho fica lembrado por 30 dias. Esqueceu? Peça ao administrador para redefinir.</p>
+      <button type="submit" disabled={ocupado || !senha} className="mt-4 w-full rounded-lg bg-(--a-7654bb) p-2.5 font-semibold disabled:opacity-50">{ocupado ? 'Conferindo…' : 'Entrar'}</button>
+      <p className="mt-3 text-center text-[11px] text-(--a-8f88a8)">Este aparelho fica lembrado por 30 dias. Esqueceu? Peça ao administrador para redefinir.</p>
     </form>
   </div>
 }
@@ -108,23 +108,23 @@ export function ConfigSenha({ id }: { id: string }) {
     try { await chamar(id, { acao: 'sair', todos: true }); window.location.href = '/portal' } catch (er) { setErro(er instanceof Error ? er.message : 'Falha.') }
   }
 
-  return <section className="rounded-xl border border-[#4a4267] bg-[#151223] p-3" aria-label="Senha do perfil">
+  return <section className="rounded-xl border border-(--a-4a4267) bg-(--s-151223) p-3" aria-label="Senha do perfil">
     <div className="flex flex-wrap items-center gap-2">
       <h3 className="flex flex-1 items-center gap-1.5 text-sm font-semibold"><Lock size={15} /> Senha do perfil</h3>
-      {sit && <span className={'rounded-full px-2 py-0.5 text-[11px] ' + (sit.protegido ? 'bg-emerald-900/60 text-emerald-200' : 'bg-[#34294f] text-[#b4aeca]')}>{sit.protegido ? '🔒 Protegido' : 'Sem senha'}</span>}
+      {sit && <span className={'rounded-full px-2 py-0.5 text-[11px] ' + (sit.protegido ? 'bg-emerald-900/60 text-emerald-200' : 'bg-(--s-34294f) text-(--a-b4aeca)')}>{sit.protegido ? '🔒 Protegido' : 'Sem senha'}</span>}
     </div>
-    {!sit && !erro && <p className="mt-2 text-xs text-[#b4aeca]">Carregando…</p>}
+    {!sit && !erro && <p className="mt-2 text-xs text-(--a-b4aeca)">Carregando…</p>}
     {sit && !modo && <>
-      <p className="mt-2 text-xs text-[#b4aeca]">{sit.protegido
+      <p className="mt-2 text-xs text-(--a-b4aeca)">{sit.protegido
         ? 'Só entra neste perfil quem souber a senha. Cada aparelho fica lembrado por 30 dias.'
         : 'Opcional: com senha, ninguém mais consegue entrar no seu perfil pelo portal. Não precisa de e-mail.'}</p>
       <div className="mt-2 flex flex-wrap gap-2">
-        <button type="button" onClick={() => setModo('definir')} className="rounded-lg bg-[#7654bb] px-3 py-1.5 text-sm font-semibold">{sit.protegido ? 'Trocar senha' : 'Criar senha'}</button>
-        {sit.protegido && <button type="button" onClick={() => setModo('remover')} className="rounded-lg border border-[#62527e] px-3 py-1.5 text-sm">Remover senha</button>}
+        <button type="button" onClick={() => setModo('definir')} className="rounded-lg bg-(--a-7654bb) px-3 py-1.5 text-sm font-semibold">{sit.protegido ? 'Trocar senha' : 'Criar senha'}</button>
+        {sit.protegido && <button type="button" onClick={() => setModo('remover')} className="rounded-lg border border-(--a-62527e) px-3 py-1.5 text-sm">Remover senha</button>}
       </div>
       {sit.protegido && sit.aparelhos.length > 0 && <div className="mt-3">
-        <p className="text-xs font-semibold text-[#d6c8e8]">Aparelhos lembrados</p>
-        <ul className="mt-1 space-y-1">{sit.aparelhos.map(a => <li key={a.id} className="flex justify-between text-xs text-[#b4aeca]"><span>{a.aparelho}{a.este && <b className="ml-1 text-emerald-300">(este)</b>}</span><span>{new Date(a.criado_em).toLocaleDateString('pt-BR')}</span></li>)}</ul>
+        <p className="text-xs font-semibold text-(--a-d6c8e8)">Aparelhos lembrados</p>
+        <ul className="mt-1 space-y-1">{sit.aparelhos.map(a => <li key={a.id} className="flex justify-between text-xs text-(--a-b4aeca)"><span>{a.aparelho}{a.este && <b className="ml-1 text-emerald-300">(este)</b>}</span><span>{new Date(a.criado_em).toLocaleDateString('pt-BR')}</span></li>)}</ul>
         <button type="button" onClick={() => void sairTodos()} className="mt-2 text-xs text-[#ff9eb5] underline underline-offset-2">Desconectar todos os aparelhos</button>
       </div>}
     </>}
@@ -133,12 +133,12 @@ export function ConfigSenha({ id }: { id: string }) {
       {modo === 'definir' && <>
         <CampoSenha valor={nova} mudar={setNova} rotulo="Senha nova (6 a 72 caracteres)" auto="new-password" foco={!sit.protegido} />
         <CampoSenha valor={repetir} mudar={setRepetir} rotulo="Repita a senha nova" auto="new-password" />
-        <p className="text-[11px] text-[#8f88a8]">Não há recuperação por e-mail: se esquecer, só o administrador da plataforma consegue apagar a senha.</p>
+        <p className="text-[11px] text-(--a-8f88a8)">Não há recuperação por e-mail: se esquecer, só o administrador da plataforma consegue apagar a senha.</p>
       </>}
       {erro && <p role="alert" className="text-sm text-red-200">{erro}</p>}
       <div className="flex gap-2">
-        <button type="button" onClick={limpar} className="flex-1 rounded-lg border border-[#62527e] p-2 text-sm">Cancelar</button>
-        <button type="button" onClick={() => void enviar()} disabled={ocupado || (sit.protegido && !atual) || (modo === 'definir' && (!nova || !repetir))} className={'flex-1 rounded-lg p-2 text-sm font-semibold disabled:opacity-50 ' + (modo === 'remover' ? 'bg-[#8a2f4b]' : 'bg-[#7654bb]')}>
+        <button type="button" onClick={limpar} className="flex-1 rounded-lg border border-(--a-62527e) p-2 text-sm">Cancelar</button>
+        <button type="button" onClick={() => void enviar()} disabled={ocupado || (sit.protegido && !atual) || (modo === 'definir' && (!nova || !repetir))} className={'flex-1 rounded-lg p-2 text-sm font-semibold disabled:opacity-50 ' + (modo === 'remover' ? 'bg-[#8a2f4b]' : 'bg-(--a-7654bb)')}>
           {ocupado ? 'Salvando…' : modo === 'remover' ? 'Remover senha' : 'Salvar senha'}</button>
       </div>
     </div>}

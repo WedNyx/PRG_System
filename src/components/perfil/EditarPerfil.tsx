@@ -80,39 +80,39 @@ export default function EditarPerfil({ perfil, fechar, salvo }: { perfil: Perfil
       <div className="flex items-center justify-between"><h2 id="editar-perfil-titulo" className="text-xl font-bold">Editar perfil</h2>
         <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 hover:bg-white/10"><X size={20} /></button></div>
       <div className="flex flex-col items-center gap-3">
-        <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-xl border-2 border-[#62527e] bg-[#28233e] text-4xl font-bold text-[#b99bff]">
+        <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-xl border-2 border-(--a-62527e) bg-(--s-28233e) text-4xl font-bold text-(--a-b99bff)">
           {avatar ? <img src={avatar} alt="Prévia da foto de perfil" className="h-full w-full object-cover" /> : (apelido.trim()[0] || '✦').toUpperCase()}
         </div>
         <input ref={arquivo} type="file" accept="image/png,image/jpeg,image/webp" onChange={escolher} className="sr-only" aria-label="Escolher nova foto" />
         <div className="flex flex-wrap justify-center gap-2">
-          <button type="button" onClick={() => arquivo.current?.click()} className="rounded-lg border border-[#62527e] bg-[#34294f] px-3 py-2 text-sm hover:bg-[#4b396f]">📷 Trocar foto</button>
-          {avatar && <button type="button" onClick={() => setAvatar(null)} className="rounded-lg border border-[#62527e] px-3 py-2 text-sm">Remover foto</button>}
+          <button type="button" onClick={() => arquivo.current?.click()} className="rounded-lg border border-(--a-62527e) bg-(--s-34294f) px-3 py-2 text-sm hover:bg-(--s-4b396f)">📷 Trocar foto</button>
+          {avatar && <button type="button" onClick={() => setAvatar(null)} className="rounded-lg border border-(--a-62527e) px-3 py-2 text-sm">Remover foto</button>}
         </div>
-        {crop && <div className="w-full rounded-xl border border-[#62527e] bg-[#100f20] p-3">
-          <p className="mb-3 text-center text-sm text-[#ed9cd8]">Arraste e ajuste sua foto</p>
-          <div className="relative mx-auto h-64 w-64 touch-none overflow-hidden rounded-xl border-2 border-[#b99bff]"
+        {crop && <div className="w-full rounded-xl border border-(--a-62527e) bg-(--s-100f20) p-3">
+          <p className="mb-3 text-center text-sm text-(--a-ed9cd8)">Arraste e ajuste sua foto</p>
+          <div className="relative mx-auto h-64 w-64 touch-none overflow-hidden rounded-xl border-2 border-(--a-b99bff)"
             onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); arrasto.current = { x: e.clientX, y: e.clientY, px: pos.x, py: pos.y } }}
             onPointerMove={e => { const a = arrasto.current; if (a) setPos(limitar(a.px + e.clientX - a.x, a.py + e.clientY - a.y)) }}
             onPointerUp={() => { arrasto.current = null }} onPointerCancel={() => { arrasto.current = null }}>
             <img src={crop} alt="Prévia do recorte" draggable={false} className="pointer-events-none absolute max-w-none select-none"
               style={{ width: tam.w * escala(), height: tam.h * escala(), left: '50%', top: '50%', transform: `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))` }} />
           </div>
-          <label className="mt-3 block text-sm text-[#b4aeca]">Zoom: {Math.round(zoom * 100)}%
-            <input type="range" min="1" max="3" step="0.05" value={zoom} onChange={e => { const z = Number(e.target.value); setZoom(z); setPos(limitar(pos.x, pos.y, z)) }} className="w-full accent-[#b99bff]" /></label>
+          <label className="mt-3 block text-sm text-(--a-b4aeca)">Zoom: {Math.round(zoom * 100)}%
+            <input type="range" min="1" max="3" step="0.05" value={zoom} onChange={e => { const z = Number(e.target.value); setZoom(z); setPos(limitar(pos.x, pos.y, z)) }} className="w-full accent-(--a-b99bff)" /></label>
           <div className="mt-3 flex gap-2">
-            <button type="button" onClick={() => setCrop(null)} className="flex-1 rounded-lg border border-[#62527e] p-2 text-sm">Cancelar</button>
-            <button type="button" onClick={confirmarFoto} className="flex-1 rounded-lg bg-[#7654bb] p-2 text-sm font-semibold">Usar esta foto</button>
+            <button type="button" onClick={() => setCrop(null)} className="flex-1 rounded-lg border border-(--a-62527e) p-2 text-sm">Cancelar</button>
+            <button type="button" onClick={confirmarFoto} className="flex-1 rounded-lg bg-(--a-7654bb) p-2 text-sm font-semibold">Usar esta foto</button>
           </div>
         </div>}
       </div>
-      <label className="block text-sm text-[#b4aeca]">Nome do aventureiro
-        <input value={apelido} onChange={e => setApelido(e.target.value)} maxLength={40} required className="mt-2 w-full rounded-lg border border-[#4a4267] bg-[#100f20] p-3 text-white outline-none focus:border-[#b99bff]" /></label>
+      <label className="block text-sm text-(--a-b4aeca)">Nome do aventureiro
+        <input value={apelido} onChange={e => setApelido(e.target.value)} maxLength={40} required className="mt-2 w-full rounded-lg border border-(--a-4a4267) bg-(--s-100f20) p-3 text-white outline-none focus:border-(--a-b99bff)" /></label>
       <EscolherGrupo valor={grupo} mudar={setGrupo} />
       <ConfigSenha id={perfil.id} />
       {erro && <p role="alert" className="rounded-lg border border-red-500/40 p-3 text-sm text-red-200">{erro}</p>}
       <div className="flex gap-2">
-        <button type="button" onClick={fechar} className="flex-1 rounded-lg border border-[#62527e] px-3 py-3">Cancelar</button>
-        <button type="submit" disabled={ocupado || !!crop} className="flex-1 rounded-lg bg-[#7654bb] px-3 py-3 font-semibold hover:bg-[#8a67ce] disabled:opacity-50">{ocupado ? 'Salvando…' : 'Salvar'}</button>
+        <button type="button" onClick={fechar} className="flex-1 rounded-lg border border-(--a-62527e) px-3 py-3">Cancelar</button>
+        <button type="submit" disabled={ocupado || !!crop} className="flex-1 rounded-lg bg-(--a-7654bb) px-3 py-3 font-semibold hover:bg-(--a-8a67ce) disabled:opacity-50">{ocupado ? 'Salvando…' : 'Salvar'}</button>
       </div>
     </form>
   </div>

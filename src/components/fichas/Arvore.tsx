@@ -14,8 +14,8 @@ import {
 const R = 34 // raio do hexágono
 const MARGEM = 170
 const hex = (r: number) => Array.from({ length: 6 }, (_, i) => { const a = Math.PI / 180 * (60 * i - 90); return `${(r * Math.cos(a)).toFixed(1)},${(r * Math.sin(a)).toFixed(1)}` }).join(' ')
-const input = 'w-full rounded-lg border border-[#5e4b78] bg-[#151123] p-2 text-white'
-const btn = 'inline-flex items-center gap-1.5 rounded-lg border border-[#70588c] px-3 py-2 text-sm hover:bg-[#38294d] disabled:opacity-40'
+const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white'
+const btn = 'inline-flex items-center gap-1.5 rounded-lg border border-(--a-70588c) px-3 py-2 text-sm hover:bg-(--s-38294d) disabled:opacity-40'
 
 type Props = {
   s: Sistema; d: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura: boolean; rolar: (expressao: string, rotulo: string) => void
@@ -103,37 +103,37 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
 
   const estado = (n: NoArvore) => a.liberados.includes(n.id) ? 'liberado' : !editorSistema && podeLiberar(a, n.id, extra).ok ? 'disponivel' : n.requer.every(r => a.liberados.includes(r)) ? 'sem-pontos' : 'bloqueado'
 
-  return <section className="overflow-hidden rounded-2xl border border-[#55456e] bg-[#0c0a16]">
-    <div className="flex flex-wrap items-center gap-3 border-b border-[#2b2140] bg-[#14111f] px-4 py-3">
+  return <section className="overflow-hidden rounded-2xl border border-(--a-55456e) bg-(--s-0c0a16)">
+    <div className="flex flex-wrap items-center gap-3 border-b border-(--a-2b2140) bg-(--s-14111f) px-4 py-3">
       <h2 className="flex-1 bg-gradient-to-b from-[#fde68a] to-[#d4a23a] bg-clip-text font-serif text-lg font-bold uppercase tracking-[.18em] text-transparent sm:text-xl">{editorSistema ? 'Árvore padrão do sistema' : 'Árvore de habilidades'}</h2>
-      {editorSistema ? <span className="rounded-full border border-[#62527e] bg-[#201a32] px-3 py-1 text-sm">🌠 Pontos iniciais: <strong>{a.pontos}</strong></span>
-        : <span className="rounded-full border border-[#62527e] bg-[#201a32] px-3 py-1 text-sm" title={`${gastos(a)} gasto(s) · ${a.pontos} ganhos${extra ? ` + ${extra} do nível` : ''}`}>
-        🌠 <strong className={livres > 0 ? 'text-amber-200' : ''}>{livres}</strong> livre{livres === 1 ? '' : 's'} <span className="text-xs text-[#b4aeca]">de {a.pontos + extra}{extra ? ` (${extra} do nível)` : ''}</span></span>}
+      {editorSistema ? <span className="rounded-full border border-(--a-62527e) bg-(--s-201a32) px-3 py-1 text-sm">🌠 Pontos iniciais: <strong>{a.pontos}</strong></span>
+        : <span className="rounded-full border border-(--a-62527e) bg-(--s-201a32) px-3 py-1 text-sm" title={`${gastos(a)} gasto(s) · ${a.pontos} ganhos${extra ? ` + ${extra} do nível` : ''}`}>
+        🌠 <strong className={livres > 0 ? 'text-amber-200' : ''}>{livres}</strong> livre{livres === 1 ? '' : 's'} <span className="text-xs text-(--a-b4aeca)">de {a.pontos + extra}{extra ? ` (${extra} do nível)` : ''}</span></span>}
       {sistemaMudou && !somenteLeitura && <button type="button" onClick={() => { if (confirm('Trazer as mudanças da árvore do sistema? Hexágonos novos entram e os iguais são atualizados; o que você liberou continua.')) salvar(mesclarArvore(a, doSistema!)) }}
         className={btn + ' !border-amber-300/60 !text-amber-200'}>🔄 Atualizar com a árvore do sistema</button>}
       {montando && !somenteLeitura && <span className="flex items-center gap-1" aria-label="Pontos ganhos">
         <button type="button" className={btn + ' !px-2'} aria-label="Menos um ponto" disabled={a.pontos <= gastos(a)} onClick={() => salvar({ ...a, pontos: a.pontos - 1 })}><Minus size={14} /></button>
         <button type="button" className={btn + ' !px-2'} aria-label="Mais um ponto" onClick={() => salvar({ ...a, pontos: Math.min(9999, a.pontos + 1) })}><Plus size={14} /></button></span>}
-      {!somenteLeitura && !editorSistema && <button type="button" onClick={() => { setMontando(m => !m); setLigando(null) }} className={btn + (montando ? ' !border-[#b99bff] !bg-[#3b2b57]' : '')}>
+      {!somenteLeitura && !editorSistema && <button type="button" onClick={() => { setMontando(m => !m); setLigando(null) }} className={btn + (montando ? ' !border-(--a-b99bff) !bg-(--s-3b2b57)' : '')}>
         <Pencil size={14} /> {montando ? 'Concluir' : 'Montar árvore'}</button>}
     </div>
 
-    {montando && <div className="flex flex-wrap items-center gap-2 border-b border-[#2b2140] bg-[#171325] px-4 py-2 text-sm">
+    {montando && <div className="flex flex-wrap items-center gap-2 border-b border-(--a-2b2140) bg-(--s-171325) px-4 py-2 text-sm">
       <button type="button" className={btn} onClick={novoNo} disabled={a.nos.length >= LIM_ARVORE.nos}><Plus size={14} /> {no ? 'Hexágono ligado a este' : 'Hexágono'}</button>
       {no && <>
         <button type="button" className={btn} onClick={() => setEditor(no)}><Pencil size={14} /> Editar</button>
         <button type="button" className={btn + (ligando ? ' !border-amber-300 !text-amber-200' : '')} onClick={() => setLigando(l => l ? null : no.id)}><Link2 size={14} /> {ligando ? 'Toque no hexágono que vai depender dele…' : 'Ligar'}</button>
         <button type="button" className={btn + ' text-[#f2a9c3]'} onClick={() => excluirNo(no)}><Trash2 size={14} /> Excluir</button></>}
-      <span className="text-xs text-[#a998bd]">Arraste os hexágonos para organizar. “Ligar”: escolha um e toque no que depende dele.</span>
+      <span className="text-xs text-(--a-a998bd)">Arraste os hexágonos para organizar. “Ligar”: escolha um e toque no que depende dele.</span>
     </div>}
 
     <div className="relative h-[62vh] min-h-[380px] touch-none select-none" style={{ background: 'radial-gradient(ellipse at 50% 40%, #2a1d4a 0%, #120d22 55%, #07060d 100%)' }}>
       {a.nos.length === 0 ? <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
         <p className="text-5xl" aria-hidden>🌌</p>
-        <p className="max-w-sm text-[#d6c8e8]">{editorSistema ? 'Monte a árvore que toda ficha nova deste sistema vai receber. Os jogadores liberam os hexágonos com pontos.' : 'Esta ficha ainda não tem árvore. Monte os hexágonos com os poderes do personagem e libere com pontos.'}</p>
+        <p className="max-w-sm text-(--a-d6c8e8)">{editorSistema ? 'Monte a árvore que toda ficha nova deste sistema vai receber. Os jogadores liberam os hexágonos com pontos.' : 'Esta ficha ainda não tem árvore. Monte os hexágonos com os poderes do personagem e libere com pontos.'}</p>
         {!somenteLeitura && <div className="flex flex-wrap justify-center gap-2">
-          {doSistema && <button type="button" className="rounded-xl bg-gradient-to-r from-[#7652ac] to-[#b45309] px-4 py-2.5 font-semibold" onClick={() => salvar(mesclarArvore(a, doSistema))}>🌠 Usar a árvore do sistema</button>}
-          <button type="button" className="rounded-xl bg-[#7652ac] px-4 py-2.5 font-semibold hover:bg-[#8b68c4]" onClick={() => { setMontando(true); novoNo() }}><Plus size={16} className="mr-1 inline" />Criar o primeiro hexágono</button>
+          {doSistema && <button type="button" className="rounded-xl bg-gradient-to-r from-(--a-7652ac) to-[#b45309] px-4 py-2.5 font-semibold" onClick={() => salvar(mesclarArvore(a, doSistema))}>🌠 Usar a árvore do sistema</button>}
+          <button type="button" className="rounded-xl bg-(--a-7652ac) px-4 py-2.5 font-semibold hover:bg-(--a-8b68c4)" onClick={() => { setMontando(true); novoNo() }}><Plus size={16} className="mr-1 inline" />Criar o primeiro hexágono</button>
           <button type="button" className={btn} onClick={() => { salvar(arvoreExemplo(alvos)); setMontando(true) }}><Sparkles size={14} /> Começar com um exemplo</button></div>}
       </div>
         : <TransformWrapper onInit={ref => { desligarZoom.current?.(); desligarZoom.current = ligarZoomSuave(ref, 0.3, 2.5) }} minScale={0.3} maxScale={2.5} initialScale={0.9} centerOnInit limitToBounds={false} doubleClick={{ disabled: true }} wheel={{ disabled: true }} panning={{ disabled: !!arrasto, velocityDisabled: true, excluded: ['arvore-no-arrastavel'] }}>
@@ -177,7 +177,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
 
     {no && !editor && <DetalheNo no={no} a={a} extra={extra} alvos={alvos} recursos={s.recursos} somenteLeitura={somenteLeitura || montando || editorSistema}
       liberar={() => liberar(no)} devolver={() => devolver(no)} rolar={rolar} fechar={() => setSel(null)} />}
-    {!no && a.nos.length > 0 && <p className="px-4 py-3 text-xs text-[#a998bd]">Toque num hexágono para ver o que ele faz. {somenteLeitura ? '' : 'Os que brilham na borda já podem ser liberados.'}</p>}
+    {!no && a.nos.length > 0 && <p className="px-4 py-3 text-xs text-(--a-a998bd)">Toque num hexágono para ver o que ele faz. {somenteLeitura ? '' : 'Os que brilham na borda já podem ser liberados.'}</p>}
     {editor && <EditorNo inicial={editor} a={a} alvos={alvos} recursos={s.recursos} gravar={gravarNo} fechar={() => setEditor(null)} />}
   </section>
 }
@@ -206,26 +206,26 @@ function DetalheNo({ no, a, extra, alvos, recursos, somenteLeitura, liberar, dev
   liberar: () => void; devolver: () => void; rolar: (expressao: string, rotulo: string) => void; fechar: () => void
 }) {
   const liberado = a.liberados.includes(no.id), pode = podeLiberar(a, no.id, extra), volta = podeDevolver(a, no.id)
-  return <div className="border-t border-[#2b2140] bg-[#14111f] p-4">
+  return <div className="border-t border-(--a-2b2140) bg-(--s-14111f) p-4">
     <div className="flex items-start gap-3">
       <span aria-hidden className="mt-0.5 h-5 w-5 shrink-0 rotate-90" style={{ background: no.cor, clipPath: 'polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)', opacity: liberado ? 1 : 0.5 }} />
       <div className="min-w-0 flex-1">
-        <h3 className="font-serif text-lg font-bold uppercase tracking-wider text-[#f2ebff]">{no.nome}</h3>
-        <p className="text-xs text-[#b4aeca]">Custo: {no.custo} ponto{no.custo === 1 ? '' : 's'}{liberado && ' · ✅ Liberado'}</p>
+        <h3 className="font-serif text-lg font-bold uppercase tracking-wider text-(--a-f2ebff)">{no.nome}</h3>
+        <p className="text-xs text-(--a-b4aeca)">Custo: {no.custo} ponto{no.custo === 1 ? '' : 's'}{liberado && ' · ✅ Liberado'}</p>
       </div>
-      <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 text-[#c4b6d4] hover:bg-[#2b2140]"><X size={18} /></button>
+      <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 text-(--a-c4b6d4) hover:bg-(--s-2b2140)"><X size={18} /></button>
     </div>
-    {no.descricao && <p className="mt-2 whitespace-pre-wrap text-sm text-[#d6c8e8]">{no.descricao}</p>}
-    {no.requer.length > 0 && <p className="mt-2 text-xs text-[#c4b6d4]">Precisa de: {no.requer.map(r => { const n = a.nos.find(x => x.id === r); return n ? (a.liberados.includes(r) ? '✓ ' : '✗ ') + n.nome : '' }).join(' · ')}</p>}
-    {no.efeitos.length > 0 && <ul className="mt-3 space-y-1.5">{no.efeitos.map((e, i) => <li key={i} className="flex items-center gap-2 rounded-lg bg-[#201a32] px-3 py-2 text-sm">
+    {no.descricao && <p className="mt-2 whitespace-pre-wrap text-sm text-(--a-d6c8e8)">{no.descricao}</p>}
+    {no.requer.length > 0 && <p className="mt-2 text-xs text-(--a-c4b6d4)">Precisa de: {no.requer.map(r => { const n = a.nos.find(x => x.id === r); return n ? (a.liberados.includes(r) ? '✓ ' : '✗ ') + n.nome : '' }).join(' · ')}</p>}
+    {no.efeitos.length > 0 && <ul className="mt-3 space-y-1.5">{no.efeitos.map((e, i) => <li key={i} className="flex items-center gap-2 rounded-lg bg-(--s-201a32) px-3 py-2 text-sm">
       <span className="flex-1">{textoEfeito(e, alvos, recursos)}</span>
-      {e.tipo === 'poder' && e.poder.expressao && liberado && <button type="button" onClick={() => rolar(e.poder.expressao!, e.poder.nome)} className="inline-flex items-center gap-1 rounded-md bg-[#3b2b57] px-2 py-1 text-xs hover:bg-[#533b78]"><Dice5 size={13} /> Rolar</button>}
+      {e.tipo === 'poder' && e.poder.expressao && liberado && <button type="button" onClick={() => rolar(e.poder.expressao!, e.poder.nome)} className="inline-flex items-center gap-1 rounded-md bg-(--s-3b2b57) px-2 py-1 text-xs hover:bg-(--a-533b78)"><Dice5 size={13} /> Rolar</button>}
     </li>)}</ul>}
     {!somenteLeitura && <div className="mt-3 flex flex-wrap items-center gap-2">
-      {!liberado && <button type="button" disabled={!pode.ok} onClick={liberar} className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#7652ac] to-[#a855f7] px-4 py-2 font-semibold shadow-[0_0_18px_#a855f766] disabled:opacity-40 disabled:shadow-none"><Sparkles size={16} /> Liberar ({no.custo})</button>}
+      {!liberado && <button type="button" disabled={!pode.ok} onClick={liberar} className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-(--a-7652ac) to-(--a-a855f7) px-4 py-2 font-semibold shadow-[0_0_18px_#a855f766] disabled:opacity-40 disabled:shadow-none"><Sparkles size={16} /> Liberar ({no.custo})</button>}
       {!liberado && !pode.ok && <span className="text-xs text-amber-200">{pode.motivo}</span>}
       {liberado && <button type="button" disabled={!volta.ok} onClick={devolver} className={btn}><Undo2 size={14} /> Devolver pontos</button>}
-      {liberado && !volta.ok && <span className="text-xs text-[#b4aeca]">{volta.motivo}</span>}
+      {liberado && !volta.ok && <span className="text-xs text-(--a-b4aeca)">{volta.motivo}</span>}
     </div>}
   </div>
 }
@@ -239,9 +239,9 @@ function EditorNo({ inicial, a, alvos, recursos, gravar, fechar }: {
   const podeAdd = n.efeitos.length < LIM_ARVORE.efeitos
   return <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
     <form role="dialog" aria-modal="true" aria-label="Hexágono" onSubmit={e => { e.preventDefault(); if (n.nome.trim()) gravar({ ...n, nome: n.nome.trim() }) }} onKeyDown={e => { if (e.key === 'Escape') fechar() }}
-      className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-[#62527e] bg-[#19172c] p-5 text-[#f4f0ff] shadow-2xl sm:rounded-2xl">
+      className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-(--a-62527e) bg-(--s-19172c) p-5 text-(--a-f4f0ff) shadow-2xl sm:rounded-2xl">
       <div className="flex items-center gap-2"><h2 className="flex-1 text-lg font-bold">{a.nos.some(x => x.id === n.id) ? 'Editar hexágono' : 'Novo hexágono'}</h2>
-        <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 hover:bg-[#2b2140]"><X size={20} /></button></div>
+        <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 hover:bg-(--s-2b2140)"><X size={20} /></button></div>
       <label className="mt-3 block text-sm">Nome<input autoFocus required maxLength={LIM_ARVORE.nome} value={n.nome} onChange={e => setN({ ...n, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Habilidade de Raio" /></label>
       <label className="mt-3 block text-sm">Descrição<textarea rows={3} maxLength={LIM_ARVORE.descricao} value={n.descricao ?? ''} onChange={e => setN({ ...n, descricao: e.target.value })} className={input + ' mt-1'} placeholder="O que ela faz na história e nas regras." /></label>
       <div className="mt-3 flex flex-wrap items-end gap-4">
@@ -255,13 +255,13 @@ function EditorNo({ inicial, a, alvos, recursos, gravar, fechar }: {
       {outros.length > 0 && <div className="mt-4 text-sm">Precisa liberar antes<div className="mt-1 flex flex-wrap gap-1.5">{outros.map(o => {
         const on = n.requer.includes(o.id), ciclo = !on && criaCiclo(a, n.id, o.id)
         return <button key={o.id} type="button" disabled={ciclo} onClick={() => setN({ ...n, requer: on ? n.requer.filter(r => r !== o.id) : [...n.requer, o.id].slice(0, LIM_ARVORE.requer) })}
-          className={'rounded-full border px-2.5 py-1 text-xs disabled:opacity-30 ' + (on ? 'border-[#b99bff] bg-[#3b2b57]' : 'border-[#4a3d63]')}>{on ? '✓ ' : ''}{o.nome}</button>
+          className={'rounded-full border px-2.5 py-1 text-xs disabled:opacity-30 ' + (on ? 'border-(--a-b99bff) bg-(--s-3b2b57)' : 'border-(--a-4a3d63)')}>{on ? '✓ ' : ''}{o.nome}</button>
       })}</div></div>}
 
-      <h3 className="mt-5 text-sm font-semibold">✨ Efeitos automáticos <span className="font-normal text-[#a998bd]">(valem quando o hexágono é liberado)</span></h3>
-      <div className="mt-2 space-y-2">{n.efeitos.map((e, i) => <div key={i} className="rounded-xl border border-[#3d3152] bg-[#151123] p-3">
-        <div className="flex items-center gap-2"><span className="flex-1 text-xs font-semibold text-[#c7a8ff]">{e.tipo === 'bonus' ? '➕ Bônus' : '🌀 Habilidade nova'}</span>
-          <button type="button" aria-label="Remover efeito" onClick={() => setN({ ...n, efeitos: n.efeitos.filter((_, k) => k !== i) })} className="rounded p-1 text-[#f2a9c3] hover:bg-[#2b2140]"><Trash2 size={14} /></button></div>
+      <h3 className="mt-5 text-sm font-semibold">✨ Efeitos automáticos <span className="font-normal text-(--a-a998bd)">(valem quando o hexágono é liberado)</span></h3>
+      <div className="mt-2 space-y-2">{n.efeitos.map((e, i) => <div key={i} className="rounded-xl border border-(--a-3d3152) bg-(--s-151123) p-3">
+        <div className="flex items-center gap-2"><span className="flex-1 text-xs font-semibold text-(--a-c7a8ff)">{e.tipo === 'bonus' ? '➕ Bônus' : '🌀 Habilidade nova'}</span>
+          <button type="button" aria-label="Remover efeito" onClick={() => setN({ ...n, efeitos: n.efeitos.filter((_, k) => k !== i) })} className="rounded p-1 text-[#f2a9c3] hover:bg-(--s-2b2140)"><Trash2 size={14} /></button></div>
         {e.tipo === 'bonus' ? <div className="mt-2 grid grid-cols-[1fr_5rem] gap-2">
           <select aria-label="Onde soma" value={e.alvo} onChange={x => mudarEfeito(i, { ...e, alvo: x.target.value })} className={input}>{alvos.map(al => <option key={al.id} value={al.id}>{al.nome}</option>)}</select>
           <input aria-label="Valor do bônus" type="number" min={-99} max={99} value={e.valor} onChange={x => mudarEfeito(i, { ...e, valor: Number(x.target.value) || 0 })} className={input} />
@@ -280,8 +280,8 @@ function EditorNo({ inicial, a, alvos, recursos, gravar, fechar }: {
         <button type="button" disabled={!podeAdd} className={btn} onClick={() => setN({ ...n, efeitos: [...n.efeitos, { tipo: 'poder', poder: { id: '', nome: n.nome || 'Habilidade', tipo: 'habilidade' } }] })}><Plus size={14} /> Habilidade nova</button>
       </div>
       <div className="mt-5 flex gap-2">
-        <button type="button" onClick={fechar} className="flex-1 rounded-xl border border-[#62527e] p-2.5">Cancelar</button>
-        <button type="submit" disabled={!n.nome.trim()} className="flex-1 rounded-xl bg-[#7652ac] p-2.5 font-semibold hover:bg-[#8b68c4] disabled:opacity-50">Salvar hexágono</button>
+        <button type="button" onClick={fechar} className="flex-1 rounded-xl border border-(--a-62527e) p-2.5">Cancelar</button>
+        <button type="submit" disabled={!n.nome.trim()} className="flex-1 rounded-xl bg-(--a-7652ac) p-2.5 font-semibold hover:bg-(--a-8b68c4) disabled:opacity-50">Salvar hexágono</button>
       </div>
     </form>
   </div>

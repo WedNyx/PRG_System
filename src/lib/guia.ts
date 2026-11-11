@@ -26,9 +26,9 @@ export const GUIA: TopicoGuia[] = [
     passos: ['O número vermelho no 🔔 mostra quantos avisos você ainda não leu. Avisos novos também aparecem num balão rápido.', 'Toque num aviso para ir direto ao lugar certo (a ficha, a campanha ou a mesa).', 'Jogadores recebem: entrada aceita, ficha aprovada/recusada/ajustes, recompensas, sessão começando, papel novo, anotações e resumos do diário.', 'O mestre recebe: pedidos para entrar, fichas e playlists enviadas e pedidos de alteração de ficha.', 'Use “Ler todos” e “Apagar os já lidos” para organizar. Avisos com mais de 60 dias somem sozinhos.'],
   },
   {
-    id: 'tema', icone: '🎨', titulo: 'Tema da plataforma',
-    resumo: 'Escolha o fundo da plataforma entre 7 temas. O padrão é Estrelinhas sonhadoras.',
-    passos: ['No menu (☰), toque em “🎨 Temas”.', 'Toque no tema que quiser: Estrelinhas sonhadoras (o padrão), Nuvens de algodão, Lua cheia, Céu carmesim, Grimório celestial, Prisma ou Noite clássica. Ele já muda na hora.', 'Cada tema tem uma imagem para celular (tela em pé) e outra para computador (tela deitada).', 'A escolha vale para este aparelho.'],
+    id: 'tema', icone: '🎨', titulo: 'Aparência: tema e personalização',
+    resumo: 'Escolha um dos 7 temas (cada um muda o fundo e as cores da plataforma) ou personalize com a sua foto e as suas cores.',
+    passos: ['No menu (☰), toque em “🎨 Aparência”.', 'Toque no tema que quiser: Estrelinhas sonhadoras (o padrão), Nuvens de algodão, Lua cheia, Céu carmesim, Grimório celestial, Prisma ou Noite clássica. O fundo e as cores mudam na hora.', 'Em “Foto de fundo”, escolha uma imagem da sua galeria; use “Escurecer” e “Desfocar” para o texto continuar fácil de ler.', 'Em “Cor principal” e “Cartões”, escolha as cores, a claridade e a transparência dos quadros. “Do tema” volta às cores do tema.', 'Em “Texto”, escolha a fonte dos títulos e o tamanho das letras.', 'Fica salvo no seu perfil e vale em qualquer aparelho. “Voltar ao padrão do tema” desfaz tudo.'],
   },
   {
     id: 'sistemas', icone: '📚', titulo: 'Sistemas de RPG e guia do mestre', foto: 'sistemas.jpg', legenda: 'Sistemas com o guia do mestre aberto',

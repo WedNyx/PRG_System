@@ -37,38 +37,38 @@ export default function PassarItem({ campanhaId, fichaId, item, tem, fechar, fei
 
   return <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 p-3 sm:items-center" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
     <div role="dialog" aria-modal="true" aria-labelledby="passar-titulo" onKeyDown={e => { if (e.key === 'Escape') fechar() }}
-      className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-[#8b6cba] bg-[#19152a] p-5 text-[#f2ebff] shadow-2xl">
+      className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-(--a-8b6cba) bg-(--s-19152a) p-5 text-(--a-f2ebff) shadow-2xl">
       <div className="flex items-center gap-3">
         <ArteItem item={item} tamanho={48} />
         <div className="min-w-0 flex-1"><h2 id="passar-titulo" className="flex items-center gap-1.5 text-lg font-bold"><Gift size={18} /> Passar item</h2>
-          <p className="truncate text-sm text-[#c4b6d4]">{item.nome}{tem > 1 ? ` · você tem ${tem}` : ''}</p></div>
-        <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 text-[#b4aeca] hover:bg-white/10"><X size={18} /></button>
+          <p className="truncate text-sm text-(--a-c4b6d4)">{item.nome}{tem > 1 ? ` · você tem ${tem}` : ''}</p></div>
+        <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 text-(--a-b4aeca) hover:bg-white/10"><X size={18} /></button>
       </div>
 
       <p className="mt-4 text-sm font-semibold">Para quem?</p>
-      {destinos === null ? <p className="mt-2 text-sm text-[#b4aeca]">Carregando…</p>
-        : destinos.length === 0 ? <p className="mt-2 text-sm text-[#b4aeca]">Ainda não há outros personagens aprovados nesta campanha.</p>
+      {destinos === null ? <p className="mt-2 text-sm text-(--a-b4aeca)">Carregando…</p>
+        : destinos.length === 0 ? <p className="mt-2 text-sm text-(--a-b4aeca)">Ainda não há outros personagens aprovados nesta campanha.</p>
         : <ul className="mt-2 grid gap-1.5" role="radiogroup" aria-label="Personagem que recebe">{destinos.map(x =>
           <li key={x.id}><button type="button" role="radio" aria-checked={para === x.id} onClick={() => setPara(x.id)}
-            className={'flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm ' + (para === x.id ? 'border-[#b99bff] bg-[#3a2c58]' : 'border-[#3d3152] bg-[#201a32] hover:bg-[#2b2140]')}>
+            className={'flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm ' + (para === x.id ? 'border-(--a-b99bff) bg-(--s-3a2c58)' : 'border-(--a-3d3152) bg-(--s-201a32) hover:bg-(--s-2b2140)')}>
             <span aria-hidden>{x.npc ? '🎭' : '🧙'}</span>
             <span className="min-w-0 flex-1 truncate font-medium">{x.nome}</span>
-            <span className="shrink-0 text-xs text-[#b4aeca]">{x.npc ? 'NPC' : x.meu ? 'seu' : x.jogador}</span>
+            <span className="shrink-0 text-xs text-(--a-b4aeca)">{x.npc ? 'NPC' : x.meu ? 'seu' : x.jogador}</span>
           </button></li>)}</ul>}
 
       {tem > 1 && <div className="mt-4 flex items-center gap-3">
         <span className="flex-1 text-sm font-semibold">Quantidade</span>
-        <button type="button" aria-label="Diminuir quantidade" disabled={qtd <= 1} onClick={() => setQtd(q => q - 1)} className="rounded-lg border border-[#5e4b78] p-1.5 disabled:opacity-30"><Minus size={14} /></button>
+        <button type="button" aria-label="Diminuir quantidade" disabled={qtd <= 1} onClick={() => setQtd(q => q - 1)} className="rounded-lg border border-(--a-5e4b78) p-1.5 disabled:opacity-30"><Minus size={14} /></button>
         <strong className="w-8 text-center text-lg tabular-nums" aria-live="polite">{qtd}</strong>
-        <button type="button" aria-label="Aumentar quantidade" disabled={qtd >= tem} onClick={() => setQtd(q => q + 1)} className="rounded-lg border border-[#5e4b78] p-1.5 disabled:opacity-30"><Plus size={14} /></button>
-        <button type="button" onClick={() => setQtd(tem)} className="rounded-lg border border-[#5e4b78] px-2 py-1 text-xs">Todos</button>
+        <button type="button" aria-label="Aumentar quantidade" disabled={qtd >= tem} onClick={() => setQtd(q => q + 1)} className="rounded-lg border border-(--a-5e4b78) p-1.5 disabled:opacity-30"><Plus size={14} /></button>
+        <button type="button" onClick={() => setQtd(tem)} className="rounded-lg border border-(--a-5e4b78) px-2 py-1 text-xs">Todos</button>
       </div>}
 
       {erro && <p role="alert" className="mt-3 text-sm text-red-200">{erro}</p>}
       <button type="button" disabled={!para || ocupado} onClick={() => void passar()}
-        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#7652ac] to-[#b45309] p-2.5 font-semibold disabled:opacity-40">
+        className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-(--a-7652ac) to-[#b45309] p-2.5 font-semibold disabled:opacity-40">
         <Gift size={16} /> {ocupado ? 'Passando…' : para ? `Passar ${qtd > 1 ? qtd + '× ' : ''}para ${destinos?.find(x => x.id === para)?.nome}` : 'Escolha quem recebe'}</button>
-      <p className="mt-2 text-center text-[11px] text-[#8f88a8]">O item sai da sua ficha e entra na outra na hora. O chat da mesa avisa.</p>
+      <p className="mt-2 text-center text-[11px] text-(--a-8f88a8)">O item sai da sua ficha e entra na outra na hora. O chat da mesa avisa.</p>
     </div>
   </div>
 }

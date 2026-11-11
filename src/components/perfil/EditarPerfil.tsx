@@ -4,6 +4,7 @@ import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { X } from 'lucide-react'
 import { validarApelidoAventureiro } from '@/lib/auth/aventureiro'
 import EscolherGrupo from './EscolherGrupo'
+import { ConfigSenha } from './Senha'
 import { ehGrupo, GRUPO_PADRAO, type GrupoId } from '@/lib/grupos'
 
 type Perfil = { id: string; apelido: string; avatar?: string | null; grupo?: string }
@@ -107,6 +108,7 @@ export default function EditarPerfil({ perfil, fechar, salvo }: { perfil: Perfil
       <label className="block text-sm text-[#b4aeca]">Nome do aventureiro
         <input value={apelido} onChange={e => setApelido(e.target.value)} maxLength={40} required className="mt-2 w-full rounded-lg border border-[#4a4267] bg-[#100f20] p-3 text-white outline-none focus:border-[#b99bff]" /></label>
       <EscolherGrupo valor={grupo} mudar={setGrupo} />
+      <ConfigSenha id={perfil.id} />
       {erro && <p role="alert" className="rounded-lg border border-red-500/40 p-3 text-sm text-red-200">{erro}</p>}
       <div className="flex gap-2">
         <button type="button" onClick={fechar} className="flex-1 rounded-lg border border-[#62527e] px-3 py-3">Cancelar</button>

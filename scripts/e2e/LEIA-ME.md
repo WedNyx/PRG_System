@@ -38,6 +38,7 @@ Simulam três aventureiros (mestre, jogador e intruso) contra um banco real.
    PRG_BASE=http://localhost:3000 node scripts/e2e/v27-forja.mjs
    PRG_BASE=http://localhost:3000 node scripts/e2e/v28-mundo.mjs   # migração 021
    PRG_BASE=http://localhost:3000 node scripts/e2e/v30-tabelas.mjs   # migração 022
+   PRG_BASE=http://localhost:3000 ADMIN_SENHA=<senha de admin local> node scripts/e2e/v31-senha.mjs   # migração 023
    ```
 Nunca rode contra o banco de produção: os testes criam campanhas e fichas.
 

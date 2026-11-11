@@ -2,6 +2,14 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.31.0 — Senha do perfil (2026-11-11)
+- 🔒 Senha do perfil (opcional): em Editar perfil → “Senha do perfil”, crie uma senha. Daí em diante, só entra no seu perfil quem souber a senha. Não precisa de e-mail.
+- Cada aparelho fica lembrado por 30 dias depois de digitar a senha. Em “Aparelhos lembrados” dá para ver onde você está conectado e desconectar todos.
+- No portal, perfis com senha aparecem com 🔒 e pedem a senha antes de entrar. Trocar a senha desconecta os outros aparelhos.
+- Esqueceu a senha? O administrador (com a senha de administrador) toca no 🔑 do perfil para apagar a senha, e você cria outra.
+- Segurança: a senha fica guardada só embaralhada (scrypt), o servidor confere em todas as ações, e 5 erros seguidos travam as tentativas por 10 minutos.
+- Migração 023: senha do perfil e aparelhos lembrados.
+
 ## v0.30.0 — Tabelas do mestre e subir de nível guiado (2026-11-11)
 - 🎲 Tabelas do mestre (aba “Tabelas” na mesa, só para o mestre): role na hora nomes, personalidade e segredo de NPC, tavernas, rumores, ganchos, complicações, tesouros, encontros, clima e itens curiosos. “NPC completo” e “Missão completa” juntam várias tabelas num resultado só.
 - “Rolar” mostra o resultado no chat para todos; “Só eu” fica visível só para o mestre. O sorteio é feito no servidor.

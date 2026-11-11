@@ -119,6 +119,12 @@ export const GUIA: TopicoGuia[] = [
     passos: ['Na mesa (ou na lista de campanhas), toque em “🌍 Mundo”.', 'Mestre: em “🗺️ Mapa”, envie a imagem do mapa. Toque em “Marcar lugar” e depois no mapa para criar um alfinete com nome, ícone, descrição e imagem. Arraste os alfinetes para ajustar.', 'Em “📖 Páginas”, crie personagens, facções, perigos, segredos e relíquias. Procure e filtre por tipo.', 'Em “🕸️ Relações”, ligue quem é aliado, inimigo, rival, família, amor ou quem serve a quem. Arraste para organizar.', 'Marque “🙈 Só o mestre vê” em páginas e ligações secretas: os jogadores só descobrem quando você mostrar.', 'Jogadores: toque nos alfinetes e nas pessoas da teia para ler tudo o que o mestre revelou.'],
   },
   {
+    id: 'senha', icone: '🔒', titulo: 'Senha do perfil', quem: 'todos',
+    resumo: 'Opcional: proteja o seu perfil para ninguém mais entrar nele.',
+    passos: ['Na Central, toque na sua foto no topo (ou no menu → “Editar perfil”).', 'Em “🔒 Senha do perfil”, toque em “Criar senha”, digite duas vezes (6 a 72 caracteres) e salve.', 'No portal, o seu perfil passa a mostrar 🔒. Em outro aparelho, a plataforma pede a senha uma vez e lembra dele por 30 dias.', 'Para trocar ou remover, use a senha atual. Trocar a senha desconecta os outros aparelhos; “Desconectar todos os aparelhos” sai de todos.', 'Esqueceu? Peça ao administrador da plataforma: ele apaga a senha pelo 🔑 no portal e você cria outra.'],
+    dica: 'Não existe recuperação por e-mail. Use uma senha que você lembre e que não use em outros sites.',
+  },
+  {
     id: 'tabelas', icone: '🎲', titulo: 'Tabelas do mestre', quem: 'mestre',
     resumo: 'Role na hora um nome, um encontro, um rumor ou um tesouro.',
     passos: ['Na mesa, abra a aba “🎲 Tabelas” (só o mestre vê).', 'As prontas já vêm com a plataforma: nomes, personalidade e segredo de NPC, tavernas, rumores, ganchos, complicações, tesouros, encontros, clima e itens curiosos. “NPC completo” e “Missão completa” juntam várias de uma vez.', 'Toque em “Rolar” para mostrar o resultado no chat para todos, ou em “Só eu” para ver sozinho (fica marcado 🔒 no chat).', 'Em “Nova tabela”, crie as suas: um resultado por linha. Escreva {1d6} para rolar um número e [[código]] para puxar um resultado de outra tabela (ex.: [[nomes]], o ferreiro).', 'As tabelas ficam salvas na campanha; edite ou apague quando quiser.'],

@@ -15,11 +15,13 @@ export async function GET() {
   if (!enabled() || !url() || !key()) return unavailable()
   try {
     const buscar = (sel: string) => fetch(url() + '/rest/v1/prg_public_adventurers?select=' + sel + '&order=created_at.asc&limit=300', { headers: headers(), cache: 'no-store' })
-    let response = await buscar('id,apelido,avatar,grupo')
-    // Antes da migração 017 a coluna “grupo” não existe: todos ficam em Lunethernnyis.
+    let response = await buscar('id,apelido,avatar,grupo,senha_hash')
+    // Colunas novas podem não existir antes das migrações 023 (senha) e 017 (grupo).
+    if (response.status === 400) response = await buscar('id,apelido,avatar,grupo')
     if (response.status === 400) response = await buscar('id,apelido,avatar')
     if (!response.ok) throw new Error('Falha no catálogo')
-    const perfis = (await response.json() as { grupo?: string }[]).map(p => ({ ...p, grupo: ehGrupo(p.grupo) ? p.grupo : GRUPO_PADRAO }))
+    // O hash nunca sai do servidor: só “tem senha ou não”.
+    const perfis = (await response.json() as { grupo?: string; senha_hash?: string | null }[]).map(({ senha_hash, ...p }) => ({ ...p, grupo: ehGrupo(p.grupo) ? p.grupo : GRUPO_PADRAO, protegido: !!senha_hash }))
     return NextResponse.json({ perfis }, { headers: { 'Cache-Control': 'no-store' } })
   } catch { return NextResponse.json({ erro: 'Não foi possível carregar os aventureiros.' }, { status: 502 }) }
 }

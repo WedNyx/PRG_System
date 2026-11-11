@@ -6,6 +6,16 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.31.0', data: '2026-11-11', titulo: 'Senha do perfil',
+    itens: [
+      '🔒 Senha do perfil (opcional): em Editar perfil → “Senha do perfil”, crie uma senha. Daí em diante, só entra no seu perfil quem souber a senha. Não precisa de e-mail.',
+      'Cada aparelho fica lembrado por 30 dias depois de digitar a senha. Em “Aparelhos lembrados” dá para ver onde você está conectado e desconectar todos.',
+      'No portal, perfis com senha aparecem com 🔒 e pedem a senha antes de entrar. Trocar a senha desconecta os outros aparelhos.',
+      'Esqueceu a senha? O administrador (com a senha de administrador) toca no 🔑 do perfil para apagar a senha, e você cria outra.',
+      'Segurança: a senha fica guardada só embaralhada (scrypt), o servidor confere em todas as ações, e 5 erros seguidos travam as tentativas por 10 minutos.',
+    ],
+  },
+  {
     versao: '0.30.0', data: '2026-11-11', titulo: 'Tabelas do mestre e subir de nível guiado',
     itens: [
       '🎲 Tabelas do mestre (aba “Tabelas” na mesa, só para o mestre): role na hora nomes, personalidade e segredo de NPC, tavernas, rumores, ganchos, complicações, tesouros, encontros, clima e itens curiosos. “NPC completo” e “Missão completa” juntam várias tabelas num resultado só.',

@@ -6,6 +6,17 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.32.5', data: '2026-11-11', titulo: 'Histórico de rolagens e inventário com fotos',
+    itens: [
+      '🎲 Histórico de rolagens novo: filtre por período (esta sessão, hoje, 7 dias, tudo), tipo (dados, ataques, mensagens, avisos da mesa), pessoa, personagem, texto e “só críticos” ou “só falhas”. Críticos e falhas aparecem destacados.',
+      '📊 Resumo da sessão: rolagens, ataques, acertos, críticos, falhas, maior dano e maior rolagem, e uma tabela por personagem com a média do d20 (quem está com sorte e quem está com azar).',
+      'O histórico abre no chat da mesa, em tela cheia, e pela Central → Histórico, mesmo com a sessão fechada. Rolagens “só o mestre” continuam só para o mestre.',
+      '📷 Foto do item: no editor de item, escolha uma imagem da galeria do celular ou do computador; ela aparece no lugar do desenho (dá para voltar para o desenho da forja).',
+      '✨ Itens mágicos: marque “Item mágico” e ele vai para uma ala própria com brilho, sem deixar de ser arma, armadura etc.',
+      '🗂️ Abas no inventário: Todos, Armas, Armaduras, Consumíveis, Equipamento, Tesouros e Mágicos (só as que têm itens). Alguns sistemas usam nomes próprios, como “Proteções” e “Itens paranormais” em Ordem Paranormal ou “Itens arcanos” no Faroeste Arcano.',
+    ],
+  },
+  {
     versao: '0.32.4', data: '2026-11-11', titulo: 'Biblioteca da campanha',
     itens: [
       '📚 Biblioteca na mesa: o mestre ganhou a aba “Biblioteca” (antes ficava escondida no Diário). Procure pelo nome, filtre por tipo e veja cada item com o desenho da forja e a cor da raridade.',

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { enviarImagemNuvem, ErroNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 import ArteItem from './ArteItem'
 import { arteDoItem, CORES_FORJA, corDaRaridade, FORMAS, nomeAleatorio, RARIDADES, type ArteItem as ArteItemT } from '@/lib/itensArte'
 import { Backpack, Dice5, Gift, Minus, Moon, Pencil, Plus, Shield, Sparkles, Trash2, X } from 'lucide-react'
@@ -47,29 +48,16 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
   }
   const nomeAlvo = Object.fromEntries(alvosDeBonus(s).map(a => [a.id, a.nome]))
   const pct = c.carga.max ? Math.min(100, (c.carga.total / c.carga.max) * 100) : 0
-
-  return <section className={card}>
-    <div className="flex flex-wrap items-center justify-between gap-2">
-      <h2 className="flex items-center gap-2 font-bold text-[#ed9cd8]"><Backpack size={18} /> Inventário</h2>
-      {!somenteLeitura && <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', categoria: 'equipamento', peso: 0, bonus: [] })}><Plus size={14} /> Novo item</button>}
-    </div>
-    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-      <div className="rounded-xl bg-[#171325] p-3 text-sm">
-        <p className="text-xs text-[#c4b6d4]">Carga{s.carga?.dica ? ' · ' + s.carga.dica : ''}</p>
-        <p className="text-lg font-bold">{c.carga.total} {c.carga.max !== null ? `/ ${c.carga.max}` : ''} <span className="text-xs font-normal text-[#c4b6d4]">{c.carga.unidade}</span></p>
-        {c.carga.max ? <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#2b2140]"><div className={'h-full transition-all ' + (c.carga.total > c.carga.max ? 'bg-red-400' : 'bg-[#b06ad8]')} style={{ width: pct + '%' }} /></div> : null}
-        {c.carga.max !== null && c.carga.total > c.carga.max && <p className="mt-1 text-xs text-red-200">Acima da capacidade!</p>}
-      </div>
-      <label className="rounded-xl bg-[#171325] p-3 text-xs text-[#c4b6d4]">💰 Carteira (moedas e valores)
-        <input value={uso.carteira} disabled={somenteLeitura} maxLength={500} onChange={e => salvarUso({ ...uso, carteira: e.target.value })} placeholder="Ex.: 35 PO, 12 PP" className={input + ' mt-1 text-sm'} /></label>
-    </div>
-    {Object.keys(c.bonus).length > 0 && <p className="mt-3 rounded-lg bg-[#1f3a2c] p-2 text-xs text-[#a9f0c8]">Itens equipados somando: {Object.entries(c.bonus).map(([a, v]) => `${nomeAlvo[a] ?? a} ${v >= 0 ? '+' : ''}${v}`).join(' · ')}</p>}
-    {!itens.length && <p className="mt-3 text-sm text-[#bfb2cf]">Nenhum item ainda.{!somenteLeitura && ' Toque em “Novo item”.'}</p>}
-    {CATEGORIAS_ITEM.map(cat => {
-      const lista = itens.filter(i => i.categoria === cat.id); if (!lista.length) return null
-      return <div key={cat.id} className="mt-4">
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#d3adf0]">{cat.icone} {cat.nome}</h3>
-        <ul className="space-y-2">{lista.map(it => {
+  // Abas por tipo (os nomes seguem o sistema, quando ele tem os seus) e a ala dos itens mágicos.
+  const [aba, setAba] = useState<'todos' | 'magico' | Item['categoria']>('todos')
+  const nomeCategoria = (id: Item['categoria']) => s.nomesItens?.[id] ?? CATEGORIAS_ITEM.find(c => c.id === id)!.nome
+  const nomeMagico = s.nomesItens?.magico ?? '✨ Itens mágicos'
+  const magicos = itens.filter(i => i.magico)
+  const abasItens = [{ id: 'todos' as const, nome: 'Todos', n: itens.length },
+    ...CATEGORIAS_ITEM.map(c => ({ id: c.id, nome: `${c.icone} ${nomeCategoria(c.id)}`, n: itens.filter(i => i.categoria === c.id).length })).filter(x => x.n),
+    ...(magicos.length ? [{ id: 'magico' as const, nome: nomeMagico, n: magicos.length }] : [])]
+  const abaAtual = abasItens.some(x => x.id === aba) ? aba : 'todos'
+  const linhaItem = (it: Item) => {
           const eq = !!uso.itens[it.id]?.equipado, n = qtd(it)
           return <li key={it.id} className={'rounded-xl border p-3 ' + (eq ? 'border-[#8b6cba] bg-[#2b2143]' : 'border-transparent bg-[#171325]') + (n <= 0 ? ' opacity-60' : '')}>
             <div className="flex items-center gap-3">
@@ -94,9 +82,40 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
                 <button type="button" className={botao} onClick={() => remover(it)} aria-label={'Remover ' + it.nome}><Trash2 size={13} /></button></>}
             </div>
           </li>
-        })}</ul>
+  }
+
+  return <section className={card}>
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <h2 className="flex items-center gap-2 font-bold text-[#ed9cd8]"><Backpack size={18} /> Inventário</h2>
+      {!somenteLeitura && <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', categoria: 'equipamento', peso: 0, bonus: [] })}><Plus size={14} /> Novo item</button>}
+    </div>
+    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <div className="rounded-xl bg-[#171325] p-3 text-sm">
+        <p className="text-xs text-[#c4b6d4]">Carga{s.carga?.dica ? ' · ' + s.carga.dica : ''}</p>
+        <p className="text-lg font-bold">{c.carga.total} {c.carga.max !== null ? `/ ${c.carga.max}` : ''} <span className="text-xs font-normal text-[#c4b6d4]">{c.carga.unidade}</span></p>
+        {c.carga.max ? <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#2b2140]"><div className={'h-full transition-all ' + (c.carga.total > c.carga.max ? 'bg-red-400' : 'bg-[#b06ad8]')} style={{ width: pct + '%' }} /></div> : null}
+        {c.carga.max !== null && c.carga.total > c.carga.max && <p className="mt-1 text-xs text-red-200">Acima da capacidade!</p>}
       </div>
-    })}
+      <label className="rounded-xl bg-[#171325] p-3 text-xs text-[#c4b6d4]">💰 Carteira (moedas e valores)
+        <input value={uso.carteira} disabled={somenteLeitura} maxLength={500} onChange={e => salvarUso({ ...uso, carteira: e.target.value })} placeholder="Ex.: 35 PO, 12 PP" className={input + ' mt-1 text-sm'} /></label>
+    </div>
+    {Object.keys(c.bonus).length > 0 && <p className="mt-3 rounded-lg bg-[#1f3a2c] p-2 text-xs text-[#a9f0c8]">Itens equipados somando: {Object.entries(c.bonus).map(([a, v]) => `${nomeAlvo[a] ?? a} ${v >= 0 ? '+' : ''}${v}`).join(' · ')}</p>}
+    {!itens.length && <p className="mt-3 text-sm text-[#bfb2cf]">Nenhum item ainda.{!somenteLeitura && ' Toque em “Novo item”.'}</p>}
+    {itens.length > 0 && <nav aria-label="Tipos de item" className="mt-4 flex gap-1.5 overflow-x-auto pb-1">
+      {abasItens.map(a => <button key={a.id} type="button" onClick={() => setAba(a.id)} aria-pressed={abaAtual === a.id}
+        className={'shrink-0 rounded-full border px-3 py-1 text-xs ' + (abaAtual === a.id ? (a.id === 'magico' ? 'border-[#f0c46a] bg-[#3a2c58] text-amber-100' : 'border-[#b99bff] bg-[#3a2c58] text-white') : 'border-[#3d3152] text-[#cfc0df]')}>{a.nome} <span className="opacity-70">({a.n})</span></button>)}
+    </nav>}
+    {abaAtual === 'todos' && magicos.length > 0 && <div className="mt-3 rounded-2xl border border-[#f0c46a]/50 bg-gradient-to-br from-[#2e2147] to-[#1a1428] p-3 shadow-[0_0_18px_#b99bff33]">
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-200">{nomeMagico}</h3>
+      <ul className="space-y-2">{magicos.map(linhaItem)}</ul>
+    </div>}
+    {abaAtual === 'todos' ? CATEGORIAS_ITEM.map(cat => {
+      const lista = itens.filter(i => i.categoria === cat.id && !i.magico); if (!lista.length) return null
+      return <div key={cat.id} className="mt-4">
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#d3adf0]">{cat.icone} {nomeCategoria(cat.id)}</h3>
+        <ul className="space-y-2">{lista.map(linhaItem)}</ul>
+      </div>
+    }) : <ul className="mt-3 space-y-2">{itens.filter(i => abaAtual === 'magico' ? i.magico : i.categoria === abaAtual).map(linhaItem)}</ul>}
     {editando && <EditorItem s={s} inicial={editando} salvar={salvarItem} fechar={() => setEditando(null)} />}
   </section>
 }
@@ -171,13 +190,38 @@ function Janela({ titulo, fechar, children }: { titulo: string; fechar: () => vo
 }
 
 /** Editor de item (usado na ficha e na biblioteca do mestre). `s` pode faltar (biblioteca sem sistema conhecido). */
+/** Foto do item (da galeria do celular ou do computador). Com foto, ela aparece no lugar do desenho da forja. */
+function FotoDoItem({ it, setIt }: { it: Item; setIt: (i: Item) => void }) {
+  const [ocupado, setOcupado] = useState(false)
+  if (!NUVEM_ATIVA) return null
+  async function enviar(f: File) {
+    setOcupado(true)
+    try { setIt({ ...it, imagem: await enviarImagemNuvem('imagens', f, 600) }) } catch (e) { toast.error(e instanceof ErroNuvem ? e.message : 'Falha ao enviar a imagem.') } finally { setOcupado(false) }
+  }
+  return <div className="flex items-center gap-3 rounded-xl border border-[#55456e] bg-[#171325] p-2.5">
+    <ArteItem item={it} tamanho={64} />
+    <div className="min-w-0 flex-1 text-sm">
+      <p className="font-semibold">📷 Foto do item <span className="text-xs font-normal text-[#c4b6d4]">(opcional)</span></p>
+      <p className="text-[11px] text-[#c4b6d4]">{it.imagem ? 'A foto aparece no lugar do desenho.' : 'Use uma imagem da sua galeria, ou monte o desenho na forja abaixo.'}</p>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <label className={botao + ' cursor-pointer ' + (ocupado ? 'pointer-events-none opacity-50' : '')}>{ocupado ? 'Enviando…' : it.imagem ? 'Trocar foto' : 'Escolher foto'}
+          <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void enviar(f) }} /></label>
+        {it.imagem && <button type="button" className={botao} onClick={() => setIt({ ...it, imagem: undefined })}>Usar o desenho</button>}
+      </div>
+    </div>
+  </div>
+}
+
 export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicial: Item; salvar: (i: Item) => void; fechar: () => void }) {
   const [it, setIt] = useState<Item>(inicial)
   const alvos = s ? alvosDeBonus(s) : []
   const setB = (i: number, b: Partial<Bonus>) => setIt({ ...it, bonus: it.bonus.map((x, k) => k === i ? { ...x, ...b } : x) })
   return <Janela titulo={inicial.nome ? 'Editar item' : 'Novo item'} fechar={fechar}>
     <form className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return } salvar({ ...v, id: inicial.id }) }}>
-      <Forja it={it} setIt={setIt} />
+      <FotoDoItem it={it} setIt={setIt} />
+      {!it.imagem && <Forja it={it} setIt={setIt} />}
+      <label className="flex items-center gap-2 rounded-xl border border-[#8b6cba]/60 bg-[#241a3a] p-2.5 text-sm"><input type="checkbox" checked={!!it.magico} onChange={e => setIt({ ...it, magico: e.target.checked || undefined })} className="h-4 w-4 accent-[#b99bff]" />
+        <span>✨ <b>Item mágico</b> <span className="text-xs text-[#c4b6d4]">— aparece na ala dos itens mágicos, com brilho</span></span></label>
       <label className="block">Nome<input required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Espada longa" /></label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block">Tipo<select value={it.categoria} onChange={e => setIt({ ...it, categoria: e.target.value as Item['categoria'] })} className={input + ' mt-1'}>{CATEGORIAS_ITEM.map(c => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></label>

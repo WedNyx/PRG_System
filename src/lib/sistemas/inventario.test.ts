@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { sistemaPorId } from './catalogo'
 import { calcular, fichaVazia } from './calculo'
+import { normalizarItem as normalizarItemT } from './inventario'
 import { bonusEquipados, lerItens, lerPoderes, lerUso, pesoTotal, podeUsar, transferirItem, type ComItens } from './inventario'
 
 describe('inventário', () => {
@@ -77,5 +78,14 @@ describe('passar item entre personagens', () => {
     if (!r.ok) throw new Error(r.erro)
     const ids = r.para.itens!.map(i => (i as { id: string }).id)
     expect(new Set(ids).size).toBe(2)
+  })
+})
+
+describe('foto e itens mágicos (v0.32.5)', () => {
+  it('guarda a foto só se veio da plataforma, e o “mágico”', () => {
+    const ok = normalizarItemT({ nome: 'Anel', categoria: 'tesouro', peso: 0, bonus: [], imagem: 'https://abc.supabase.co/storage/v1/object/public/prg-mesa/imagens/a.webp', magico: true })!
+    expect(ok.imagem).toContain('prg-mesa'); expect(ok.magico).toBe(true)
+    const fora = normalizarItemT({ nome: 'Anel', categoria: 'tesouro', peso: 0, bonus: [], imagem: 'https://site-estranho.com/a.png', magico: 'sim' })!
+    expect(fora.imagem).toBeUndefined(); expect(fora.magico).toBeUndefined()
   })
 })

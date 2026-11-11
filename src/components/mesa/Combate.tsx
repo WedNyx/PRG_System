@@ -63,7 +63,7 @@ export function PainelFichas({ fichas, carregar, tokens, admin, cenaId, acao, at
         {aberta === f.id && <div className="space-y-2 border-t border-[#3d3152] p-3">
           {c && c.recursos.length > 0 && <p className="text-xs text-[#d6c8e8]">{c.recursos.map(r => `${r.nome}: ${r.atual}${r.max !== null ? '/' + r.max : ''}`).join(' · ')}</p>}
           {c && c.ataques.length > 0 && <ul className="space-y-1">{c.ataques.map(a => <li key={a.tipo + a.id} className="rounded-lg bg-[#151123] px-2 py-1 text-xs">
-            {a.tipo === 'item' ? <ArteItem item={{ nome: a.nome, categoria: a.categoria ?? 'arma', arte: a.arte, raridade: lerRaridade(a.raridade) }} tamanho={22} className="mr-1 !rounded-md !border align-middle" /> : '✨'} <strong>{a.nome}</strong> · {a.dano} · {a.alcance} m{a.recurso ? ` · ${a.custo} ${c.recursos.find(r => r.id === a.recurso)?.nome ?? a.recurso}` : ''}</li>)}</ul>}
+            {a.tipo === 'item' ? <ArteItem item={{ nome: a.nome, categoria: a.categoria ?? 'arma', arte: a.arte, raridade: lerRaridade(a.raridade), imagem: a.imagem, magico: a.magico }} tamanho={22} className="mr-1 !rounded-md !border align-middle" /> : '✨'} <strong>{a.nome}</strong> · {a.dano} · {a.alcance} m{a.recurso ? ` · ${a.custo} ${c.recursos.find(r => r.id === a.recurso)?.nome ?? a.recurso}` : ''}</li>)}</ul>}
           <div className="flex flex-wrap gap-2">
             <a href={'/ficha?nuvem=' + f.id} target="_blank" rel="noopener" className={btn}><ExternalLink size={14} /> Abrir ficha</a>
             {!naMesa && cenaId && <button type="button" className={btn} onClick={() => void acao({ acao: 'token_criar', cenaId, fichaId: f.id }).then(() => toast.success(`${f.nome || 'Personagem'} entrou na mesa.`)).catch(() => {})}>📍 Colocar na mesa</button>}
@@ -118,7 +118,7 @@ export function JanelaAtaque({ estado, mudar, tokens, ficha, admin, acao, fechar
       <div className="mt-1 flex flex-wrap gap-1.5">
         {c?.ataques.map(a => <button key={chaveFonte(a)} type="button" onClick={() => mudar({ ...estado, fonte: chaveFonte(a) })}
           className={'rounded-lg border px-2.5 py-1.5 text-left text-xs ' + (estado.fonte === chaveFonte(a) ? 'border-[#b99bff] bg-[#3b2b57]' : 'border-[#4a3d63]')}>
-          <span className="flex items-center gap-1.5 font-semibold">{a.tipo === 'item' ? <ArteItem item={{ nome: a.nome, categoria: a.categoria ?? 'arma', arte: a.arte, raridade: lerRaridade(a.raridade) }} tamanho={24} className="!rounded-md !border" /> : '✨'} {a.nome}</span><span className="text-[#c4b6d4]">{a.dano} · {a.alcance} m{a.recurso ? ` · ${a.custo} ${c.recursos.find(r => r.id === a.recurso)?.nome ?? ''}` : ''}</span></button>)}
+          <span className="flex items-center gap-1.5 font-semibold">{a.tipo === 'item' ? <ArteItem item={{ nome: a.nome, categoria: a.categoria ?? 'arma', arte: a.arte, raridade: lerRaridade(a.raridade), imagem: a.imagem, magico: a.magico }} tamanho={24} className="!rounded-md !border" /> : '✨'} {a.nome}</span><span className="text-[#c4b6d4]">{a.dano} · {a.alcance} m{a.recurso ? ` · ${a.custo} ${c.recursos.find(r => r.id === a.recurso)?.nome ?? ''}` : ''}</span></button>)}
         <button type="button" onClick={() => mudar({ ...estado, fonte: 'livre' })} className={'rounded-lg border px-2.5 py-1.5 text-xs ' + (estado.fonte === 'livre' ? 'border-[#b99bff] bg-[#3b2b57]' : 'border-[#4a3d63]')}>✍️ Ataque livre</button>
       </div>
       {!c && <p className="mt-2 text-xs text-[#a99bbb]">Este token não tem ficha ligada: informe o bônus e o dano.</p>}

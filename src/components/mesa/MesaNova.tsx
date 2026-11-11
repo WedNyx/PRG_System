@@ -17,6 +17,7 @@ import PainelCampanha from './PainelCampanha'
 import PainelMusica from './PainelMusica'
 import PainelTabelas from './PainelTabelas'
 import PainelBiblioteca from './PainelBiblioteca'
+import HistoricoRolagens from './HistoricoRolagens'
 import DicasMesa, { deveMostrarDicas } from './DicasMesa'
 import Sino from '@/components/Sino'
 import TocadorMesa from './TocadorMesa'
@@ -627,26 +628,12 @@ function PainelIniciativa({ e, admin, acao, fichas, atacar }: { e: Estado; admin
 }
 
 function Historico({ campanhaId, membros, fechar }: { campanhaId: string; membros: Estado['membros']; fechar: () => void }) {
-  const [f, setF] = useState({ autor: '', tipo: 'rolagem', personagem: '' })
-  const [lista, setLista] = useState<Evento[] | null>(null)
-  const buscar = useCallback(async (antes?: number) => {
-    const p = new URLSearchParams({ historico: '1', ...(f.autor && { autor: f.autor }), ...(f.tipo && { tipo: f.tipo }), ...(f.personagem && { personagem: f.personagem }), ...(antes && { antes: String(antes) }) })
-    try { const r = await api<{ eventos: Evento[] }>(`mesa/${campanhaId}?${p}`); setLista(l => antes ? [...(l ?? []), ...r.eventos] : r.eventos) } catch (er) { toast.error(msg(er)) }
-  }, [campanhaId, f])
-  useEffect(() => { void buscar() }, [buscar])
   return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="Histórico de rolagens">
-    <div className="flex max-h-[85vh] w-full max-w-lg flex-col rounded-2xl border border-[#62527e] bg-[#19172c] p-4">
-      <div className="flex items-center justify-between"><h2 className="font-bold">📜 Histórico da campanha</h2><button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-[#34294f]"><X size={18} /></button></div>
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <select aria-label="Jogador" value={f.autor} onChange={x => setF({ ...f, autor: x.target.value })} className={input}><option value="">Todos</option>{membros.map(m => <option key={m.aventureiro_id} value={m.aventureiro_id}>{m.aventureiro?.apelido}</option>)}</select>
-        <select aria-label="Tipo" value={f.tipo} onChange={x => setF({ ...f, tipo: x.target.value })} className={input}><option value="rolagem">Rolagens</option><option value="chat">Mensagens</option><option value="">Tudo</option></select>
-        <input aria-label="Personagem" value={f.personagem} onChange={x => setF({ ...f, personagem: x.target.value })} placeholder="Personagem" className={input} />
-      </div>
-      <ul className="mt-3 min-h-0 flex-1 space-y-1 overflow-y-auto text-sm">{lista?.map(ev => <li key={ev.id} className="rounded-lg bg-[#1e1a30] p-2">
-        <span className="text-[11px] text-[#b4aeca]">{new Date(ev.criado_em).toLocaleString('pt-BR')} · {ev.personagem || ev.autor?.apelido}{ev.visibilidade !== 'publica' && ' · 🔒'}</span><br />
-        {ev.tipo === 'rolagem' ? <>🎲 {ev.expressao} → [{ev.resultados?.join(', ')}] = <strong>{ev.total}</strong></> : ev.texto}</li>)}
-        {lista?.length === 0 && <li className="text-[#b4aeca]">Nada encontrado.</li>}</ul>
-      {lista && lista.length >= 100 && <button type="button" className={btn + ' mt-2 justify-center'} onClick={() => buscar(lista.at(-1)?.id)}>Carregar mais</button>}
+    <div className="flex max-h-[90vh] w-full max-w-xl flex-col rounded-2xl border border-[#62527e] bg-[#19172c] p-4">
+      <div className="mb-2 flex items-center justify-between gap-2"><h2 className="font-bold">📜 Histórico de rolagens</h2>
+        <a href={'/rolagens?campanha=' + campanhaId} className="ml-auto text-xs text-[#c7a8ff] underline">Abrir em tela cheia</a>
+        <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-[#34294f]"><X size={18} /></button></div>
+      <HistoricoRolagens campanhaId={campanhaId} membros={membros} />
     </div>
   </div>
 }

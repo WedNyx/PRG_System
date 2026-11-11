@@ -30,6 +30,8 @@ export type Sistema = {
   autor?: string
   /** Capa enviada pelo autor (sistemas autorais; imagem da plataforma). */
   capa?: string
+  /** Nomes das abas do inventário neste sistema (ex.: “Proteções” em vez de “Armadura/escudo”) e da ala dos itens mágicos. */
+  nomesItens?: Partial<Record<'arma' | 'armadura' | 'consumivel' | 'equipamento' | 'tesouro' | 'outro' | 'magico', string>>
   campos: CampoDef[]
   atributos: AtributoDef[]
   /** Modificador do atributo; `X` é o valor do atributo. Sem isso, o modificador é o próprio valor. */

@@ -11,7 +11,7 @@ import type { DadosFicha, Sistema } from './tipos'
 export const METROS_POR_CELULA = 1.5
 export const ALCANCE_CORPO = 1.5
 
-export type OpcaoAtaque = { tipo: 'item' | 'poder'; id: string; nome: string; dano: string; alcance: number; recurso?: string; custo?: number; categoria?: string; arte?: unknown; raridade?: string }
+export type OpcaoAtaque = { tipo: 'item' | 'poder'; id: string; nome: string; dano: string; alcance: number; recurso?: string; custo?: number; categoria?: string; arte?: unknown; raridade?: string; imagem?: string; magico?: boolean }
 export type Teste = { id: string; nome: string; valor: number }
 export type ResumoCombate = {
   vida: { id: string; nome: string; atual: number; max: number | null } | null
@@ -46,7 +46,7 @@ export function resumoCombate(s: Sistema, bruto: unknown): ResumoCombate {
 
   const ataques: OpcaoAtaque[] = [
     ...lerItens(d.itens).filter(i => i.dano).map(i => ({ tipo: 'item' as const, id: i.id, nome: i.nome, dano: i.dano!, alcance: i.alcance ?? ALCANCE_CORPO,
-      categoria: i.categoria, ...(i.arte ? { arte: i.arte } : {}), ...(i.raridade ? { raridade: i.raridade } : {}) })),
+      categoria: i.categoria, ...(i.arte ? { arte: i.arte } : {}), ...(i.raridade ? { raridade: i.raridade } : {}), ...(i.imagem ? { imagem: i.imagem } : {}), ...(i.magico ? { magico: true } : {}) })),
     ...lerPoderes(d.poderes).filter(p => p.expressao).map(p => ({ tipo: 'poder' as const, id: p.id, nome: p.nome, dano: p.expressao!, alcance: p.alcance ?? ALCANCE_CORPO,
       ...(p.recurso ? { recurso: p.recurso, custo: p.custo ?? 0 } : {}) })),
   ]

@@ -9,7 +9,7 @@ import { lerArvore } from './arvore'
 import { alvosDeBonus } from './inventario'
 import { avaliar, variaveisDaFormula } from './formula'
 import type { Sistema } from './tipos'
-import { imagemDaPlataforma } from '../nuvem/validacao'
+import { imagemDaPlataforma } from '../imagens'
 
 export const PREFIXO_AUTORAL = 'autoral-'
 export const ehAutoral = (id: unknown): id is string => typeof id === 'string' && /^autoral-[0-9a-f]{32}$/.test(id)

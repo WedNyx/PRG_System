@@ -80,31 +80,31 @@ export default function Sino({ classe = '' }: { classe?: string }) {
   if (!NUVEM_ATIVA) return null
   return <div ref={painel} className={'relative ' + classe}>
     <button type="button" onClick={() => { setAberto(a => !a); if (!aberto) void carregar() }} aria-expanded={aberto} aria-haspopup="dialog"
-      aria-label={naoLidas ? `Avisos: ${naoLidas} não lidos` : 'Avisos'} className="relative rounded-full p-2 text-[#e4d3ff] hover:bg-[#342749]">
+      aria-label={naoLidas ? `Avisos: ${naoLidas} não lidos` : 'Avisos'} className="relative rounded-full p-2 text-(--a-e4d3ff) hover:bg-(--s-342749)">
       <Bell size={20} className={naoLidas ? 'prg-sino' : ''} />
       {naoLidas > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ed5f9a] px-1 text-[11px] font-bold text-white shadow">{naoLidas > 99 ? '99+' : naoLidas}</span>}
     </button>
-    {aberto && <div role="dialog" aria-label="Avisos" className="fixed inset-x-2 top-16 z-[80] max-h-[75vh] overflow-hidden rounded-2xl border border-[#62527e] bg-[#1b1529] shadow-2xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-96">
-      <div className="flex items-center gap-2 border-b border-[#3d3152] px-4 py-3">
-        <h2 className="flex-1 font-bold text-[#f2ebff]">🔔 Avisos</h2>
-        {naoLidas > 0 && <button type="button" onClick={() => void lerTodas()} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-[#c7a8ff] hover:bg-[#2b2140]"><CheckCheck size={14} /> Ler todos</button>}
-        <button type="button" onClick={() => setAberto(false)} aria-label="Fechar avisos" className="rounded-lg p-1 text-[#c4b6d4] hover:bg-[#2b2140]"><X size={18} /></button>
+    {aberto && <div role="dialog" aria-label="Avisos" className="fixed inset-x-2 top-16 z-[80] max-h-[75vh] overflow-hidden rounded-2xl border border-(--a-62527e) bg-(--s-1b1529) shadow-2xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-96">
+      <div className="flex items-center gap-2 border-b border-(--a-3d3152) px-4 py-3">
+        <h2 className="flex-1 font-bold text-(--a-f2ebff)">🔔 Avisos</h2>
+        {naoLidas > 0 && <button type="button" onClick={() => void lerTodas()} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-(--a-c7a8ff) hover:bg-(--s-2b2140)"><CheckCheck size={14} /> Ler todos</button>}
+        <button type="button" onClick={() => setAberto(false)} aria-label="Fechar avisos" className="rounded-lg p-1 text-(--a-c4b6d4) hover:bg-(--s-2b2140)"><X size={18} /></button>
       </div>
       <ul className="max-h-[calc(75vh-110px)] overflow-y-auto">
-        {itens.length === 0 && <li className="px-4 py-10 text-center text-sm text-[#bfb2cf]">Nenhum aviso por enquanto. 🌙</li>}
+        {itens.length === 0 && <li className="px-4 py-10 text-center text-sm text-(--a-bfb2cf)">Nenhum aviso por enquanto. 🌙</li>}
         {itens.map(a => <li key={a.id}>
-          <button type="button" onClick={() => void abrirAviso(a)} className={'flex w-full gap-3 border-b border-[#2b2140] px-4 py-3 text-left hover:bg-[#2b2140] ' + (a.lida ? 'opacity-70' : 'bg-[#241c38]')}>
+          <button type="button" onClick={() => void abrirAviso(a)} className={'flex w-full gap-3 border-b border-(--a-2b2140) px-4 py-3 text-left hover:bg-(--s-2b2140) ' + (a.lida ? 'opacity-70' : 'bg-(--s-241c38)')}>
             <span className={'mt-1.5 h-2 w-2 shrink-0 rounded-full ' + (a.lida ? 'bg-transparent' : 'bg-[#ed5f9a]')} aria-hidden="true" />
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold text-[#f2ebff]">{a.titulo}</span>
-              {a.texto && <span className="mt-0.5 block text-xs text-[#c9bcd9]">{a.texto}</span>}
-              <span className="mt-1 block text-[11px] text-[#9d8db0]">{haQuanto(a.criada_em)}{!a.lida && <span className="sr-only"> · não lido</span>}</span>
+              <span className="block text-sm font-semibold text-(--a-f2ebff)">{a.titulo}</span>
+              {a.texto && <span className="mt-0.5 block text-xs text-(--a-c9bcd9)">{a.texto}</span>}
+              <span className="mt-1 block text-[11px] text-(--a-9d8db0)">{haQuanto(a.criada_em)}{!a.lida && <span className="sr-only"> · não lido</span>}</span>
             </span>
           </button>
         </li>)}
       </ul>
-      {itens.some(a => a.lida) && <div className="border-t border-[#3d3152] px-4 py-2 text-right">
-        <button type="button" onClick={() => void limparLidas()} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-[#c4b6d4] hover:bg-[#2b2140]"><Trash2 size={13} /> Apagar os já lidos</button>
+      {itens.some(a => a.lida) && <div className="border-t border-(--a-3d3152) px-4 py-2 text-right">
+        <button type="button" onClick={() => void limparLidas()} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-(--a-c4b6d4) hover:bg-(--s-2b2140)"><Trash2 size={13} /> Apagar os já lidos</button>
       </div>}
     </div>}
   </div>

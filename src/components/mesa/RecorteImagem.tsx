@@ -43,17 +43,17 @@ export default function RecorteImagem({ url, inicial, onSalvar, onCancelar }: {
   const cantos: [Alca, string][] = [['no', '-left-2 -top-2 cursor-nwse-resize'], ['ne', '-right-2 -top-2 cursor-nesw-resize'], ['so', '-left-2 -bottom-2 cursor-nesw-resize'], ['se', '-right-2 -bottom-2 cursor-nwse-resize']]
 
   return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-3" role="dialog" aria-modal="true" aria-label="Recortar imagem do mapa">
-    <div className="flex max-h-full w-full max-w-3xl flex-col rounded-2xl border border-[#62527e] bg-[#19172c] p-4">
+    <div className="flex max-h-full w-full max-w-3xl flex-col rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-4">
       <div className="flex items-center justify-between gap-2"><h2 className="font-bold">✂️ Escolha a parte da imagem</h2>
-        <button type="button" onClick={onCancelar} aria-label="Fechar" className="rounded p-1 hover:bg-[#34294f]"><X size={18} /></button></div>
-      <p className="mt-1 text-xs text-[#b4aeca]">Arraste o quadro para mover e puxe os cantos para mudar o tamanho. Só a parte dentro do quadro aparece no mapa.</p>
+        <button type="button" onClick={onCancelar} aria-label="Fechar" className="rounded p-1 hover:bg-(--s-34294f)"><X size={18} /></button></div>
+      <p className="mt-1 text-xs text-(--a-b4aeca)">Arraste o quadro para mover e puxe os cantos para mudar o tamanho. Só a parte dentro do quadro aparece no mapa.</p>
       <div className="mt-3 flex min-h-0 flex-1 items-center justify-center overflow-hidden">
         <div ref={caixa} className="relative inline-block touch-none select-none" onPointerMove={move} onPointerUp={() => { arraste.current = null }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={url} alt="Imagem do mapa" draggable={false} onLoad={e => setAr(e.currentTarget.naturalHeight / e.currentTarget.naturalWidth || 1)} className="block max-h-[60vh] max-w-full" />
           <div className="pointer-events-none absolute inset-0 bg-black/60" style={{ clipPath: `polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${pct(r.cx)} ${pct(r.cy)}, ${pct(r.cx)} ${pct(r.cy + r.ch)}, ${pct(r.cx + r.cw)} ${pct(r.cy + r.ch)}, ${pct(r.cx + r.cw)} ${pct(r.cy)}, ${pct(r.cx)} ${pct(r.cy)})` }} />
-          <div className="absolute cursor-move border-2 border-[#ed9cd8]" style={{ left: pct(r.cx), top: pct(r.cy), width: pct(r.cw), height: pct(r.ch) }} onPointerDown={e => down(e, 'mover')}>
-            {cantos.map(([a, c]) => <div key={a} role="button" aria-label={'Canto ' + a} onPointerDown={e => down(e, a)} className={'absolute h-5 w-5 rounded-full border-2 border-white bg-[#7654bb] ' + c} />)}
+          <div className="absolute cursor-move border-2 border-(--a-ed9cd8)" style={{ left: pct(r.cx), top: pct(r.cy), width: pct(r.cw), height: pct(r.ch) }} onPointerDown={e => down(e, 'mover')}>
+            {cantos.map(([a, c]) => <div key={a} role="button" aria-label={'Canto ' + a} onPointerDown={e => down(e, a)} className={'absolute h-5 w-5 rounded-full border-2 border-white bg-(--a-7654bb) ' + c} />)}
           </div>
         </div>
       </div>
@@ -61,7 +61,7 @@ export default function RecorteImagem({ url, inicial, onSalvar, onCancelar }: {
         <button type="button" className={btn} onClick={() => setR({ cx: 0, cy: 0, cw: 1, ch: 1 })}><Maximize size={14} /> Imagem inteira</button>
         <span className="flex-1" />
         <button type="button" className={btn} onClick={onCancelar}>Cancelar</button>
-        <button type="button" className={btn + ' border-[#b99bff] bg-[#5b4380]'} onClick={() => onSalvar(r, ar)}><Check size={14} /> Usar este recorte</button>
+        <button type="button" className={btn + ' border-(--a-b99bff) bg-(--a-5b4380)'} onClick={() => onSalvar(r, ar)}><Check size={14} /> Usar este recorte</button>
       </div>
     </div>
   </div>

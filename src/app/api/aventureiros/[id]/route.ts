@@ -3,12 +3,13 @@ import { exigirAdmin } from '@/lib/nuvem/admin'
 import { isUuid } from '@/lib/nuvem/validacao'
 import { validarApelidoAventureiro } from '@/lib/auth/aventureiro'
 import { ehGrupo } from '@/lib/grupos'
+import { limparVisual } from '@/lib/visual'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
 const AVATAR = /^data:image\/jpeg;base64,[a-zA-Z0-9+/=]+$/
 
-/** O próprio aventureiro muda o nome e/ou a foto. */
+/** O próprio aventureiro muda o nome, a foto, o grupo e/ou a aparência. */
 export const PATCH = rota<Ctx>(async (req, { params }) => {
   const { id } = await params
   if (!isUuid(id)) throw new ErroApi(404, 'Aventureiro não encontrado.')
@@ -29,9 +30,15 @@ export const PATCH = rota<Ctx>(async (req, { params }) => {
     if (!ehGrupo(b.grupo)) throw new ErroApi(400, 'Escolha um grupo: Lunethernnyis ou De Fora.')
     mud.grupo = b.grupo
   }
+  if (b.visual !== undefined) {
+    // Aparência do perfil: só campos conhecidos; foto de fundo só do armazenamento da plataforma.
+    const v = b.visual === null ? null : limparVisual(b.visual)
+    if (v && JSON.stringify(v).length > 2000) throw new ErroApi(400, 'Aparência inválida.')
+    mud.visual = v && Object.keys(v).length ? v : null
+  }
   if (!Object.keys(mud).length) throw new ErroApi(400, 'Nada para alterar.')
-  let r: { id: string; apelido: string; avatar: string | null; grupo?: string }[]
-  try { r = await rest(`prg_public_adventurers?id=eq.${q(id)}&select=id,apelido,avatar${mud.grupo ? ',grupo' : ''}`, { method: 'PATCH', prefer: 'return=representation', body: JSON.stringify(mud) }) }
+  let r: { id: string; apelido: string; avatar: string | null; grupo?: string; visual?: unknown }[]
+  try { r = await rest(`prg_public_adventurers?id=eq.${q(id)}&select=id,apelido,avatar${mud.grupo ? ',grupo' : ''}${'visual' in mud ? ',visual' : ''}`, { method: 'PATCH', prefer: 'return=representation', body: JSON.stringify(mud) }) }
   catch (e) { if (e instanceof ErroApi && e.status === 409) throw new ErroApi(409, 'Esse apelido já está em uso.'); throw e }
   if (!r.length) throw new ErroApi(404, 'Aventureiro não encontrado.')
   return ok({ perfil: r[0] })

@@ -17,18 +17,18 @@ function Conteudo() {
   const [dados, setDados] = useState<{ ficha: { nome: string }; historico: Item[] } | null>(null)
   const [erro, setErro] = useState('')
   useEffect(() => { api<{ ficha: { nome: string }; historico: Item[] }>(`fichas/${encodeURIComponent(id)}/historico`).then(setDados).catch(e => setErro(e instanceof ErroNuvem ? e.message : 'Falha de conexão.')) }, [id])
-  return <main className="min-h-screen fundo-tema px-4 py-6 text-[#f2ebff]">
+  return <main className="min-h-screen fundo-tema px-4 py-6 text-(--a-f2ebff)">
     <div className="mx-auto max-w-3xl">
-      <Link href="/central" className="text-sm text-[#b99bff] hover:underline">← Início</Link>
+      <Link href="/central" className="text-sm text-(--a-b99bff) hover:underline">← Início</Link>
       <h1 className="mt-3 flex items-center gap-2 text-2xl font-bold"><History /> Histórico{dados ? ' — ' + (dados.ficha.nome || 'sem nome') : ''}</h1>
       {erro && <p role="alert" className="mt-4 text-red-200">{erro}</p>}
-      {!dados && !erro && <p className="mt-4 text-[#b4aeca]">Carregando...</p>}
-      <ol className="mt-5 space-y-3">{dados?.historico.map(h => <li key={h.id} className="rounded-xl border border-[#55456e] bg-[#201a32] p-4 text-sm">
-        <p className="text-xs text-[#b5a5c8]">{new Date(h.criado_em).toLocaleString('pt-BR')} · {h.autor?.apelido ?? '—'} · {TIPO[h.tipo] ?? h.tipo}{h.categoria ? ' · ' + (AREA[h.categoria] ?? h.categoria) : ''}</p>
+      {!dados && !erro && <p className="mt-4 text-(--a-b4aeca)">Carregando...</p>}
+      <ol className="mt-5 space-y-3">{dados?.historico.map(h => <li key={h.id} className="rounded-xl border border-(--a-55456e) bg-(--s-201a32) p-4 text-sm">
+        <p className="text-xs text-(--a-b5a5c8)">{new Date(h.criado_em).toLocaleString('pt-BR')} · {h.autor?.apelido ?? '—'} · {TIPO[h.tipo] ?? h.tipo}{h.categoria ? ' · ' + (AREA[h.categoria] ?? h.categoria) : ''}</p>
         {h.descricao && <p className="mt-1">{h.descricao}</p>}
-        {h.depois && <ul className="mt-2 space-y-1 text-xs">{h.depois.map((d, i) => <li key={d.campo + i} className="break-words"><span className="text-[#b5a5c8]">{d.campo}:</span> <span className="line-through opacity-70">{h.antes?.[i]?.valor ?? '—'}</span> → <strong>{d.valor}</strong></li>)}</ul>}
+        {h.depois && <ul className="mt-2 space-y-1 text-xs">{h.depois.map((d, i) => <li key={d.campo + i} className="break-words"><span className="text-(--a-b5a5c8)">{d.campo}:</span> <span className="line-through opacity-70">{h.antes?.[i]?.valor ?? '—'}</span> → <strong>{d.valor}</strong></li>)}</ul>}
       </li>)}</ol>
-      {dados?.historico.length === 0 && <p className="mt-4 text-[#c4b6d4]">Nada registrado ainda. O histórico registra fichas de campanha.</p>}
+      {dados?.historico.length === 0 && <p className="mt-4 text-(--a-c4b6d4)">Nada registrado ainda. O histórico registra fichas de campanha.</p>}
     </div>
   </main>
 }

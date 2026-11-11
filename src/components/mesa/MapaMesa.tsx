@@ -168,11 +168,11 @@ export default function MapaMesa(p: Props) {
   const camadas = p.camadas.map(c => camadaEdit?.c.id === c.id ? camadaEdit.c : c)
   const medida = regua ? (() => { const n = Math.max(Math.abs(regua.x2 - regua.x1), Math.abs(regua.y2 - regua.y1)); return { n, m: Math.round(n * METROS_POR_CELULA * 10) / 10 } })() : null
 
-  return <div className="h-full w-full overflow-hidden bg-[#0b0a14]">
+  return <div className="h-full w-full overflow-hidden bg-(--s-0b0a14)">
     <TransformWrapper ref={zoom} minScale={0.2} maxScale={4} centerOnInit doubleClick={{ disabled: true }} wheel={{ disabled: true }}
       panning={{ disabled: modo !== 'mover' || !!arrastando, velocityDisabled: true }}>
       <TransformComponent wrapperClass="!w-full !h-full" contentClass="p-6">
-        <div ref={ref} className="relative select-none touch-none overflow-hidden rounded-lg border border-[#2c2840]"
+        <div ref={ref} className="relative select-none touch-none overflow-hidden rounded-lg border border-(--a-2c2840)"
           style={{ width: largura, height: altura, backgroundColor: '#1a2332', backgroundImage: p.fundo ? `url(${p.fundo})` : undefined, backgroundSize: '100% 100%',
             cursor: modo === 'mover' ? undefined : 'crosshair' }}
           onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerLeave={up}>
@@ -188,7 +188,7 @@ export default function MapaMesa(p: Props) {
                 left: -((c.cx ?? 0) / (c.cw ?? 1)) * 100 + '%', top: -((c.cy ?? 0) / (c.ch ?? 1)) * 100 + '%' }} />
             </div>
             {editandoMapa && p.camadaSel === c.id && <div role="button" aria-label="Redimensionar imagem" onPointerDown={e => camadaDown(e, c, 'tamanho')}
-              className="absolute -bottom-2 -right-2 h-6 w-6 cursor-nwse-resize rounded-full border-2 border-white bg-[#7654bb]" />}
+              className="absolute -bottom-2 -right-2 h-6 w-6 cursor-nwse-resize rounded-full border-2 border-white bg-(--a-7654bb)" />}
           </div>)}
           {camadaGrade}
           <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 5 }}>
@@ -206,13 +206,13 @@ export default function MapaMesa(p: Props) {
             return <div key={t.id} className={'absolute ' + (emDrag ? '' : 'transition-[left,top] duration-100')} onPointerDown={e => tokenDown(e, t)}
               onClick={e => { e.stopPropagation(); if (tokenTocado.current === t.id) { tokenTocado.current = null; p.onTokenClick(t.id) } }}
               style={{ left: x * CELULA, top: y * CELULA, width: lado, height: lado, zIndex: emDrag ? 30 : 10, opacity: t.visivel ? 1 : 0.45, pointerEvents: editandoMapa ? 'none' : undefined }}>
-              <div title={t.nome} className={'flex h-full w-full items-center justify-center overflow-hidden rounded-full border-2 bg-cover bg-center text-sm font-bold text-[#0b0a14] shadow-lg '
-                + (t.podeMover && modo === 'mover' ? 'cursor-grab ' : 'cursor-pointer ') + (emDrag ? 'scale-110 border-white ' : t.meu ? 'border-[#b99bff] ' : 'border-black/50 ') + (morto ? 'grayscale' : '')}
+              <div title={t.nome} className={'flex h-full w-full items-center justify-center overflow-hidden rounded-full border-2 bg-cover bg-center text-sm font-bold text-(--a-0b0a14) shadow-lg '
+                + (t.podeMover && modo === 'mover' ? 'cursor-grab ' : 'cursor-pointer ') + (emDrag ? 'scale-110 border-white ' : t.meu ? 'border-(--a-b99bff) ' : 'border-black/50 ') + (morto ? 'grayscale' : '')}
                 style={{ backgroundColor: t.cor, backgroundImage: t.imagem_url ? `url(${t.imagem_url})` : undefined }}>
                 {t.morte?.estado === 'morto' ? '⚰️' : morto ? '💀' : !t.imagem_url && t.nome[0]?.toUpperCase()}
               </div>
               {p.vez === t.id && <><span aria-hidden className="prg-vez pointer-events-none absolute -inset-1.5 rounded-full border-[3px] border-amber-300" />
-                <span className="pointer-events-none absolute -left-2 -top-2 rounded-full bg-amber-400 px-1 text-[10px] font-bold text-[#1a1230] shadow" title="Vez deste token">⚔️</span></>}
+                <span className="pointer-events-none absolute -left-2 -top-2 rounded-full bg-amber-400 px-1 text-[10px] font-bold text-(--a-1a1230) shadow" title="Vez deste token">⚔️</span></>}
               {!t.podeMover && <span className="pointer-events-none absolute -right-1 -top-1 text-[10px]" title="Travado">🔒</span>}
               {t.condicoes.length > 0 && <div className="pointer-events-none absolute -top-3 left-1/2 flex -translate-x-1/2 gap-px whitespace-nowrap rounded-full bg-black/70 px-1 text-[9px]">{t.condicoes.slice(0, 4).map(c => <span key={c}>{emojiCondicao[c] ?? '❓'}{t.rodadas?.[c] ? <sub className="font-bold text-amber-200">{t.rodadas[c]}</sub> : null}</span>)}{t.condicoes.length > 4 && <span>+{t.condicoes.length - 4}</span>}</div>}
               {t.morte?.estado === 'caido' && <div className="pointer-events-none absolute -bottom-[38px] left-1/2 flex -translate-x-1/2 rounded-full bg-black/80 px-1.5 py-1" title="Testes contra a morte"><Bolinhas m={t.morte} pequeno /></div>}

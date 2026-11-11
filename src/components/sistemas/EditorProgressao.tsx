@@ -7,8 +7,8 @@ import { slug } from '@/lib/sistemas/autoral'
 export type ClasseProg = { id: string; nome: string; campoNivel: string; tabela: Record<string, number[]> }
 export type DefProgressao = { classes: ClasseProg[]; colunas: Record<string, string> }
 
-const input = 'w-full rounded-lg border border-[#5e4b78] bg-[#151123] p-2 text-sm text-white'
-const botao = 'inline-flex items-center gap-1 rounded-lg border border-[#5e4b78] px-2.5 py-1.5 text-xs hover:bg-[#34294f] disabled:opacity-40'
+const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-sm text-white'
+const botao = 'inline-flex items-center gap-1 rounded-lg border border-(--a-5e4b78) px-2.5 py-1.5 text-xs hover:bg-(--s-34294f) disabled:opacity-40'
 const NIVEIS = 20
 
 /** Colunas que a plataforma já sabe usar (as outras viram só variáveis prog_<id>). */
@@ -37,9 +37,9 @@ export default function EditorProgressao({ valor, mudar, camposNumero, criarCamp
   const [lista, setLista] = useState('')
   const [ate, setAte] = useState(10)
   const [novaCol, setNovaCol] = useState('')
-  if (!valor) return <div className="space-y-2 rounded-xl border border-dashed border-[#6d5690] p-3">
-    <p className="text-[#d6c8e8]">Diga o que o personagem ganha a cada nível: pontos da árvore, vida, pontos de atributo… A ficha soma sozinha quando o jogador sobe de nível.</p>
-    <button type="button" className="rounded-lg bg-[#7652ac] px-3 py-2 text-sm font-semibold" onClick={() => mudar(progressaoNova(camposNumero.find(c => /nivel/i.test(c.id))?.id ?? criarCampoNivel()))}>📈 Ativar progressão por nível</button>
+  if (!valor) return <div className="space-y-2 rounded-xl border border-dashed border-(--a-6d5690) p-3">
+    <p className="text-(--a-d6c8e8)">Diga o que o personagem ganha a cada nível: pontos da árvore, vida, pontos de atributo… A ficha soma sozinha quando o jogador sobe de nível.</p>
+    <button type="button" className="rounded-lg bg-(--a-7652ac) px-3 py-2 text-sm font-semibold" onClick={() => mudar(progressaoNova(camposNumero.find(c => /nivel/i.test(c.id))?.id ?? criarCampoNivel()))}>📈 Ativar progressão por nível</button>
   </div>
   const cl = valor.classes[Math.min(aba, valor.classes.length - 1)]
   const cols = Object.keys(cl.tabela)
@@ -58,16 +58,16 @@ export default function EditorProgressao({ valor, mudar, camposNumero, criarCamp
   }
   return <div className="space-y-3">
     <div className="flex flex-wrap items-center gap-1.5">
-      {valor.classes.map((c, i) => <button key={c.id} type="button" onClick={() => setAba(i)} className={'rounded-full px-3 py-1 text-xs ' + (c.id === cl.id ? 'bg-[#5b4380] text-white' : 'bg-[#1e1a30] text-[#c4b6d4]')}>{c.nome}</button>)}
+      {valor.classes.map((c, i) => <button key={c.id} type="button" onClick={() => setAba(i)} className={'rounded-full px-3 py-1 text-xs ' + (c.id === cl.id ? 'bg-(--a-5b4380) text-white' : 'bg-(--s-1e1a30) text-(--a-c4b6d4)')}>{c.nome}</button>)}
       <button type="button" className={botao} onClick={addClasse} disabled={valor.classes.length >= 6} title="Para multiclasse: cada classe tem o seu nível e a sua tabela; a ficha soma tudo."><Plus size={12} /> Classe</button>
       <button type="button" className={botao + ' ml-auto text-red-200'} onClick={() => { if (confirm('Desligar a progressão por nível?')) mudar(null) }}><Trash2 size={12} /> Desligar</button>
     </div>
-    {listas.length > 0 && ligar && <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-[#6d5690] p-2 text-xs">
+    {listas.length > 0 && ligar && <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-(--a-6d5690) p-2 text-xs">
       <span>🔗 Uma tabela para cada opção de</span>
       <select aria-label="Lista que escolhe a tabela" value={lista || listas[0].id} onChange={e => setLista(e.target.value)} className={input + ' !w-auto'}>
         {listas.map(l => <option key={l.id} value={l.id}>{l.nome}</option>)}</select>
       <button type="button" className={botao} onClick={() => { ligar(lista || listas[0].id); setAba(0) }}>Criar e ligar</button>
-      <span className="w-full text-[#a998bd]">Cada opção (ex.: Guerreiro, Mago) ganha a sua tabela, começando igual a esta. Na ficha, só vale a tabela da opção escolhida. Até 6 tabelas.</span>
+      <span className="w-full text-(--a-a998bd)">Cada opção (ex.: Guerreiro, Mago) ganha a sua tabela, começando igual a esta. Na ficha, só vale a tabela da opção escolhida. Até 6 tabelas.</span>
     </div>}
     <p className="text-xs text-[#c9f5d8]">{ligadas[cl.id]?.length ? 'Vale para quem escolher: ' + ligadas[cl.id].join(', ') : 'Vale para todos os personagens.'}</p>
     <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
@@ -76,18 +76,18 @@ export default function EditorProgressao({ valor, mudar, camposNumero, criarCamp
         {camposNumero.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}{!camposNumero.some(c => c.id === cl.campoNivel) && <option value={cl.campoNivel}>(escolha)</option>}</select></label>
       {valor.classes.length > 1 && <button type="button" className={botao + ' self-end text-red-200'} onClick={() => { mudar({ ...valor, classes: valor.classes.filter(c => c.id !== cl.id) }); setAba(0) }}><Trash2 size={12} /> Tirar classe</button>}
     </div>
-    <div className="overflow-x-auto rounded-xl border border-[#3d3152]">
+    <div className="overflow-x-auto rounded-xl border border-(--a-3d3152)">
       <table className="w-full min-w-[420px] text-xs">
-        <thead className="bg-[#1e1a30] text-[#d6c8e8]"><tr><th className="p-2 text-left">Nível</th>
+        <thead className="bg-(--s-1e1a30) text-(--a-d6c8e8)"><tr><th className="p-2 text-left">Nível</th>
           {cols.map(col => <th key={col} className="p-2 text-left font-semibold"><span className="flex items-center gap-1">{nomeCol(col)}
-            <button type="button" aria-label={'Tirar coluna ' + nomeCol(col)} onClick={() => mudar({ classes: valor.classes.map(c => { const t = { ...c.tabela }; delete t[col]; return { ...c, tabela: t } }), colunas: valor.colunas })} className="rounded p-0.5 text-[#f2a9c3] hover:bg-[#2b2140]"><Trash2 size={11} /></button></span>
-            <span className="block font-mono text-[10px] font-normal text-[#a998bd]">prog_{col}</span></th>)}</tr></thead>
-        <tbody>{Array.from({ length: ate }, (_, n) => <tr key={n} className="border-t border-[#2b2140]">
+            <button type="button" aria-label={'Tirar coluna ' + nomeCol(col)} onClick={() => mudar({ classes: valor.classes.map(c => { const t = { ...c.tabela }; delete t[col]; return { ...c, tabela: t } }), colunas: valor.colunas })} className="rounded p-0.5 text-[#f2a9c3] hover:bg-(--s-2b2140)"><Trash2 size={11} /></button></span>
+            <span className="block font-mono text-[10px] font-normal text-(--a-a998bd)">prog_{col}</span></th>)}</tr></thead>
+        <tbody>{Array.from({ length: ate }, (_, n) => <tr key={n} className="border-t border-(--a-2b2140)">
           <td className="p-2 font-semibold">{n + 1}</td>
           {cols.map(col => { const ganhos = paraGanhos(cl.tabela[col])
-            return <td key={col} className="p-1"><div className="flex items-center gap-1"><span className="text-[#a998bd]">+</span>
-              <input type="number" aria-label={`${nomeCol(col)} ganho no nível ${n + 1}`} value={ganhos[n] ?? 0} onChange={e => setGanho(col, n, Number(e.target.value) || 0)} className="w-14 rounded border border-[#4a3d63] bg-[#151123] p-1 text-white" />
-              <span className="text-[10px] text-[#a998bd]" title="Total neste nível">= {cl.tabela[col][n]}</span></div></td> })}
+            return <td key={col} className="p-1"><div className="flex items-center gap-1"><span className="text-(--a-a998bd)">+</span>
+              <input type="number" aria-label={`${nomeCol(col)} ganho no nível ${n + 1}`} value={ganhos[n] ?? 0} onChange={e => setGanho(col, n, Number(e.target.value) || 0)} className="w-14 rounded border border-(--a-4a3d63) bg-(--s-151123) p-1 text-white" />
+              <span className="text-[10px] text-(--a-a998bd)" title="Total neste nível">= {cl.tabela[col][n]}</span></div></td> })}
         </tr>)}</tbody>
       </table>
     </div>
@@ -97,7 +97,7 @@ export default function EditorProgressao({ valor, mudar, camposNumero, criarCamp
       <input value={novaCol} onChange={e => setNovaCol(e.target.value)} maxLength={40} placeholder="Outra coluna (ex.: Mana)" className={input + ' !w-44'} />
       <button type="button" className={botao} disabled={!slug(novaCol)} onClick={() => { addColuna(slug(novaCol), novaCol.trim()); setNovaCol('') }}><Plus size={12} /> Coluna</button>
     </div>
-    <ul className="space-y-1 text-[11px] text-[#a998bd]">
+    <ul className="space-y-1 text-[11px] text-(--a-a998bd)">
       <li>Cada número é quanto o personagem <strong>ganha</strong> naquele nível; a ficha soma até o nível atual (o “=” mostra o total).</li>
       {COLUNAS_PRONTAS.filter(c => cols.includes(c.id)).map(c => <li key={c.id}>{c.nome}: {c.dica}</li>)}
       <li>Outras colunas viram a variável <span className="font-mono">prog_nome</span> para usar nas fórmulas.</li>

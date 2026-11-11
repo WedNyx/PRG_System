@@ -15,8 +15,9 @@ export async function GET() {
   if (!enabled() || !url() || !key()) return unavailable()
   try {
     const buscar = (sel: string) => fetch(url() + '/rest/v1/prg_public_adventurers?select=' + sel + '&order=created_at.asc&limit=300', { headers: headers(), cache: 'no-store' })
-    let response = await buscar('id,apelido,avatar,grupo,senha_hash')
-    // Colunas novas podem não existir antes das migrações 023 (senha) e 017 (grupo).
+    let response = await buscar('id,apelido,avatar,grupo,senha_hash,visual')
+    // Colunas novas podem não existir antes das migrações 025 (visual), 023 (senha) e 017 (grupo).
+    if (response.status === 400) response = await buscar('id,apelido,avatar,grupo,senha_hash')
     if (response.status === 400) response = await buscar('id,apelido,avatar,grupo')
     if (response.status === 400) response = await buscar('id,apelido,avatar')
     if (!response.ok) throw new Error('Falha no catálogo')

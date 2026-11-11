@@ -193,13 +193,13 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   }, [e])
 
   const nomes = useMemo(() => Object.fromEntries((e?.membros ?? []).map(m => [m.aventureiro_id, m.aventureiro?.apelido ?? '?'])), [e?.membros])
-  if (!e && fechada) return <main className="fundo-tema flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center text-[#e8dff7]">
+  if (!e && fechada) return <main className="fundo-tema flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center text-(--a-e8dff7)">
     <p className="text-5xl" aria-hidden="true">🌙</p>
     <h1 className="text-2xl font-bold">A sessão está fechada</h1>
-    <p className="max-w-sm text-[#cfc0df]">Só o mestre pode abrir a mesa. Deixe esta página aberta: assim que a sessão começar, você entra sozinho.</p>
-    <Link href="/central" className="rounded-xl border border-[#8d70b6] px-4 py-2 text-[#e4d3ff]">← Voltar ao início</Link>
+    <p className="max-w-sm text-(--a-cfc0df)">Só o mestre pode abrir a mesa. Deixe esta página aberta: assim que a sessão começar, você entra sozinho.</p>
+    <Link href="/central" className="rounded-xl border border-(--a-8d70b6) px-4 py-2 text-(--a-e4d3ff)">← Voltar ao início</Link>
   </main>
-  if (!e) return <main className="flex min-h-screen items-center justify-center bg-[#0d0c19] text-[#d6c8e8]">{erro || 'Abrindo a mesa...'}{erro && <Link href="/central" className="ml-3 underline">Voltar</Link>}</main>
+  if (!e) return <main className="flex min-h-screen items-center justify-center bg-(--s-0d0c19) text-(--a-d6c8e8)">{erro || 'Abrindo a mesa...'}{erro && <Link href="/central" className="ml-3 underline">Voltar</Link>}</main>
 
   const admin = e.campanha.meuPapel === 'mestre' || e.campanha.meuPapel === 'comestre'
   const espectador = e.campanha.meuPapel === 'espectador'
@@ -263,34 +263,34 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     toast.success(sessaoAberta ? 'Sessão encerrada.' : 'Sessão aberta! O grupo já pode entrar.')
   }
 
-  return <div className="fixed inset-0 flex flex-col overflow-hidden bg-[#0d0c19] text-[#f4f0ff]">
+  return <div className="fixed inset-0 flex flex-col overflow-hidden bg-(--s-0d0c19) text-(--a-f4f0ff)">
     <RolagemCentral ref={dados} som={som} />
-    <header className="relative z-40 flex shrink-0 items-center gap-1.5 border-b border-[#373251] bg-gradient-to-r from-[#1b1830] via-[#1d1733] to-[#1b1830] px-2 py-1.5 sm:gap-2 sm:px-3">
-      <Link href="/central" aria-label="Voltar para a Central" title="Voltar para a Central" className="rounded-lg p-1.5 text-[#b99bff] hover:bg-[#34294f]"><ArrowLeft size={18} /></Link>
+    <header className="relative z-40 flex shrink-0 items-center gap-1.5 border-b border-(--a-373251) bg-gradient-to-r from-(--s-1b1830) via-(--s-1d1733) to-(--s-1b1830) px-2 py-1.5 sm:gap-2 sm:px-3">
+      <Link href="/central" aria-label="Voltar para a Central" title="Voltar para a Central" className="rounded-lg p-1.5 text-(--a-b99bff) hover:bg-(--s-34294f)"><ArrowLeft size={18} /></Link>
       <div className="min-w-0 flex-1">
         <h1 className="truncate text-sm font-bold sm:text-base">{e.campanha.nome}</h1>
-        <p className="truncate text-[11px] text-[#b4aeca]">{cena ? '🗺️ ' + cena.nome : 'Sem cena'}{vez ? ` · ⚔️ vez de ${vez.nome} (rodada ${e.mesa.rodada})` : ''}{espectador ? ' · 👁️ assistindo' : ''}{travada ? ' · 🔒 tokens travados' : ''}</p>
+        <p className="truncate text-[11px] text-(--a-b4aeca)">{cena ? '🗺️ ' + cena.nome : 'Sem cena'}{vez ? ` · ⚔️ vez de ${vez.nome} (rodada ${e.mesa.rodada})` : ''}{espectador ? ' · 👁️ assistindo' : ''}{travada ? ' · 🔒 tokens travados' : ''}</p>
       </div>
-      {minhaVez && <button type="button" onClick={() => iniciarAtaque(minhaVez.id)} className="prg-sua-vez shrink-0 rounded-full bg-gradient-to-r from-[#b91c1c] to-[#7c3aed] px-3 py-1 text-xs font-bold">⚔️ Sua vez</button>}
+      {minhaVez && <button type="button" onClick={() => iniciarAtaque(minhaVez.id)} className="prg-sua-vez shrink-0 rounded-full bg-gradient-to-r from-[#b91c1c] to-(--a-7c3aed) px-3 py-1 text-xs font-bold">⚔️ Sua vez</button>}
       {admin && <button type="button" onClick={() => void alternarSessao()} aria-label={sessaoAberta ? 'Encerrar sessão' : 'Abrir sessão'} title={sessaoAberta ? 'Encerrar a sessão (todos saem da mesa)' : 'Abrir a sessão para o grupo entrar'}
         className={'shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ' + (sessaoAberta ? 'bg-[#4b253a] text-red-100 hover:bg-[#5e2d48]' : 'bg-emerald-700 text-white hover:bg-emerald-600')}>
         {sessaoAberta ? <>⏹ Encerrar<span className="hidden sm:inline"> sessão</span></> : <>▶ Abrir<span className="hidden sm:inline"> sessão</span></>}</button>}
-      <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#14121f] px-2 py-1 text-[11px] text-[#cfc0df]" title={(tempoReal ? 'Tempo real ligado' : 'Atualizando a cada 4 s') + ' · online: ' + (online.map(id => nomes[id]).filter(Boolean).join(', ') || 'você')}>
+      <span className="flex shrink-0 items-center gap-1 rounded-full bg-(--s-14121f) px-2 py-1 text-[11px] text-(--a-cfc0df)" title={(tempoReal ? 'Tempo real ligado' : 'Atualizando a cada 4 s') + ' · online: ' + (online.map(id => nomes[id]).filter(Boolean).join(', ') || 'você')}>
         <span className={'h-2 w-2 rounded-full ' + (tempoReal ? 'bg-emerald-400' : 'bg-amber-400')} />{online.length || 1}<span className="hidden sm:inline"> online</span></span>
       <Sino />
       <div className="hidden items-center gap-1 md:flex">
-        <button type="button" onClick={() => setSom(!som)} aria-label={som ? 'Desligar o som dos dados' : 'Ligar o som dos dados'} title={som ? 'Som dos dados ligado' : 'Som dos dados desligado'} className="rounded-lg p-1.5 hover:bg-[#34294f]">{som ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
-        <Link href={'/mundo?campanha=' + campanhaId} className="rounded-lg p-1.5 hover:bg-[#34294f]" title="Mundo da campanha: mapa, lugares, personagens e relações" aria-label="Mundo da campanha"><Globe size={18} /></Link>
-        <button type="button" onClick={() => setDicas('aberto')} className="rounded-lg p-1.5 hover:bg-[#34294f]" title="Dicas rápidas da mesa" aria-label="Dicas rápidas da mesa"><CircleHelp size={18} /></button>
+        <button type="button" onClick={() => setSom(!som)} aria-label={som ? 'Desligar o som dos dados' : 'Ligar o som dos dados'} title={som ? 'Som dos dados ligado' : 'Som dos dados desligado'} className="rounded-lg p-1.5 hover:bg-(--s-34294f)">{som ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
+        <Link href={'/mundo?campanha=' + campanhaId} className="rounded-lg p-1.5 hover:bg-(--s-34294f)" title="Mundo da campanha: mapa, lugares, personagens e relações" aria-label="Mundo da campanha"><Globe size={18} /></Link>
+        <button type="button" onClick={() => setDicas('aberto')} className="rounded-lg p-1.5 hover:bg-(--s-34294f)" title="Dicas rápidas da mesa" aria-label="Dicas rápidas da mesa"><CircleHelp size={18} /></button>
       </div>
-      <button type="button" onClick={() => setPainel(!painel)} aria-label={painel ? 'Esconder o painel (só o mapa)' : 'Mostrar o painel'} title={painel ? 'Só o mapa' : 'Mostrar o painel'} className="rounded-lg p-1.5 hover:bg-[#34294f]">{painel ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}</button>
+      <button type="button" onClick={() => setPainel(!painel)} aria-label={painel ? 'Esconder o painel (só o mapa)' : 'Mostrar o painel'} title={painel ? 'Só o mapa' : 'Mostrar o painel'} className="rounded-lg p-1.5 hover:bg-(--s-34294f)">{painel ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}</button>
       <div className="relative md:hidden">
-        <button type="button" onClick={() => setMais(m => !m)} aria-expanded={mais} aria-label="Mais opções" className="rounded-lg p-1.5 hover:bg-[#34294f]"><MoreHorizontal size={18} /></button>
-        {mais && <div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-xl border border-[#55456e] bg-[#1d1730] p-1 shadow-2xl" onClick={() => setMais(false)}>
-          <Link href={'/mundo?campanha=' + campanhaId} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-[#34294f]"><Globe size={16} /> Mundo da campanha</Link>
-          <button type="button" onClick={() => setHistorico(true)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-[#34294f]"><History size={16} /> Histórico de rolagens</button>
-          <button type="button" onClick={() => setSom(!som)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-[#34294f]">{som ? <VolumeX size={16} /> : <Volume2 size={16} />} {som ? 'Desligar o som dos dados' : 'Ligar o som dos dados'}</button>
-          <button type="button" onClick={() => setDicas('aberto')} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-[#34294f]"><CircleHelp size={16} /> Dicas da mesa</button>
+        <button type="button" onClick={() => setMais(m => !m)} aria-expanded={mais} aria-label="Mais opções" className="rounded-lg p-1.5 hover:bg-(--s-34294f)"><MoreHorizontal size={18} /></button>
+        {mais && <div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-xl border border-(--a-55456e) bg-(--s-1d1730) p-1 shadow-2xl" onClick={() => setMais(false)}>
+          <Link href={'/mundo?campanha=' + campanhaId} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-(--s-34294f)"><Globe size={16} /> Mundo da campanha</Link>
+          <button type="button" onClick={() => setHistorico(true)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-(--s-34294f)"><History size={16} /> Histórico de rolagens</button>
+          <button type="button" onClick={() => setSom(!som)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-(--s-34294f)">{som ? <VolumeX size={16} /> : <Volume2 size={16} />} {som ? 'Desligar o som dos dados' : 'Ligar o som dos dados'}</button>
+          <button type="button" onClick={() => setDicas('aberto')} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-(--s-34294f)"><CircleHelp size={16} /> Dicas da mesa</button>
         </div>}
       </div>
     </header>
@@ -299,19 +299,19 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       <section className="relative min-h-[45vh] flex-1 overflow-hidden">
         {admin && !sessaoAberta && !ataque && avisoSessao && <p role="status" className="pointer-events-none absolute inset-x-2 top-2 z-30 mx-auto flex max-w-md items-center gap-2 rounded-xl border border-amber-500/50 bg-[#2b2310]/85 p-2 text-xs text-amber-100"><span className="flex-1 text-center">🌙 Sessão fechada: só você vê a mesa. Toque em “▶ Abrir sessão” quando o grupo for jogar.</span><button type="button" aria-label="Esconder aviso" onClick={() => setAvisoSessao(false)} className="pointer-events-auto rounded p-1 hover:bg-white/10"><X size={14} /></button></p>}
         {!espectador && <div className="absolute bottom-2 left-2 z-20 flex max-w-[calc(100%-1rem)] flex-col items-start gap-1">
-        {cena && <p className="pointer-events-none rounded-md bg-[#19172c]/90 px-2 py-0.5 text-[11px] text-[#cfc0df]">{ferramentas.find(f => f.id === modo)?.nome}{modo === 'mover' ? ' · toque no token para ver vida e atacar' : ''}</p>}
-        <div className="flex max-w-full flex-wrap items-center gap-1 rounded-xl border border-[#373251] bg-[#19172c]/95 p-1 shadow-lg">
+        {cena && <p className="pointer-events-none rounded-md bg-(--s-19172c)/90 px-2 py-0.5 text-[11px] text-(--a-cfc0df)">{ferramentas.find(f => f.id === modo)?.nome}{modo === 'mover' ? ' · toque no token para ver vida e atacar' : ''}</p>}
+        <div className="flex max-w-full flex-wrap items-center gap-1 rounded-xl border border-(--a-373251) bg-(--s-19172c)/95 p-1 shadow-lg">
           {ferramentas.filter(f => !f.so || admin).filter(f => !f.fog || cena?.fog_ativo).map(f => <button key={f.id} type="button" title={f.nome} aria-label={f.nome} aria-pressed={modo === f.id} onClick={() => setModo(f.id)}
-            className={'rounded-lg p-2 ' + (modo === f.id ? 'bg-[#7654bb]' : 'hover:bg-[#34294f]')}><f.icone size={18} /></button>)}
-          {(modo === 'revelar' || modo === 'esconder') && [1, 3, 5].map(n => <button key={n} type="button" onClick={() => setPincel(n)} aria-label={'Pincel ' + n + '×' + n} className={'rounded-lg px-2 py-1.5 text-xs ' + (pincel === n ? 'bg-[#7654bb]' : 'hover:bg-[#34294f]')}>{n}×{n}</button>)}
+            className={'rounded-lg p-2 ' + (modo === f.id ? 'bg-(--a-7654bb)' : 'hover:bg-(--s-34294f)')}><f.icone size={18} /></button>)}
+          {(modo === 'revelar' || modo === 'esconder') && [1, 3, 5].map(n => <button key={n} type="button" onClick={() => setPincel(n)} aria-label={'Pincel ' + n + '×' + n} className={'rounded-lg px-2 py-1.5 text-xs ' + (pincel === n ? 'bg-(--a-7654bb)' : 'hover:bg-(--s-34294f)')}>{n}×{n}</button>)}
           {modo === 'desenhar' && <>{CORES.map(c => <button key={c} type="button" aria-label={'Cor ' + c} onClick={() => setCor(c)} className={'h-8 w-8 rounded-lg border-2 ' + (cor === c ? 'border-white' : 'border-transparent')} style={{ background: c }} />)}
-            {admin && cena && <button type="button" title="Apagar desenhos" aria-label="Apagar desenhos" onClick={() => { setTracos({}); aoVivo('limpar', 0, 'limpar', {}, true); void acao({ acao: 'desenhos_limpar', cenaId: cena.id }).catch(() => {}) }} className="rounded-lg p-2 hover:bg-[#34294f]"><Eraser size={18} /></button>}</>}
+            {admin && cena && <button type="button" title="Apagar desenhos" aria-label="Apagar desenhos" onClick={() => { setTracos({}); aoVivo('limpar', 0, 'limpar', {}, true); void acao({ acao: 'desenhos_limpar', cenaId: cena.id }).catch(() => {}) }} className="rounded-lg p-2 hover:bg-(--s-34294f)"><Eraser size={18} /></button>}</>}
           {modo === 'editar-mapa' && camadaSel && cena && <>
             <button type="button" className={btn} onClick={() => { const l = cena.camadas; const i = l.findIndex(c => c.id === camadaSel); if (i < l.length - 1) { const n = [...l]; [n[i], n[i + 1]] = [n[i + 1], n[i]]; void salvarCamadas(n) } }}><ArrowUp size={14} /> Frente</button>
             <button type="button" className={btn} onClick={() => { const l = cena.camadas; const i = l.findIndex(c => c.id === camadaSel); if (i > 0) { const n = [...l]; [n[i], n[i - 1]] = [n[i - 1], n[i]]; void salvarCamadas(n) } }}><ArrowDown size={14} /> Trás</button>
             <button type="button" className={btn} onClick={() => { void salvarCamadas(cena.camadas.filter(c => c.id !== camadaSel)); setCamadaSel(null) }}><Trash2 size={14} /> Remover</button></>}
         </div></div>}
-        {modo === 'editar-mapa' && <p className="absolute left-2 top-2 z-20 rounded-lg bg-[#19172c]/95 px-3 py-1.5 text-xs">Arraste as imagens para montar o mapa. Toque numa imagem e puxe a bolinha para mudar o tamanho.</p>}
+        {modo === 'editar-mapa' && <p className="absolute left-2 top-2 z-20 rounded-lg bg-(--s-19172c)/95 px-3 py-1.5 text-xs">Arraste as imagens para montar o mapa. Toque numa imagem e puxe a bolinha para mudar o tamanho.</p>}
         {cena ? <MapaMesa cols={cena.grid_cols} rows={cena.grid_rows} fundo={cena.mapa_url} camadas={cena.camadas ?? []} fogAtivo={cena.fog_ativo} fogRevelado={cena.fog_revelado}
           tokens={tokensMapa} desenhos={desenhosMapa} cursores={cursores} pings={pings} admin={admin} modo={modo} cor={cor} pincel={pincel}
           camadaSel={camadaSel} onSelecionarCamada={setCamadaSel}
@@ -327,7 +327,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           onArrastando={(id, x, y) => aoVivo('token:' + id, 60, 'token', { id, x, y })}
           onTracando={(id, pontos) => aoVivo('traco:' + id, 120, 'traco', { id, cor, pontos })}
           onCursor={(x, y) => aoVivo('cursor', 90, 'cursor', { id: e.eu, nome: nomes[e.eu] ?? '', x, y })} />
-          : <div className="flex h-full items-center justify-center p-6 text-center text-[#b4aeca]">{admin ? 'Crie uma cena em "Mestre → Controles" para começar.' : 'O mestre ainda não abriu nenhuma cena.'}</div>}
+          : <div className="flex h-full items-center justify-center p-6 text-center text-(--a-b4aeca)">{admin ? 'Crie uma cena em "Mestre → Controles" para começar.' : 'O mestre ainda não abriu nenhuma cena.'}</div>}
 
         {ataque && <JanelaAtaque estado={ataque} mudar={setAtaque} tokens={e.tokens} ficha={fichaDoToken(ataque.atacante)} admin={admin} acao={acao}
           fechar={() => setAtaque(null)} aoAtacar={ev => destacar(ev as unknown as Evento)} />}
@@ -335,18 +335,18 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
 
       </section>
 
-      {painel && <aside className="flex max-h-[55vh] min-h-0 w-full flex-col border-t border-[#373251] bg-[#14121f] lg:max-h-none lg:w-[410px] lg:border-l lg:border-t-0">
-        <nav className="flex shrink-0 gap-1 border-b border-[#373251] bg-[#17142a] p-1.5" aria-label="Painel da mesa">
+      {painel && <aside className="flex max-h-[55vh] min-h-0 w-full flex-col border-t border-(--a-373251) bg-(--s-14121f) lg:max-h-none lg:w-[410px] lg:border-l lg:border-t-0">
+        <nav className="flex shrink-0 gap-1 border-b border-(--a-373251) bg-(--s-17142a) p-1.5" aria-label="Painel da mesa">
           {grupos.map(g => { const ativo = g.id === grupoAtual.id
             return <button key={g.id} type="button" onClick={() => abrirGrupo(g)} aria-current={ativo ? 'page' : undefined}
-              className={'flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-[11px] transition sm:text-xs ' + (ativo ? (g.id === 'mestre' ? 'bg-gradient-to-b from-[#5a4320] to-[#3a2a14] text-amber-100' : 'bg-[#3a2c58] text-white') : 'text-[#b4aeca] hover:bg-[#241d38]')}>
+              className={'flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-[11px] transition sm:text-xs ' + (ativo ? (g.id === 'mestre' ? 'bg-gradient-to-b from-[#5a4320] to-[#3a2a14] text-amber-100' : 'bg-(--s-3a2c58) text-white') : 'text-(--a-b4aeca) hover:bg-(--s-241d38)')}>
               <g.icone size={16} /><span className="truncate">{g.nome}</span></button> })}
         </nav>
-        {grupoAtual.partes.length > 1 && <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-[#2b2540] px-2 py-1.5" role="tablist" aria-label={grupoAtual.nome}>
+        {grupoAtual.partes.length > 1 && <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-(--a-2b2540) px-2 py-1.5" role="tablist" aria-label={grupoAtual.nome}>
           {grupoAtual.partes.map(p => <button key={p.id} type="button" role="tab" aria-selected={p.id === parteAtual.id} onClick={() => { ultimaParte.current[grupoAtual.id] = p.id; setAba(p.id) }}
-            className={'inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-xs ' + (p.id === parteAtual.id ? 'border-[#b99bff] bg-[#2b2143] text-white' : 'border-transparent text-[#b4aeca] hover:bg-[#241d38]')}><p.icone size={13} /> {p.nome}</button>)}
+            className={'inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-xs ' + (p.id === parteAtual.id ? 'border-(--a-b99bff) bg-(--s-2b2143) text-white' : 'border-transparent text-(--a-b4aeca) hover:bg-(--s-241d38)')}><p.icone size={13} /> {p.nome}</button>)}
         </div>}
-        <p className="flex shrink-0 items-start gap-1.5 border-b border-[#2b2540] bg-[#15122a] px-3 py-1.5 text-[11px] leading-snug text-[#a99bbb]"><CircleHelp size={13} className="mt-px shrink-0" /> {parteAtual.ajuda}</p>
+        <p className="flex shrink-0 items-start gap-1.5 border-b border-(--a-2b2540) bg-(--s-15122a) px-3 py-1.5 text-[11px] leading-snug text-(--a-a99bbb)"><CircleHelp size={13} className="mt-px shrink-0" /> {parteAtual.ajuda}</p>
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
           {parteAtual.id === 'chat' && <Chat e={e} nomes={nomes} papelDe={papelDe} admin={admin} espectador={espectador} acao={acao} destacar={destacar} abrirHistorico={() => setHistorico(true)} />}
           {parteAtual.id === 'fichas' && <PainelFichas fichas={fichasMesa} carregar={() => void carregarFichas()} tokens={e.tokens} admin={admin} cenaId={cena?.id ?? null} acao={acao} atacarCom={iniciarAtaque} />}
@@ -411,32 +411,32 @@ function PainelMestre({ e, acao, campanhaId, setModo }: { e: Estado; acao: Acao;
   return <div className="space-y-5 text-sm">
     {cena && <section className="space-y-2">
       <h3 className="font-semibold">📐 Tamanho do mapa</h3>
-      <div className="flex flex-wrap gap-1">{PRESETS.map(([n, c, r]) => <button key={n} type="button" onClick={() => setTam({ c, r })} className={btn + (tam.c === c && tam.r === r ? ' bg-[#5b4380]' : '')}>{n} {c}×{r}</button>)}</div>
+      <div className="flex flex-wrap gap-1">{PRESETS.map(([n, c, r]) => <button key={n} type="button" onClick={() => setTam({ c, r })} className={btn + (tam.c === c && tam.r === r ? ' bg-(--a-5b4380)' : '')}>{n} {c}×{r}</button>)}</div>
       <div className="flex flex-wrap items-center gap-2">
         <input aria-label="Colunas do mapa" type="number" min={5} max={100} value={tam.c} onChange={x => setTam({ ...tam, c: Number(x.target.value) })} className={input + ' !w-20'} />×
         <input aria-label="Linhas do mapa" type="number" min={5} max={100} value={tam.r} onChange={x => setTam({ ...tam, r: Number(x.target.value) })} className={input + ' !w-20'} />
-        <span className="text-xs text-[#b4aeca]">≈ {Math.round(tam.c * 1.5)} × {Math.round(tam.r * 1.5)} m</span>
+        <span className="text-xs text-(--a-b4aeca)">≈ {Math.round(tam.c * 1.5)} × {Math.round(tam.r * 1.5)} m</span>
         <button type="button" className={btn} disabled={tam.c === cena.grid_cols && tam.r === cena.grid_rows} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, grid_cols: tam.c, grid_rows: tam.r }).catch(() => {})}>Aplicar</button>
       </div>
-      <p className="text-xs text-[#b4aeca]">Cada quadrado vale 1,5 m. Diminuir o mapa não apaga tokens; eles ficam na borda.</p>
+      <p className="text-xs text-(--a-b4aeca)">Cada quadrado vale 1,5 m. Diminuir o mapa não apaga tokens; eles ficam na borda.</p>
     </section>}
 
     {cena && <section className="space-y-2">
       <h3 className="font-semibold">🖼️ Imagens do mapa</h3>
-      {cena.mapa_url && <div className="rounded-lg border border-[#5e4b78] p-2 text-xs">Esta cena usa um fundo antigo (não recortável).
+      {cena.mapa_url && <div className="rounded-lg border border-(--a-5e4b78) p-2 text-xs">Esta cena usa um fundo antigo (não recortável).
         <button type="button" className={btn + ' ml-2'} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, mapa_url: null, camadas: [{ id: crypto.randomUUID(), url: cena.mapa_url, x: 0, y: 0, w: cena.grid_cols, h: cena.grid_rows }, ...camadas] }).catch(() => {})}>Tornar editável</button></div>}
-      <ul className="space-y-1">{camadas.map((c, i) => <li key={c.id} className="flex items-center gap-2 rounded-lg bg-[#1e1a30] p-2">
-        <span className="relative h-10 w-14 shrink-0 overflow-hidden rounded bg-[#100f20]">
+      <ul className="space-y-1">{camadas.map((c, i) => <li key={c.id} className="flex items-center gap-2 rounded-lg bg-(--s-1e1a30) p-2">
+        <span className="relative h-10 w-14 shrink-0 overflow-hidden rounded bg-(--s-100f20)">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={c.url} alt="" className="absolute max-w-none" style={{ width: 100 / (c.cw ?? 1) + '%', height: 100 / (c.ch ?? 1) + '%', left: -((c.cx ?? 0) / (c.cw ?? 1)) * 100 + '%', top: -((c.cy ?? 0) / (c.ch ?? 1)) * 100 + '%' }} /></span>
-        <span className="flex-1 text-xs text-[#c4b6d4]">Imagem {i + 1} · {c.w}×{c.h}{c.cw ? ' · recortada' : ''}</span>
+        <span className="flex-1 text-xs text-(--a-c4b6d4)">Imagem {i + 1} · {c.w}×{c.h}{c.cw ? ' · recortada' : ''}</span>
         <button type="button" className={btn} onClick={() => setRecortar(c)} title="Escolher a parte da imagem">✂️</button>
         <button type="button" className={btn} title="Ocupar o mapa inteiro" onClick={() => salvar(camadas.map(x => x.id === c.id ? { ...x, x: 0, y: 0, w: cena.grid_cols, h: cena.grid_rows } : x))}>⛶</button>
         <button type="button" className={btn} aria-label="Remover imagem" onClick={() => salvar(camadas.filter(x => x.id !== c.id))}><Trash2 size={14} /></button>
       </li>)}</ul>
       <label className={btn + ' cursor-pointer'}><ImageIcon size={14} /> {enviando === 'camada' ? 'Enviando…' : 'Adicionar imagens (várias)'}
         <input type="file" multiple accept="image/png,image/jpeg,image/webp" className="hidden" onChange={x => { if (x.target.files?.length) void adicionarCamadas(x.target.files); x.target.value = '' }} /></label>
-      <p className="text-xs text-[#b4aeca]">✂️ escolhe a parte da imagem · ⛶ estica a imagem no mapa todo · <Layers size={12} className="inline" /> “Montar mapa” (no canto do mapa) arrasta e redimensiona.</p>
+      <p className="text-xs text-(--a-b4aeca)">✂️ escolhe a parte da imagem · ⛶ estica a imagem no mapa todo · <Layers size={12} className="inline" /> “Montar mapa” (no canto do mapa) arrasta e redimensiona.</p>
     </section>}
 
     {cena && <section className="space-y-2">
@@ -447,18 +447,18 @@ function PainelMestre({ e, acao, campanhaId, setModo }: { e: Estado; acao: Acao;
           <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, nevoa_tudo: true })}><Eye size={14} /> Revelar tudo</button>
           <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, fog_limpar: true })}><EyeOff size={14} /> Esconder tudo</button></>}
       </div>
-      {cena.fog_ativo && <p className="text-xs text-[#b4aeca]">No canto do mapa: <Eye size={12} className="inline" /> pincel (1×1, 3×3, 5×5) ou <Square size={12} className="inline" /> arraste um retângulo para revelar uma área inteira.</p>}
+      {cena.fog_ativo && <p className="text-xs text-(--a-b4aeca)">No canto do mapa: <Eye size={12} className="inline" /> pincel (1×1, 3×3, 5×5) ou <Square size={12} className="inline" /> arraste um retângulo para revelar uma área inteira.</p>}
       <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, tokens_travados: !cena.tokens_travados })}>{cena.tokens_travados ? <><LockOpen size={14} /> Destravar tokens dos jogadores</> : <><Lock size={14} /> Travar tokens dos jogadores</>}</button>
     </section>}
 
     <section className="space-y-2">
       <h3 className="font-semibold">🎬 Cenas</h3>
-      <ul className="space-y-1">{e.cenas.map(c => <li key={c.id} className={'flex flex-wrap items-center gap-2 rounded-lg p-2 ' + (c.ativa ? 'bg-[#5b4380]' : 'bg-[#1e1a30]')}>
+      <ul className="space-y-1">{e.cenas.map(c => <li key={c.id} className={'flex flex-wrap items-center gap-2 rounded-lg p-2 ' + (c.ativa ? 'bg-(--a-5b4380)' : 'bg-(--s-1e1a30)')}>
         <span className="flex-1 truncate">{c.nome}{c.ativa && ' · na mesa'}</span>
         {!c.ativa && <button type="button" className={btn} onClick={() => acao({ acao: 'cena_ativar', cenaId: c.id })}>Mostrar</button>}
         <button type="button" aria-label={'Excluir ' + c.nome} className={btn} onClick={() => { if (window.confirm(`Excluir a cena "${c.nome}" e seus tokens?`)) void acao({ acao: 'cena_excluir', cenaId: c.id }) }}><Trash2 size={14} /></button>
       </li>)}</ul>
-      <form className="space-y-2 rounded-lg border border-[#373251] p-2" onSubmit={criarCena}>
+      <form className="space-y-2 rounded-lg border border-(--a-373251) p-2" onSubmit={criarCena}>
         <input required aria-label="Nome da cena" value={nova.nome} onChange={x => setNova({ ...nova, nome: x.target.value })} placeholder="Nova cena (ex.: Saloon)" className={input} />
         <label className={btn + ' cursor-pointer'}><ImageIcon size={14} /> {enviando === 'nova' ? 'Enviando…' : nova.enviado ? 'Mapa escolhido ✓ (trocar)' : 'Mapa do aparelho (opcional)'}
           <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={x => { const f = x.target.files?.[0]; if (f) void fundoNovaCena(f); x.target.value = '' }} /></label>
@@ -483,7 +483,7 @@ function PainelTokens({ e, admin, acao, campanhaId, abrir }: { e: Estado; admin:
   const cena = e.cenaAtiva
   const [tk, setTk] = useState({ fichaId: '', nome: '', hp_max: '', cor: '#a78bfa', visivel: true, movimento: 'dono', tamanho: 1, imagem_url: '' })
   const [enviando, setEnviando] = useState(false)
-  if (!cena) return <p className="text-sm text-[#b4aeca]">Nenhuma cena aberta ainda.</p>
+  if (!cena) return <p className="text-sm text-(--a-b4aeca)">Nenhuma cena aberta ainda.</p>
   const meus = e.tokens.filter(t => t.dono_id === e.eu)
   const lista = admin ? e.tokens : e.tokens.filter(t => t.visivel)
   const minhasFichas = e.fichas.filter(f => admin || f.dono_id === e.eu)
@@ -493,13 +493,13 @@ function PainelTokens({ e, admin, acao, campanhaId, abrir }: { e: Estado; admin:
   }
   return <div className="space-y-4 text-sm">
     <ul className="space-y-1">{lista.map(t => <li key={t.id}>
-      <button type="button" onClick={() => abrir(t.id)} className="flex w-full items-center gap-2 rounded-lg bg-[#1e1a30] p-2 text-left hover:bg-[#2b2140]">
+      <button type="button" onClick={() => abrir(t.id)} className="flex w-full items-center gap-2 rounded-lg bg-(--s-1e1a30) p-2 text-left hover:bg-(--s-2b2140)">
         <span className="h-6 w-6 shrink-0 rounded-full bg-cover bg-center" style={{ background: t.imagem_url ? `center/cover url(${t.imagem_url})` : t.cor }} />
         <span className="flex-1 truncate">{t.nome}{t.dono_id === e.eu && ' (meu)'}</span>
-        <span className="text-[11px] text-[#b4aeca]">{t.movimento === 'mestre' ? '🔒' : t.movimento === 'todos' ? '👥' : ''}{!t.visivel && ' 🙈'}{t.hp_max ? ` ${t.hp_atual}/${t.hp_max}` : ''}</span>
+        <span className="text-[11px] text-(--a-b4aeca)">{t.movimento === 'mestre' ? '🔒' : t.movimento === 'todos' ? '👥' : ''}{!t.visivel && ' 🙈'}{t.hp_max ? ` ${t.hp_atual}/${t.hp_max}` : ''}</span>
       </button></li>)}</ul>
-    {lista.length === 0 && <p className="text-[#b4aeca]">Nenhum token nesta cena.</p>}
-    <form className="space-y-2 rounded-lg border border-[#373251] p-2" onSubmit={x => {
+    {lista.length === 0 && <p className="text-(--a-b4aeca)">Nenhum token nesta cena.</p>}
+    <form className="space-y-2 rounded-lg border border-(--a-373251) p-2" onSubmit={x => {
       x.preventDefault()
       const ficha = e.fichas.find(f => f.id === tk.fichaId)
       void acao({ acao: 'token_criar', cenaId: cena.id, fichaId: tk.fichaId || undefined, nome: tk.nome || ficha?.nome || (admin ? '' : e.membros.find(m => m.aventureiro_id === e.eu)?.aventureiro?.apelido), hp_max: tk.hp_max, cor: tk.cor,
@@ -522,7 +522,7 @@ function PainelTokens({ e, admin, acao, campanhaId, abrir }: { e: Estado; admin:
         <label className="col-span-2 flex items-center gap-2 text-xs"><input type="checkbox" checked={!tk.visivel} onChange={x => setTk({ ...tk, visivel: !x.target.checked })} /> Escondido dos jogadores</label>
       </div>}
       <button type="submit" className={btn}><Plus size={14} /> Colocar na mesa</button>
-      {!admin && <p className="text-xs text-[#b4aeca]">Até 3 tokens seus por cena. O mestre pode travar o movimento.</p>}
+      {!admin && <p className="text-xs text-(--a-b4aeca)">Até 3 tokens seus por cena. O mestre pode travar o movimento.</p>}
     </form>
   </div>
 }
@@ -532,14 +532,14 @@ function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar, regraMorte
   const [dano, setDano] = useState('')
   const hp = t.hp_atual ?? 0
   return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label={'Token ' + t.nome} onClick={fechar}>
-    <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-[#62527e] bg-[#19172c] p-4" onClick={x => x.stopPropagation()}>
+    <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-4" onClick={x => x.stopPropagation()}>
       <div className="flex items-center gap-2"><span className="h-8 w-8 rounded-full" style={{ background: t.imagem_url ? `center/cover url(${t.imagem_url})` : t.cor }} /><h2 className="flex-1 font-bold">{t.nome}</h2>
-        <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-[#34294f]"><X size={18} /></button></div>
-      {atacar && <button type="button" onClick={atacar} className="mt-3 w-full rounded-xl bg-gradient-to-r from-[#b91c1c] to-[#7c3aed] p-2.5 font-bold shadow-[0_0_14px_#b91c1c55]">⚔️ Atacar</button>}
-      {t.ficha_id && <p className="mt-2 text-[11px] text-[#a99bbb]">📜 Ligado a uma ficha: a vida é a da ficha.</p>}
+        <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-(--s-34294f)"><X size={18} /></button></div>
+      {atacar && <button type="button" onClick={atacar} className="mt-3 w-full rounded-xl bg-gradient-to-r from-[#b91c1c] to-(--a-7c3aed) p-2.5 font-bold shadow-[0_0_14px_#b91c1c55]">⚔️ Atacar</button>}
+      {t.ficha_id && <p className="mt-2 text-[11px] text-(--a-a99bbb)">📜 Ligado a uma ficha: a vida é a da ficha.</p>}
       {t.ficha_id && !t.hp_max && !hp && <p className="mt-2 rounded-lg bg-[#3a2a14]/80 p-2 text-[11px] text-[#f6dca8]">⚠️ A ficha está com a vida zerada e sem máximo. Preencha a vida na ficha para o dano contar.</p>}
       {t.hp_max ? <div className="mt-3"><p className="text-sm">PV <strong>{hp} / {t.hp_max}</strong></p>
-        <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#2b2140]"><div className="h-full bg-[#b06ad8]" style={{ width: Math.max(0, Math.min(100, hp / t.hp_max * 100)) + '%' }} /></div>
+        <div className="mt-1 h-2 overflow-hidden rounded-full bg-(--s-2b2140)"><div className="h-full bg-(--a-b06ad8)" style={{ width: Math.max(0, Math.min(100, hp / t.hp_max * 100)) + '%' }} /></div>
         {pode && <div className="mt-2 flex gap-2"><input aria-label="Quantidade" value={dano} onChange={x => setDano(x.target.value)} inputMode="numeric" placeholder="Qtd." className={input + ' !w-20'} />
           <button type="button" className={btn} onClick={() => { void acao({ acao: 'token_editar', tokenId: t.id, hp_atual: hp - (Number(dano) || 0) }).catch(() => {}); setDano('') }}>− Dano</button>
           <button type="button" className={btn} onClick={() => { void acao({ acao: 'token_editar', tokenId: t.id, hp_atual: Math.min(t.hp_max ?? hp, hp + (Number(dano) || 0)) }).catch(() => {}); setDano('') }}>+ Cura</button></div>}
@@ -549,30 +549,30 @@ function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar, regraMorte
       <p className="mt-3 text-sm font-semibold">Condições</p>
       <div className="mt-1 flex flex-wrap gap-1">{condicoesDisponiveis.map(c => { const ativa = t.condicoes.includes(c.id)
         return <button key={c.id} type="button" disabled={!pode} aria-pressed={ativa} onClick={() => acao({ acao: 'token_editar', tokenId: t.id, condicoes: ativa ? t.condicoes.filter(x => x !== c.id) : [...t.condicoes, c.id] }).catch(() => {})}
-          className={'rounded-full border px-2 py-1 text-xs ' + (ativa ? 'border-[#b99bff] bg-[#5b4380]' : 'border-[#5e4b78]')}>{c.emoji} {c.nome}</button> })}</div>
-      {t.condicoes.length > 0 && <div className="mt-2 space-y-1 rounded-lg bg-[#1e1a30] p-2 text-xs">
-        <p className="text-[#c4b6d4]">Quanto tempo dura? A contagem desce no fim de cada turno de {t.nome}.</p>
+          className={'rounded-full border px-2 py-1 text-xs ' + (ativa ? 'border-(--a-b99bff) bg-(--a-5b4380)' : 'border-(--a-5e4b78)')}>{c.emoji} {c.nome}</button> })}</div>
+      {t.condicoes.length > 0 && <div className="mt-2 space-y-1 rounded-lg bg-(--s-1e1a30) p-2 text-xs">
+        <p className="text-(--a-c4b6d4)">Quanto tempo dura? A contagem desce no fim de cada turno de {t.nome}.</p>
         {t.condicoes.map(c => { const n = t.condicoes_rodadas?.[c] ?? 0
-          return <div key={c} className="flex flex-wrap items-center gap-2 border-t border-[#2b2140] pt-1.5 first-of-type:border-0"><span className="min-w-24 flex-1">{emojiCondicao[c]} {nomeCondicao(c)}</span>
+          return <div key={c} className="flex flex-wrap items-center gap-2 border-t border-(--a-2b2140) pt-1.5 first-of-type:border-0"><span className="min-w-24 flex-1">{emojiCondicao[c]} {nomeCondicao(c)}</span>
             <select aria-label={'Duração de ' + nomeCondicao(c)} disabled={!pode} value={n} onChange={x => acao({ acao: 'token_editar', tokenId: t.id, rodadas: { ...(t.condicoes_rodadas ?? {}), [c]: Number(x.target.value) } }).catch(() => {})} className={input + ' !w-auto !py-1'}>
               <option value={0}>Sem limite</option>{[1, 2, 3, 4, 5, 6, 8, 10].map(k => <option key={k} value={k}>{k} {k === 1 ? 'rodada' : 'rodadas'}</option>)}
             </select>
             <DanoPorTurno key={c + (t.condicoes_dano?.[c] ?? '')} valor={t.condicoes_dano?.[c] ?? ''} nome={nomeCondicao(c)} pode={pode}
               salvar={v => acao({ acao: 'token_editar', tokenId: t.id, danos: { ...(t.condicoes_dano ?? {}), [c]: v } }).catch(() => {})} /></div> })}
-        <p className="text-[11px] text-[#a998bd]">💥 Dano por turno: rolado no começo do turno de {t.nome} e tirado da vida dele. Deixe vazio para não causar dano.</p>
+        <p className="text-[11px] text-(--a-a998bd)">💥 Dano por turno: rolado no começo do turno de {t.nome} e tirado da vida dele. Deixe vazio para não causar dano.</p>
       </div>}
       {pode && <label className={btn + ' mt-3 cursor-pointer'}><ImageIcon size={14} /> Trocar imagem do token<input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={async x => {
         const f = x.target.files?.[0]; x.target.value = ''; if (!f) return
         try { const { url } = await enviarImagem(campanhaId, eu, f); await acao({ acao: 'token_editar', tokenId: t.id, imagem_url: url }) } catch (er) { toast.error(msg(er)) }
       }} /></label>}
-      {admin && <div className="mt-3 space-y-2 border-t border-[#373251] pt-3">
+      {admin && <div className="mt-3 space-y-2 border-t border-(--a-373251) pt-3">
         <p className="text-sm font-semibold">Controle do mestre</p>
         <select aria-label="Quem move este token" value={t.movimento ?? 'dono'} onChange={x => acao({ acao: 'token_editar', tokenId: t.id, movimento: x.target.value }).catch(() => {})} className={input}>{Object.entries(MOVIMENTO).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
         <select aria-label="Tamanho do token" value={t.tamanho ?? 1} onChange={x => acao({ acao: 'token_editar', tokenId: t.id, tamanho: Number(x.target.value) }).catch(() => {})} className={input}><option value={1}>Tamanho 1×1</option><option value={2}>Grande 2×2</option><option value={3}>Enorme 3×3</option><option value={4}>Colossal 4×4</option></select>
         <div className="flex gap-2"><button type="button" className={btn} onClick={() => acao({ acao: 'token_editar', tokenId: t.id, visivel: !t.visivel }).catch(() => {})}>{t.visivel ? <><EyeOff size={14} /> Esconder</> : <><Eye size={14} /> Mostrar</>}</button>
           <button type="button" className={btn} onClick={() => { void acao({ acao: 'token_excluir', tokenId: t.id }).catch(() => {}); fechar() }}><Trash2 size={14} /> Remover</button></div>
       </div>}
-      {!pode && <p className="mt-3 flex items-center gap-1 text-xs text-[#b4aeca]"><Lock size={12} /> Só o mestre ou o dono deste token altera.</p>}
+      {!pode && <p className="mt-3 flex items-center gap-1 text-xs text-(--a-b4aeca)"><Lock size={12} /> Só o mestre ou o dono deste token altera.</p>}
     </div>
   </div>
 }
@@ -598,18 +598,18 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
   }
   return <div className="flex min-h-full flex-col gap-3">
     <p className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]" aria-label="Legenda das cores">{(['mestre', 'jogador', 'espectador'] as const).map(p => <span key={p} className={PAPEL_ESTILO[p].cor}>{PAPEL_ESTILO[p].icone} {PAPEL_ESTILO[p].nome}</span>)}</p>
-    <div className="flex items-center justify-between"><p className="text-xs text-[#b4aeca]">{espectador ? 'Você está assistindo: pode conversar no chat.' : ''}</p>
+    <div className="flex items-center justify-between"><p className="text-xs text-(--a-b4aeca)">{espectador ? 'Você está assistindo: pode conversar no chat.' : ''}</p>
       <button type="button" onClick={abrirHistorico} className={btn}><History size={14} /> Histórico</button></div>
-    <ul className="space-y-2 text-sm">{e.eventos.map(ev => <li key={ev.id} className={'rounded-lg p-2 ' + (ev.visibilidade === 'publica' ? 'bg-[#1e1a30]' : 'border border-[#7a5a9a] bg-[#261c38]')}>
-      <p className="text-[11px] text-[#b4aeca]">{hora(ev.criado_em)} · {ev.tipo === 'sistema' ? <strong className="text-[#e4d3ff]">Mesa</strong> : (() => { const st = estiloPapel(papelDe[ev.autor_id ?? '']); return <strong className={st.cor} title={st.nome}>{st.icone} {ev.personagem || ev.autor?.apelido || '?'}</strong> })()}{ev.personagem && ev.autor ? ` (${ev.autor.apelido})` : ''}
+    <ul className="space-y-2 text-sm">{e.eventos.map(ev => <li key={ev.id} className={'rounded-lg p-2 ' + (ev.visibilidade === 'publica' ? 'bg-(--s-1e1a30)' : 'border border-(--a-7a5a9a) bg-(--s-261c38)')}>
+      <p className="text-[11px] text-(--a-b4aeca)">{hora(ev.criado_em)} · {ev.tipo === 'sistema' ? <strong className="text-(--a-e4d3ff)">Mesa</strong> : (() => { const st = estiloPapel(papelDe[ev.autor_id ?? '']); return <strong className={st.cor} title={st.nome}>{st.icone} {ev.personagem || ev.autor?.apelido || '?'}</strong> })()}{ev.personagem && ev.autor ? ` (${ev.autor.apelido})` : ''}
         {ev.visibilidade === 'mestre' && ' · 🔒 só o mestre'}{ev.visibilidade === 'privada' && ` · 🔒 privado para ${nomes[ev.destinatario_id ?? ''] ?? '?'}`}</p>
-      {ev.tipo === 'rolagem' ? <p><span className="text-[#b99bff]">🎲 {ev.expressao}</span> → [{ev.resultados?.join(', ')}] = <strong className="text-lg text-[#ed9cd8]">{ev.total}</strong>
-        {ev.expressao?.includes('d20') && ev.resultados?.[0] === 20 && ' ✨ 20 natural!'}{ev.expressao?.includes('d20') && ev.resultados?.[0] === 1 && ' 💀 1 natural'}{ev.texto && <span className="block text-xs text-[#c4b6d4]">{ev.texto}</span>}</p>
+      {ev.tipo === 'rolagem' ? <p><span className="text-(--a-b99bff)">🎲 {ev.expressao}</span> → [{ev.resultados?.join(', ')}] = <strong className="text-lg text-(--a-ed9cd8)">{ev.total}</strong>
+        {ev.expressao?.includes('d20') && ev.resultados?.[0] === 20 && ' ✨ 20 natural!'}{ev.expressao?.includes('d20') && ev.resultados?.[0] === 1 && ' 💀 1 natural'}{ev.texto && <span className="block text-xs text-(--a-c4b6d4)">{ev.texto}</span>}</p>
         : ev.tipo === 'ataque' && ev.dados ? <CartaoAtaque d={ev.dados} eventoId={ev.id} admin={admin} acao={acao} />
         : <p className="whitespace-pre-wrap break-words">{ev.texto}</p>}
     </li>)}<div ref={fim} /></ul>
-    {e.eventos.length === 0 && <p className="text-center text-sm text-[#b4aeca]">Nada por aqui ainda. Role um dado!</p>}
-    <div className="mt-auto space-y-2 border-t border-[#373251] pt-3">
+    {e.eventos.length === 0 && <p className="text-center text-sm text-(--a-b4aeca)">Nada por aqui ainda. Role um dado!</p>}
+    <div className="mt-auto space-y-2 border-t border-(--a-373251) pt-3">
       <div className="grid grid-cols-2 gap-2">
         <select aria-label="Quem vê" value={vis} onChange={x => setVis(x.target.value as typeof vis)} className={input}>
           <option value="publica">👀 Todos veem</option><option value="mestre">🔒 Só o mestre</option><option value="privada">✉️ Privado para…</option></select>
@@ -620,11 +620,11 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
       {!espectador && <><div className="flex flex-wrap gap-1">{DADOS.map(d => <button key={d} type="button" onClick={() => rolar(d)} className={btn}>{d.slice(1)}</button>)}</div>
       <form onSubmit={x => { x.preventDefault(); void rolar(expr) }} className="flex gap-2">
         <input aria-label="Expressão de dados" value={expr} onChange={x => setExpr(x.target.value)} maxLength={80} placeholder="2d6+3, 4d6kh3, 2d20kh1" className={input} />
-        <button type="submit" className="rounded-lg bg-[#7654bb] px-3 text-sm font-semibold"><Dices size={18} /></button>
+        <button type="submit" className="rounded-lg bg-(--a-7654bb) px-3 text-sm font-semibold"><Dices size={18} /></button>
       </form></>}
       <form onSubmit={x => { x.preventDefault(); void enviar() }} className="flex gap-2">
         <input aria-label="Mensagem" value={texto} onChange={x => setTexto(x.target.value)} maxLength={1000} placeholder={espectador ? 'Mensagem' : 'Mensagem (ou /r 1d20+2)'} className={input} />
-        <button type="submit" aria-label="Enviar" className="rounded-lg bg-[#7654bb] px-3"><Send size={18} /></button>
+        <button type="submit" aria-label="Enviar" className="rounded-lg bg-(--a-7654bb) px-3"><Send size={18} /></button>
       </form>
     </div>
   </div>
@@ -639,26 +639,26 @@ function PainelIniciativa({ e, admin, acao, fichas, atacar }: { e: Estado; admin
   const tokenDe = (x: Iniciativa) => x.tokenId ? e.tokens.find(t => t.id === x.tokenId) : undefined
   return <div className="space-y-3">
     {admin && <div className="flex flex-wrap gap-2">
-      <button type="button" onClick={() => setPreparando(true)} className="flex-1 rounded-xl bg-gradient-to-r from-[#b91c1c] to-[#7c3aed] px-3 py-2.5 font-bold shadow-[0_0_14px_#b91c1c44]">⚔️ {lista.length ? 'Preparar de novo' : 'Preparar combate'}</button>
+      <button type="button" onClick={() => setPreparando(true)} className="flex-1 rounded-xl bg-gradient-to-r from-[#b91c1c] to-(--a-7c3aed) px-3 py-2.5 font-bold shadow-[0_0_14px_#b91c1c44]">⚔️ {lista.length ? 'Preparar de novo' : 'Preparar combate'}</button>
       {lista.length > 0 && <button type="button" onClick={() => { if (confirm('Encerrar o combate e limpar a ordem de turnos?')) void acao({ acao: 'combate_encerrar' }).catch(() => {}) }} className={btn}>🏳️ Encerrar</button>}
     </div>}
     {lista.length > 0 && <p className="text-sm">Rodada <strong>{rodada}</strong> · vez de <strong className="text-amber-200">{lista[turno]?.nome}</strong></p>}
     <ol className="space-y-1">{lista.map((x, i) => { const t = tokenDe(x), minha = !!t && t.dono_id === e.eu
-      return <li key={x.id} className={'flex items-center gap-2 rounded-lg p-2 text-sm ' + (i === turno ? 'bg-gradient-to-r from-[#5b4380] to-[#7c2d4a] font-semibold ring-1 ring-amber-300/60' : 'bg-[#1e1a30]')}>
+      return <li key={x.id} className={'flex items-center gap-2 rounded-lg p-2 text-sm ' + (i === turno ? 'bg-gradient-to-r from-(--a-5b4380) to-[#7c2d4a] font-semibold ring-1 ring-amber-300/60' : 'bg-(--s-1e1a30)')}>
         <span className="w-8 text-center tabular-nums">{x.valor}</span>
         {t && <span aria-hidden className="h-6 w-6 shrink-0 rounded-full border border-black/40 bg-cover bg-center" style={{ backgroundColor: t.cor, backgroundImage: t.imagem_url ? `url("${t.imagem_url}")` : undefined }} />}
-        <span className="min-w-0 flex-1 truncate">{x.nome}{t?.hp_max ? <span className="ml-1 text-[11px] font-normal text-[#c4b6d4]">❤️ {t.hp_atual ?? 0}/{t.hp_max}</span> : null}
+        <span className="min-w-0 flex-1 truncate">{x.nome}{t?.hp_max ? <span className="ml-1 text-[11px] font-normal text-(--a-c4b6d4)">❤️ {t.hp_atual ?? 0}/{t.hp_max}</span> : null}
           {t?.condicoes?.length ? <span className="ml-1 text-[11px] font-normal" title={t.condicoes.map(nomeCondicao).join(', ')}>{t.condicoes.map(c => emojiCondicao[c] + (t.condicoes_rodadas?.[c] ? t.condicoes_rodadas[c] : '')).join(' ')}</span> : null}</span>
         {i === turno && <>⚔️{(admin || minha) && t && <button type="button" onClick={() => atacar(t.id)} className="rounded-md bg-[#b91c1c] px-2 py-0.5 text-[11px] font-semibold text-white">Atacar</button>}</>}
         {admin && <button type="button" aria-label={'Remover ' + x.nome} onClick={() => salvar(lista.filter(y => y.id !== x.id), Math.min(turno, Math.max(0, lista.length - 2)))} className="rounded p-1 hover:bg-[#4b253a]"><X size={14} /></button>}
       </li> })}</ol>
     {!admin && lista.length > 0 && (() => { const t = tokenDe(lista[turno]); return t && t.dono_id === e.eu
-      ? <button type="button" onClick={() => void acao({ acao: 'turno', direcao: 1, turnoAtual: turno }).catch(() => {})} className="w-full rounded-lg bg-[#5b4380] px-3 py-2 text-sm font-semibold hover:bg-[#6b5190]">✅ Terminar meu turno</button> : null })()}
-    {lista.length === 0 && <p className="text-sm text-[#b4aeca]">{admin ? 'Ninguém na iniciativa. Toque em “Preparar combate” para rolar a iniciativa de todos os tokens.' : 'Ainda não há combate.'}</p>}
+      ? <button type="button" onClick={() => void acao({ acao: 'turno', direcao: 1, turnoAtual: turno }).catch(() => {})} className="w-full rounded-lg bg-(--a-5b4380) px-3 py-2 text-sm font-semibold hover:bg-(--a-6b5190)">✅ Terminar meu turno</button> : null })()}
+    {lista.length === 0 && <p className="text-sm text-(--a-b4aeca)">{admin ? 'Ninguém na iniciativa. Toque em “Preparar combate” para rolar a iniciativa de todos os tokens.' : 'Ainda não há combate.'}</p>}
     {admin && <>
       {lista.length > 0 && <div className="flex gap-2"><button type="button" onClick={() => passar(-1)} className={btn}><ChevronLeft size={14} /> Anterior</button>
-        <button type="button" onClick={() => passar(1)} className={'flex-1 justify-center rounded-lg bg-[#5b4380] px-3 py-2 text-sm font-semibold hover:bg-[#6b5190] inline-flex items-center gap-1'}>Próximo turno <ChevronRight size={14} /></button></div>}
-      <details className="text-sm"><summary className="cursor-pointer text-xs text-[#c7a8ff]">Adicionar alguém à mão</summary>
+        <button type="button" onClick={() => passar(1)} className={'flex-1 justify-center rounded-lg bg-(--a-5b4380) px-3 py-2 text-sm font-semibold hover:bg-(--a-6b5190) inline-flex items-center gap-1'}>Próximo turno <ChevronRight size={14} /></button></div>}
+      <details className="text-sm"><summary className="cursor-pointer text-xs text-(--a-c7a8ff)">Adicionar alguém à mão</summary>
         <form onSubmit={x => { x.preventDefault(); if (!nome.trim()) return; void salvar([...lista, { id: crypto.randomUUID(), nome, valor: Number(valor) || 0 }]); setNome(''); setValor('') }} className="mt-2 flex gap-2">
           <input aria-label="Nome" value={nome} onChange={x => setNome(x.target.value)} placeholder="Nome" className={input} />
           <input aria-label="Valor" value={valor} onChange={x => setValor(x.target.value)} inputMode="numeric" placeholder="Valor" className={input + ' !w-20'} />
@@ -671,10 +671,10 @@ function PainelIniciativa({ e, admin, acao, fichas, atacar }: { e: Estado; admin
 
 function Historico({ campanhaId, membros, fechar }: { campanhaId: string; membros: Estado['membros']; fechar: () => void }) {
   return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="Histórico de rolagens">
-    <div className="flex max-h-[90vh] w-full max-w-xl flex-col rounded-2xl border border-[#62527e] bg-[#19172c] p-4">
+    <div className="flex max-h-[90vh] w-full max-w-xl flex-col rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-4">
       <div className="mb-2 flex items-center justify-between gap-2"><h2 className="font-bold">📜 Histórico de rolagens</h2>
-        <a href={'/rolagens?campanha=' + campanhaId} className="ml-auto text-xs text-[#c7a8ff] underline">Abrir em tela cheia</a>
-        <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-[#34294f]"><X size={18} /></button></div>
+        <a href={'/rolagens?campanha=' + campanhaId} className="ml-auto text-xs text-(--a-c7a8ff) underline">Abrir em tela cheia</a>
+        <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-(--s-34294f)"><X size={18} /></button></div>
       <HistoricoRolagens campanhaId={campanhaId} membros={membros} />
     </div>
   </div>

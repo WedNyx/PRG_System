@@ -34,22 +34,22 @@ export default function DicasMesa({ papel, aberto, fechar }: { papel: PapelDicas
   if (!aberto) return null
   const d = lista[Math.min(i, lista.length - 1)]
   const terminar = () => { try { localStorage.setItem(chave(papel), '1') } catch {} ; setI(0); fechar() }
-  return <div role="dialog" aria-modal="false" aria-labelledby="dica-titulo" className="fixed inset-x-3 bottom-3 z-[70] mx-auto max-w-md rounded-2xl border border-[#b99bff] bg-[#1d1730]/97 p-4 text-[#f2ebff] shadow-2xl backdrop-blur sm:bottom-6">
+  return <div role="dialog" aria-modal="false" aria-labelledby="dica-titulo" className="fixed inset-x-3 bottom-3 z-[70] mx-auto max-w-md rounded-2xl border border-(--a-b99bff) bg-(--s-1d1730)/97 p-4 text-(--a-f2ebff) shadow-2xl backdrop-blur sm:bottom-6">
     <div className="flex items-start gap-3">
       <span className="text-3xl" aria-hidden>{d.icone}</span>
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] uppercase tracking-widest text-[#d3adf0]">Dica {i + 1} de {lista.length}</p>
+        <p className="text-[11px] uppercase tracking-widest text-(--a-d3adf0)">Dica {i + 1} de {lista.length}</p>
         <h2 id="dica-titulo" className="font-bold">{d.titulo}</h2>
-        <p className="mt-1 text-sm text-[#d6c8e8]">{d.texto}</p>
+        <p className="mt-1 text-sm text-(--a-d6c8e8)">{d.texto}</p>
       </div>
-      <button type="button" onClick={terminar} aria-label="Fechar dicas" className="rounded-lg p-1 text-[#b4aeca] hover:bg-white/10"><X size={18} /></button>
+      <button type="button" onClick={terminar} aria-label="Fechar dicas" className="rounded-lg p-1 text-(--a-b4aeca) hover:bg-white/10"><X size={18} /></button>
     </div>
     <div className="mt-3 flex items-center gap-2">
-      <div className="flex flex-1 gap-1" aria-hidden>{lista.map((_, k) => <span key={k} className={'h-1.5 flex-1 rounded-full ' + (k <= i ? 'bg-[#b99bff]' : 'bg-[#3b3054]')} />)}</div>
-      {i > 0 && <button type="button" onClick={() => setI(i - 1)} className="inline-flex items-center rounded-lg border border-[#5e4b78] px-2 py-1 text-xs" aria-label="Dica anterior"><ChevronLeft size={14} /></button>}
+      <div className="flex flex-1 gap-1" aria-hidden>{lista.map((_, k) => <span key={k} className={'h-1.5 flex-1 rounded-full ' + (k <= i ? 'bg-(--a-b99bff)' : 'bg-(--s-3b3054)')} />)}</div>
+      {i > 0 && <button type="button" onClick={() => setI(i - 1)} className="inline-flex items-center rounded-lg border border-(--a-5e4b78) px-2 py-1 text-xs" aria-label="Dica anterior"><ChevronLeft size={14} /></button>}
       {i < lista.length - 1
-        ? <button type="button" onClick={() => setI(i + 1)} className="inline-flex items-center gap-1 rounded-lg bg-[#7652ac] px-3 py-1 text-xs font-semibold">Próxima <ChevronRight size={14} /></button>
-        : <button type="button" onClick={terminar} className="rounded-lg bg-[#7652ac] px-3 py-1 text-xs font-semibold">Entendi!</button>}
+        ? <button type="button" onClick={() => setI(i + 1)} className="inline-flex items-center gap-1 rounded-lg bg-(--a-7652ac) px-3 py-1 text-xs font-semibold">Próxima <ChevronRight size={14} /></button>
+        : <button type="button" onClick={terminar} className="rounded-lg bg-(--a-7652ac) px-3 py-1 text-xs font-semibold">Entendi!</button>}
     </div>
   </div>
 }

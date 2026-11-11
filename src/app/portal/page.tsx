@@ -9,9 +9,11 @@ import EscolherGrupo from '@/components/perfil/EscolherGrupo'
 import { GRUPOS, GRUPO_PADRAO, ehGrupo, grupoDe, type GrupoId } from '@/lib/grupos'
 import SaudePlataforma from '@/components/admin/SaudePlataforma'
 import { JanelaSenha, situacaoSenha } from '@/components/perfil/Senha'
+import AjudaTela from '@/components/AjudaTela'
+import { aplicarVisual, limparVisual } from '@/lib/visual'
 import LuaLogo from '@/components/LuaDinamica'
 
-type Perfil = { id: string; apelido: string; avatar?: string; grupo?: string; protegido?: boolean }
+type Perfil = { id: string; apelido: string; avatar?: string; grupo?: string; protegido?: boolean; visual?: unknown }
 const GRUPO_KEY = 'prg-grupo-v1'
 const KEY = 'prg-aventureiros-demo-v1'
 const SELECTED_KEY = 'prg-aventureiro-selecionado-v1'
@@ -281,39 +283,45 @@ export default function PortalAventureiros() {
   }
 
   return (
-    <main className="min-h-screen fundo-tema text-[#f4f0ff] px-4 py-5 sm:py-8">
+    <main className="min-h-screen fundo-tema text-(--a-f4f0ff) px-4 py-5 sm:py-8">
       <div className="mx-auto max-w-6xl">
         <header className="flex items-center justify-between gap-3">
           <span className="flex items-center gap-2 font-bold tracking-wide text-lg sm:text-xl"><LuaLogo /><Link href="/portal">PRG System</Link></span>
-          <button onClick={abrirCriacao} className="rounded-lg border border-[#62527e] bg-[#34294f] px-3 py-2 text-xs sm:text-sm font-semibold hover:bg-[#4b396f] focus-visible:outline-2 focus-visible:outline-[#b99bff]">
+          <span className="flex items-center gap-2"><AjudaTela titulo="Ajuda do portal" intro="O portal é a porta de entrada: cada pessoa tem o seu perfil de aventureiro." passos={[
+            { icone: '🌙', titulo: 'De onde você vem?', texto: 'Escolha o seu grupo. Ele só separa os perfis de cada turma de amigos.' },
+            { icone: '🧙', titulo: 'Escolha o seu perfil', texto: 'Toque no seu aventureiro para entrar na Central, onde ficam suas fichas e campanhas.' },
+            { icone: '➕', titulo: 'Criar perfil', texto: 'Ainda não tem? Use “+ Criar perfil”, escolha um nome e uma imagem. Não precisa de e-mail.' },
+            { icone: '🔒', titulo: 'Senha (opcional)', texto: 'Se quiser que só você entre no seu perfil, crie uma senha em Editar perfil, dentro da Central.' },
+          ]} />
+          <button onClick={abrirCriacao} className="rounded-lg border border-(--a-62527e) bg-(--s-34294f) px-3 py-2 text-xs sm:text-sm font-semibold hover:bg-(--s-4b396f) focus-visible:outline-2 focus-visible:outline-(--a-b99bff)">
             + Criar perfil
-          </button>
+          </button></span>
         </header>
 
         <section className="flex min-h-[65vh] flex-col items-center justify-center py-12">
-          <p className="text-xs uppercase tracking-[.24em] text-[#ed9cd8]">🌙 Portal dos Aventureiros</p>
+          <p className="text-xs uppercase tracking-[.24em] text-(--a-ed9cd8)">🌙 Portal dos Aventureiros</p>
           {!grupo ? <>
             <h1 className="mt-4 text-center text-2xl font-bold sm:text-4xl">De onde você vem?</h1>
-            <p className="mt-3 text-center text-sm text-[#b4aeca]">Escolha o seu grupo para ver os perfis dele.</p>
+            <p className="mt-3 text-center text-sm text-(--a-b4aeca)">Escolha o seu grupo para ver os perfis dele.</p>
             <div aria-label="Escolha o grupo" className="mt-10 grid w-full max-w-2xl gap-4 sm:grid-cols-2">
               {GRUPOS.map(g => {
                 const doGrupo = perfis.filter(p => grupoDoPerfil(p) === g.id)
                 return <button key={g.id} type="button" onClick={() => setGrupo(g.id)} style={{ ['--cor' as string]: g.cor }}
-                  className="group rounded-2xl border-2 border-[#51466a] bg-[#201a32]/90 p-6 text-left shadow-xl transition hover:-translate-y-1 hover:border-[var(--cor)] hover:shadow-[0_0_28px_#7654bb55] focus-visible:outline-2 focus-visible:outline-[#b99bff]">
+                  className="group rounded-2xl border-2 border-(--a-51466a) bg-(--s-201a32)/90 p-6 text-left shadow-xl transition hover:-translate-y-1 hover:border-[var(--cor)] hover:shadow-[0_0_28px_#7654bb55] focus-visible:outline-2 focus-visible:outline-(--a-b99bff)">
                   <span className="block text-4xl">{g.icone}</span>
                   <span className="mt-3 block text-2xl font-bold" style={{ color: g.cor }}>{g.nome}</span>
-                  <span className="mt-1 block text-sm text-[#b4aeca]">{g.descricao}</span>
+                  <span className="mt-1 block text-sm text-(--a-b4aeca)">{g.descricao}</span>
                   <span className="mt-4 flex items-center gap-2">
-                    <span className="flex -space-x-2">{doGrupo.slice(0, 5).map(p => <span key={p.id} className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-[#201a32] bg-[#28233e] text-xs font-bold text-[#b99bff]">
+                    <span className="flex -space-x-2">{doGrupo.slice(0, 5).map(p => <span key={p.id} className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-(--a-201a32) bg-(--s-28233e) text-xs font-bold text-(--a-b99bff)">
                       {p.avatar ? <img src={p.avatar} alt="" className="h-full w-full object-cover" /> : p.apelido[0].toUpperCase()}</span>)}</span>
-                    <span className="text-xs text-[#b4aeca]">{doGrupo.length === 1 ? '1 perfil' : doGrupo.length + ' perfis'}</span>
+                    <span className="text-xs text-(--a-b4aeca)">{doGrupo.length === 1 ? '1 perfil' : doGrupo.length + ' perfis'}</span>
                   </span>
                 </button>
               })}
             </div>
           </> : <>
           <h1 className="mt-4 text-center text-2xl font-bold sm:text-4xl">Quem vai se aventurar hoje?</h1>
-          <p className="mt-3 flex flex-wrap items-center justify-center gap-2 text-center text-sm text-[#b4aeca]">
+          <p className="mt-3 flex flex-wrap items-center justify-center gap-2 text-center text-sm text-(--a-b4aeca)">
             <span className="rounded-full border px-3 py-1 font-semibold" style={{ borderColor: grupoDe(grupo).cor, color: grupoDe(grupo).cor }}>{grupoDe(grupo).icone} {grupoDe(grupo).nome}</span>
             <button type="button" onClick={() => setGrupo(null)} className="underline underline-offset-2 hover:text-white">Trocar grupo</button>
           </p>
@@ -323,7 +331,7 @@ export default function PortalAventureiros() {
               <div key={perfil.id} className="group relative flex w-28 flex-col items-center gap-3 sm:w-36">
                 {gerenciando && !CLOUD_ENABLED && (
                   <button onClick={() => abrirEdicao(perfil)} aria-label={'Editar perfil ' + perfil.apelido}
-                    className="absolute -right-1 -top-2 z-10 rounded-full border border-[#b99bff] bg-[#34294f] px-2 py-1 text-sm shadow-lg">✎</button>
+                    className="absolute -right-1 -top-2 z-10 rounded-full border border-(--a-b99bff) bg-(--s-34294f) px-2 py-1 text-sm shadow-lg">✎</button>
                 )}
                 {gerenciando && CLOUD_ENABLED && senhaAdmin && (
                   <button onClick={() => removerDaNuvem(perfil)} disabled={processando} aria-label={'Remover perfil ' + perfil.apelido}
@@ -338,6 +346,8 @@ export default function PortalAventureiros() {
                   onClick={event => {
                     event.preventDefault()
                     try { localStorage.setItem(SELECTED_KEY, perfil.id) } catch {}
+                    // A aparência do perfil já vale na transição para a Central.
+                    if (perfil.visual !== undefined) aplicarVisual(perfil.id, limparVisual(perfil.visual))
                     // Volta para um convite aberto antes de escolher o perfil (somente caminhos internos).
                     const depois = new URLSearchParams(window.location.search).get('depois')
                     const destino = depois && /^\/convite\/[A-Za-z0-9-]{1,20}$/.test(depois) ? depois : '/central?personagem=' + encodeURIComponent(perfil.id)
@@ -352,41 +362,41 @@ export default function PortalAventureiros() {
                     }
                     setEntrando({ perfil, origem: caixa, destino })
                   }}
-                  className="flex w-full flex-col items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b99bff]">
-                  <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border-2 border-[#51466a] bg-[#28233e] text-5xl font-bold text-[#b99bff] shadow-xl transition-all duration-200 group-hover:scale-105 group-hover:border-[#b99bff] group-hover:shadow-[0_0_24px_#7654bb66]">
+                  className="flex w-full flex-col items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-(--a-b99bff)">
+                  <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border-2 border-(--a-51466a) bg-(--s-28233e) text-5xl font-bold text-(--a-b99bff) shadow-xl transition-all duration-200 group-hover:scale-105 group-hover:border-(--a-b99bff) group-hover:shadow-[0_0_24px_#7654bb66]">
                     {perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : perfil.apelido[0].toUpperCase()}
                     {perfil.protegido && <span className="absolute bottom-1.5 right-1.5 rounded-full bg-black/70 px-1.5 py-0.5 text-sm" role="img" aria-label="Perfil com senha">🔒</span>}
                   </div>
-                  <span className="max-w-full break-words text-center text-sm font-medium text-[#b4aeca] group-hover:text-white">{perfil.apelido}</span>
+                  <span className="max-w-full break-words text-center text-sm font-medium text-(--a-b4aeca) group-hover:text-white">{perfil.apelido}</span>
                 </Link>
               </div>
             ))}
             {visiveis.length === 0 && (
-              <div className="rounded-xl border border-dashed border-[#51466a] px-8 py-10 text-center text-[#b4aeca]">
+              <div className="rounded-xl border border-dashed border-(--a-51466a) px-8 py-10 text-center text-(--a-b4aeca)">
                 Ainda não há perfis em {grupoDe(grupo).nome}.<br />Toque em “+ Criar perfil” para começar!
               </div>
             )}
           </div>
           </>}
           {erro && !modal && <p role="alert" className="mt-6 max-w-md rounded-lg border border-red-500/40 p-3 text-center text-sm text-red-200">{erro}</p>}
-          {gerenciando && CLOUD_ENABLED && <p className="mt-6 text-center text-sm text-[#ed9cd8]">Modo administrador: toque na 🗑 para remover um perfil.</p>}
+          {gerenciando && CLOUD_ENABLED && <p className="mt-6 text-center text-sm text-(--a-ed9cd8)">Modo administrador: toque na 🗑 para remover um perfil.</p>}
           {gerenciando && CLOUD_ENABLED && senhaAdmin && <button type="button" onClick={() => setVendoSaude(true)}
-            className="mt-3 rounded-lg border border-[#ed9cd8]/60 px-5 py-2 text-sm text-[#ed9cd8] hover:bg-[#34294f]">🩺 Saúde da plataforma e cópias de segurança</button>}
+            className="mt-3 rounded-lg border border-(--a-ed9cd8)/60 px-5 py-2 text-sm text-(--a-ed9cd8) hover:bg-(--s-34294f)">🩺 Saúde da plataforma e cópias de segurança</button>}
           <button onClick={alternarGerenciar}
-            className="mt-6 rounded-lg border border-[#62527e] px-5 py-2 text-sm text-[#b99bff] hover:bg-[#34294f]">
+            className="mt-6 rounded-lg border border-(--a-62527e) px-5 py-2 text-sm text-(--a-b99bff) hover:bg-(--s-34294f)">
             {gerenciando ? '✓ Concluir' : '🔒 Gerenciar perfis'}
           </button>
-          {CLOUD_ENABLED && <p className="mt-2 text-center text-xs text-[#8f86a8]">Para mudar seu nome ou foto, entre no seu perfil e use “Editar perfil” no menu.</p>}
+          {CLOUD_ENABLED && <p className="mt-2 text-center text-xs text-(--a-8f86a8)">Para mudar seu nome ou foto, entre no seu perfil e use “Editar perfil” no menu.</p>}
         </section>
-        <div className="flex flex-wrap items-center justify-center gap-3 pb-3 text-xs text-[#b4aeca]">
-          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.32.6'}</Link>
+        <div className="flex flex-wrap items-center justify-center gap-3 pb-3 text-xs text-(--a-b4aeca)">
+          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.32.9'}</Link>
           {versao?.revision && <span title="Identificador da implantação">Build {versao.revision}</span>}
           <button type="button" onClick={() => window.location.reload()}
-            className="rounded-md border border-[#62527e] px-2 py-1 text-[#b99bff] hover:bg-[#34294f]">
+            className="rounded-md border border-(--a-62527e) px-2 py-1 text-(--a-b99bff) hover:bg-(--s-34294f)">
             ↻ Verificar atualização
           </button>
         </div>
-        <p className="mx-auto max-w-2xl pb-6 text-center text-xs text-[#b4aeca]">
+        <p className="mx-auto max-w-2xl pb-6 text-center text-xs text-(--a-b4aeca)">
           {CLOUD_ENABLED ? 'Perfis e fichas ficam na nuvem e abrem em qualquer aparelho.' : 'Versão de testes: os perfis, fotos e fichas ficam apenas neste navegador; guarde backups.'}
         </p>
       </div>
@@ -399,15 +409,15 @@ export default function PortalAventureiros() {
       {pedindoSenha && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4" onMouseDown={event => { if (event.target === event.currentTarget) setPedindoSenha(false) }}>
           <form onSubmit={conferirSenha} role="dialog" aria-modal="true" aria-labelledby="senha-titulo" onKeyDown={event => { if (event.key === 'Escape') setPedindoSenha(false) }}
-            className="w-full max-w-sm rounded-2xl border border-[#62527e] bg-[#19172c] p-5 shadow-2xl">
+            className="w-full max-w-sm rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-5 shadow-2xl">
             <h2 id="senha-titulo" className="text-lg font-bold">🔒 Área do administrador</h2>
-            <p className="mt-1 text-sm text-[#b4aeca]">Digite a senha para remover perfis e ver a saúde da plataforma.</p>
+            <p className="mt-1 text-sm text-(--a-b4aeca)">Digite a senha para remover perfis e ver a saúde da plataforma.</p>
             <input type="password" autoFocus autoComplete="current-password" value={senhaDigitada} onChange={e => setSenhaDigitada(e.target.value)} maxLength={200} aria-label="Senha do administrador"
-              className="mt-4 w-full rounded-lg border border-[#4a4267] bg-[#100f20] p-3 text-white outline-none focus:border-[#b99bff]" />
+              className="mt-4 w-full rounded-lg border border-(--a-4a4267) bg-(--s-100f20) p-3 text-white outline-none focus:border-(--a-b99bff)" />
             {erroSenha && <p role="alert" className="mt-3 text-sm text-red-200">{erroSenha}</p>}
             <div className="mt-4 flex gap-2">
-              <button type="button" onClick={() => setPedindoSenha(false)} className="flex-1 rounded-lg border border-[#62527e] p-2.5">Cancelar</button>
-              <button type="submit" disabled={processando || !senhaDigitada} className="flex-1 rounded-lg bg-[#7654bb] p-2.5 font-semibold disabled:opacity-50">{processando ? 'Conferindo…' : 'Entrar'}</button>
+              <button type="button" onClick={() => setPedindoSenha(false)} className="flex-1 rounded-lg border border-(--a-62527e) p-2.5">Cancelar</button>
+              <button type="submit" disabled={processando || !senhaDigitada} className="flex-1 rounded-lg bg-(--a-7654bb) p-2.5 font-semibold disabled:opacity-50">{processando ? 'Conferindo…' : 'Entrar'}</button>
             </div>
           </form>
         </div>
@@ -418,30 +428,30 @@ export default function PortalAventureiros() {
           onMouseDown={event => { if (event.target === event.currentTarget) fechar() }}>
           <section role="dialog" aria-modal="true" aria-labelledby="modal-title"
             onKeyDown={event => { if (event.key === 'Escape') fechar() }}
-            className="my-auto w-full max-w-md rounded-2xl border border-[#62527e] bg-[#19172c] p-5 shadow-2xl sm:p-7">
+            className="my-auto w-full max-w-md rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-5 shadow-2xl sm:p-7">
             <div className="flex items-center justify-between gap-3">
               <h2 id="modal-title" className="text-xl font-bold">{modal === 'criar' ? 'Criar aventureiro' : 'Editar aventureiro'}</h2>
-              <button onClick={fechar} aria-label="Fechar janela" className="rounded-lg px-2 py-1 text-[#b4aeca] hover:bg-[#34294f]">✕</button>
+              <button onClick={fechar} aria-label="Fechar janela" className="rounded-lg px-2 py-1 text-(--a-b4aeca) hover:bg-(--s-34294f)">✕</button>
             </div>
-            <p className="mt-2 text-sm text-[#b4aeca]">Personalize sua identidade no portal.</p>
+            <p className="mt-2 text-sm text-(--a-b4aeca)">Personalize sua identidade no portal.</p>
             <form onSubmit={salvar} className="mt-5 space-y-4">
               <div className="flex flex-col items-center gap-3">
-                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-xl border-2 border-[#62527e] bg-[#28233e] text-4xl font-bold text-[#b99bff]">
+                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-xl border-2 border-(--a-62527e) bg-(--s-28233e) text-4xl font-bold text-(--a-b99bff)">
                   {avatar ? <img src={avatar} alt="Prévia da foto de perfil" className="h-full w-full object-cover" /> : (apelido.trim()[0] || '✦').toUpperCase()}
                 </div>
                 <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={selecionarFoto} className="sr-only" aria-label="Selecionar foto de perfil" />
                 <div className="flex flex-wrap justify-center gap-2">
                   <button type="button" onClick={() => fileRef.current?.click()} disabled={processando}
-                    className="rounded-lg border border-[#62527e] bg-[#34294f] px-3 py-2 text-sm hover:bg-[#4b396f] disabled:opacity-50">
+                    className="rounded-lg border border-(--a-62527e) bg-(--s-34294f) px-3 py-2 text-sm hover:bg-(--s-4b396f) disabled:opacity-50">
                     {processando ? 'Processando...' : '📷 Escolher foto'}
                   </button>
-                  {avatar && <button type="button" onClick={() => setAvatar(undefined)} className="rounded-lg border border-[#62527e] px-3 py-2 text-sm">Remover foto</button>}
+                  {avatar && <button type="button" onClick={() => setAvatar(undefined)} className="rounded-lg border border-(--a-62527e) px-3 py-2 text-sm">Remover foto</button>}
                 </div>
-                <p className="text-center text-xs text-[#b4aeca]">JPG, PNG ou WebP até 5 MB.</p>
+                <p className="text-center text-xs text-(--a-b4aeca)">JPG, PNG ou WebP até 5 MB.</p>
                 {crop && (
-                  <div className="w-full rounded-xl border border-[#62527e] bg-[#100f20] p-3">
-                    <p className="mb-3 text-center text-sm text-[#ed9cd8]">Arraste e ajuste sua foto</p>
-                    <div className="relative mx-auto h-64 w-64 touch-none overflow-hidden rounded-xl border-2 border-[#b99bff]"
+                  <div className="w-full rounded-xl border border-(--a-62527e) bg-(--s-100f20) p-3">
+                    <p className="mb-3 text-center text-sm text-(--a-ed9cd8)">Arraste e ajuste sua foto</p>
+                    <div className="relative mx-auto h-64 w-64 touch-none overflow-hidden rounded-xl border-2 border-(--a-b99bff)"
                       onPointerDown={e => {
                         e.currentTarget.setPointerCapture(e.pointerId)
                         dragging.current = { x: e.clientX, y: e.clientY, px: position.x, py: position.y }
@@ -461,32 +471,32 @@ export default function PortalAventureiros() {
                           transform: 'translate(calc(-50% + ' + position.x + 'px), calc(-50% + ' + position.y + 'px))'
                         }} />
                     </div>
-                    <label htmlFor="avatar-zoom" className="mt-3 block text-sm text-[#b4aeca]">Zoom: {Math.round(zoom * 100)}%</label>
+                    <label htmlFor="avatar-zoom" className="mt-3 block text-sm text-(--a-b4aeca)">Zoom: {Math.round(zoom * 100)}%</label>
                     <input id="avatar-zoom" type="range" min="1" max="3" step="0.05" value={zoom}
                       onChange={e => {
                         const next = Number(e.target.value)
                         setZoom(next)
                         setPosition(constrain(position.x, position.y, next))
-                      }} className="w-full accent-[#b99bff]" />
+                      }} className="w-full accent-(--a-b99bff)" />
                     <div className="mt-3 flex gap-2">
-                      <button type="button" onClick={() => setCrop(null)} className="flex-1 rounded-lg border border-[#62527e] p-2 text-sm">Cancelar</button>
+                      <button type="button" onClick={() => setCrop(null)} className="flex-1 rounded-lg border border-(--a-62527e) p-2 text-sm">Cancelar</button>
                       <button type="button" onClick={confirmarFoto} disabled={processando}
-                        className="flex-1 rounded-lg bg-[#7654bb] p-2 text-sm font-semibold">Usar esta foto</button>
+                        className="flex-1 rounded-lg bg-(--a-7654bb) p-2 text-sm font-semibold">Usar esta foto</button>
                     </div>
                   </div>
                 )}
               </div>
               <div>
-                <label htmlFor="apelido" className="mb-2 block text-sm text-[#b4aeca]">Apelido do aventureiro</label>
+                <label htmlFor="apelido" className="mb-2 block text-sm text-(--a-b4aeca)">Apelido do aventureiro</label>
                 <input ref={nameRef} id="apelido" value={apelido} onChange={e => setApelido(e.target.value)}
                   maxLength={40} required placeholder="Ex.: Wed Nyx"
-                  className="w-full rounded-lg border border-[#4a4267] bg-[#100f20] p-3 text-white outline-none focus:border-[#b99bff]" />
+                  className="w-full rounded-lg border border-(--a-4a4267) bg-(--s-100f20) p-3 text-white outline-none focus:border-(--a-b99bff)" />
               </div>
               {modal === 'criar' && <EscolherGrupo valor={grupoNovo} mudar={setGrupoNovo} />}
               {erro && <p role="alert" className="rounded-lg border border-red-500/40 p-3 text-sm text-red-200">{erro}</p>}
               <div className="flex gap-2">
-                <button type="button" onClick={fechar} className="flex-1 rounded-lg border border-[#62527e] px-3 py-3">Cancelar</button>
-                <button type="submit" disabled={processando || Boolean(crop)} className="flex-1 rounded-lg border border-[#a689e5] bg-[#7654bb] px-3 py-3 font-semibold hover:bg-[#8a67ce] disabled:opacity-50">
+                <button type="button" onClick={fechar} className="flex-1 rounded-lg border border-(--a-62527e) px-3 py-3">Cancelar</button>
+                <button type="submit" disabled={processando || Boolean(crop)} className="flex-1 rounded-lg border border-(--a-a689e5) bg-(--a-7654bb) px-3 py-3 font-semibold hover:bg-(--a-8a67ce) disabled:opacity-50">
                   {modal === 'criar' ? 'Criar perfil' : 'Salvar alterações'}
                 </button>
               </div>

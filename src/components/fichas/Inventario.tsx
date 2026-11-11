@@ -10,9 +10,9 @@ import type { Calculo } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { alvosDeBonus, CATEGORIAS_ITEM, lerItens, lerPoderes, lerUso, normalizarItem, normalizarPoder, podeUsar, TIPOS_PODER, type Bonus, type Item, type Poder, type Uso } from '@/lib/sistemas/inventario'
 
-const card = 'rounded-2xl border border-[#55456e] bg-[#201a32] p-4 sm:p-5'
-const input = 'w-full rounded-lg border border-[#5e4b78] bg-[#151123] p-2 text-white disabled:opacity-70'
-const botao = 'inline-flex items-center gap-1 rounded-lg border border-[#5e4b78] px-2.5 py-1.5 text-xs hover:bg-[#34294f] disabled:opacity-40'
+const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
+const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
+const botao = 'inline-flex items-center gap-1 rounded-lg border border-(--a-5e4b78) px-2.5 py-1.5 text-xs hover:bg-(--s-34294f) disabled:opacity-40'
 const novoId = () => Math.random().toString(36).slice(2, 12)
 export type Rolar = (expressao: string, rotulo: string) => Promise<void>
 
@@ -59,17 +59,17 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
   const abaAtual = abasItens.some(x => x.id === aba) ? aba : 'todos'
   const linhaItem = (it: Item) => {
           const eq = !!uso.itens[it.id]?.equipado, n = qtd(it)
-          return <li key={it.id} className={'rounded-xl border p-3 ' + (eq ? 'border-[#8b6cba] bg-[#2b2143]' : 'border-transparent bg-[#171325]') + (n <= 0 ? ' opacity-60' : '')}>
+          return <li key={it.id} className={'rounded-xl border p-3 ' + (eq ? 'border-(--a-8b6cba) bg-(--s-2b2143)' : 'border-transparent bg-(--s-171325)') + (n <= 0 ? ' opacity-60' : '')}>
             <div className="flex items-center gap-3">
               <ArteItem item={it} tamanho={46} />
               <span className="min-w-0 flex-1">
-                <span className="block font-semibold">{it.nome}{eq && <span className="ml-2 rounded bg-[#5b4380] px-1.5 py-0.5 text-[10px]">equipado</span>}</span>
-                <span className="block text-[11px]">{it.raridade && <strong style={{ color: corDaRaridade(it.raridade) }}>{RARIDADES.find(x => x.id === it.raridade)?.nome} · </strong>}<span className="text-[#c4b6d4]">{it.peso ? `${it.peso} ${c.carga.unidade} cada` : ''}</span></span>
+                <span className="block font-semibold">{it.nome}{eq && <span className="ml-2 rounded bg-(--a-5b4380) px-1.5 py-0.5 text-[10px]">equipado</span>}</span>
+                <span className="block text-[11px]">{it.raridade && <strong style={{ color: corDaRaridade(it.raridade) }}>{RARIDADES.find(x => x.id === it.raridade)?.nome} · </strong>}<span className="text-(--a-c4b6d4)">{it.peso ? `${it.peso} ${c.carga.unidade} cada` : ''}</span></span>
               </span>
             </div>
-            {(it.bonus.length > 0 || it.descricao) && <p className="mt-1 text-xs text-[#c9bcd9]">{it.bonus.map(b => `${nomeAlvo[b.alvo] ?? b.alvo} ${b.valor >= 0 ? '+' : ''}${b.valor}`).join(' · ')}{it.bonus.length && it.descricao ? ' — ' : ''}{it.descricao}</p>}
+            {(it.bonus.length > 0 || it.descricao) && <p className="mt-1 text-xs text-(--a-c9bcd9)">{it.bonus.map(b => `${nomeAlvo[b.alvo] ?? b.alvo} ${b.valor >= 0 ? '+' : ''}${b.valor}`).join(' · ')}{it.bonus.length && it.descricao ? ' — ' : ''}{it.descricao}</p>}
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span className="inline-flex items-center rounded-lg border border-[#5e4b78]">
+              <span className="inline-flex items-center rounded-lg border border-(--a-5e4b78)">
                 <button type="button" disabled={somenteLeitura || n <= 0} onClick={() => mudarQtd(it, -1)} aria-label={'Menos ' + it.nome} className="px-2 py-1 disabled:opacity-40"><Minus size={13} /></button>
                 <span className="min-w-8 text-center text-sm tabular-nums" aria-label="Quantidade">{n}</span>
                 <button type="button" disabled={somenteLeitura} onClick={() => mudarQtd(it, 1)} aria-label={'Mais ' + it.nome} className="px-2 py-1 disabled:opacity-40"><Plus size={13} /></button>
@@ -86,33 +86,33 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
 
   return <section className={card}>
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <h2 className="flex items-center gap-2 font-bold text-[#ed9cd8]"><Backpack size={18} /> Inventário</h2>
+      <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Backpack size={18} /> Inventário</h2>
       {!somenteLeitura && <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', categoria: 'equipamento', peso: 0, bonus: [] })}><Plus size={14} /> Novo item</button>}
     </div>
     <div className="mt-3 grid gap-3 sm:grid-cols-2">
-      <div className="rounded-xl bg-[#171325] p-3 text-sm">
-        <p className="text-xs text-[#c4b6d4]">Carga{s.carga?.dica ? ' · ' + s.carga.dica : ''}</p>
-        <p className="text-lg font-bold">{c.carga.total} {c.carga.max !== null ? `/ ${c.carga.max}` : ''} <span className="text-xs font-normal text-[#c4b6d4]">{c.carga.unidade}</span></p>
-        {c.carga.max ? <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#2b2140]"><div className={'h-full transition-all ' + (c.carga.total > c.carga.max ? 'bg-red-400' : 'bg-[#b06ad8]')} style={{ width: pct + '%' }} /></div> : null}
+      <div className="rounded-xl bg-(--s-171325) p-3 text-sm">
+        <p className="text-xs text-(--a-c4b6d4)">Carga{s.carga?.dica ? ' · ' + s.carga.dica : ''}</p>
+        <p className="text-lg font-bold">{c.carga.total} {c.carga.max !== null ? `/ ${c.carga.max}` : ''} <span className="text-xs font-normal text-(--a-c4b6d4)">{c.carga.unidade}</span></p>
+        {c.carga.max ? <div className="mt-1 h-2 overflow-hidden rounded-full bg-(--s-2b2140)"><div className={'h-full transition-all ' + (c.carga.total > c.carga.max ? 'bg-red-400' : 'bg-(--a-b06ad8)')} style={{ width: pct + '%' }} /></div> : null}
         {c.carga.max !== null && c.carga.total > c.carga.max && <p className="mt-1 text-xs text-red-200">Acima da capacidade!</p>}
       </div>
-      <label className="rounded-xl bg-[#171325] p-3 text-xs text-[#c4b6d4]">💰 Carteira (moedas e valores)
+      <label className="rounded-xl bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">💰 Carteira (moedas e valores)
         <input value={uso.carteira} disabled={somenteLeitura} maxLength={500} onChange={e => salvarUso({ ...uso, carteira: e.target.value })} placeholder="Ex.: 35 PO, 12 PP" className={input + ' mt-1 text-sm'} /></label>
     </div>
     {Object.keys(c.bonus).length > 0 && <p className="mt-3 rounded-lg bg-[#1f3a2c] p-2 text-xs text-[#a9f0c8]">Itens equipados somando: {Object.entries(c.bonus).map(([a, v]) => `${nomeAlvo[a] ?? a} ${v >= 0 ? '+' : ''}${v}`).join(' · ')}</p>}
-    {!itens.length && <p className="mt-3 text-sm text-[#bfb2cf]">Nenhum item ainda.{!somenteLeitura && ' Toque em “Novo item”.'}</p>}
+    {!itens.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">Nenhum item ainda.{!somenteLeitura && ' Toque em “Novo item”.'}</p>}
     {itens.length > 0 && <nav aria-label="Tipos de item" className="mt-4 flex gap-1.5 overflow-x-auto pb-1">
       {abasItens.map(a => <button key={a.id} type="button" onClick={() => setAba(a.id)} aria-pressed={abaAtual === a.id}
-        className={'shrink-0 rounded-full border px-3 py-1 text-xs ' + (abaAtual === a.id ? (a.id === 'magico' ? 'border-[#f0c46a] bg-[#3a2c58] text-amber-100' : 'border-[#b99bff] bg-[#3a2c58] text-white') : 'border-[#3d3152] text-[#cfc0df]')}>{a.nome} <span className="opacity-70">({a.n})</span></button>)}
+        className={'shrink-0 rounded-full border px-3 py-1 text-xs ' + (abaAtual === a.id ? (a.id === 'magico' ? 'border-[#f0c46a] bg-(--s-3a2c58) text-amber-100' : 'border-(--a-b99bff) bg-(--s-3a2c58) text-white') : 'border-(--a-3d3152) text-(--a-cfc0df)')}>{a.nome} <span className="opacity-70">({a.n})</span></button>)}
     </nav>}
-    {abaAtual === 'todos' && magicos.length > 0 && <div className="mt-3 rounded-2xl border border-[#f0c46a]/50 bg-gradient-to-br from-[#2e2147] to-[#1a1428] p-3 shadow-[0_0_18px_#b99bff33]">
+    {abaAtual === 'todos' && magicos.length > 0 && <div className="mt-3 rounded-2xl border border-[#f0c46a]/50 bg-gradient-to-br from-(--s-2e2147) to-(--s-1a1428) p-3 shadow-[0_0_18px_#b99bff33]">
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-200">{nomeMagico}</h3>
       <ul className="space-y-2">{magicos.map(linhaItem)}</ul>
     </div>}
     {abaAtual === 'todos' ? CATEGORIAS_ITEM.map(cat => {
       const lista = itens.filter(i => i.categoria === cat.id && !i.magico); if (!lista.length) return null
       return <div key={cat.id} className="mt-4">
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#d3adf0]">{cat.icone} {nomeCategoria(cat.id)}</h3>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{cat.icone} {nomeCategoria(cat.id)}</h3>
         <ul className="space-y-2">{lista.map(linhaItem)}</ul>
       </div>
     }) : <ul className="mt-3 space-y-2">{itens.filter(i => abaAtual === 'magico' ? i.magico : i.categoria === abaAtual).map(linhaItem)}</ul>}
@@ -147,24 +147,24 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
 
   return <section className={card}>
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <h2 className="flex items-center gap-2 font-bold text-[#ed9cd8]"><Sparkles size={18} /> Poderes e magias</h2>
+      <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Sparkles size={18} /> Poderes e magias</h2>
       <div className="flex gap-2">
         {comUsos && !somenteLeitura && <button type="button" className={botao} onClick={descansar} title="Zera os usos gastos"><Moon size={14} /> Descansar</button>}
         {!somenteLeitura && <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', tipo: 'habilidade' })}><Plus size={14} /> Novo poder</button>}
       </div>
     </div>
-    {!poderes.length && <p className="mt-3 text-sm text-[#bfb2cf]">Nenhum poder ainda.{!somenteLeitura && ' Toque em “Novo poder”.'}</p>}
+    {!poderes.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">Nenhum poder ainda.{!somenteLeitura && ' Toque em “Novo poder”.'}</p>}
     <ul className="mt-3 space-y-2">{poderes.map(p => {
       const tipo = TIPOS_PODER.find(t => t.id === p.tipo)!, gastos = uso.poderes[p.id] ?? 0
       const atual = p.recurso ? d.recursos[p.recurso]?.atual ?? 0 : undefined
       const ok = podeUsar(p, uso, atual).ok
-      return <li key={p.id} className="rounded-xl bg-[#171325] p-3">
+      return <li key={p.id} className="rounded-xl bg-(--s-171325) p-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="min-w-0 flex-1 font-semibold">{tipo.icone} {p.nome}</span>
-          <span className="rounded bg-[#2b2140] px-1.5 py-0.5 text-[10px] text-[#d6c8e8]">{tipo.nome}</span>
-          {p.id.startsWith('arv-') && <span className="rounded bg-[#3b2b57] px-1.5 py-0.5 text-[10px] text-amber-200" title="Vem de um hexágono liberado; muda na Árvore de habilidades">🌠 Árvore</span>}
+          <span className="rounded bg-(--s-2b2140) px-1.5 py-0.5 text-[10px] text-(--a-d6c8e8)">{tipo.nome}</span>
+          {p.id.startsWith('arv-') && <span className="rounded bg-(--s-3b2b57) px-1.5 py-0.5 text-[10px] text-amber-200" title="Vem de um hexágono liberado; muda na Árvore de habilidades">🌠 Árvore</span>}
         </div>
-        <p className="mt-1 text-xs text-[#c9bcd9]">
+        <p className="mt-1 text-xs text-(--a-c9bcd9)">
           {[p.recurso && p.custo ? `Custo: ${p.custo} ${nomeRecurso[p.recurso] ?? p.recurso}` : '', p.usosMax ? `Usos: ${p.usosMax - gastos}/${p.usosMax} (${p.recarga === 'curto' ? 'descanso curto' : 'descanso longo'})` : '', p.expressao ? `Rolagem: ${p.expressao}` : ''].filter(Boolean).join(' · ')}
           {p.descricao && <span className="mt-1 block whitespace-pre-wrap">{p.descricao}</span>}
         </p>
@@ -182,8 +182,8 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
 
 function Janela({ titulo, fechar, children }: { titulo: string; fechar: () => void; children: React.ReactNode }) {
   return <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 p-3 sm:items-center" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
-    <div role="dialog" aria-modal="true" aria-label={titulo} className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[#6d5690] bg-[#1b1529] p-5 text-sm text-[#f2ebff]">
-      <div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-bold">{titulo}</h2><button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1.5 hover:bg-[#38294d]"><X size={18} /></button></div>
+    <div role="dialog" aria-modal="true" aria-label={titulo} className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-(--a-6d5690) bg-(--s-1b1529) p-5 text-sm text-(--a-f2ebff)">
+      <div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-bold">{titulo}</h2><button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1.5 hover:bg-(--s-38294d)"><X size={18} /></button></div>
       {children}
     </div>
   </div>
@@ -198,11 +198,11 @@ function FotoDoItem({ it, setIt }: { it: Item; setIt: (i: Item) => void }) {
     setOcupado(true)
     try { setIt({ ...it, imagem: await enviarImagemNuvem('imagens', f, 600) }) } catch (e) { toast.error(e instanceof ErroNuvem ? e.message : 'Falha ao enviar a imagem.') } finally { setOcupado(false) }
   }
-  return <div className="flex items-center gap-3 rounded-xl border border-[#55456e] bg-[#171325] p-2.5">
+  return <div className="flex items-center gap-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-2.5">
     <ArteItem item={it} tamanho={64} />
     <div className="min-w-0 flex-1 text-sm">
-      <p className="font-semibold">📷 Foto do item <span className="text-xs font-normal text-[#c4b6d4]">(opcional)</span></p>
-      <p className="text-[11px] text-[#c4b6d4]">{it.imagem ? 'A foto aparece no lugar do desenho.' : 'Use uma imagem da sua galeria, ou monte o desenho na forja abaixo.'}</p>
+      <p className="font-semibold">📷 Foto do item <span className="text-xs font-normal text-(--a-c4b6d4)">(opcional)</span></p>
+      <p className="text-[11px] text-(--a-c4b6d4)">{it.imagem ? 'A foto aparece no lugar do desenho.' : 'Use uma imagem da sua galeria, ou monte o desenho na forja abaixo.'}</p>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         <label className={botao + ' cursor-pointer ' + (ocupado ? 'pointer-events-none opacity-50' : '')}>{ocupado ? 'Enviando…' : it.imagem ? 'Trocar foto' : 'Escolher foto'}
           <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void enviar(f) }} /></label>
@@ -220,8 +220,8 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
     <form className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return } salvar({ ...v, id: inicial.id }) }}>
       <FotoDoItem it={it} setIt={setIt} />
       {!it.imagem && <Forja it={it} setIt={setIt} />}
-      <label className="flex items-center gap-2 rounded-xl border border-[#8b6cba]/60 bg-[#241a3a] p-2.5 text-sm"><input type="checkbox" checked={!!it.magico} onChange={e => setIt({ ...it, magico: e.target.checked || undefined })} className="h-4 w-4 accent-[#b99bff]" />
-        <span>✨ <b>Item mágico</b> <span className="text-xs text-[#c4b6d4]">— aparece na ala dos itens mágicos, com brilho</span></span></label>
+      <label className="flex items-center gap-2 rounded-xl border border-(--a-8b6cba)/60 bg-(--s-241a3a) p-2.5 text-sm"><input type="checkbox" checked={!!it.magico} onChange={e => setIt({ ...it, magico: e.target.checked || undefined })} className="h-4 w-4 accent-(--a-b99bff)" />
+        <span>✨ <b>Item mágico</b> <span className="text-xs text-(--a-c4b6d4)">— aparece na ala dos itens mágicos, com brilho</span></span></label>
       <label className="block">Nome<input required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Espada longa" /></label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block">Tipo<select value={it.categoria} onChange={e => setIt({ ...it, categoria: e.target.value as Item['categoria'] })} className={input + ' mt-1'}>{CATEGORIAS_ITEM.map(c => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></label>
@@ -232,19 +232,19 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
           <input value={it.dano ?? ''} maxLength={40} onChange={e => setIt({ ...it, dano: e.target.value })} className={input + ' mt-1'} placeholder="Opcional" /></label>
         <label className="block">Alcance (m)<input type="number" min={0} max={1000} step="1.5" value={it.alcance ?? ''} onChange={e => setIt({ ...it, alcance: Number(e.target.value) || undefined })} className={input + ' mt-1'} placeholder="1,5" /></label>
       </div>
-      {alvos.length > 0 && <fieldset className="rounded-xl border border-[#55456e] p-3">
-        <legend className="px-1 text-xs text-[#d3adf0]">Bônus quando equipado</legend>
+      {alvos.length > 0 && <fieldset className="rounded-xl border border-(--a-55456e) p-3">
+        <legend className="px-1 text-xs text-(--a-d3adf0)">Bônus quando equipado</legend>
         {it.bonus.map((b, i) => <div key={i} className="mb-2 flex gap-2">
           <select aria-label="Onde soma" value={b.alvo} onChange={e => setB(i, { alvo: e.target.value })} className={input + ' flex-1'}>{alvos.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}</select>
           <input aria-label="Valor" type="number" value={b.valor} onChange={e => setB(i, { valor: Number(e.target.value) || 0 })} className={input + ' w-20'} />
           <button type="button" onClick={() => setIt({ ...it, bonus: it.bonus.filter((_, k) => k !== i) })} aria-label="Tirar bônus" className={botao}><Trash2 size={13} /></button>
         </div>)}
         {it.bonus.length < 8 && <button type="button" className={botao} onClick={() => setIt({ ...it, bonus: [...it.bonus, { alvo: alvos[0].id, valor: 1 }] })}><Plus size={13} /> Adicionar bônus</button>}
-        <p className="mt-2 text-[11px] text-[#a998bd]">Ex.: escudo → Classe de Armadura +2; anel → uma resistência +1.</p>
+        <p className="mt-2 text-[11px] text-(--a-a998bd)">Ex.: escudo → Classe de Armadura +2; anel → uma resistência +1.</p>
       </fieldset>}
       <label className="block">Descrição<textarea rows={3} value={it.descricao ?? ''} maxLength={2000} onChange={e => setIt({ ...it, descricao: e.target.value })} className={input + ' mt-1'} /></label>
-      <div className="flex gap-2"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-[#62527e] p-2.5">Cancelar</button>
-        <button type="submit" className="flex-1 rounded-lg bg-[#7654bb] p-2.5 font-semibold">Salvar</button></div>
+      <div className="flex gap-2"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-(--a-62527e) p-2.5">Cancelar</button>
+        <button type="submit" className="flex-1 rounded-lg bg-(--a-7654bb) p-2.5 font-semibold">Salvar</button></div>
     </form>
   </Janela>
 }
@@ -269,8 +269,8 @@ export function EditorPoder({ s, inicial, salvar, fechar }: { s?: Sistema; inici
         <option value="longo">🌙 Descanso longo</option><option value="curto">☕ Descanso curto (ou longo)</option></select></label>}
       <label className="block">Alcance na mesa (metros)<input type="number" min={0} max={1000} step="1.5" value={p.alcance ?? ''} onChange={e => setP({ ...p, alcance: Number(e.target.value) || undefined })} className={input + ' mt-1'} placeholder="Corpo a corpo (1,5 m)" /></label>
       <label className="block">Descrição<textarea rows={4} value={p.descricao ?? ''} maxLength={2000} onChange={e => setP({ ...p, descricao: e.target.value })} className={input + ' mt-1'} placeholder="Alcance, duração, efeito…" /></label>
-      <div className="flex gap-2"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-[#62527e] p-2.5">Cancelar</button>
-        <button type="submit" className="flex-1 rounded-lg bg-[#7654bb] p-2.5 font-semibold">Salvar</button></div>
+      <div className="flex gap-2"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-(--a-62527e) p-2.5">Cancelar</button>
+        <button type="submit" className="flex-1 rounded-lg bg-(--a-7654bb) p-2.5 font-semibold">Salvar</button></div>
     </form>
   </Janela>
 }
@@ -288,11 +288,11 @@ function Forja({ it, setIt }: { it: Item; setIt: (i: Item) => void }) {
     setIt({ ...it, arte: { forma: f.id, cor: c(), cor2: c() }, raridade: rar, nome: it.nome || nomeAleatorio(f.id) })
   }
   const cor = corDaRaridade(it.raridade)
-  return <div className="overflow-hidden rounded-2xl border border-[#55456e] bg-[#151123]">
+  return <div className="overflow-hidden rounded-2xl border border-(--a-55456e) bg-(--s-151123)">
     <div className="flex items-center gap-3 p-3" style={{ background: `linear-gradient(90deg, ${cor}22, transparent)` }}>
       <ArteItem item={it} tamanho={aberta ? 96 : 56} />
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-bold uppercase tracking-widest text-[#ed9cd8]">⚒️ Forja</p>
+        <p className="text-xs font-bold uppercase tracking-widest text-(--a-ed9cd8)">⚒️ Forja</p>
         <p className="truncate font-semibold">{it.nome || 'Item sem nome'}</p>
         {it.raridade && <p className="text-xs font-bold" style={{ color: cor }}>{RARIDADES.find(r => r.id === it.raridade)?.nome}</p>}
       </div>
@@ -301,16 +301,16 @@ function Forja({ it, setIt }: { it: Item; setIt: (i: Item) => void }) {
         <button type="button" onClick={() => setAberta(v => !v)} className={botao}>{aberta ? 'Fechar forja' : '🎨 Personalizar'}</button>
       </div>
     </div>
-    {aberta && <div className="space-y-3 border-t border-[#3d3152] p-3">
-      <div><p className="mb-1 text-xs text-[#d3adf0]">Forma</p>
+    {aberta && <div className="space-y-3 border-t border-(--a-3d3152) p-3">
+      <div><p className="mb-1 text-xs text-(--a-d3adf0)">Forma</p>
         <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-7">{FORMAS.map(f => <button key={f.id} type="button" title={f.nome} aria-label={'Forma ' + f.nome} aria-pressed={a.forma === f.id}
-          onClick={() => mudar({ forma: f.id })} className={'rounded-lg border p-0.5 ' + (a.forma === f.id ? 'border-[#e4d3ff] bg-[#3b2a5a]' : 'border-[#3d3152] bg-[#1e1a30] hover:border-[#8b6cba]')}>
+          onClick={() => mudar({ forma: f.id })} className={'rounded-lg border p-0.5 ' + (a.forma === f.id ? 'border-(--a-e4d3ff) bg-(--s-3b2a5a)' : 'border-(--a-3d3152) bg-(--s-1e1a30) hover:border-(--a-8b6cba)')}>
           <svg viewBox="0 0 100 100" className="h-9 w-full" aria-hidden dangerouslySetInnerHTML={{ __html: f.desenho(a.cor, a.cor2) }} /></button>)}</div></div>
-      {([['cor', 'Cor principal'], ['cor2', 'Cor do detalhe']] as const).map(([k, rot]) => <div key={k}><p className="mb-1 text-xs text-[#d3adf0]">{rot}</p>
+      {([['cor', 'Cor principal'], ['cor2', 'Cor do detalhe']] as const).map(([k, rot]) => <div key={k}><p className="mb-1 text-xs text-(--a-d3adf0)">{rot}</p>
         <div className="flex flex-wrap items-center gap-1.5">{CORES_FORJA.map(c => <button key={c} type="button" aria-label={rot + ' ' + c} aria-pressed={a[k] === c} onClick={() => mudar({ [k]: c })}
           className={'h-7 w-7 rounded-full border-2 ' + (a[k] === c ? 'border-white' : 'border-black/40')} style={{ background: c }} />)}
-          <input type="color" aria-label={rot + ' personalizada'} value={a[k]} onChange={e => mudar({ [k]: e.target.value })} className="h-7 w-9 cursor-pointer rounded border border-[#5e4b78] bg-transparent" /></div></div>)}
-      <div><p className="mb-1 text-xs text-[#d3adf0]">Raridade</p>
+          <input type="color" aria-label={rot + ' personalizada'} value={a[k]} onChange={e => mudar({ [k]: e.target.value })} className="h-7 w-9 cursor-pointer rounded border border-(--a-5e4b78) bg-transparent" /></div></div>)}
+      <div><p className="mb-1 text-xs text-(--a-d3adf0)">Raridade</p>
         <div className="flex flex-wrap gap-1.5"><button type="button" onClick={() => setIt({ ...it, raridade: undefined })} className={botao + (!it.raridade ? ' border-white' : '')}>Nenhuma</button>
           {RARIDADES.map(r => <button key={r.id} type="button" onClick={() => setIt({ ...it, raridade: r.id })} className={botao + ' font-semibold'} style={{ color: r.cor, borderColor: it.raridade === r.id ? r.cor : undefined, background: it.raridade === r.id ? r.cor + '22' : undefined }}>{r.nome}</button>)}</div></div>
       <button type="button" className={botao} onClick={() => setIt({ ...it, nome: nomeAleatorio(a.forma) })}>✨ Sugerir um nome</button>

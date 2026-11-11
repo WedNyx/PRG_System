@@ -6,6 +6,35 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.32.9', data: '2026-11-11', titulo: 'Plataforma mais bonita e do seu jeito',
+    itens: [
+      '🎨 Cada tema agora muda as cores da plataforma inteira, não só o fundo: Lua cheia fica azul, Céu carmesim fica vermelho, Nuvens de algodão fica rosa, Grimório celestial fica anil e Prisma fica prateado.',
+      '🪟 Visual novo: cartões de vidro que deixam o fundo aparecer desfocado, sombras mais suaves, botões com brilho e títulos com letra de fantasia. O texto também ganhou uma letra mais bonita e legível.',
+      '✨ Central → Aparência: personalize do seu jeito — foto de fundo da sua galeria (com ajuste para escurecer e desfocar), cor principal, cor, claridade e transparência dos cartões, fonte dos títulos (Fantasia, Elegante ou Simples) e tamanho do texto.',
+      '☁️ A aparência fica salva no seu perfil: vale no celular e no computador, e cada pessoa do grupo pode ter a sua. Tudo muda na hora, e “Voltar ao padrão do tema” desfaz.',
+    ],
+  },
+  {
+    versao: '0.32.8', data: '2026-11-11', titulo: 'Ficha organizada e ajuda nas telas',
+    itens: [
+      '📜 Ficha com topo novo: o nome do personagem, o sistema e se a ficha é avulsa ou de campanha, com um selo colorido mostrando se já salvou (verde) ou se ainda está salvando (amarelo).',
+      '❔ Botão “Ajuda” na ficha com o passo a passo: menu, salvar, rolar dados, vida e recursos, inventário e o que muda numa campanha.',
+      'Cada parte da ficha começa com uma linha explicando para que serve, e no fim há um atalho “Próxima parte →”.',
+      '📱 No celular, os campos curtos (nível, números) ficam lado a lado, a barra de vida não é mais cortada (“CA” no lugar de “Classe de Armadura”) e o menu da ficha acompanha a parte escolhida.',
+      '❔ Ajuda também no Portal (escolher e criar perfil) e no Histórico de rolagens em tela cheia.',
+    ],
+  },
+  {
+    versao: '0.32.7', data: '2026-11-11', titulo: 'Central e menus',
+    itens: [
+      '🧭 Central reorganizada: o menu lateral mostra seu perfil no topo, cada seção com uma descrição curta e os atalhos separados em “Conta” (Editar perfil, Temas, Trocar aventureiro) e “Ajuda” (Guia, Tutoriais, Novidades).',
+      '📱 No celular, uma barra fixa embaixo leva direto para Início, Fichas, Campanhas, Sistemas e Rolagens — sem precisar abrir o menu.',
+      '❔ Cada seção da Central tem um título com explicação e um botão “Como funciona?” com o passo a passo.',
+      '↩️ “Continuar de onde parou” no Início: suas campanhas (com botão para a Mesa) e as últimas fichas mexidas, a um toque.',
+      '📜 Fichas com nomes mais claros: “Avulsas” (só suas) e “Em campanhas”.',
+    ],
+  },
+  {
     versao: '0.32.6', data: '2026-11-11', titulo: 'Mesa organizada',
     itens: [
       '🗺️ Mesa reorganizada: o painel agora tem 5 grupos — 💬 Chat, ⚔️ Jogo (Fichas, Iniciativa e Tokens), 🎵 Música, 📖 Diário e 👑 Mestre (Controles, Biblioteca e Tabelas) — em vez de 10 abas espremidas.',

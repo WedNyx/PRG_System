@@ -13,8 +13,8 @@ import { api, enviarImagemNuvem, ErroNuvem } from '@/lib/nuvem/cliente'
 import { ICONES, lerMundo, novoId, posicaoNaTeia, TIPOS_PAGINA, TIPOS_RELACAO, type Mundo, type Pagina, type Relacao } from '@/lib/mundo'
 import { ligarZoomSuave } from '@/lib/zoomRoda'
 
-const btn = 'inline-flex items-center gap-1.5 rounded-lg border border-[#5e4b78] px-2.5 py-1.5 text-xs hover:bg-[#34294f] disabled:opacity-50'
-const input = 'w-full rounded-lg border border-[#5e4b78] bg-[#100f20] p-2 text-sm text-white'
+const btn = 'inline-flex items-center gap-1.5 rounded-lg border border-(--a-5e4b78) px-2.5 py-1.5 text-xs hover:bg-(--s-34294f) disabled:opacity-50'
+const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-100f20) p-2 text-sm text-white'
 const msg = (e: unknown) => e instanceof Error ? e.message : 'Falha de conexão.'
 type Estado = { campanha: { id: string; nome: string }; admin: boolean; mundo: Mundo }
 type Aba = 'mapa' | 'teia' | 'paginas'
@@ -59,7 +59,7 @@ export default function MundoCampanha({ campanhaId }: { campanhaId: string }) {
   }, [e, campanhaId, carregar])
 
   if (erro && !e) return <Tela><p className="text-center">{erro}</p><Link href="/central" className="mt-3 block text-center underline">Voltar</Link></Tela>
-  if (!e) return <Tela><p className="text-center text-[#b4aeca]">Abrindo o mundo…</p></Tela>
+  if (!e) return <Tela><p className="text-center text-(--a-b4aeca)">Abrindo o mundo…</p></Tela>
   const { mundo, admin } = e
   const pagina = aberta ? mundo.paginas.find(p => p.id === aberta) ?? null : null
   const salvarPagina = (p: Pagina) => {
@@ -74,16 +74,16 @@ export default function MundoCampanha({ campanhaId }: { campanhaId: string }) {
   }
   const verNoMapa = (id: string) => { setAba('mapa'); setAberta(null); setDestaque(id); setTimeout(() => setDestaque(d => d === id ? null : d), 4000) }
 
-  return <main className="fundo-tema flex min-h-screen flex-col text-[#f4f0ff]">
-    <header className="sticky top-0 z-30 flex flex-wrap items-center gap-2 border-b border-[#373251] bg-[#19172c]/95 px-3 py-2 backdrop-blur">
-      <Link href={'/mesa?campanha=' + campanhaId} className="inline-flex items-center gap-1 text-sm text-[#b99bff] hover:underline"><ArrowLeft size={16} /> Mesa</Link>
+  return <main className="fundo-tema flex min-h-screen flex-col text-(--a-f4f0ff)">
+    <header className="sticky top-0 z-30 flex flex-wrap items-center gap-2 border-b border-(--a-373251) bg-(--s-19172c)/95 px-3 py-2 backdrop-blur">
+      <Link href={'/mesa?campanha=' + campanhaId} className="inline-flex items-center gap-1 text-sm text-(--a-b99bff) hover:underline"><ArrowLeft size={16} /> Mesa</Link>
       <h1 className="min-w-0 flex-1 truncate font-bold">🗺️ Mundo · {e.campanha.nome}</h1>
-      {admin && <span className="rounded-full bg-[#34294f] px-2 py-1 text-[11px] text-[#d6c8e8]">👑 Você edita</span>}
+      {admin && <span className="rounded-full bg-(--s-34294f) px-2 py-1 text-[11px] text-(--a-d6c8e8)">👑 Você edita</span>}
     </header>
-    <nav className="flex gap-1 border-b border-[#373251] bg-[#14111f] px-3 py-2">
+    <nav className="flex gap-1 border-b border-(--a-373251) bg-(--s-14111f) px-3 py-2">
       {([['mapa', '🗺️ Mapa'], ['teia', '🕸️ Relações'], ['paginas', '📖 Páginas']] as const).map(([id, nome]) =>
-        <button key={id} type="button" onClick={() => setAba(id)} className={'rounded-full px-3 py-1.5 text-sm ' + (aba === id ? 'bg-[#5b4380] text-white' : 'text-[#c4b6d4] hover:bg-[#241e38]')}>{nome}</button>)}
-      <span className="ml-auto self-center text-xs text-[#a998bd]">{mundo.paginas.length} página(s)</span>
+        <button key={id} type="button" onClick={() => setAba(id)} className={'rounded-full px-3 py-1.5 text-sm ' + (aba === id ? 'bg-(--a-5b4380) text-white' : 'text-(--a-c4b6d4) hover:bg-(--s-241e38)')}>{nome}</button>)}
+      <span className="ml-auto self-center text-xs text-(--a-a998bd)">{mundo.paginas.length} página(s)</span>
     </nav>
 
     <div className="relative min-h-0 flex-1">
@@ -109,7 +109,7 @@ export default function MundoCampanha({ campanhaId }: { campanhaId: string }) {
 }
 
 function Tela({ children }: { children: React.ReactNode }) {
-  return <main className="fundo-tema flex min-h-screen items-center justify-center p-6 text-[#f4f0ff]"><div>{children}</div></main>
+  return <main className="fundo-tema flex min-h-screen items-center justify-center p-6 text-(--a-f4f0ff)"><div>{children}</div></main>
 }
 
 /* ---------------- Mapa ---------------- */
@@ -142,11 +142,11 @@ function AbaMapa({ mundo, admin, campanhaId, destaque, posicionando, abrir, salv
   if (!mundo.mapa) return <div className="mx-auto max-w-lg p-6 text-center">
     <p className="text-5xl">🗺️</p>
     <h2 className="mt-3 text-xl font-bold">{admin ? 'Comece pelo mapa do mundo' : 'O mestre ainda não mostrou o mapa'}</h2>
-    <p className="mt-2 text-sm text-[#b4aeca]">{admin ? 'Envie uma imagem do mapa (desenhada à mão, de um gerador de mapas…). Depois é só tocar nele para marcar cidades, masmorras e segredos.' : 'Enquanto isso, veja as páginas e a teia de relações.'}</p>
+    <p className="mt-2 text-sm text-(--a-b4aeca)">{admin ? 'Envie uma imagem do mapa (desenhada à mão, de um gerador de mapas…). Depois é só tocar nele para marcar cidades, masmorras e segredos.' : 'Enquanto isso, veja as páginas e a teia de relações.'}</p>
     {admin && <div className="mt-4 flex justify-center">{enviar}</div>}
   </div>
 
-  return <div className="absolute inset-0 overflow-hidden bg-[#0b0a14]">
+  return <div className="absolute inset-0 overflow-hidden bg-(--s-0b0a14)">
     <TransformWrapper ref={zoom} minScale={0.4} maxScale={6} initialScale={1} centerOnInit limitToBounds={false} doubleClick={{ disabled: true }} wheel={{ disabled: true }}
       panning={{ disabled: !!arrasto, velocityDisabled: true }} onInit={ref => { desligar.current?.(); desligar.current = ligarZoomSuave(ref, 0.4, 6) }}
       onTransform={(_r, s) => setEscala(s.scale)}>
@@ -171,7 +171,7 @@ function AbaMapa({ mundo, admin, campanhaId, destaque, posicionando, abrir, salv
               onPointerDown={ev => { if (!admin) return; ev.stopPropagation(); arrastou.current = false; setArrasto({ id: p.id, ...p.mapa! }) }}
               onClick={ev => { ev.stopPropagation(); if (!arrastou.current) abrir(p.id); arrastou.current = false }}>
               <span className={'flex h-11 w-11 items-center justify-center rounded-full border-2 text-2xl shadow-[0_4px_10px_#000a] transition group-hover:scale-110 '
-                + (p.oculto ? 'border-dashed border-[#a998bd] bg-[#19172c]/80 opacity-75' : 'border-[#fde68a] bg-[#2b2143]') + (luz ? ' prg-vez' : '')}>{p.icone}</span>
+                + (p.oculto ? 'border-dashed border-(--a-a998bd) bg-(--s-19172c)/80 opacity-75' : 'border-[#fde68a] bg-(--s-2b2143)') + (luz ? ' prg-vez' : '')}>{p.icone}</span>
               <span className="-mt-0.5 h-3 w-0.5 bg-[#fde68a]" />
               <span className="mt-0.5 max-w-36 truncate rounded-md bg-black/75 px-1.5 py-0.5 text-[11px] font-semibold text-white">{p.oculto && '🙈 '}{p.nome}</span>
             </button>
@@ -182,11 +182,11 @@ function AbaMapa({ mundo, admin, campanhaId, destaque, posicionando, abrir, salv
     {(criando || posicionando) && <div className="pointer-events-none absolute inset-x-2 top-2 z-30 mx-auto flex max-w-md items-center gap-2 rounded-xl border border-amber-400/60 bg-[#2b2310]/90 p-2 text-sm text-amber-100">
       <MapPin size={18} /><span className="flex-1">{posicionando ? 'Toque no mapa onde fica este lugar.' : 'Toque no mapa onde fica o novo lugar.'}</span>
       <button type="button" className="pointer-events-auto rounded-lg border border-amber-300/60 px-2 py-1 text-xs" onClick={() => { setCriando(false); cancelarPosicao() }}>Cancelar</button></div>}
-    {admin && <div className="absolute bottom-3 left-3 z-30 flex flex-wrap gap-2 rounded-xl border border-[#373251] bg-[#19172c]/95 p-2">
+    {admin && <div className="absolute bottom-3 left-3 z-30 flex flex-wrap gap-2 rounded-xl border border-(--a-373251) bg-(--s-19172c)/95 p-2">
       <button type="button" className={btn + ' border-amber-300/60 font-semibold'} onClick={() => setCriando(true)}><Plus size={14} /> Marcar lugar</button>
       {enviar}
     </div>}
-    {!noMapa.length && <p className="pointer-events-none absolute inset-x-0 bottom-20 z-20 text-center text-sm text-[#d6c8e8] [text-shadow:0_1px_3px_#000]">{admin ? 'Toque em “Marcar lugar” e depois no mapa.' : 'Nenhum lugar marcado ainda.'}</p>}
+    {!noMapa.length && <p className="pointer-events-none absolute inset-x-0 bottom-20 z-20 text-center text-sm text-(--a-d6c8e8) [text-shadow:0_1px_3px_#000]">{admin ? 'Toque em “Marcar lugar” e depois no mapa.' : 'Nenhum lugar marcado ainda.'}</p>}
   </div>
 }
 
@@ -206,13 +206,13 @@ function AbaTeia({ mundo, admin, abrir, salvar, novaLigacao }: { mundo: Mundo; a
   }
   if (!nos.length) return <div className="mx-auto max-w-lg p-6 text-center"><p className="text-5xl">🕸️</p>
     <h2 className="mt-3 text-xl font-bold">Ninguém na teia ainda</h2>
-    <p className="mt-2 text-sm text-[#b4aeca]">{admin ? 'Crie páginas de Personagens e Facções (aba Páginas) e ligue quem é aliado, inimigo, família…' : 'O mestre ainda não mostrou as relações.'}</p></div>
+    <p className="mt-2 text-sm text-(--a-b4aeca)">{admin ? 'Crie páginas de Personagens e Facções (aba Páginas) e ligue quem é aliado, inimigo, família…' : 'O mestre ainda não mostrou as relações.'}</p></div>
   return <div className="flex h-full flex-col p-3">
     <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px]">
       {TIPOS_RELACAO.map(t => <span key={t.id} className="inline-flex items-center gap-1"><span className="inline-block h-1 w-5 rounded" style={{ background: t.cor }} />{t.nome}</span>)}
-      {admin && <button type="button" className={btn + ' ml-auto border-[#b99bff]'} onClick={novaLigacao}><Link2 size={14} /> Nova ligação</button>}
+      {admin && <button type="button" className={btn + ' ml-auto border-(--a-b99bff)'} onClick={novaLigacao}><Link2 size={14} /> Nova ligação</button>}
     </div>
-    <svg ref={svg} viewBox="0 0 1000 700" className="w-full flex-1 touch-none rounded-2xl border border-[#3d3152] bg-[radial-gradient(circle_at_50%_40%,#241a3a,#0f0c1d)]" style={{ minHeight: 320 }}
+    <svg ref={svg} viewBox="0 0 1000 700" className="w-full flex-1 touch-none rounded-2xl border border-(--a-3d3152) bg-[radial-gradient(circle_at_50%_40%,#241a3a,#0f0c1d)]" style={{ minHeight: 320 }}
       onPointerMove={ev => { if (!arrasto) return; moveu.current = true; const q = ponto(ev.clientX, ev.clientY); if (q) setArrasto({ ...arrasto, ...q }) }}
       onPointerUp={() => { if (arrasto && moveu.current) void salvar({ ...mundo, paginas: mundo.paginas.map(p => p.id === arrasto.id ? { ...p, teia: { x: Math.round(arrasto.x), y: Math.round(arrasto.y) } } : p) }); setArrasto(null) }}>
       <defs><marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="context-stroke" /></marker></defs>
@@ -234,7 +234,7 @@ function AbaTeia({ mundo, admin, abrir, salvar, novaLigacao }: { mundo: Mundo; a
           <text textAnchor="middle" y={58} fontSize={17} fontWeight={700} fill="#f4f0ff" stroke="#0f0c1d" strokeWidth={4} paintOrder="stroke">{p.nome.length > 18 ? p.nome.slice(0, 17) + '…' : p.nome}</text>
         </g> })}
     </svg>
-    <p className="mt-2 text-center text-[11px] text-[#a998bd]">{admin ? 'Arraste para organizar · toque para abrir a página' : 'Toque em alguém para ver a página'}</p>
+    <p className="mt-2 text-center text-[11px] text-(--a-a998bd)">{admin ? 'Arraste para organizar · toque para abrir a página' : 'Toque em alguém para ver a página'}</p>
   </div>
 }
 
@@ -245,22 +245,22 @@ function AbaPaginas({ mundo, admin, abrir, nova }: { mundo: Mundo; admin: boolea
   const lista = mundo.paginas.filter(p => (!tipo || p.tipo === tipo) && (!busca || (p.nome + ' ' + (p.texto ?? '')).toLowerCase().includes(busca.toLowerCase())))
   return <div className="mx-auto max-w-3xl p-3">
     <div className="flex gap-2">
-      <label className="relative flex-1"><Search size={15} className="absolute left-2.5 top-2.5 text-[#a998bd]" />
+      <label className="relative flex-1"><Search size={15} className="absolute left-2.5 top-2.5 text-(--a-a998bd)" />
         <input value={busca} onChange={x => setBusca(x.target.value)} placeholder="Procurar…" className={input + ' pl-8'} /></label>
-      {admin && <button type="button" onClick={nova} className="inline-flex items-center gap-1 rounded-lg bg-[#7654bb] px-3 text-sm font-semibold"><Plus size={15} /> Nova página</button>}
+      {admin && <button type="button" onClick={nova} className="inline-flex items-center gap-1 rounded-lg bg-(--a-7654bb) px-3 text-sm font-semibold"><Plus size={15} /> Nova página</button>}
     </div>
     <div className="mt-2 flex flex-wrap gap-1.5">
-      <button type="button" onClick={() => setTipo('')} className={'rounded-full px-3 py-1 text-xs ' + (!tipo ? 'bg-[#5b4380]' : 'bg-[#1e1a30] text-[#c4b6d4]')}>Tudo</button>
-      {TIPOS_PAGINA.map(t => <button key={t.id} type="button" onClick={() => setTipo(t.id)} className={'rounded-full px-3 py-1 text-xs ' + (tipo === t.id ? 'bg-[#5b4380]' : 'bg-[#1e1a30] text-[#c4b6d4]')}>{t.icone} {t.nome}</button>)}
+      <button type="button" onClick={() => setTipo('')} className={'rounded-full px-3 py-1 text-xs ' + (!tipo ? 'bg-(--a-5b4380)' : 'bg-(--s-1e1a30) text-(--a-c4b6d4)')}>Tudo</button>
+      {TIPOS_PAGINA.map(t => <button key={t.id} type="button" onClick={() => setTipo(t.id)} className={'rounded-full px-3 py-1 text-xs ' + (tipo === t.id ? 'bg-(--a-5b4380)' : 'bg-(--s-1e1a30) text-(--a-c4b6d4)')}>{t.icone} {t.nome}</button>)}
     </div>
     <ul className="mt-3 grid gap-2 sm:grid-cols-2">{lista.map(p => <li key={p.id}>
-      <button type="button" onClick={() => abrir(p.id)} className="flex w-full gap-3 rounded-xl border border-[#3d3152] bg-[#1e1a30] p-2 text-left hover:border-[#8b6cba]">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#2b2143] bg-cover bg-center text-3xl" style={p.imagem ? { backgroundImage: `url("${p.imagem}")` } : undefined}>{p.imagem ? '' : p.icone}</span>
+      <button type="button" onClick={() => abrir(p.id)} className="flex w-full gap-3 rounded-xl border border-(--a-3d3152) bg-(--s-1e1a30) p-2 text-left hover:border-(--a-8b6cba)">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-(--s-2b2143) bg-cover bg-center text-3xl" style={p.imagem ? { backgroundImage: `url("${p.imagem}")` } : undefined}>{p.imagem ? '' : p.icone}</span>
         <span className="min-w-0 flex-1"><span className="block truncate font-semibold">{p.icone} {p.nome}</span>
-          <span className="text-[11px] text-[#c4b6d4]">{tipoDe(p).nome}{p.mapa ? ' · 📍 no mapa' : ''}{p.oculto ? ' · 🙈 só o mestre' : ''}</span>
-          {p.texto && <span className="mt-0.5 line-clamp-2 block text-xs text-[#a998bd]">{p.texto}</span>}</span>
+          <span className="text-[11px] text-(--a-c4b6d4)">{tipoDe(p).nome}{p.mapa ? ' · 📍 no mapa' : ''}{p.oculto ? ' · 🙈 só o mestre' : ''}</span>
+          {p.texto && <span className="mt-0.5 line-clamp-2 block text-xs text-(--a-a998bd)">{p.texto}</span>}</span>
       </button></li>)}</ul>
-    {!lista.length && <p className="mt-6 text-center text-sm text-[#b4aeca]">{mundo.paginas.length ? 'Nada encontrado.' : admin ? 'Nenhuma página ainda. Crie lugares, personagens e facções.' : 'O mestre ainda não revelou nada do mundo.'}</p>}
+    {!lista.length && <p className="mt-6 text-center text-sm text-(--a-b4aeca)">{mundo.paginas.length ? 'Nada encontrado.' : admin ? 'Nenhuma página ainda. Crie lugares, personagens e facções.' : 'O mestre ainda não revelou nada do mundo.'}</p>}
   </div>
 }
 
@@ -273,22 +273,22 @@ function PainelPagina({ p, mundo, admin, fechar, abrir, verNoMapa, editar, remov
   const nome = (id: string) => mundo.paginas.find(x => x.id === id)
   return <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/55 sm:items-stretch sm:justify-end" onClick={fechar}>
     <article role="dialog" aria-modal="true" aria-label={p.nome} onClick={x => x.stopPropagation()}
-      className="max-h-[88vh] w-full overflow-y-auto rounded-t-3xl border border-[#62527e] bg-[#19172c] sm:max-h-none sm:max-w-md sm:rounded-none sm:rounded-l-3xl">
+      className="max-h-[88vh] w-full overflow-y-auto rounded-t-3xl border border-(--a-62527e) bg-(--s-19172c) sm:max-h-none sm:max-w-md sm:rounded-none sm:rounded-l-3xl">
       {p.imagem && /* eslint-disable-next-line @next/next/no-img-element */ <img src={p.imagem} alt="" className="h-48 w-full object-cover" />}
       <div className="p-4">
         <div className="flex items-start gap-2">
           <span className="text-4xl">{p.icone}</span>
           <div className="min-w-0 flex-1"><h2 className="text-xl font-bold">{p.nome}</h2>
-            <p className="text-xs text-[#c4b6d4]">{tipoDe(p).icone} {tipoDe(p).nome}{p.oculto && <span className="ml-2 rounded-full bg-[#4b253a] px-2 py-0.5 text-red-100">🙈 Só o mestre vê</span>}</p></div>
-          <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1.5 hover:bg-[#34294f]"><X size={18} /></button>
+            <p className="text-xs text-(--a-c4b6d4)">{tipoDe(p).icone} {tipoDe(p).nome}{p.oculto && <span className="ml-2 rounded-full bg-[#4b253a] px-2 py-0.5 text-red-100">🙈 Só o mestre vê</span>}</p></div>
+          <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1.5 hover:bg-(--s-34294f)"><X size={18} /></button>
         </div>
-        {p.texto ? <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-[#e4dcf3]">{p.texto}</p> : <p className="mt-3 text-sm italic text-[#a998bd]">Sem descrição ainda.</p>}
-        {rels.length > 0 && <div className="mt-4"><p className="text-xs font-bold uppercase tracking-widest text-[#ed9cd8]">Relações</p>
+        {p.texto ? <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-(--a-e4dcf3)">{p.texto}</p> : <p className="mt-3 text-sm italic text-(--a-a998bd)">Sem descrição ainda.</p>}
+        {rels.length > 0 && <div className="mt-4"><p className="text-xs font-bold uppercase tracking-widest text-(--a-ed9cd8)">Relações</p>
           <ul className="mt-1.5 space-y-1">{rels.map(r => { const outro = nome(r.de === p.id ? r.para : r.de), t = corRel(r)
-            return <li key={r.id} className="flex items-center gap-2 rounded-lg bg-[#1e1a30] px-2 py-1.5 text-sm">
+            return <li key={r.id} className="flex items-center gap-2 rounded-lg bg-(--s-1e1a30) px-2 py-1.5 text-sm">
               <span className="rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ background: t.cor + '33', color: t.cor }}>{r.rotulo || t.nome}{r.oculto ? ' 🙈' : ''}</span>
               <button type="button" className="min-w-0 flex-1 truncate text-left hover:underline" onClick={() => outro && abrir(outro.id)}>{r.tipo === 'serve' ? (r.de === p.id ? 'serve a ' : 'é servido por ') : ''}{outro?.icone} {outro?.nome}</button>
-              {admin && <button type="button" aria-label="Tirar ligação" onClick={() => tirarLigacao(r)} className="rounded p-1 text-[#f2a9c3] hover:bg-[#2b2140]"><Trash2 size={13} /></button>}
+              {admin && <button type="button" aria-label="Tirar ligação" onClick={() => tirarLigacao(r)} className="rounded p-1 text-[#f2a9c3] hover:bg-(--s-2b2140)"><Trash2 size={13} /></button>}
             </li> })}</ul></div>}
         <div className="mt-4 flex flex-wrap gap-2">
           {p.mapa && <button type="button" className={btn} onClick={() => verNoMapa(p.id)}><MapPin size={14} /> Ver no mapa</button>}
@@ -308,8 +308,8 @@ function PainelPagina({ p, mundo, admin, fechar, abrir, verNoMapa, editar, remov
 /* ---------------- Editores ---------------- */
 function Janela({ titulo, fechar, children }: { titulo: string; fechar: () => void; children: React.ReactNode }) {
   return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 sm:items-center" onMouseDown={x => { if (x.target === x.currentTarget) fechar() }}>
-    <div role="dialog" aria-modal="true" aria-label={titulo} className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[#6d5690] bg-[#1b1529] p-5 text-sm">
-      <div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-bold">{titulo}</h2><button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1.5 hover:bg-[#38294d]"><X size={18} /></button></div>
+    <div role="dialog" aria-modal="true" aria-label={titulo} className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-(--a-6d5690) bg-(--s-1b1529) p-5 text-sm">
+      <div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-bold">{titulo}</h2><button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1.5 hover:bg-(--s-38294d)"><X size={18} /></button></div>
       {children}
     </div>
   </div>
@@ -322,9 +322,9 @@ function EditorPagina({ inicial, campanhaId, salvar, fechar }: { inicial: Pagina
     <form className="space-y-3" onSubmit={x => { x.preventDefault(); if (!p.nome.trim()) { toast.error('Dê um nome.'); return } salvar({ ...p, nome: p.nome.trim() }) }}>
       <label className="block">Nome<input autoFocus value={p.nome} maxLength={60} onChange={x => setP({ ...p, nome: x.target.value })} className={input + ' mt-1'} placeholder="Ex.: Castelo de Valmor" /></label>
       <div><p className="mb-1">Tipo</p><div className="flex flex-wrap gap-1.5">{TIPOS_PAGINA.map(t => <button key={t.id} type="button" onClick={() => setP({ ...p, tipo: t.id, icone: p.icone === TIPOS_PAGINA.find(x => x.id === p.tipo)?.icone ? t.icone : p.icone })}
-        className={'rounded-full border px-3 py-1 text-xs ' + (p.tipo === t.id ? 'border-[#e4d3ff] bg-[#5b4380]' : 'border-[#4a3d63]')}>{t.icone} {t.nome}</button>)}</div></div>
+        className={'rounded-full border px-3 py-1 text-xs ' + (p.tipo === t.id ? 'border-(--a-e4d3ff) bg-(--a-5b4380)' : 'border-(--a-4a3d63)')}>{t.icone} {t.nome}</button>)}</div></div>
       <div><p className="mb-1">Ícone no mapa e na teia</p><div className="grid grid-cols-8 gap-1">{ICONES.map(i => <button key={i} type="button" aria-label={'Ícone ' + i} onClick={() => setP({ ...p, icone: i })}
-        className={'rounded-lg p-1 text-xl ' + (p.icone === i ? 'bg-[#5b4380] ring-1 ring-[#e4d3ff]' : 'hover:bg-[#2b2140]')}>{i}</button>)}</div></div>
+        className={'rounded-lg p-1 text-xl ' + (p.icone === i ? 'bg-(--a-5b4380) ring-1 ring-(--a-e4d3ff)' : 'hover:bg-(--s-2b2140)')}>{i}</button>)}</div></div>
       <label className="block">Descrição<textarea rows={6} value={p.texto ?? ''} maxLength={3000} onChange={x => setP({ ...p, texto: x.target.value })} className={input + ' mt-1'} placeholder="História, quem mora lá, o que os heróis sabem…" /></label>
       <div className="flex flex-wrap items-center gap-2">
         {p.imagem && /* eslint-disable-next-line @next/next/no-img-element */ <img src={p.imagem} alt="" className="h-16 w-24 rounded-lg object-cover" />}
@@ -335,10 +335,10 @@ function EditorPagina({ inicial, campanhaId, salvar, fechar }: { inicial: Pagina
           }} /></label>
         {p.imagem && <button type="button" className={btn} onClick={() => setP({ ...p, imagem: undefined })}>Tirar imagem</button>}
       </div>
-      <label className="flex items-center gap-2 rounded-lg bg-[#241d38] p-2"><input type="checkbox" checked={!!p.oculto} onChange={x => setP({ ...p, oculto: x.target.checked || undefined })} className="accent-[#b99bff]" />
-        <span>🙈 Só o mestre vê <span className="block text-[11px] text-[#a998bd]">Os jogadores só descobrem quando você mostrar.</span></span></label>
-      <div className="flex gap-2"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-[#62527e] p-2.5">Cancelar</button>
-        <button type="submit" disabled={enviando} className="flex-1 rounded-lg bg-[#7654bb] p-2.5 font-semibold disabled:opacity-50">Salvar</button></div>
+      <label className="flex items-center gap-2 rounded-lg bg-(--s-241d38) p-2"><input type="checkbox" checked={!!p.oculto} onChange={x => setP({ ...p, oculto: x.target.checked || undefined })} className="accent-(--a-b99bff)" />
+        <span>🙈 Só o mestre vê <span className="block text-[11px] text-(--a-a998bd)">Os jogadores só descobrem quando você mostrar.</span></span></label>
+      <div className="flex gap-2"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-(--a-62527e) p-2.5">Cancelar</button>
+        <button type="submit" disabled={enviando} className="flex-1 rounded-lg bg-(--a-7654bb) p-2.5 font-semibold disabled:opacity-50">Salvar</button></div>
     </form>
   </Janela>
 }
@@ -348,16 +348,16 @@ function EditorLigacao({ inicial, paginas, salvar, fechar }: { inicial: Partial<
   const pode = r.de && r.para && r.de !== r.para
   const opcoes = (atual?: string) => <><option value="">Escolha…</option>{paginas.map(p => <option key={p.id} value={p.id} disabled={p.id === atual}>{p.icone} {p.nome}</option>)}</>
   return <Janela titulo="Nova ligação" fechar={fechar}>
-    {paginas.length < 2 ? <p className="text-[#c4b6d4]">Crie pelo menos duas páginas para ligar.</p> :
+    {paginas.length < 2 ? <p className="text-(--a-c4b6d4)">Crie pelo menos duas páginas para ligar.</p> :
     <form className="space-y-3" onSubmit={x => { x.preventDefault(); if (pode) salvar({ id: novoId(), de: r.de!, para: r.para!, tipo: r.tipo ?? 'aliado', ...(r.rotulo?.trim() ? { rotulo: r.rotulo.trim() } : {}), ...(r.oculto ? { oculto: true } : {}) }) }}>
       <label className="block">De<select value={r.de ?? ''} onChange={x => setR({ ...r, de: x.target.value })} className={input + ' mt-1'}>{opcoes(r.para)}</select></label>
       <div><p className="mb-1">Relação</p><div className="flex flex-wrap gap-1.5">{TIPOS_RELACAO.map(t => <button key={t.id} type="button" onClick={() => setR({ ...r, tipo: t.id })}
         className="rounded-full border px-3 py-1 text-xs font-semibold" style={{ color: t.cor, borderColor: r.tipo === t.id ? t.cor : '#4a3d63', background: r.tipo === t.id ? t.cor + '22' : undefined }}>{t.nome}</button>)}</div></div>
       <label className="block">Para<select value={r.para ?? ''} onChange={x => setR({ ...r, para: x.target.value })} className={input + ' mt-1'}>{opcoes(r.de)}</select></label>
       <label className="block">Texto na linha (opcional)<input value={r.rotulo ?? ''} maxLength={40} onChange={x => setR({ ...r, rotulo: x.target.value })} className={input + ' mt-1'} placeholder="Ex.: quer o trono, deve dinheiro" /></label>
-      <label className="flex items-center gap-2"><input type="checkbox" checked={!!r.oculto} onChange={x => setR({ ...r, oculto: x.target.checked })} className="accent-[#b99bff]" /> 🙈 Segredo: só o mestre vê</label>
-      <div className="flex gap-2"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-[#62527e] p-2.5">Cancelar</button>
-        <button type="submit" disabled={!pode} className="flex-1 rounded-lg bg-[#7654bb] p-2.5 font-semibold disabled:opacity-50">Ligar</button></div>
+      <label className="flex items-center gap-2"><input type="checkbox" checked={!!r.oculto} onChange={x => setR({ ...r, oculto: x.target.checked })} className="accent-(--a-b99bff)" /> 🙈 Segredo: só o mestre vê</label>
+      <div className="flex gap-2"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-(--a-62527e) p-2.5">Cancelar</button>
+        <button type="submit" disabled={!pode} className="flex-1 rounded-lg bg-(--a-7654bb) p-2.5 font-semibold disabled:opacity-50">Ligar</button></div>
     </form>}
   </Janela>
 }

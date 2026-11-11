@@ -54,13 +54,13 @@ export default function TransicaoPerfil({ perfil, origem, aoTerminar }: { perfil
           style={{ '--fx': `${Math.cos(a) * r}px`, '--fy': `${Math.sin(a) * r}px`, animationDelay: `${(i % 5) * 40}ms`, fontSize: 10 + (i % 4) * 5 } as React.CSSProperties}>✦</span>
       })}
     </div>}
-    <div ref={foto} className={'absolute flex ' + (fase !== 'voando' ? 'prg-pulso ' : '') + ' items-center justify-center overflow-hidden border-2 border-[#b99bff] bg-[#28233e] text-6xl font-bold text-[#b99bff] shadow-[0_0_60px_#9b7bff88]'} style={{ willChange: 'transform', width: 0, height: 0 }}>
+    <div ref={foto} className={'absolute flex ' + (fase !== 'voando' ? 'prg-pulso ' : '') + ' items-center justify-center overflow-hidden border-2 border-(--a-b99bff) bg-(--s-28233e) text-6xl font-bold text-(--a-b99bff) shadow-[0_0_60px_#9b7bff88]'} style={{ willChange: 'transform', width: 0, height: 0 }}>
       {perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : perfil.apelido[0]?.toUpperCase()}
     </div>
     <div className={'pointer-events-none absolute inset-x-0 top-[calc(50%+80px)] text-center transition-all duration-500 ' + (fase === 'nome' ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0')}>
-      <p className="text-xs uppercase tracking-[.3em] text-[#ed9cd8]">Bem-vindo de volta</p>
+      <p className="text-xs uppercase tracking-[.3em] text-(--a-ed9cd8)">Bem-vindo de volta</p>
       <p className="mt-2 text-2xl font-bold text-white drop-shadow-[0_0_12px_#9b7bff]">{perfil.apelido}</p>
     </div>
-    <p className="pointer-events-none absolute inset-x-0 bottom-6 text-center text-xs text-[#a99bbb]">Toque para pular</p>
+    <p className="pointer-events-none absolute inset-x-0 bottom-6 text-center text-xs text-(--a-a99bbb)">Toque para pular</p>
   </div>
 }

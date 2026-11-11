@@ -42,10 +42,10 @@ export default function BarraRecurso({ nome, cor, atual, max, maxEditavel, somen
     if (Number.isFinite(v)) { if (editando === 'atual') mudar(limite(v)); else if (editando === 'max' && mudarMax) mudarMax(Math.max(0, v)) }
     setEditando(null)
   }
-  return <div className="rounded-xl bg-[#171325] p-3">
+  return <div className="rounded-xl bg-(--s-171325) p-3">
     <div className="mb-1.5 flex items-center justify-between text-xs font-bold uppercase tracking-widest" style={{ color: cor.ate }}>
       <span>{cor.emoji} {nome}</span>
-      {zerada ? <span className="text-red-300">💀 zerado</span> : max ? <span className={'tabular-nums ' + (baixa ? 'text-red-300' : 'text-[#a998bd]')}>{baixa ? '⚠️ ' : ''}{Math.round(pct)}%</span> : null}
+      {zerada ? <span className="text-red-300">💀 zerado</span> : max ? <span className={'tabular-nums ' + (baixa ? 'text-red-300' : 'text-(--a-a998bd)')}>{baixa ? '⚠️ ' : ''}{Math.round(pct)}%</span> : null}
     </div>
     <div className="relative flex items-center gap-1.5">
       {!somenteLeitura && <><button type="button" className={botao} aria-label={`${nome} −5`} disabled={atual <= 0} onClick={() => mudar(limite(atual - 5))}><ChevronsLeft size={16} /></button>

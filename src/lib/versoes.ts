@@ -6,6 +6,64 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.28.0', data: '2026-11-10', titulo: 'Mundo da campanha',
+    itens: [
+      '🌍 Mundo da campanha (botão “🌍 Mundo” na mesa e nas campanhas): o mestre envia o mapa-múndi e toca em “Marcar lugar” para pôr alfinetes. Cada alfinete abre uma página com imagem, descrição e relações.',
+      'Páginas de lugares, personagens, facções, perigos, segredos e relíquias, com 32 ícones. Dá para procurar e filtrar por tipo, e o mestre arrasta os alfinetes para ajustar.',
+      '🕸️ Teia de relações: quem é aliado, inimigo, rival, família, amor, quem serve a quem e conhecidos, cada um com uma cor e texto na linha (ex.: “quer o trono”). O mestre arrasta para organizar; tocar abre a página.',
+      '🙈 “Só o mestre vê” em páginas e ligações: os jogadores só descobrem quando o mestre mostrar (o servidor esconde de verdade).',
+      'O mapa tem zoom suave, os alfinetes ficam do mesmo tamanho em qualquer zoom e “Ver no mapa” acende o lugar. Os jogadores veem as mudanças sem recarregar.',
+      'Migração 021: mundo da campanha.',
+    ],
+  },
+  {
+    versao: '0.27.0', data: '2026-11-10', titulo: 'Forja de itens',
+    itens: [
+      '⚒️ Forja de itens: no editor de item, escolha entre 19 formas desenhadas pela plataforma (espada, adaga, machado, martelo, lança, arco, cajado, escudo, armadura, elmo, poção, pergaminho, livro, tocha, chave, anel, amuleto, gema e bolsa de moedas), a cor principal, a cor do detalhe (ou qualquer cor) e a raridade.',
+      'Raridades com moldura colorida: Comum, Incomum, Raro, Épico, Lendário e Único. Do Raro para cima o item brilha, e Lendário e Único ganham uma faísca.',
+      '“🎲 Surpreenda-me” sorteia forma, cores e raridade combinando com o tipo do item; “✨ Sugerir um nome” cria nomes como “Lâmina do Crepúsculo”.',
+      'Itens que já existem ganham arte sozinhos, pelo nome e pelo tipo (uma “Adaga” vira adaga, um “Elixir” vira poção…).',
+      'A arte aparece no inventário, na biblioteca do mestre e na mesa: na escolha da arma ao atacar e na aba Fichas.',
+    ],
+  },
+  {
+    versao: '0.26.0', data: '2026-11-10', titulo: 'À beira da morte e barras vivas',
+    itens: [
+      'À beira da morte: quando a vida chega a 0, o personagem cai e faz um teste contra a morte (d20) sozinho no começo de cada turno. 10+ é sucesso, 9 ou menos é falha, 1 conta duas falhas e 20 levanta com 1 de vida.',
+      '3 sucessos deixam estável; 3 falhas, morreu (⚰️). Dano em quem está caído conta falha (crítico conta duas), e qualquer cura levanta e zera a contagem.',
+      'As bolinhas de sucesso e falha aparecem embaixo do token no mapa e na janela do token. O dono pode rolar na hora, e o mestre ajusta na mão (+✅, +❌, estabilizar, zerar).',
+      'Regra opcional ⚠️ Medidas desesperadas (aba Mestre → Regras de combate): de pé, o jogador aceita 1 falha futura (fugir, correr o dobro ou +5 num d20) ou 3 (ataque extra ou recuperar uma magia). As falhas entram na conta quando ele cair.',
+      'Barras melhores: o pedaço perdido fica claro e some devagar, a barra treme, o número sobe (−5 / +3) e a barra pulsa quando passa de 25% para baixo. Mini-barras de PV, PE e Sanidade no topo da ficha.',
+      'Migração 020: estado “à beira da morte” nos tokens.',
+    ],
+  },
+  {
+    versao: '0.25.0', data: '2026-11-10', titulo: 'Barras de vida, esforço e sanidade',
+    itens: [
+      'Fichas: PV, PE, Sanidade, Mana e os outros recursos viraram barras grossas e coloridas, no estilo das fichas de Ordem Paranormal: vida vermelha, sanidade azul, esforço laranja, mana anil.',
+      'Botões dos lados da barra: ‹ › mudam 1 e « » mudam 5. Toque no número para digitar o valor ou, quando o sistema não calcula sozinho, o máximo.',
+    ],
+  },
+  {
+    versao: '0.24.0', data: '2026-11-10', titulo: 'Dano por turno e dados certos',
+    itens: [
+      'Dano por turno: Queimando (1d6), Envenenado (1d4) e Sangrando (1d4) já entram causando dano. Na janela do token, o campo 💥 de cada condição muda o dano (ex.: 2d4+1 ou 3) ou tira, se ficar vazio.',
+      'O dano é rolado no começo do turno de quem tem a condição e sai da vida dele (ou da ficha ligada). O chat mostra os dados e a vida que sobrou, e a condição continua até as rodadas acabarem.',
+      'Corrigido: fichas novas começavam com a vida em 0, então o dano não tinha de onde sair. Agora vida, mana e afins começam cheias quando o sistema calcula o máximo.',
+      'Janela do token: botão “❤️ Vida cheia” e aviso quando a ficha ligada está sem vida preenchida.',
+      'Dados 3D: o d100 agora cai como dois dados (dezenas + unidades) e mostra o número certo. Os dados assentam mais rápido e tremem menos no fim.',
+      'Cartão da rolagem: o bônus aparece separado (ex.: dado 13 e +5 = 18) e os dados descartados (vantagem, 4d6kh3) aparecem riscados, para o número do dado bater com o total.',
+      'Tokens colocados na mesa sem posição entram na casa livre mais perto do meio (antes ficavam um em cima do outro, e tocar num pegava o outro).',
+      'Migração 019: dano por turno das condições.',
+    ],
+  },
+  {
+    versao: '0.23.1', data: '2026-11-10', titulo: 'Zoom suave no mapa',
+    itens: [
+      'Zoom do mapa da mesa e da árvore de habilidades com a rodinha do mouse ficou suave: cada clique aproxima ou afasta só um pouco, mirando onde está o mouse. Antes, um movimento pequeno pulava do zoom mínimo ao máximo.',
+    ],
+  },
+  {
     versao: '0.23.0', data: '2026-11-10', titulo: 'Condições com duração e toque no celular',
     itens: [
       'Corrigido: no celular, tocar num token (para abrir a janela dele ou escolher o alvo do ataque) abria e fechava na hora. Agora o toque funciona.',

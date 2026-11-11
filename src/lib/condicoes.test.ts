@@ -11,3 +11,13 @@ describe('duração das condições', () => {
     expect(r).toEqual({ condicoes: ['envenenado', 'caido'], rodadas: { envenenado: 1 }, acabaram: ['atordoado'] })
   })
 })
+
+describe('dano por turno', () => {
+  it('aceita só expressões simples das condições ativas', async () => {
+    const { normalizarDanos } = await import('./condicoes')
+    expect(normalizarDanos({ queimando: '1D6', envenenado: '2d4+1', sangrando: '3', caido: '1d4', cego: 'abc' }, ['queimando', 'envenenado', 'sangrando', 'cego']))
+      .toEqual({ queimando: '1d6', envenenado: '2d4+1', sangrando: '3' })
+    expect(normalizarDanos({ queimando: '50d6' }, ['queimando'])).toEqual({})
+    expect(normalizarDanos({ queimando: '1d6!kh1' }, ['queimando'])).toEqual({})
+  })
+})

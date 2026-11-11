@@ -4,11 +4,15 @@ import { carregarSistema } from './sistemasServidor'
 import { validarFichaDados } from './validacao'
 import { aplicarNaVida, resumoCombate, type ResumoCombate } from '../sistemas/combate'
 import { ehV8 } from './categorias'
+import { aoCair, aoLevantar, danoCaido, lerMorte, lerRegraMorte, type RegraMorte } from '../sistemas/morte'
 import type { Sistema } from '../sistemas/tipos'
 
 export type TokenCombate = { id: string; cena_id: string; ficha_id: string | null; dono_id: string | null; nome: string; x: number; y: number; hp_atual: number | null; hp_max: number | null }
-export type RegrasCombate = { acerto: 'automatico' | 'mestre' }
-export const lerRegrasCombate = (v: unknown): RegrasCombate => ({ acerto: (v as { acerto?: unknown })?.acerto === 'automatico' ? 'automatico' : 'mestre' })
+export type RegrasCombate = { acerto: 'automatico' | 'mestre'; morte: RegraMorte }
+export const lerRegrasCombate = (v: unknown): RegrasCombate => ({
+  acerto: (v as { acerto?: unknown })?.acerto === 'automatico' ? 'automatico' : 'mestre',
+  morte: lerRegraMorte((v as { morte?: unknown })?.morte),
+})
 
 export async function tokenCombate(cid: string, id: unknown): Promise<TokenCombate> {
   if (typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)) throw new ErroApi(400, 'Token inválido.')
@@ -74,4 +78,42 @@ export async function vidaDasFichas(fichaIds: string[]): Promise<Record<string, 
     if (v) out[f.id] = { atual: v.atual, max: v.max }
   }
   return out
+}
+
+/** Escreve uma linha do sistema no chat da mesa. */
+export const avisarMesa = (cid: string, eu: string, texto: string) =>
+  rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica', texto: texto.slice(0, 1000) }) }).catch(() => {})
+
+/**
+ * Depois de mudar a vida de um token: caiu (0), levou dano caído (falha) ou levantou (zera a contagem).
+ * Só vale se a regra “à beira da morte” da campanha estiver ligada. Devolve as linhas para o chat.
+ */
+export async function atualizarMorte(cid: string, t: { id: string; nome: string }, vida: { antes: number | null; depois: number | null }, dano: number, critico = false): Promise<string[]> {
+  if (vida.antes === null || vida.depois === null) return []
+  const [camp] = await rest<{ combate: unknown }[]>(`prg_campanhas?select=combate&id=eq.${q(cid)}`)
+  if (lerRegrasCombate(camp?.combate).morte === 'desligado') return []
+  const [tk] = await rest<{ morte: unknown }[]>(`prg_tokens?select=morte&id=eq.${q(t.id)}`).catch(() => [])
+  const m = lerMorte(tk?.morte)
+  let novo = m, texto = ''
+  if (vida.depois <= 0 && (vida.antes > 0 || !m.estado)) {
+    novo = aoCair(m)
+    texto = `💀 ${t.nome} caiu!` + (m.futuras ? ` As ${m.futuras} falha(s) das medidas desesperadas entram na conta.` : '')
+      + (novo.estado === 'morto' ? ' Não resistiu…' : ' Faz testes contra a morte no começo do turno.')
+  } else if (vida.depois <= 0 && dano > 0) {
+    novo = danoCaido(m, critico)
+    texto = `🩸 ${t.nome} levou dano caído: ${critico ? 'duas falhas' : 'uma falha'}` + (novo.estado === 'morto' ? ' — morreu.' : ` (❌ ${novo.falhas}/3).`)
+  } else if (vida.depois > 0 && m.estado) {
+    novo = aoLevantar(m)
+    texto = `💚 ${t.nome} ${m.estado === 'morto' ? 'voltou à vida' : 'levantou'}!`
+  }
+  if (novo === m) return []
+  await rest(`prg_tokens?id=eq.${q(t.id)}`, { method: 'PATCH', body: JSON.stringify({ morte: novo }) })
+  return texto ? [texto] : []
+}
+
+/** Dano/cura + “à beira da morte” + aviso no chat. */
+export async function danoComMorte(cid: string, eu: string, t: TokenCombate, dano: number, critico = false) {
+  const vida = await aplicarDano(t, dano)
+  for (const texto of await atualizarMorte(cid, t, vida, dano, critico)) await avisarMesa(cid, eu, texto)
+  return vida
 }

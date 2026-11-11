@@ -1,7 +1,10 @@
-export type Condicao = { id: string; emoji: string; nome: string }
+import { rolarExpressao } from './dice'
+
+/** `dano`: sugestão de dano por turno (o mestre pode mudar ou tirar). */
+export type Condicao = { id: string; emoji: string; nome: string; dano?: string }
 
 export const condicoesDisponiveis: Condicao[] = [
-  { id: 'envenenado', emoji: '☠️', nome: 'Envenenado' },
+  { id: 'envenenado', emoji: '☠️', nome: 'Envenenado', dano: '1d4' },
   { id: 'atordoado', emoji: '💫', nome: 'Atordoado' },
   { id: 'caido', emoji: '🔻', nome: 'Caído' },
   { id: 'agarrado', emoji: '✊', nome: 'Agarrado' },
@@ -11,8 +14,8 @@ export const condicoesDisponiveis: Condicao[] = [
   { id: 'concentrando', emoji: '🎯', nome: 'Concentrando' },
   { id: 'inconsciente', emoji: '💤', nome: 'Inconsciente' },
   { id: 'abencoado', emoji: '✨', nome: 'Abençoado' },
-  { id: 'sangrando', emoji: '🩸', nome: 'Sangrando' },
-  { id: 'queimando', emoji: '🔥', nome: 'Queimando' },
+  { id: 'sangrando', emoji: '🩸', nome: 'Sangrando', dano: '1d4' },
+  { id: 'queimando', emoji: '🔥', nome: 'Queimando', dano: '1d6' },
   { id: 'lento', emoji: '🐌', nome: 'Lento' },
   { id: 'paralisado', emoji: '⛓️', nome: 'Paralisado' },
 ]
@@ -38,4 +41,17 @@ export function passarRodada(condicoes: string[], rodadas: Record<string, number
   const r = normalizarRodadas(rodadas, condicoes), acabaram: string[] = [], novas: Record<string, number> = {}
   for (const [id, n] of Object.entries(r)) { if (n <= 1) acabaram.push(id); else novas[id] = n - 1 }
   return { condicoes: condicoes.filter(c => !acabaram.includes(c)), rodadas: novas, acabaram }
+}
+
+/** Dano por turno de cada condição ativa: só expressões de dados válidas e pequenas (ex.: “1d6”, “2d4+1”, “3”). */
+export function normalizarDanos(v: unknown, ativas: string[]): Record<string, string> {
+  const o = v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {}
+  const out: Record<string, string> = {}
+  for (const id of ativas) {
+    const e = typeof o[id] === 'string' ? (o[id] as string).toLowerCase().replace(/\s+/g, '').slice(0, 20) : ''
+    if (!e || !/^[0-9d+-]+$/.test(e)) continue
+    const r = rolarExpressao(e)
+    if (r && r.resultados.length <= 10) out[id] = e
+  }
+  return out
 }

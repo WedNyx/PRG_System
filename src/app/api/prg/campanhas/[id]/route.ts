@@ -11,6 +11,8 @@ export const GET = rota<Ctx>(async (req, { params }) => {
   const papel = await papelNaCampanha(id, eu)
   if (!papel) throw new ErroApi(404, 'Campanha não encontrada.')
   const [campanha] = await rest<Record<string, unknown>[]>(`prg_campanhas?select=*&id=eq.${q(id)}&limit=1`)
+  // O mundo (com páginas “só o mestre”) só sai pela rota /mundo, que filtra para os jogadores.
+  if (campanha) delete campanha.mundo
   const membros = await rest<Record<string, unknown>[]>(
     `prg_campanha_membros?select=aventureiro_id,papel,excecoes,entrou_em,aventureiro:prg_public_adventurers(apelido,avatar)&campanha_id=eq.${q(id)}&order=entrou_em.asc`)
   const admin = podeAdministrar(papel)

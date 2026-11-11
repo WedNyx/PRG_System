@@ -6,13 +6,15 @@
  * Funções puras, testadas em inventario.test.ts.
  */
 import type { Sistema } from './tipos'
+import { lerArte, lerRaridade, type ArteItem, type Raridade } from '../itensArte'
 
 export type CategoriaItem = 'arma' | 'armadura' | 'consumivel' | 'equipamento' | 'tesouro' | 'outro'
 export type TipoPoder = 'magia' | 'habilidade' | 'talento' | 'tecnica' | 'outro'
 /** Bônus de um item equipado: soma `valor` no alvo (ex.: 'derivado:ca', 'atributo:FOR', 'pericia:furtividade', 'recurso:pv'). */
 export type Bonus = { alvo: string; valor: number }
 /** `alcance` em metros (ataques na mesa); sem alcance = corpo a corpo (1,5 m). */
-export type Item = { id: string; nome: string; categoria: CategoriaItem; peso: number; dano?: string; alcance?: number; bonus: Bonus[]; descricao?: string }
+/** `arte`: desenho da Forja (forma + cores); `raridade` dá a cor da moldura. */
+export type Item = { id: string; nome: string; categoria: CategoriaItem; peso: number; dano?: string; alcance?: number; bonus: Bonus[]; descricao?: string; arte?: ArteItem; raridade?: Raridade }
 export type Poder = { id: string; nome: string; tipo: TipoPoder; recurso?: string; custo?: number; usosMax?: number; expressao?: string; alcance?: number; descricao?: string }
 export type Uso = { itens: Record<string, { qtd: number; equipado: boolean }>; poderes: Record<string, number>; carteira: string }
 
@@ -43,7 +45,9 @@ export function normalizarItem(v: unknown): Item | null {
       ? [{ alvo: x.alvo, valor: num(x.valor, -99, 99) }] : []
   })
   const dano = txt(o.dano, 40).trim()
-  return { id: id(o.id), nome, categoria, peso: num(o.peso, 0, 100000), ...(dano && EXPR.test(dano) ? { dano } : {}), ...(Number(o.alcance) > 0 ? { alcance: num(o.alcance, 0, 1000) } : {}), bonus, ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}) }
+  const arte = lerArte(o.arte), raridade = lerRaridade(o.raridade)
+  return { id: id(o.id), nome, categoria, peso: num(o.peso, 0, 100000), ...(dano && EXPR.test(dano) ? { dano } : {}), ...(Number(o.alcance) > 0 ? { alcance: num(o.alcance, 0, 1000) } : {}), bonus, ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}),
+    ...(arte ? { arte } : {}), ...(raridade ? { raridade } : {}) }
 }
 export function normalizarPoder(v: unknown): Poder | null {
   if (!v || typeof v !== 'object') return null

@@ -41,7 +41,7 @@ export function PainelFichas({ fichas, carregar, tokens, admin, cenaId, acao, at
   const lista = fichas.filter(f => filtro === 'todas' || (filtro === 'npcs' ? f.npc : !f.npc))
   return <div className="space-y-3 text-sm">
     <div className="flex flex-wrap items-center gap-2">
-      <p className="flex-1 text-xs text-[#b4aeca]">{admin ? 'Todas as fichas da campanha. Coloque na mesa para jogar com elas: as armas e poderes viram ataques.' : 'Seus personagens nesta campanha.'}</p>
+      <p className="flex-1 text-xs text-[#b4aeca]">{admin ? 'Todas as fichas da campanha.' : 'Seus personagens nesta campanha.'}</p>
       <button type="button" onClick={carregar} aria-label="Atualizar fichas" className="rounded-lg p-1.5 hover:bg-[#34294f]"><RefreshCw size={14} /></button>
     </div>
     {admin && <div className="flex gap-1">{(['todas', 'jogadores', 'npcs'] as const).map(f => <button key={f} type="button" onClick={() => setFiltro(f)}
@@ -63,7 +63,7 @@ export function PainelFichas({ fichas, carregar, tokens, admin, cenaId, acao, at
         {aberta === f.id && <div className="space-y-2 border-t border-[#3d3152] p-3">
           {c && c.recursos.length > 0 && <p className="text-xs text-[#d6c8e8]">{c.recursos.map(r => `${r.nome}: ${r.atual}${r.max !== null ? '/' + r.max : ''}`).join(' · ')}</p>}
           {c && c.ataques.length > 0 && <ul className="space-y-1">{c.ataques.map(a => <li key={a.tipo + a.id} className="rounded-lg bg-[#151123] px-2 py-1 text-xs">
-            {a.tipo === 'item' ? <ArteItem item={{ nome: a.nome, categoria: a.categoria ?? 'arma', arte: a.arte, raridade: lerRaridade(a.raridade) }} tamanho={22} className="mr-1 !rounded-md !border align-middle" /> : '✨'} <strong>{a.nome}</strong> · {a.dano} · {a.alcance} m{a.recurso ? ` · ${a.custo} ${c.recursos.find(r => r.id === a.recurso)?.nome ?? a.recurso}` : ''}</li>)}</ul>}
+            {a.tipo === 'item' ? <ArteItem item={{ nome: a.nome, categoria: a.categoria ?? 'arma', arte: a.arte, raridade: lerRaridade(a.raridade), imagem: a.imagem, magico: a.magico }} tamanho={22} className="mr-1 !rounded-md !border align-middle" /> : '✨'} <strong>{a.nome}</strong> · {a.dano} · {a.alcance} m{a.recurso ? ` · ${a.custo} ${c.recursos.find(r => r.id === a.recurso)?.nome ?? a.recurso}` : ''}</li>)}</ul>}
           <div className="flex flex-wrap gap-2">
             <a href={'/ficha?nuvem=' + f.id} target="_blank" rel="noopener" className={btn}><ExternalLink size={14} /> Abrir ficha</a>
             {!naMesa && cenaId && <button type="button" className={btn} onClick={() => void acao({ acao: 'token_criar', cenaId, fichaId: f.id }).then(() => toast.success(`${f.nome || 'Personagem'} entrou na mesa.`)).catch(() => {})}>📍 Colocar na mesa</button>}
@@ -118,7 +118,7 @@ export function JanelaAtaque({ estado, mudar, tokens, ficha, admin, acao, fechar
       <div className="mt-1 flex flex-wrap gap-1.5">
         {c?.ataques.map(a => <button key={chaveFonte(a)} type="button" onClick={() => mudar({ ...estado, fonte: chaveFonte(a) })}
           className={'rounded-lg border px-2.5 py-1.5 text-left text-xs ' + (estado.fonte === chaveFonte(a) ? 'border-[#b99bff] bg-[#3b2b57]' : 'border-[#4a3d63]')}>
-          <span className="flex items-center gap-1.5 font-semibold">{a.tipo === 'item' ? <ArteItem item={{ nome: a.nome, categoria: a.categoria ?? 'arma', arte: a.arte, raridade: lerRaridade(a.raridade) }} tamanho={24} className="!rounded-md !border" /> : '✨'} {a.nome}</span><span className="text-[#c4b6d4]">{a.dano} · {a.alcance} m{a.recurso ? ` · ${a.custo} ${c.recursos.find(r => r.id === a.recurso)?.nome ?? ''}` : ''}</span></button>)}
+          <span className="flex items-center gap-1.5 font-semibold">{a.tipo === 'item' ? <ArteItem item={{ nome: a.nome, categoria: a.categoria ?? 'arma', arte: a.arte, raridade: lerRaridade(a.raridade), imagem: a.imagem, magico: a.magico }} tamanho={24} className="!rounded-md !border" /> : '✨'} {a.nome}</span><span className="text-[#c4b6d4]">{a.dano} · {a.alcance} m{a.recurso ? ` · ${a.custo} ${c.recursos.find(r => r.id === a.recurso)?.nome ?? ''}` : ''}</span></button>)}
         <button type="button" onClick={() => mudar({ ...estado, fonte: 'livre' })} className={'rounded-lg border px-2.5 py-1.5 text-xs ' + (estado.fonte === 'livre' ? 'border-[#b99bff] bg-[#3b2b57]' : 'border-[#4a3d63]')}>✍️ Ataque livre</button>
       </div>
       {!c && <p className="mt-2 text-xs text-[#a99bbb]">Este token não tem ficha ligada: informe o bônus e o dano.</p>}
@@ -245,7 +245,7 @@ export function PrepararCombate({ tokens, fichas, acao, fechar }: { tokens: Toke
             placeholder={ini !== null ? (ini >= 0 ? '+' + ini : String(ini)) : '+0'} aria-label={'Bônus de iniciativa de ' + t.nome} className={input + ' mt-0.5 !w-16 !p-1.5 text-center'} /></label>
         </li>
       })}</ul>
-      {tokens.length === 0 && <p className="mt-3 text-center text-[#b4aeca]">Não há tokens nesta cena. Coloque as fichas na mesa pela aba “Fichas”.</p>}
+      {tokens.length === 0 && <p className="mt-3 text-center text-[#b4aeca]">Não há tokens nesta cena. Coloque as fichas na mesa pela aba “Jogo → Fichas”.</p>}
       <button type="button" disabled={!escolhidos.length || enviando} onClick={() => void comecar()}
         className="mt-3 w-full rounded-xl bg-gradient-to-r from-[#b91c1c] to-[#7c3aed] p-3 font-bold shadow-[0_0_18px_#b91c1c55] disabled:opacity-40 disabled:shadow-none">
         {enviando ? 'Rolando…' : `🎲 Rolar iniciativa e começar (${escolhidos.length})`}</button>

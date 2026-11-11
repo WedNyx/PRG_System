@@ -56,7 +56,7 @@ export default function JanelaDescanso({ s, d, onChange, rolarTotal, fechar }: {
         <p className="mt-1 text-xs text-[#cfc0df]">Uma noite de sono: {s.recursos.filter(r => !/temp/i.test(r.id)).map(r => r.nome).slice(0, 4).join(', ') || 'os recursos'} voltam ao máximo, valores temporários zeram e todos os usos de poderes voltam.</p>
         <button type="button" disabled={ocupado} onClick={() => void descansar('longo')} className="mt-3 w-full rounded-xl bg-gradient-to-r from-[#7652ac] to-[#b45309] p-2.5 font-semibold disabled:opacity-50">Fazer descanso longo</button>
       </section>
-      <p className="mt-3 text-[11px] text-[#8f88a8]">Em campanha, o mestre também pode dar o descanso para o grupo todo (aba Mestre na mesa).</p>
+      <p className="mt-3 text-[11px] text-[#8f88a8]">Em campanha, o mestre também pode dar o descanso para o grupo todo (Mestre → Controles, na mesa).</p>
     </div>
   </div>
 }

@@ -17,7 +17,7 @@ type Entrada = { id: string; tipo: 'item' | 'poder'; nome: string; dados: Record
 const MAX_DAR = 20
 
 function Icone({ b, tamanho = 44 }: { b: { tipo: 'item' | 'poder'; nome: string; dados: Record<string, unknown> }; tamanho?: number }) {
-  if (b.tipo === 'item') return <ArteItem item={{ nome: b.nome, categoria: String(b.dados.categoria ?? 'equipamento'), arte: b.dados.arte, raridade: b.dados.raridade as Raridade | undefined }} tamanho={tamanho} />
+  if (b.tipo === 'item') return <ArteItem item={{ nome: b.nome, categoria: String(b.dados.categoria ?? 'equipamento'), arte: b.dados.arte, raridade: b.dados.raridade as Raridade | undefined, imagem: b.dados.imagem, magico: b.dados.magico }} tamanho={tamanho} />
   return <span className="flex shrink-0 items-center justify-center rounded-xl border-2 border-[#5e4b78] bg-[#2a2142] text-2xl" style={{ width: tamanho, height: tamanho }} aria-hidden>{TIPOS_PODER.find(t => t.id === b.dados.tipo)?.icone ?? '✨'}</span>
 }
 function detalhe(d: Record<string, unknown>, tipo: 'item' | 'poder') {

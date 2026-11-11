@@ -8,6 +8,7 @@ import { aceitarMedida, aoCair, lerMorte, MEDIDAS, testeMorte, type EstadoMorte 
 import { detectarCritico } from '@/lib/dice'
 import { lerTabelas, rolarTabela, TABELAS_PRONTAS } from '@/lib/tabelas'
 import { aplicarDescanso } from '@/lib/sistemas/descanso'
+import { filtroResultado, resumirRolagens, type EventoResumo } from '@/lib/historico'
 import { acertou, ALCANCE_CORPO, distancia, gastarCusto, ordenarIniciativa, regraDeAtaque, regraDeIniciativa, rolarDano, resumoCombate, type EntradaOrdem } from '@/lib/sistemas/combate'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { ehV8 } from '@/lib/nuvem/categorias'
@@ -105,7 +106,8 @@ const inteiro = (v: unknown, min: number, max: number) => { const n = Math.round
 
 /**
  * Estado da mesa. Jogadores recebem só a cena ativa, tokens visíveis e o que podem ver do chat.
- * ?historico=1&antes=<id>&autor=<id>&personagem=<texto>&tipo=rolagem|chat → histórico permanente.
+ * ?historico=1&antes=<id>&autor=<id>&personagem=<texto>&tipo=rolagem|ataque|dados|chat|sistema&desde=<iso>&busca=<texto>&resultado=critico|falha → histórico permanente.
+ * ?historico=1&resumo=1&desde=<iso> → resumo das rolagens do período (críticos, falhas, maior dano…).
  */
 export const GET = rota<Ctx>(async (req, { params }) => {
   const { cid } = await params
@@ -138,10 +140,24 @@ export const GET = rota<Ctx>(async (req, { params }) => {
     const filtros: string[] = [vis]
     const antes = Number(sp.get('antes')); if (Number.isInteger(antes) && antes > 0) filtros.push(`id=lt.${antes}`)
     if (isUuid(sp.get('autor'))) filtros.push(`autor_id=eq.${q(sp.get('autor')!)}`)
-    const tipo = sp.get('tipo'); if (tipo === 'rolagem' || tipo === 'chat') filtros.push(`tipo=eq.${tipo}`)
-    const pers = (sp.get('personagem') ?? '').replace(/[*,()%]/g, '').slice(0, 60); if (pers) filtros.push(`personagem=ilike.*${q(pers)}*`)
+    const tipo = sp.get('tipo')
+    if (tipo === 'rolagem' || tipo === 'chat' || tipo === 'ataque' || tipo === 'sistema') filtros.push(`tipo=eq.${tipo}`)
+    else if (tipo === 'dados') filtros.push('tipo=in.(rolagem,ataque)')
+    const limpo = (v: string | null) => (v ?? '').replace(/[*,()%\\]/g, '').trim().slice(0, 60)
+    const pers = limpo(sp.get('personagem')); if (pers) filtros.push(`personagem=ilike.*${q(pers)}*`)
+    const busca = limpo(sp.get('busca')); if (busca) filtros.push(`texto=ilike.*${q(busca)}*`)
+    const desde = sp.get('desde'); if (desde && !Number.isNaN(Date.parse(desde))) filtros.push(`criado_em=gte.${q(new Date(desde).toISOString())}`)
+    const res = sp.get('resultado'); if (res === 'critico' || res === 'falha') filtros.push(...filtroResultado(res))
+    const [camp] = await rest<{ sessao_aberta_em: string | null }[]>(`prg_campanhas?select=sessao_aberta_em&id=eq.${q(cid)}`)
+    if (sp.get('resumo')) {
+      // Resumo: até 2000 rolagens/ataques do período (respeitando o que a pessoa pode ver).
+      const evs = await rest<EventoResumo[]>(`prg_mesa_eventos?select=tipo,personagem,autor_id,expressao,resultados,total,dados,criado_em&campanha_id=eq.${q(cid)}&${filtros.filter(x => !x.startsWith('tipo=')).join('&')}&tipo=in.(rolagem,ataque)&order=id.desc&limit=2000`)
+      const membros = await rest<{ aventureiro_id: string; aventureiro: { apelido: string } | null }[]>(`prg_campanha_membros?select=aventureiro_id,aventureiro:prg_public_adventurers(apelido)&campanha_id=eq.${q(cid)}`)
+      const nomes = Object.fromEntries(membros.map(m => [m.aventureiro_id, m.aventureiro?.apelido ?? 'Alguém']))
+      return ok({ resumo: resumirRolagens(evs, id => (id && nomes[id]) || 'Alguém'), total: evs.length, sessaoAbertaEm: camp?.sessao_aberta_em ?? null })
+    }
     const eventos = await rest(`prg_mesa_eventos?select=${EVENTO}&campanha_id=eq.${q(cid)}&${filtros.join('&')}&order=id.desc&limit=100`)
-    return ok({ eventos })
+    return ok({ eventos, sessaoAbertaEm: camp?.sessao_aberta_em ?? null })
   }
 
   const [camp] = await rest<{ id: string; nome: string; sistema: string; mesa: Record<string, unknown>; musica: unknown; sessao_aberta: boolean; sessao_aberta_em: string | null; combate: unknown }[]>(`prg_campanhas?select=id,nome,sistema,mesa,musica,sessao_aberta,sessao_aberta_em,combate&id=eq.${q(cid)}`)

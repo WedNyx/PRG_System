@@ -1,6 +1,7 @@
 /** Validações puras (sem rede) usadas pela API da Fase 1. Testadas em validacao.test.ts. */
 import { CAMPOS, REGRAS, permissoesPadrao, type Campo, type Modelo, type Permissoes, type Regra } from '../campanhas/permissoes'
 import { lerItens, lerPoderes } from '../sistemas/inventario'
+import { imagemDaPlataforma } from '../imagens'
 
 export const ESTADOS = ['planejada', 'ativa', 'pausada', 'encerrada'] as const
 export type EstadoCampanha = typeof ESTADOS[number]
@@ -41,9 +42,7 @@ export function normalizarExcecoes(valor: unknown): Partial<Permissoes> {
 export type DadosCampanha = { nome: string; descricao: string; sistema: string; modelo_padrao: Modelo; permissoes: Permissoes; estado?: EstadoCampanha; capa_url?: string | null }
 
 /** Imagem enviada pela própria plataforma (bucket público prg-mesa do Supabase). */
-export function imagemDaPlataforma(v: unknown): v is string {
-  return typeof v === 'string' && v.length <= 500 && /^https?:\/\/[^\s"'<>()]+\/storage\/v1\/object\/public\/prg-mesa\/[A-Za-z0-9/_.-]+\.(png|jpe?g|webp)$/.test(v)
-}
+export { imagemDaPlataforma }
 
 export function validarCampanha(body: unknown, parcial = false): Ok<Partial<DadosCampanha>> | Erro {
   if (!body || typeof body !== 'object') return { ok: false, erro: 'Dados inválidos.' }

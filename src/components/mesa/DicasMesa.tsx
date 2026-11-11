@@ -15,10 +15,10 @@ const DICAS: Record<PapelDicas, Dica[]> = {
     { icone: '💬', titulo: 'Painel', texto: 'No painel ficam o Chat (com dados: 1d20+5, 2d6…), a sua Ficha e a Iniciativa. “Só o mapa” esconde o painel no celular.' },
   ],
   mestre: [
-    { icone: '🗺️', titulo: 'Cena e mapa', texto: 'Na aba “Mestre”, crie a cena, envie o mapa e use a névoa para esconder o que os jogadores ainda não viram.' },
-    { icone: '📜', titulo: 'Personagens na mesa', texto: 'Na aba “Fichas”, toque numa ficha e em “📍 Colocar na mesa”. NPCs entram do mesmo jeito.' },
-    { icone: '⚔️', titulo: 'Combate', texto: 'Na aba “Iniciativa”, toque em “Preparar combate”, marque quem luta e role tudo de uma vez. Em “Mestre → Regras de combate” você escolhe se confirma cada dano.' },
-    { icone: '🎲', titulo: 'Tabelas e sessão', texto: 'A aba “Tabelas” rola nomes, encontros e tesouros na hora. Lembre de “▶ Abrir sessão” para o grupo entrar.' },
+    { icone: '🗺️', titulo: 'Cena e mapa', texto: 'Na aba “Mestre → Controles”, crie a cena, envie o mapa e use a névoa para esconder o que os jogadores ainda não viram.' },
+    { icone: '📜', titulo: 'Personagens na mesa', texto: 'Na aba “Jogo → Fichas”, toque numa ficha e em “📍 Colocar na mesa”. NPCs entram do mesmo jeito.' },
+    { icone: '⚔️', titulo: 'Combate', texto: 'Na aba “Jogo → Iniciativa”, toque em “Preparar combate”, marque quem luta e role tudo de uma vez. Em “Mestre → Regras de combate” você escolhe se confirma cada dano.' },
+    { icone: '🎲', titulo: 'Tabelas e sessão', texto: 'A aba “Mestre → Tabelas” rola nomes, encontros e tesouros na hora. Lembre de “▶ Abrir sessão” para o grupo entrar.' },
   ],
   espectador: [
     { icone: '👁️', titulo: 'Assistindo', texto: 'Você vê o mapa, ouve a música e conversa no chat. Os dados e os tokens ficam com o mestre e os jogadores.' },

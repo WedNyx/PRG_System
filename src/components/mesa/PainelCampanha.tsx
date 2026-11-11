@@ -34,7 +34,7 @@ function Sessoes({ campanhaId, admin }: { campanhaId: string; admin: boolean }) 
     try { await api(`campanhas/${campanhaId}/sessoes`, { method: 'POST', body: edit }); setEdit(null); await carregar(); toast.success('Sessão salva!') } catch (er) { toast.error(msg(er)) }
   }
   if (edit) return <div className="space-y-2">
-    <div className="flex gap-2"><input aria-label="Número" type="number" min={1} value={edit.numero ?? 1} onChange={x => setEdit({ ...edit, numero: Number(x.target.value) })} className={input + ' w-20'} />
+    <div className="flex gap-2"><input aria-label="Número" type="number" min={1} value={edit.numero ?? 1} onChange={x => setEdit({ ...edit, numero: Number(x.target.value) })} className={input + ' !w-20'} />
       <input aria-label="Título da sessão" value={edit.titulo ?? ''} onChange={x => setEdit({ ...edit, titulo: x.target.value })} placeholder="Título" className={input} /></div>
     <input aria-label="Data" type="date" value={edit.data ?? ''} onChange={x => setEdit({ ...edit, data: x.target.value })} className={input} />
     <label className="block text-xs">🎩 Preparação (só você vê)<textarea rows={5} value={edit.preparacao ?? ''} onChange={x => setEdit({ ...edit, preparacao: x.target.value })} className={input + ' mt-1'} placeholder="Ganchos, encontros, NPCs, segredos…" /></label>
@@ -107,7 +107,7 @@ function Recompensas({ campanhaId, e }: { campanhaId: string; e: Estado }) {
     } catch (er) { toast.error(msg(er)) } finally { setEnviando(false) }
   }
   return <div className="space-y-2">
-    <p className="rounded-lg bg-[#2a2142] p-2 text-xs text-[#e4d3ff]">📚 Itens e poderes prontos ficam na aba <b>Biblioteca</b> da mesa, com o botão “🎁 Dar”.</p>
+    <p className="rounded-lg bg-[#2a2142] p-2 text-xs text-[#e4d3ff]">📚 Itens e poderes prontos ficam em <b>Mestre → Biblioteca</b> da mesa, com o botão “🎁 Dar”.</p>
     <p className="text-xs text-[#b4aeca]">Vai direto para as fichas aprovadas: o XP soma no campo de XP (ou é anotado), itens, poderes e moedas vão para o inventário, e os pontos vão para a árvore de habilidades. Fica no histórico e aparece no chat.</p>
     <div className="space-y-1">{fichas.map(f => <label key={f.id} className="flex items-center gap-2 rounded-lg bg-[#1e1a30] p-2">
       <input type="checkbox" checked={sel.includes(f.id)} onChange={x => setSel(s => x.target.checked ? [...s, f.id] : s.filter(y => y !== f.id))} />

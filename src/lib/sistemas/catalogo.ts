@@ -164,6 +164,7 @@ export const SISTEMAS: Sistema[] = [
   },
   {
     id: 'fate-core',
+    nomesItens: { magico: '✨ Itens extraordinários' },
     nome: 'Fate Core',
     resumo: 'Narrativo e flexível: aspectos, perícias na escada de adjetivos, estresse e consequências. Serve para qualquer gênero.',
     tipo: 'aberto', licenca: 'CC-BY-3.0',
@@ -198,6 +199,7 @@ export const SISTEMAS: Sistema[] = [
   },
   {
     id: 'blades',
+    nomesItens: { equipamento: 'Equipamento', tesouro: 'Moedas e contrabando', magico: '🔮 Itens estranhos' },
     nome: 'Blades in the Dark',
     resumo: 'Golpes e intrigas numa cidade sombria. Ações com pontos (parada de d6), estresse, trauma e dano.',
     tipo: 'aberto', licenca: 'CC-BY-3.0',
@@ -233,6 +235,7 @@ export const SISTEMAS: Sistema[] = [
   },
   {
     id: 'brp',
+    nomesItens: { magico: '🔮 Artefatos' },
     nome: 'Basic Roleplaying (BRP — horror, aventura, investigação)',
     resumo: 'Sistema percentual clássico (a base de jogos de investigação e horror). Características, PV, pontos de poder e perícias em %.',
     tipo: 'aberto', licenca: 'ORC License',
@@ -259,6 +262,7 @@ export const SISTEMAS: Sistema[] = [
   },
   {
     id: 'faroeste-arcano',
+    nomesItens: { arma: 'Armas e munição', magico: '🔮 Itens arcanos' },
     nome: 'Faroeste Arcano (d20 · Velho Oeste)',
     resumo: 'Tiroteios e feitiçaria no Oeste selvagem. Desgarrado, Pistoleiro e Rastreador com multiclasse: ataque base, CA, iniciativa e resistências pelas tabelas de classe.',
     tipo: 'aberto', licenca: 'OGL 1.0a (Conteúdo Aberto)',
@@ -349,6 +353,7 @@ export const SISTEMAS: Sistema[] = [
   },
   {
     id: 'ordem-paranormal',
+    nomesItens: { armadura: 'Proteções', equipamento: 'Itens gerais', magico: '🩸 Itens paranormais' },
     nome: 'Ordem Paranormal (estrutura)',
     resumo: 'Ficha estrutural para jogar com o seu livro: atributos, NEX, PV/PE/Sanidade e lista de perícias. As regras ficam com o livro oficial.',
     tipo: 'estrutura', licenca: 'Sistema comercial — apenas estrutura de ficha',

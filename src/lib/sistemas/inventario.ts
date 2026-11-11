@@ -5,6 +5,7 @@
  *   fica na área “PV e recursos”, que normalmente é livre para o jogador.
  * Funções puras, testadas em inventario.test.ts.
  */
+import { imagemDaPlataforma } from '../imagens'
 import type { Sistema } from './tipos'
 import { lerArte, lerRaridade, type ArteItem, type Raridade } from '../itensArte'
 
@@ -14,7 +15,11 @@ export type TipoPoder = 'magia' | 'habilidade' | 'talento' | 'tecnica' | 'outro'
 export type Bonus = { alvo: string; valor: number }
 /** `alcance` em metros (ataques na mesa); sem alcance = corpo a corpo (1,5 m). */
 /** `arte`: desenho da Forja (forma + cores); `raridade` dá a cor da moldura. */
-export type Item = { id: string; nome: string; categoria: CategoriaItem; peso: number; dano?: string; alcance?: number; bonus: Bonus[]; descricao?: string; arte?: ArteItem; raridade?: Raridade }
+export type Item = { id: string; nome: string; categoria: CategoriaItem; peso: number; dano?: string; alcance?: number; bonus: Bonus[]; descricao?: string; arte?: ArteItem; raridade?: Raridade
+  /** Foto enviada (v0.32.5); sem foto, usa o desenho da forja. */
+  imagem?: string
+  /** Item mágico: aparece na ala ✨ do inventário. */
+  magico?: boolean }
 export type Poder = { id: string; nome: string; tipo: TipoPoder; recurso?: string; custo?: number; usosMax?: number; expressao?: string; alcance?: number; descricao?: string
   /** Em que descanso os usos voltam (padrão: longo). */
   recarga?: 'curto' }
@@ -49,7 +54,7 @@ export function normalizarItem(v: unknown): Item | null {
   const dano = txt(o.dano, 40).trim()
   const arte = lerArte(o.arte), raridade = lerRaridade(o.raridade)
   return { id: id(o.id), nome, categoria, peso: num(o.peso, 0, 100000), ...(dano && EXPR.test(dano) ? { dano } : {}), ...(Number(o.alcance) > 0 ? { alcance: num(o.alcance, 0, 1000) } : {}), bonus, ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}),
-    ...(arte ? { arte } : {}), ...(raridade ? { raridade } : {}) }
+    ...(arte ? { arte } : {}), ...(raridade ? { raridade } : {}), ...(imagemDaPlataforma(o.imagem) ? { imagem: o.imagem } : {}), ...(o.magico === true ? { magico: true } : {}) }
 }
 export function normalizarPoder(v: unknown): Poder | null {
   if (!v || typeof v !== 'object') return null

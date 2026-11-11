@@ -12,6 +12,7 @@ import { BookOpen, Castle, ChevronRight, CircleHelp, GraduationCap, Dice5, House
 import EditarPerfil from '@/components/perfil/EditarPerfil'
 import LuaLogo, { FraseDaLua } from '@/components/LuaDinamica'
 import ComecePorAqui from '@/components/central/ComecePorAqui'
+import RolagensCampanhas from '@/components/central/RolagensCampanhas'
 import Sino from '@/components/Sino'
 import { CHAVE_ENTRADA } from '@/components/perfil/TransicaoPerfil'
 import { aplicarTema, TEMA_PADRAO, temaAtual, TEMAS, type Tema } from '@/lib/tema'
@@ -146,7 +147,7 @@ function CentralContent() {
           </>}
           {section === 'temas' && <EscolherTema tema={tema} escolher={escolherTema} />}
           {section === 'sistemas' && <><h1 className="text-3xl font-bold">Sistemas de RPG</h1><p className="mt-2 text-[#bfb2cf]">Escolha um sistema e crie uma ficha que calcula as regras sozinha.</p><SistemasGaleria aventureiroId={perfil.id} /></>}
-          {section === 'historico' && <><h1 className="text-3xl font-bold">Histórico de rolagens</h1><p className="mt-2 text-[#bfb2cf]">Onde encontrar suas rolagens.</p><div className="mt-6 rounded-2xl border border-[#55456e] bg-[#201a32] p-6 text-sm text-[#c4b6d4]">As rolagens das campanhas ficam salvas no histórico da mesa: abra a campanha, entre na mesa e toque em “Histórico” no chat (dá para filtrar por pessoa, personagem e tipo). Rolagens feitas em fichas fora de campanha não entram nesse histórico.</div></>}
+          {section === 'historico' && <><h1 className="text-3xl font-bold">Histórico de rolagens</h1><p className="mt-2 text-[#bfb2cf]">Escolha a campanha para ver as rolagens, filtrar por pessoa, personagem, tipo e período e ver o resumo da sessão (críticos, falhas, maior dano). Rolagens de fichas fora de campanha não ficam salvas.</p>{CLOUD_ENABLED && <RolagensCampanhas />}</>}
         </div>
       </div>
       {editando && <EditarPerfil perfil={perfil} fechar={() => setEditando(false)} salvo={p => setPerfil({ id: p.id, apelido: p.apelido, avatar: p.avatar ?? undefined, grupo: p.grupo })} />}

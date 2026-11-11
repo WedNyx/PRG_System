@@ -6,6 +6,16 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.32.8', data: '2026-11-11', titulo: 'Ficha organizada e ajuda nas telas',
+    itens: [
+      '📜 Ficha com topo novo: o nome do personagem, o sistema e se a ficha é avulsa ou de campanha, com um selo colorido mostrando se já salvou (verde) ou se ainda está salvando (amarelo).',
+      '❔ Botão “Ajuda” na ficha com o passo a passo: menu, salvar, rolar dados, vida e recursos, inventário e o que muda numa campanha.',
+      'Cada parte da ficha começa com uma linha explicando para que serve, e no fim há um atalho “Próxima parte →”.',
+      '📱 No celular, os campos curtos (nível, números) ficam lado a lado, a barra de vida não é mais cortada (“CA” no lugar de “Classe de Armadura”) e o menu da ficha acompanha a parte escolhida.',
+      '❔ Ajuda também no Portal (escolher e criar perfil) e no Histórico de rolagens em tela cheia.',
+    ],
+  },
+  {
     versao: '0.32.7', data: '2026-11-11', titulo: 'Central e menus',
     itens: [
       '🧭 Central reorganizada: o menu lateral mostra seu perfil no topo, cada seção com uma descrição curta e os atalhos separados em “Conta” (Editar perfil, Temas, Trocar aventureiro) e “Ajuda” (Guia, Tutoriais, Novidades).',

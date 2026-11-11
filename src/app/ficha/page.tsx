@@ -13,6 +13,8 @@ import { CAMPOS } from '@/lib/campanhas/permissoes'
 import { toast } from 'sonner'
 import PassarItem from '@/components/fichas/PassarItem'
 import type { Item } from '@/lib/sistemas/inventario'
+import AjudaTela, { type PassoAjuda } from '@/components/AjudaTela'
+import { ArrowLeft } from 'lucide-react'
 
 const AREAS: Record<string, string> = Object.fromEntries(CAMPOS.map(c => [c.id, c.titulo]))
 
@@ -20,9 +22,28 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const LOCAL = 'prg-ficha-gen-'
 type Estado = 'carregando' | 'salvo' | 'salvando' | 'pendente' | 'offline' | 'conflito' | 'erro' | 'leitura' | 'local'
 const ROTULO: Record<Estado, string> = {
-  carregando: 'Carregando...', salvo: '☁️ Salvo na nuvem', salvando: '☁️ Salvando...', pendente: '✏️ Alterações não salvas',
-  offline: '⚠️ Sem conexão · tentando de novo', conflito: '⚠️ Alterada em outro lugar', erro: '⚠️ Erro ao salvar',
-  leitura: '👁️ Somente leitura', local: '💾 Salvo neste navegador',
+  carregando: 'Carregando…', salvo: '✓ Salvo', salvando: '☁️ Salvando…', pendente: '✏️ Editando…',
+  offline: '⚠️ Sem conexão', conflito: '⚠️ Mudou em outro lugar', erro: '⚠️ Erro ao salvar',
+  leitura: '👁️ Só leitura', local: '💾 Neste navegador',
+}
+
+const COR: Partial<Record<Estado, string>> = {
+  salvo: 'border-emerald-700/60 bg-emerald-950/40 text-emerald-200', local: 'border-emerald-700/60 bg-emerald-950/40 text-emerald-200',
+  salvando: 'border-[#62527e] bg-[#2b2140] text-[#e4d3ff]', pendente: 'border-amber-700/60 bg-amber-950/40 text-amber-100',
+  offline: 'border-amber-700/60 bg-amber-950/40 text-amber-100', conflito: 'border-red-800/70 bg-red-950/40 text-red-200', erro: 'border-red-800/70 bg-red-950/40 text-red-200',
+  leitura: 'border-sky-800/60 bg-sky-950/40 text-sky-100',
+}
+
+function passosFicha(campanha: boolean, leitura: boolean): PassoAjuda[] {
+  return [
+    { icone: '🧭', titulo: 'Menu da ficha', texto: 'A ficha é dividida em partes: Principal, Atributos, Poderes, Inventário, Anotações e o Guia do sistema. No celular, deslize a fileira de botões; no computador, use o menu à esquerda.' },
+    { icone: '☁️', titulo: 'Salva sozinha', texto: 'Tudo o que você muda é salvo em poucos segundos. O selo no topo mostra se já salvou (verde) ou se ainda falta (amarelo).' },
+    { icone: '🎲', titulo: 'Rolar dados', texto: campanha ? 'Toque no valor de um atributo, perícia, arma ou poder. Como a ficha é de campanha, o resultado também aparece no chat da mesa para todos.' : 'Toque no valor de um atributo, perícia, arma ou poder. Esta ficha é avulsa: a rolagem aparece só para você e não fica salva.' },
+    { icone: '❤️', titulo: 'Vida e recursos', texto: 'Na parte Principal, use − e + nas barras (PV, mana etc.). O botão 🌙 Descansar recupera o que as regras mandam.' },
+    { icone: '🎒', titulo: 'Inventário', texto: campanha ? 'Adicione itens com foto ou desenho, marque os mágicos e use 🎁 Passar para entregar um item a outro personagem da campanha.' : 'Adicione itens com foto ou desenho e marque os mágicos. Para passar itens a outros personagens, a ficha precisa estar numa campanha.' },
+    ...(campanha ? [{ icone: '👑', titulo: 'O mestre acompanha', texto: 'Dependendo das regras da campanha, algumas mudanças vão para aprovação do mestre antes de valer. O aviso no topo diz quais.' }] : [{ icone: '🏰', titulo: 'Levar para uma campanha', texto: 'Na Central → Fichas → Avulsas, use “Enviar para campanha”.' }]),
+    ...(leitura ? [{ icone: '👁️', titulo: 'Somente leitura', texto: 'Você pode ver esta ficha, mas não editar (ela é de outra pessoa ou o mestre travou).' }] : []),
+  ]
 }
 
 function Conteudo() {
@@ -109,12 +130,18 @@ function Conteudo() {
   }
 
   return <main className="min-h-screen fundo-tema text-[#f2ebff]">
-    <header className="sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b border-[#373251] bg-[#19172c]/95 px-4 py-3 backdrop-blur">
-      <Link href="/central" className="text-sm text-[#b99bff] hover:underline">← Início</Link>
-      <h1 className="min-w-0 flex-1 truncate font-bold">{sistema?.nome ?? 'Ficha'}{sistema?.autor && <span className="block truncate text-xs font-normal text-[#ed9cd8]">✍️ Sistema criado por {sistema.autor}</span>}</h1>
-      <span className="text-xs text-[#b4aeca]" aria-live="polite">{ROTULO[estado]}</span>
+    <header className="sticky top-0 z-20 border-b border-[#373251] bg-[#19172c]/95 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-6">
+        <Link href="/central?secao=fichas" aria-label="Voltar para a Central" className="inline-flex shrink-0 items-center gap-1 rounded-lg p-1.5 text-sm text-[#b99bff] hover:bg-[#2b2140]"><ArrowLeft size={18} /><span className="hidden sm:inline">Central</span></Link>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate font-bold leading-tight">{dados?.nome || (sistema ? 'Personagem sem nome' : 'Ficha')}</h1>
+          <p className="truncate text-xs text-[#b4aeca]">{sistema?.nome ?? '…'}{sistema && (campanhaId ? ' · 🏰 Ficha de campanha' : nuvem ? ' · 🧙 Ficha avulsa' : '')}{sistema?.autor && <span className="text-[#ed9cd8]"> · ✍️ {sistema.autor}</span>}</p>
+        </div>
+        <span className={'shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium ' + (COR[estado] ?? 'border-[#62527e] text-[#b4aeca]')} aria-live="polite">{ROTULO[estado]}</span>
+        {sistema && <AjudaTela titulo="Ajuda da ficha" intro="Como usar esta ficha, passo a passo." passos={passosFicha(!!campanhaId, estado === 'leitura')} />}
+      </div>
     </header>
-    <div className="mx-auto max-w-5xl px-3 py-5 sm:px-6">
+    <div className="mx-auto max-w-6xl px-3 py-4 sm:px-6 sm:py-5">
       {erro && <p role="alert" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#62527e] bg-[#2b2140] p-3 text-sm">
         <span className="flex-1">{erro}</span>{estado === 'conflito' && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-[#b99bff] px-3 py-1">Recarregar</button>}</p>}
       {aviso && <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#62527e] bg-[#1f2a40] p-3 text-sm">

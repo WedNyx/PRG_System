@@ -9,6 +9,7 @@ import EscolherGrupo from '@/components/perfil/EscolherGrupo'
 import { GRUPOS, GRUPO_PADRAO, ehGrupo, grupoDe, type GrupoId } from '@/lib/grupos'
 import SaudePlataforma from '@/components/admin/SaudePlataforma'
 import { JanelaSenha, situacaoSenha } from '@/components/perfil/Senha'
+import AjudaTela from '@/components/AjudaTela'
 import LuaLogo from '@/components/LuaDinamica'
 
 type Perfil = { id: string; apelido: string; avatar?: string; grupo?: string; protegido?: boolean }
@@ -285,9 +286,15 @@ export default function PortalAventureiros() {
       <div className="mx-auto max-w-6xl">
         <header className="flex items-center justify-between gap-3">
           <span className="flex items-center gap-2 font-bold tracking-wide text-lg sm:text-xl"><LuaLogo /><Link href="/portal">PRG System</Link></span>
+          <span className="flex items-center gap-2"><AjudaTela titulo="Ajuda do portal" intro="O portal é a porta de entrada: cada pessoa tem o seu perfil de aventureiro." passos={[
+            { icone: '🌙', titulo: 'De onde você vem?', texto: 'Escolha o seu grupo. Ele só separa os perfis de cada turma de amigos.' },
+            { icone: '🧙', titulo: 'Escolha o seu perfil', texto: 'Toque no seu aventureiro para entrar na Central, onde ficam suas fichas e campanhas.' },
+            { icone: '➕', titulo: 'Criar perfil', texto: 'Ainda não tem? Use “+ Criar perfil”, escolha um nome e uma imagem. Não precisa de e-mail.' },
+            { icone: '🔒', titulo: 'Senha (opcional)', texto: 'Se quiser que só você entre no seu perfil, crie uma senha em Editar perfil, dentro da Central.' },
+          ]} />
           <button onClick={abrirCriacao} className="rounded-lg border border-[#62527e] bg-[#34294f] px-3 py-2 text-xs sm:text-sm font-semibold hover:bg-[#4b396f] focus-visible:outline-2 focus-visible:outline-[#b99bff]">
             + Criar perfil
-          </button>
+          </button></span>
         </header>
 
         <section className="flex min-h-[65vh] flex-col items-center justify-center py-12">
@@ -379,7 +386,7 @@ export default function PortalAventureiros() {
           {CLOUD_ENABLED && <p className="mt-2 text-center text-xs text-[#8f86a8]">Para mudar seu nome ou foto, entre no seu perfil e use “Editar perfil” no menu.</p>}
         </section>
         <div className="flex flex-wrap items-center justify-center gap-3 pb-3 text-xs text-[#b4aeca]">
-          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.32.7'}</Link>
+          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.32.8'}</Link>
           {versao?.revision && <span title="Identificador da implantação">Build {versao.revision}</span>}
           <button type="button" onClick={() => window.location.reload()}
             className="rounded-md border border-[#62527e] px-2 py-1 text-[#b99bff] hover:bg-[#34294f]">

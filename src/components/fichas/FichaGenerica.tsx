@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { AlertTriangle, Dice5, Info } from 'lucide-react'
 import { calcular, opcaoEscolhida } from '@/lib/sistemas/calculo'
@@ -84,16 +84,21 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     : /habilidade|tecnica|talento|magia|poder|facanha|transforma|rituais|tracos/.test(id) ? 'habilidades' : 'anotacoes'
   const listasDe = (sec: string) => s.listas.filter(l => secaoDeLista(l.id) === sec)
   const SECOES = ([
-    { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade e recursos', ok: true },
-    { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? 'Atributos e perícias' : s.pericias.titulo ?? 'Perícias') : 'Atributos', sub: 'Testes e rolagens', ok: s.atributos.length > 0 || !!s.pericias },
-    { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ok: true },
-    { id: 'arvore', icone: '🌠', nome: 'Árvore de habilidades', sub: 'Hexágonos, pontos e caminhos', ok: true },
-    { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ok: true },
-    { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ok: true },
-    { id: 'guia', icone: '📖', nome: 'Guia de criação', sub: 'Passo a passo deste sistema', ok: !!GUIAS[s.id] },
+    { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade e recursos', ajuda: 'Nome, imagem e os dados básicos do personagem. Mais abaixo ficam os valores calculados e as barras de vida e recursos (use − e +).', ok: true },
+    { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? 'Atributos e perícias' : s.pericias.titulo ?? 'Perícias') : 'Atributos', sub: 'Testes e rolagens', ajuda: 'Digite os valores dos atributos; os bônus se calculam sozinhos. Toque no bônus de um teste ou perícia para rolar.', ok: s.atributos.length > 0 || !!s.pericias },
+    { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ajuda: 'Adicione poderes com custo, usos e dano. Toque no dado do poder para rolar; os usos gastos voltam no descanso.', ok: true },
+    { id: 'arvore', icone: '🌠', nome: 'Árvore de habilidades', sub: 'Hexágonos, pontos e caminhos', ajuda: 'Gaste pontos para liberar habilidades. Uma habilidade só abre quando a anterior do caminho já foi liberada.', ok: true },
+    { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou desenho, separados em abas por tipo. Itens equipados contam nos bônus; os mágicos ficam numa ala própria.', ok: true },
+    { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ajuda: 'Espaço livre para a história do personagem, aliados, segredos e lembretes. Embaixo ficam as regras e os créditos do sistema.', ok: true },
+    { id: 'guia', icone: '📖', nome: 'Guia de criação', sub: 'Passo a passo deste sistema', ajuda: 'Siga os passos para criar o personagem do jeito que as regras pedem.', ok: !!GUIAS[s.id] },
   ] as const).filter(x => x.ok)
   const [secao, setSecao] = useState<string>('principal')
   const ir = (id: string) => { setSecao(id); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+  const menu = useRef<HTMLDivElement>(null)
+  // No celular, o botão da seção escolhida fica visível na fileira.
+  useEffect(() => { menu.current?.querySelector('[aria-current="page"]')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }) }, [secao])
+  const iAtual = SECOES.findIndex(x => x.id === secao)
+  const atual = SECOES[iAtual], proxima = SECOES[iAtual + 1]
   // PV primeiro (mesmo com máximo digitado); senão, o primeiro recurso com máximo.
   const recursoPrincipal = s.recursos.find(r => /^(pv|vida)$/.test(r.id)) ?? s.recursos.find(r => c.recursosMax[r.id])
   const defesa = s.derivados.find(x => /^(defesa|ca)$/.test(x.id))
@@ -101,18 +106,19 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
   return <div>
     <RolagemCentral ref={central} />
     {descansando && <JanelaDescanso s={s} d={d} onChange={onChange} rolarTotal={rolarTotal} fechar={() => setDescansando(false)} />}
-    <div className="sticky top-[57px] z-10 -mx-3 mb-4 flex items-center gap-3 overflow-x-auto border-b border-[#373251] bg-[#100d1c]/95 px-3 py-2 backdrop-blur sm:-mx-6 sm:px-6">
-      <span className="shrink-0 truncate font-semibold text-[#e4d3ff]">{d.nome || 'Personagem'}</span>
+    <div className="sticky top-[57px] z-10 -mx-3 mb-4 border-b border-[#373251] bg-[#100d1c]/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-4" aria-label="Resumo do personagem">
+      <div className="flex items-center gap-3 overflow-x-auto">
       {recursoPrincipal && [recursoPrincipal, ...s.recursos.filter(r => r !== recursoPrincipal && (c.recursosMax[r.id] || d.recursos[r.id]?.max))].slice(0, 3).map(r => {
         const calc = !!r.formula || r.maxFixo !== undefined
         const max = c.recursosMax[r.id] ?? (calc ? null : (d.recursos[r.id]?.max ?? null)) ?? (/^(pv|vida|hp)$/.test(r.id) ? (c.derivados.pv_max ?? c.derivados.pv_sugerido ?? null) : null)
         return <MiniBarra key={r.id} nome={/^pv$/.test(r.id) ? 'PV' : r.nome.split(' (')[0]} cor={corDoRecurso(r.id, r.nome)} atual={Number(d.recursos[r.id]?.atual ?? 0) || 0} max={max} />
       })}
-      {defesa && <span className="shrink-0 rounded-lg border border-[#62527e] bg-[#201a32] px-3 py-1 text-sm">🛡️ {defesa.nome.split(' (')[0]} <strong>{c.derivados[defesa.id] ?? '—'}</strong></span>}
+      {defesa && <span className="shrink-0 whitespace-nowrap rounded-lg border border-[#62527e] bg-[#201a32] px-3 py-1 text-sm" title={defesa.nome}>🛡️ {/^classe de armadura/i.test(defesa.nome) ? 'CA' : defesa.nome.split(' (')[0]} <strong>{c.derivados[defesa.id] ?? '—'}</strong></span>}
+      </div>
     </div>
     <div className="lg:flex lg:gap-6">
       <nav aria-label="Seções da ficha" className="mb-4 lg:mb-0 lg:w-60 lg:shrink-0">
-        <div className="flex gap-2 overflow-x-auto pb-1 lg:sticky lg:top-[120px] lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-[#55456e] lg:bg-[#201a32] lg:p-3">
+        <div ref={menu} className="flex gap-2 overflow-x-auto pb-1 lg:sticky lg:top-[120px] lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-[#55456e] lg:bg-[#201a32] lg:p-3">
           <p className="hidden px-2 pb-1 text-xs font-bold uppercase tracking-widest text-[#ed9cd8] lg:block">🌙 Menu da ficha</p>
           {SECOES.map(x => <button key={x.id} type="button" onClick={() => ir(x.id)} aria-current={secao === x.id ? 'page' : undefined}
             className={'shrink-0 rounded-xl px-3 py-2 text-left text-sm transition lg:w-full ' + (secao === x.id ? 'bg-[#5b4380] text-white' : 'bg-[#201a32] text-[#d6c8e8] hover:bg-[#2b2140] lg:bg-transparent')}>
@@ -122,6 +128,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         </div>
       </nav>
       <div className="min-w-0 flex-1 space-y-4">
+        {atual && <p className="flex gap-2 rounded-xl border border-[#3d3152] bg-[#171325]/90 px-3 py-2 text-xs text-[#cfc0df]"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-[#e4d3ff]">{atual.nome}:</strong> {atual.ajuda}</span></p>}
         {secao === 'principal' && <>
     <section className={card}>
       <div className="flex items-start gap-4">
@@ -129,8 +136,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         <label className="block min-w-0 flex-1 text-sm font-semibold">Nome do personagem
           <input value={d.nome} maxLength={90} disabled={somenteLeitura} onChange={e => set('nome', e.target.value)} className={input + ' mt-1 text-lg font-bold'} placeholder="Ex.: Lyra Nyx" /></label>
       </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {s.campos.map(f => f.tipo === 'escolha' ? <CampoEscolha key={f.id} s={s} f={f} valor={d.campos[f.id]} somenteLeitura={somenteLeitura} mudar={v => set('campos', { ...d.campos, [f.id]: v })} /> : <label key={f.id} className={'block text-sm ' + (f.tipo === 'area' ? 'sm:col-span-2 lg:col-span-3' : '')}>{f.nome}
+      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3 lg:grid-cols-3">
+        {s.campos.map(f => f.tipo === 'escolha' ? <div key={f.id} className="col-span-2 sm:col-span-1"><CampoEscolha s={s} f={f} valor={d.campos[f.id]} somenteLeitura={somenteLeitura} mudar={v => set('campos', { ...d.campos, [f.id]: v })} /></div> : <label key={f.id} className={'flex flex-col justify-end text-sm text-[#d6c8e8] ' + (f.tipo === 'area' ? 'col-span-2 lg:col-span-3' : f.tipo === 'numero' ? '' : 'col-span-2 sm:col-span-1')}>{f.nome}
           {f.tipo === 'area'
             ? <textarea rows={3} value={String(d.campos[f.id] ?? '')} disabled={somenteLeitura} onChange={e => set('campos', { ...d.campos, [f.id]: e.target.value.slice(0, 4000) })} className={input + ' mt-1'} />
             : <input type={f.tipo === 'numero' ? 'number' : 'text'} value={d.campos[f.id] ?? ''} disabled={somenteLeitura} maxLength={120}
@@ -241,6 +248,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     </section>}
         </>}
         {secao === 'guia' && <GuiaSistema sistemaId={s.id} />}
+        {proxima && <button type="button" onClick={() => ir(proxima.id)} className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-[#62527e] bg-[#171325]/80 p-3 text-left text-sm transition hover:border-[#b99bff] hover:bg-[#2b2140]">
+          <span className="text-xl" aria-hidden="true">{proxima.icone}</span><span className="min-w-0 flex-1"><span className="block text-xs text-[#a99bbb]">Próxima parte</span><span className="block font-semibold">{proxima.nome}</span></span><span aria-hidden="true" className="text-[#b99bff]">→</span></button>}
       </div>
     </div>
   </div>

@@ -6,6 +6,15 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.32.4', data: '2026-11-11', titulo: 'Biblioteca da campanha',
+    itens: [
+      '📚 Biblioteca na mesa: o mestre ganhou a aba “Biblioteca” (antes ficava escondida no Diário). Procure pelo nome, filtre por tipo e veja cada item com o desenho da forja e a cor da raridade.',
+      '🎁 Dar direto da biblioteca: escolha jogadores e NPCs e a quantidade; os itens iguais se juntam na ficha, o chat avisa (se quiser) e quem recebe ganha um aviso.',
+      '✨ Prontos para usar: 34 itens e poderes da plataforma (armas, proteção, poções, equipamento de aventura, tesouros e poderes) para copiar para a campanha com um toque, ou um grupo inteiro de uma vez.',
+      'Duplicar uma entrada para fazer variações (ex.: “Espada +1” a partir da Espada longa).',
+    ],
+  },
+  {
     versao: '0.32.3', data: '2026-11-11', titulo: 'Descanso curto e longo',
     itens: [
       '🌙 Descanso curto e longo: na ficha, o botão “🌙 Descansar” (em Valores e recursos e em Poderes) abre as duas opções.',

@@ -67,5 +67,12 @@ export function aplicarRecompensa(sistema: string, dados: Dados, r: Recompensa):
 
 export function descreverRecompensa(r: Recompensa) {
   return [r.xp ? `${r.xp > 0 ? '+' : ''}${r.xp} XP` : '', r.pontos ? `${r.pontos > 0 ? '+' : ''}${r.pontos} ponto(s) de habilidade` : '', r.item ? `“${r.item}”` : '',
-    ...(r.biblioteca ?? []).map(e => `“${e.tipo === 'item' ? e.item.nome : e.poder.nome}”`), r.moedas ? r.moedas : ''].filter(Boolean).join(', ')
+    ...contarNomes((r.biblioteca ?? []).map(e => e.tipo === 'item' ? e.item.nome : e.poder.nome)), r.moedas ? r.moedas : ''].filter(Boolean).join(', ')
+}
+
+/** “Poção”, “Poção”, “Poção” → 3× “Poção”. */
+function contarNomes(nomes: string[]) {
+  const n = new Map<string, number>()
+  for (const x of nomes) n.set(x, (n.get(x) ?? 0) + 1)
+  return [...n].map(([x, q]) => `${q > 1 ? q + '× ' : ''}“${x}”`)
 }

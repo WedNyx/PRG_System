@@ -2,6 +2,12 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.32.4 — Biblioteca da campanha (2026-11-11)
+- 📚 Biblioteca na mesa: o mestre ganhou a aba “Biblioteca” (antes ficava escondida no Diário). Procure pelo nome, filtre por tipo e veja cada item com o desenho da forja e a cor da raridade.
+- 🎁 Dar direto da biblioteca: escolha jogadores e NPCs e a quantidade; os itens iguais se juntam na ficha, o chat avisa (se quiser) e quem recebe ganha um aviso.
+- ✨ Prontos para usar: 34 itens e poderes da plataforma (armas, proteção, poções, equipamento de aventura, tesouros e poderes) para copiar para a campanha com um toque, ou um grupo inteiro de uma vez.
+- Duplicar uma entrada para fazer variações (ex.: “Espada +1” a partir da Espada longa).
+
 ## v0.32.3 — Descanso curto e longo (2026-11-11)
 - 🌙 Descanso curto e longo: na ficha, o botão “🌙 Descansar” (em Valores e recursos e em Poderes) abre as duas opções.
 - Descanso longo: vida e recursos voltam ao máximo, valores temporários (como PV temporários) zeram e todos os usos de poderes voltam.

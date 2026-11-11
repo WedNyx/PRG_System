@@ -39,6 +39,15 @@ export const POST = rota<Ctx>(async (req, { params }) => {
     const [r] = await rest<unknown[]>('prg_biblioteca', { method: 'POST', prefer: 'return=representation', body: JSON.stringify({ campanha_id: id, criado_por: eu, ...c }) })
     return ok({ entrada: r }, 201)
   }
+  if (b.acao === 'importar') {
+    // Vários de uma vez (ex.: da biblioteca pronta da plataforma).
+    const entradas = (Array.isArray(b.entradas) ? b.entradas : []).slice(0, 60).map(x => { const o = (x ?? {}) as Record<string, unknown>; return conteudo(o.tipo, o.dados) })
+    if (!entradas.length) throw new ErroApi(400, 'Nada para importar.')
+    const ja = await rest<unknown[]>(`prg_biblioteca?select=id&campanha_id=eq.${q(id)}&limit=${MAX}`)
+    if (ja.length + entradas.length > MAX) throw new ErroApi(400, `Limite de ${MAX} entradas na biblioteca.`)
+    const r = await rest<unknown[]>('prg_biblioteca', { method: 'POST', prefer: 'return=representation', body: JSON.stringify(entradas.map(c => ({ campanha_id: id, criado_por: eu, ...c }))) })
+    return ok({ entradas: r }, 201)
+  }
   if (!isUuid(b.id)) throw new ErroApi(400, 'Entrada inválida.')
   const filtro = `prg_biblioteca?id=eq.${q(b.id)}&campanha_id=eq.${q(id)}`
   if (b.acao === 'editar') {
@@ -48,5 +57,12 @@ export const POST = rota<Ctx>(async (req, { params }) => {
     return ok({ entrada: r[0] })
   }
   if (b.acao === 'excluir') { await rest(filtro, { method: 'DELETE' }); return ok({ ok: true }) }
+  if (b.acao === 'duplicar') {
+    const [orig] = await rest<{ tipo: string; nome: string; dados: unknown }[]>(`prg_biblioteca?select=tipo,nome,dados&id=eq.${q(b.id)}&campanha_id=eq.${q(id)}`)
+    if (!orig) throw new ErroApi(404, 'Entrada não encontrada.')
+    const c = conteudo(orig.tipo, { ...(orig.dados as object), nome: (orig.nome + ' (cópia)').slice(0, 120) })
+    const [r] = await rest<unknown[]>('prg_biblioteca', { method: 'POST', prefer: 'return=representation', body: JSON.stringify({ campanha_id: id, criado_por: eu, ...c }) })
+    return ok({ entrada: r }, 201)
+  }
   throw new ErroApi(400, 'Ação desconhecida.')
 })

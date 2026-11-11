@@ -131,6 +131,12 @@ export const GUIA: TopicoGuia[] = [
     dica: 'Não existe recuperação por e-mail. Use uma senha que você lembre e que não use em outros sites.',
   },
   {
+    id: 'biblioteca', icone: '📚', titulo: 'Biblioteca da campanha', quem: 'mestre',
+    resumo: 'Itens e poderes prontos para entregar com um toque.',
+    passos: ['Na mesa, abra a aba “📚 Biblioteca” (só o mestre vê).', 'Em “✨ Prontos para usar”, toque em + para copiar um item ou poder da plataforma, ou em “Todos” para um grupo inteiro.', 'Em “Da campanha”, crie os seus com “Novo item” ou “Novo poder” (com a forja, raridade, dano e bônus) e use ⧉ para fazer variações.', 'Toque em “🎁 Dar”, marque quem recebe (jogadores e NPCs) e a quantidade. Vai direto para as fichas, e o chat avisa se você quiser.'],
+    dica: 'XP, moedas e pontos da árvore continuam em Diário → Recompensas.',
+  },
+  {
     id: 'tabelas', icone: '🎲', titulo: 'Tabelas do mestre', quem: 'mestre',
     resumo: 'Role na hora um nome, um encontro, um rumor ou um tesouro.',
     passos: ['Na mesa, abra a aba “🎲 Tabelas” (só o mestre vê).', 'As prontas já vêm com a plataforma: nomes, personalidade e segredo de NPC, tavernas, rumores, ganchos, complicações, tesouros, encontros, clima e itens curiosos. “NPC completo” e “Missão completa” juntam várias de uma vez.', 'Toque em “Rolar” para mostrar o resultado no chat para todos, ou em “Só eu” para ver sozinho (fica marcado 🔒 no chat).', 'Em “Nova tabela”, crie as suas: um resultado por linha. Escreva {1d6} para rolar um número e [[código]] para puxar um resultado de outra tabela (ex.: [[nomes]], o ferreiro).', 'As tabelas ficam salvas na campanha; edite ou apague quando quiser.'],

@@ -2,10 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { BookOpen, Gift, Library, NotebookPen, Pencil, Pin, Plus, Save, Trash2, X } from 'lucide-react'
-import { sistemaDaCampanha, sistemaPorId } from '@/lib/sistemas/catalogo'
-import { CATEGORIAS_ITEM, TIPOS_PODER, type Item, type Poder } from '@/lib/sistemas/inventario'
-import { EditorItem, EditorPoder } from '@/components/fichas/Inventario'
+import { BookOpen, Gift, NotebookPen, Pin, Plus, Save, Trash2, X } from 'lucide-react'
 import { api } from '@/lib/nuvem/cliente'
 import type { Estado } from './MesaNova'
 import { btn, input, msg } from './estilos'
@@ -16,15 +13,14 @@ const VIS: Record<Nota['visibilidade'], string> = { privada: '🔒 Só eu', mest
 
 /** Aba “Diário”: sessões, anotações, e (mestre) biblioteca de itens/poderes e recompensas. */
 export default function PainelCampanha({ campanhaId, e, admin }: { campanhaId: string; e: Estado; admin: boolean }) {
-  const [aba, setAba] = useState<'diario' | 'notas' | 'biblioteca' | 'recompensas'>('diario')
+  const [aba, setAba] = useState<'diario' | 'notas' | 'recompensas'>('diario')
   return <div className="space-y-3 text-sm">
     <div className="flex gap-1">
-      {([['diario', BookOpen, 'Sessões'], ['notas', NotebookPen, 'Anotações'], ...(admin ? [['biblioteca', Library, 'Biblioteca'], ['recompensas', Gift, 'Recompensas']] : [])] as [typeof aba, typeof BookOpen, string][]).map(([id, I, n]) =>
+      {([['diario', BookOpen, 'Sessões'], ['notas', NotebookPen, 'Anotações'], ...(admin ? [['recompensas', Gift, 'Recompensas']] : [])] as [typeof aba, typeof BookOpen, string][]).map(([id, I, n]) =>
         <button key={id} type="button" onClick={() => setAba(id)} className={'flex flex-1 items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-xs ' + (aba === id ? 'bg-[#5b4380]' : 'bg-[#1e1a30]')}><I size={14} /> {n}</button>)}
     </div>
     {aba === 'diario' && <Sessoes campanhaId={campanhaId} admin={admin} />}
     {aba === 'notas' && <Notas campanhaId={campanhaId} e={e} admin={admin} />}
-    {aba === 'biblioteca' && admin && <Biblioteca campanhaId={campanhaId} e={e} />}
     {aba === 'recompensas' && admin && <Recompensas campanhaId={campanhaId} e={e} />}
   </div>
 }
@@ -111,6 +107,7 @@ function Recompensas({ campanhaId, e }: { campanhaId: string; e: Estado }) {
     } catch (er) { toast.error(msg(er)) } finally { setEnviando(false) }
   }
   return <div className="space-y-2">
+    <p className="rounded-lg bg-[#2a2142] p-2 text-xs text-[#e4d3ff]">📚 Itens e poderes prontos ficam na aba <b>Biblioteca</b> da mesa, com o botão “🎁 Dar”.</p>
     <p className="text-xs text-[#b4aeca]">Vai direto para as fichas aprovadas: o XP soma no campo de XP (ou é anotado), itens, poderes e moedas vão para o inventário, e os pontos vão para a árvore de habilidades. Fica no histórico e aparece no chat.</p>
     <div className="space-y-1">{fichas.map(f => <label key={f.id} className="flex items-center gap-2 rounded-lg bg-[#1e1a30] p-2">
       <input type="checkbox" checked={sel.includes(f.id)} onChange={x => setSel(s => x.target.checked ? [...s, f.id] : s.filter(y => y !== f.id))} />
@@ -138,44 +135,3 @@ function Recompensas({ campanhaId, e }: { campanhaId: string; e: Estado }) {
 }
 
 type EntradaBib = { id: string; tipo: 'item' | 'poder'; nome: string; dados: Record<string, unknown> }
-
-/** Biblioteca do mestre: itens e poderes prontos para dar de recompensa (só o mestre vê). */
-function Biblioteca({ campanhaId, e }: { campanhaId: string; e: Estado }) {
-  const [lista, setLista] = useState<EntradaBib[] | null>(null)
-  const [filtro, setFiltro] = useState<'item' | 'poder'>('item')
-  const [editando, setEditando] = useState<{ id?: string; tipo: 'item' | 'poder'; valor: Item | Poder } | null>(null)
-  const sistemaId = sistemaDaCampanha(e.campanha.sistema ?? '')
-  const s = sistemaPorId(sistemaId)
-  const carregar = useCallback(() => api<{ biblioteca: EntradaBib[] }>(`campanhas/${campanhaId}/biblioteca`).then(r => setLista(r.biblioteca)).catch(er => toast.error(msg(er))), [campanhaId])
-  useEffect(() => { void carregar() }, [carregar])
-  async function salvar(tipo: 'item' | 'poder', valor: Item | Poder, id?: string) {
-    try {
-      await api(`campanhas/${campanhaId}/biblioteca`, { method: 'POST', body: { acao: id ? 'editar' : 'criar', id, tipo, dados: valor } })
-      setEditando(null); await carregar(); toast.success('Salvo na biblioteca!')
-    } catch (er) { toast.error(msg(er)) }
-  }
-  async function excluir(b: EntradaBib) {
-    if (!confirm(`Excluir "${b.nome}" da biblioteca? (Quem já recebeu continua com o seu.)`)) return
-    try { await api(`campanhas/${campanhaId}/biblioteca`, { method: 'POST', body: { acao: 'excluir', id: b.id } }); await carregar() } catch (er) { toast.error(msg(er)) }
-  }
-  const editar = (b: EntradaBib) => setEditando({ id: b.id, tipo: b.tipo, valor: { ...b.dados, nome: b.nome, id: 'x' } as unknown as Item | Poder })
-  const visiveis = (lista ?? []).filter(b => b.tipo === filtro)
-  return <div className="space-y-2">
-    <p className="text-xs text-[#b4aeca]">Monte itens e poderes uma vez e entregue em “Recompensas”. Só você vê a biblioteca.{!s && ' (Campanha com Ficha V8 ou sistema próprio: os bônus automáticos não aparecem aqui.)'}</p>
-    <div className="flex gap-1">{(['item', 'poder'] as const).map(t => <button key={t} type="button" onClick={() => setFiltro(t)} className={'flex-1 rounded-lg px-2 py-1.5 text-xs ' + (filtro === t ? 'bg-[#5b4380]' : 'bg-[#1e1a30]')}>{t === 'item' ? '🎒 Itens' : '✨ Poderes'} ({(lista ?? []).filter(b => b.tipo === t).length})</button>)}</div>
-    <button type="button" className={btn} onClick={() => setEditando(filtro === 'item' ? { tipo: 'item', valor: { id: 'novo', nome: '', categoria: 'equipamento', peso: 0, bonus: [] } } : { tipo: 'poder', valor: { id: 'novo', nome: '', tipo: 'magia' } })}><Plus size={14} /> Novo {filtro === 'item' ? 'item' : 'poder'}</button>
-    {lista === null && <p className="text-[#b4aeca]">Carregando…</p>}
-    {lista && !visiveis.length && <p className="text-[#b4aeca]">Nada aqui ainda.</p>}
-    <ul className="space-y-1">{visiveis.map(b => {
-      const icone = b.tipo === 'item' ? CATEGORIAS_ITEM.find(c => c.id === b.dados.categoria)?.icone ?? '📦' : TIPOS_PODER.find(t => t.id === b.dados.tipo)?.icone ?? '✨'
-      const extra = [b.dados.dano || b.dados.expressao, Array.isArray(b.dados.bonus) && b.dados.bonus.length ? `${b.dados.bonus.length} bônus` : ''].filter(Boolean).join(' · ')
-      return <li key={b.id} className="flex items-center gap-2 rounded-lg bg-[#1e1a30] p-2">
-        <span className="min-w-0 flex-1"><span className="block truncate">{icone} {b.nome}</span>{extra && <span className="block text-[11px] text-[#b4aeca]">{String(extra)}</span>}</span>
-        <button type="button" onClick={() => editar(b)} aria-label={'Editar ' + b.nome} className="rounded p-1 hover:bg-[#34294f]"><Pencil size={14} /></button>
-        <button type="button" onClick={() => void excluir(b)} aria-label={'Excluir ' + b.nome} className="rounded p-1 text-red-300 hover:bg-[#34294f]"><Trash2 size={14} /></button>
-      </li>
-    })}</ul>
-    {editando?.tipo === 'item' && <EditorItem s={s} inicial={editando.valor as Item} salvar={v => void salvar('item', v, editando.id)} fechar={() => setEditando(null)} />}
-    {editando?.tipo === 'poder' && <EditorPoder s={s} inicial={editando.valor as Poder} salvar={v => void salvar('poder', v, editando.id)} fechar={() => setEditando(null)} />}
-  </div>
-}

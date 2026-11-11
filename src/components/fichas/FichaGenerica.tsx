@@ -11,6 +11,7 @@ import { enviarImagemNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 import GuiaSistema from '@/components/sistemas/GuiaSistema'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import { InventarioFicha, PoderesFicha } from './Inventario'
+import JanelaDescanso from './Descanso'
 import type { Item } from '@/lib/sistemas/inventario'
 import ArvoreHabilidades from './Arvore'
 import Progressao from './Progressao'
@@ -66,7 +67,15 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     if (!r) { if (!rolarNaCampanha) toast.error('Rolagem inválida: ' + expressao); return }
     central.current?.mostrar({ rotulo, expressao, resultados: r.resultados, total: r.total, nota: naMesa })
   }
-  const propsInv = { s, d, c, onChange, somenteLeitura, rolar: rolarExpr }
+  /** Rola e devolve o total (para a cura do descanso curto). */
+  async function rolarTotal(expressao: string, rotulo: string): Promise<number | null> {
+    const r = rolarNaCampanha ? await rolarNaCampanha(expressao, rotulo) : rolarExpressao(expressao)
+    if (!r) { if (!rolarNaCampanha) toast.error('Rolagem inválida: ' + expressao); return null }
+    central.current?.mostrar({ rotulo, expressao, resultados: r.resultados, total: r.total, nota: naMesa })
+    return r.total
+  }
+  const [descansando, setDescansando] = useState(false)
+  const propsInv = { s, d, c, onChange, somenteLeitura, rolar: rolarExpr, abrirDescanso: somenteLeitura ? undefined : () => setDescansando(true) }
 
   const grupos = new Map<string, NonNullable<Sistema['pericias']>['lista']>()
   for (const p of s.pericias?.lista ?? []) grupos.set(p.grupo ?? '', [...(grupos.get(p.grupo ?? '') ?? []), p])
@@ -91,6 +100,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
 
   return <div>
     <RolagemCentral ref={central} />
+    {descansando && <JanelaDescanso s={s} d={d} onChange={onChange} rolarTotal={rolarTotal} fechar={() => setDescansando(false)} />}
     <div className="sticky top-[57px] z-10 -mx-3 mb-4 flex items-center gap-3 overflow-x-auto border-b border-[#373251] bg-[#100d1c]/95 px-3 py-2 backdrop-blur sm:-mx-6 sm:px-6">
       <span className="shrink-0 truncate font-semibold text-[#e4d3ff]">{d.nome || 'Personagem'}</span>
       {recursoPrincipal && [recursoPrincipal, ...s.recursos.filter(r => r !== recursoPrincipal && (c.recursosMax[r.id] || d.recursos[r.id]?.max))].slice(0, 3).map(r => {
@@ -134,7 +144,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       <ul className="mt-2 list-disc pl-5">{c.limites.filter(l => l.excedido).map(l => <li key={l.nome}>{l.nome}: {l.uso} de {l.max}</li>)}</ul>
     </section>}
     {(s.derivados.length > 0 || s.recursos.length > 0) && <section className={card}>
-      <h2 className="mb-3 font-bold text-[#ed9cd8]">Valores e recursos</h2>
+      <div className="mb-3 flex flex-wrap items-center gap-2"><h2 className="flex-1 font-bold text-[#ed9cd8]">Valores e recursos</h2>
+        {!somenteLeitura && s.recursos.length > 0 && <button type="button" onClick={() => setDescansando(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d4a23a]/70 px-3 py-1.5 text-sm text-amber-100 hover:bg-[#3a2a14]">🌙 Descansar</button>}</div>
       {s.derivados.length > 0 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {s.derivados.map(x => <div key={x.id} className="rounded-xl bg-[#171325] p-3" title={x.dica}>
           <p className="text-xs text-[#c4b6d4]">{x.nome}</p><p className="text-2xl font-black">{c.derivados[x.id] ?? '—'}</p>

@@ -7,6 +7,7 @@ import { aplicarDano, atualizarMorte, avisarMesa, danoComMorte, fichaDeCombate, 
 import { aceitarMedida, aoCair, lerMorte, MEDIDAS, testeMorte, type EstadoMorte } from '@/lib/sistemas/morte'
 import { detectarCritico } from '@/lib/dice'
 import { lerTabelas, rolarTabela, TABELAS_PRONTAS } from '@/lib/tabelas'
+import { aplicarDescanso } from '@/lib/sistemas/descanso'
 import { acertou, ALCANCE_CORPO, distancia, gastarCusto, ordenarIniciativa, regraDeAtaque, regraDeIniciativa, rolarDano, resumoCombate, type EntradaOrdem } from '@/lib/sistemas/combate'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { ehV8 } from '@/lib/nuvem/categorias'
@@ -384,6 +385,28 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       const tabelas = lerTabelas(b.tabelas)
       await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify({ tabelas }) })
       return ok({ tabelas })
+    }
+    case 'descanso': {
+      // O mestre dá um descanso curto ou longo para o grupo (fichas ativas da campanha; NPCs só se pedir).
+      exigirAdmin(admin)
+      const tipo = b.tipo === 'curto' ? 'curto' : 'longo'
+      const fichas = await rest<{ id: string; nome: string; sistema: string }[]>(`prg_fichas?select=id,nome,sistema&campanha_id=eq.${q(cid)}&status=eq.ativa${b.npcs === true ? '' : '&npc=eq.false'}&limit=100`)
+      const linhas: string[] = []
+      for (const f of fichas) {
+        if (ehV8(f.sistema)) continue
+        const s = await carregarSistema(f.sistema)
+        if (!s) continue
+        let mud: string[] = []
+        await mudarFicha(f.id, dados => { const r = aplicarDescanso(s, dados, tipo); mud = r.mudancas; return r.mudancas.length ? r.d as unknown as Record<string, unknown> : null })
+        if (mud.length) linhas.push(`${f.nome || 'Sem nome'}: ${mud.join(', ')}`)
+      }
+      if (tipo === 'longo') {
+        // Depois de uma noite de sono, quem estava caído ou estável levanta (quem morreu continua morto).
+        await rest(`prg_tokens?campanha_id=eq.${q(cid)}&morte->>estado=in.(caido,estavel)`, { method: 'PATCH', body: JSON.stringify({ morte: {} }) }).catch(() => {})
+      }
+      const titulo = tipo === 'longo' ? '🌙 Descanso longo para o grupo.' : '☕ Descanso curto para o grupo.'
+      await avisarMesa(cid, eu, (titulo + (linhas.length ? '\n' + linhas.join('\n') : ' Ninguém precisava recuperar nada.')).slice(0, 1000))
+      return ok({ ok: true, fichas: fichas.length, recuperaram: linhas.length })
     }
     case 'tabela_rolar': {
       exigirAdmin(admin)

@@ -185,6 +185,27 @@ export function ConfigCombate({ acerto, morte = 'testes', acao }: { acerto: 'aut
   </section>
 }
 
+/** Mestre: descanso curto ou longo para o grupo todo (fichas aprovadas; NPCs se marcar). */
+export function DescansoGrupo({ acao, carregar }: { acao: Acao; carregar?: () => void }) {
+  const [npcs, setNpcs] = useState(false)
+  const [ocupado, setOcupado] = useState(false)
+  async function dar(tipo: 'curto' | 'longo') {
+    if (!confirm(tipo === 'longo' ? 'Dar um descanso longo para o grupo? Vida e recursos voltam ao máximo e os usos de poderes voltam.' : 'Dar um descanso curto para o grupo? Voltam os usos dos poderes de descanso curto.')) return
+    setOcupado(true)
+    try { const r = await acao({ acao: 'descanso', tipo, npcs }); toast.success(tipo === 'longo' ? '🌙 Descanso longo dado' : '☕ Descanso curto dado', { description: `${r.recuperaram ?? 0} de ${r.fichas ?? 0} personagens recuperaram algo. O chat mostra os detalhes.` }); carregar?.() }
+    catch { /* o erro já aparece pela acao */ } finally { setOcupado(false) }
+  }
+  return <section className="rounded-xl border border-[#d4a23a]/50 bg-[#1e1a30] p-3">
+    <h3 className="font-semibold">🌙 Descanso do grupo</h3>
+    <p className="mt-1 text-xs text-[#b4aeca]">Recupera as fichas de todos de uma vez. No curto, cada jogador pode curar a vida pela própria ficha (🌙 Descansar).</p>
+    <label className="mt-2 flex items-center gap-2 text-sm"><input type="checkbox" checked={npcs} onChange={e => setNpcs(e.target.checked)} className="accent-[#b99bff]" /> Incluir os NPCs</label>
+    <div className="mt-2 grid grid-cols-2 gap-2">
+      <button type="button" disabled={ocupado} onClick={() => void dar('curto')} className={btn + ' justify-center py-2 text-sm'}>☕ Curto</button>
+      <button type="button" disabled={ocupado} onClick={() => void dar('longo')} className="rounded-lg bg-gradient-to-r from-[#7652ac] to-[#b45309] py-2 text-sm font-semibold disabled:opacity-50">🌙 Longo</button>
+    </div>
+  </section>
+}
+
 type TokenPrep = TokenBase & { imagem_url: string | null; cor: string; npc: boolean; visivel: boolean; hp_atual: number | null; hp_max: number | null }
 /** Preparar combate: escolher quem luta, conferir o bônus de iniciativa e rolar para todos de uma vez. */
 export function PrepararCombate({ tokens, fichas, acao, fechar }: { tokens: TokenPrep[]; fichas: FichaMesa[] | null; acao: Acao; fechar: () => void }) {

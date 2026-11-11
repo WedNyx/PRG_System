@@ -67,7 +67,7 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'inventario', icone: '🎒', titulo: 'Inventário e poderes', foto: 'inventario.jpg', legenda: 'Inventário com carga e itens equipados',
     resumo: 'Itens e poderes organizados, que somam sozinhos na ficha.',
-    passos: ['Na ficha, abra “🎒 Inventário” e toque em “Novo item”: escolha o tipo, o peso, a rolagem de dano e os bônus quando equipado (ex.: escudo → CA +2).', 'No topo do editor fica a ⚒️ Forja: escolha a forma do desenho, as cores e a raridade (a moldura brilha do Raro para cima). “🎲 Surpreenda-me” sorteia tudo e “✨ Sugerir um nome” dá ideias.', 'Toque em “Equipar” para o bônus entrar na ficha. Use + e − para a quantidade; consumíveis têm o botão “Usar”.', 'A barra de carga mostra o peso total e o limite do sistema. Anote as moedas na carteira.', 'Em campanha, toque em “🎁 Passar” no item para dar a outro personagem: escolha quem recebe e quantos. Vai na hora, e o chat avisa.', 'Em “🌌 Poderes e habilidades”, crie magias e técnicas com custo (ex.: 3 PM), usos até descansar e rolagem. “Usar” desconta o recurso e rola; “Descansar” recupera os usos.'],
+    passos: ['Na ficha, abra “🎒 Inventário” e toque em “Novo item”: escolha o tipo, o peso, a rolagem de dano e os bônus quando equipado (ex.: escudo → CA +2).', 'No topo do editor fica a ⚒️ Forja: escolha a forma do desenho, as cores e a raridade (a moldura brilha do Raro para cima). “🎲 Surpreenda-me” sorteia tudo e “✨ Sugerir um nome” dá ideias.', 'Toque em “Equipar” para o bônus entrar na ficha. Use + e − para a quantidade; consumíveis têm o botão “Usar”.', 'A barra de carga mostra o peso total e o limite do sistema. Anote as moedas na carteira.', 'Em campanha, toque em “🎁 Passar” no item para dar a outro personagem: escolha quem recebe e quantos. Vai na hora, e o chat avisa.', 'Em “🌌 Poderes e habilidades”, crie magias e técnicas com custo (ex.: 3 PM), usos até descansar e rolagem. “Usar” desconta o recurso e rola.', '🌙 Descansar (em Valores e recursos ou em Poderes): o descanso curto recupera os poderes marcados “descanso curto” e pode curar a vida com um número ou dados (ex.: 1d8+2); o longo enche a vida e os recursos e recupera todos os usos. Em campanha, o mestre pode dar o descanso para o grupo todo na aba Mestre da mesa.'],
     dica: 'O mestre monta itens e poderes na “Biblioteca” (aba Diário da mesa) e entrega em “Recompensas”: eles chegam prontos na ficha.',
   },
   {
@@ -129,6 +129,12 @@ export const GUIA: TopicoGuia[] = [
     resumo: 'Opcional: proteja o seu perfil para ninguém mais entrar nele.',
     passos: ['Na Central, toque na sua foto no topo (ou no menu → “Editar perfil”).', 'Em “🔒 Senha do perfil”, toque em “Criar senha”, digite duas vezes (6 a 72 caracteres) e salve.', 'No portal, o seu perfil passa a mostrar 🔒. Em outro aparelho, a plataforma pede a senha uma vez e lembra dele por 30 dias.', 'Para trocar ou remover, use a senha atual. Trocar a senha desconecta os outros aparelhos; “Desconectar todos os aparelhos” sai de todos.', 'Esqueceu? Peça ao administrador da plataforma: ele apaga a senha pelo 🔑 no portal e você cria outra.'],
     dica: 'Não existe recuperação por e-mail. Use uma senha que você lembre e que não use em outros sites.',
+  },
+  {
+    id: 'biblioteca', icone: '📚', titulo: 'Biblioteca da campanha', quem: 'mestre',
+    resumo: 'Itens e poderes prontos para entregar com um toque.',
+    passos: ['Na mesa, abra a aba “📚 Biblioteca” (só o mestre vê).', 'Em “✨ Prontos para usar”, toque em + para copiar um item ou poder da plataforma, ou em “Todos” para um grupo inteiro.', 'Em “Da campanha”, crie os seus com “Novo item” ou “Novo poder” (com a forja, raridade, dano e bônus) e use ⧉ para fazer variações.', 'Toque em “🎁 Dar”, marque quem recebe (jogadores e NPCs) e a quantidade. Vai direto para as fichas, e o chat avisa se você quiser.'],
+    dica: 'XP, moedas e pontos da árvore continuam em Diário → Recompensas.',
   },
   {
     id: 'tabelas', icone: '🎲', titulo: 'Tabelas do mestre', quem: 'mestre',

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowDown, ArrowLeft, ArrowUp, BookOpen, ScrollText, ChevronLeft, ChevronRight, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, BookOpen, Library, ScrollText, ChevronLeft, ChevronRight, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
@@ -16,13 +16,14 @@ import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/Ro
 import PainelCampanha from './PainelCampanha'
 import PainelMusica from './PainelMusica'
 import PainelTabelas from './PainelTabelas'
+import PainelBiblioteca from './PainelBiblioteca'
 import DicasMesa, { deveMostrarDicas } from './DicasMesa'
 import Sino from '@/components/Sino'
 import TocadorMesa from './TocadorMesa'
 import type { EstadoMusica } from '@/lib/nuvem/musica'
 import RecorteImagem from './RecorteImagem'
 import { btn, input, msg } from './estilos'
-import { CartaoAtaque, ConfigCombate, JanelaAtaque, PainelFichas, PainelMorte, PrepararCombate, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type FichaMesa, type Morte } from './Combate'
+import { CartaoAtaque, ConfigCombate, DescansoGrupo, JanelaAtaque, PainelFichas, PainelMorte, PrepararCombate, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type FichaMesa, type Morte } from './Combate'
 
 type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean }
 type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; condicoes_rodadas?: Record<string, number> | null; condicoes_dano?: Record<string, string> | null; morte?: Morte | null; dono_id: string | null; ficha_id: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number }
@@ -66,7 +67,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [cor, setCor] = useState(CORES[0])
   const [pincel, setPincel] = useState(1)
   const [dicas, setDicas] = useState<'auto' | 'aberto' | 'fechado'>('auto')
-  const [aba, setAba] = useState<'chat' | 'fichas' | 'tokens' | 'iniciativa' | 'musica' | 'campanha' | 'tabelas' | 'mestre'>('chat')
+  const [aba, setAba] = useState<'chat' | 'fichas' | 'tokens' | 'iniciativa' | 'musica' | 'campanha' | 'tabelas' | 'biblioteca' | 'mestre'>('chat')
   const [painel, setPainel] = useState(true)
   const [pings, setPings] = useState<Ping[]>([])
   const [cursores, setCursores] = useState<CursorRemoto[]>([])
@@ -234,7 +235,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     { id: 'editar-mapa', icone: Layers, nome: 'Montar mapa (mover/redimensionar imagens)', so: true },
   ]
   const abas = (espectador ? [['chat', MessageSquare, 'Chat'], ['iniciativa', Swords, 'Iniciativa'], ['musica', Music2, 'Música']]
-    : [['chat', MessageSquare, 'Chat'], ['fichas', ScrollText, 'Fichas'], ['tokens', UserRound, 'Tokens'], ['iniciativa', Swords, 'Iniciativa'], ['musica', Music2, 'Música'], ['campanha', BookOpen, 'Diário'], ...(admin ? [['tabelas', Dices, 'Tabelas'], ['mestre', Settings2, 'Mestre']] : [])]) as [typeof aba, typeof Hand, string][]
+    : [['chat', MessageSquare, 'Chat'], ['fichas', ScrollText, 'Fichas'], ['tokens', UserRound, 'Tokens'], ['iniciativa', Swords, 'Iniciativa'], ['musica', Music2, 'Música'], ['campanha', BookOpen, 'Diário'], ...(admin ? [['biblioteca', Library, 'Biblioteca'], ['tabelas', Dices, 'Tabelas'], ['mestre', Settings2, 'Mestre']] : [])]) as [typeof aba, typeof Hand, string][]
   async function alternarSessao() {
     if (sessaoAberta && !confirm('Encerrar a sessão? Os jogadores e espectadores saem da mesa e a música para.')) return
     await acao({ acao: 'sessao', aberta: !sessaoAberta }).catch(() => {})
@@ -310,8 +311,9 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           {aba === 'iniciativa' && <PainelIniciativa e={e} admin={admin} acao={acao} fichas={fichasMesa} atacar={iniciarAtaque} />}
           {aba === 'musica' && <PainelMusica campanhaId={campanhaId} eu={e.eu} admin={admin} espectador={espectador} tocando={e.musica} aoMudar={avisarMudanca} />}
           {aba === 'campanha' && <PainelCampanha campanhaId={campanhaId} e={e} admin={admin} />}
+          {aba === 'biblioteca' && admin && <PainelBiblioteca campanhaId={campanhaId} e={e} />}
           {aba === 'tabelas' && admin && <PainelTabelas campanhaId={campanhaId} acao={acao} />}
-          {aba === 'mestre' && admin && <><ConfigCombate acerto={e.combate?.acerto ?? 'mestre'} morte={e.combate?.morte ?? 'testes'} acao={acao} /><div className="h-3" /><PainelMestre e={e} acao={acao} campanhaId={campanhaId} setModo={setModo} /></>}
+          {aba === 'mestre' && admin && <><ConfigCombate acerto={e.combate?.acerto ?? 'mestre'} morte={e.combate?.morte ?? 'testes'} acao={acao} /><div className="h-3" /><DescansoGrupo acao={acao} carregar={() => void carregarFichas()} /><div className="h-3" /><PainelMestre e={e} acao={acao} campanhaId={campanhaId} setModo={setModo} /></>}
         </div>
       </aside>}
     </div>

@@ -15,7 +15,9 @@ export type Bonus = { alvo: string; valor: number }
 /** `alcance` em metros (ataques na mesa); sem alcance = corpo a corpo (1,5 m). */
 /** `arte`: desenho da Forja (forma + cores); `raridade` dá a cor da moldura. */
 export type Item = { id: string; nome: string; categoria: CategoriaItem; peso: number; dano?: string; alcance?: number; bonus: Bonus[]; descricao?: string; arte?: ArteItem; raridade?: Raridade }
-export type Poder = { id: string; nome: string; tipo: TipoPoder; recurso?: string; custo?: number; usosMax?: number; expressao?: string; alcance?: number; descricao?: string }
+export type Poder = { id: string; nome: string; tipo: TipoPoder; recurso?: string; custo?: number; usosMax?: number; expressao?: string; alcance?: number; descricao?: string
+  /** Em que descanso os usos voltam (padrão: longo). */
+  recarga?: 'curto' }
 export type Uso = { itens: Record<string, { qtd: number; equipado: boolean }>; poderes: Record<string, number>; carteira: string }
 
 export const CATEGORIAS_ITEM: { id: CategoriaItem; nome: string; icone: string }[] = [
@@ -59,7 +61,7 @@ export function normalizarPoder(v: unknown): Poder | null {
   return {
     id: id(o.id), nome, tipo,
     ...(recurso ? { recurso, custo: num(o.custo, 0, 999, 1) } : {}),
-    ...(Number(o.usosMax) > 0 ? { usosMax: num(o.usosMax, 1, 99) } : {}),
+    ...(Number(o.usosMax) > 0 ? { usosMax: num(o.usosMax, 1, 99), ...(o.recarga === 'curto' ? { recarga: 'curto' as const } : {}) } : {}),
     ...(expressao && EXPR.test(expressao) ? { expressao } : {}),
     ...(Number(o.alcance) > 0 ? { alcance: num(o.alcance, 0, 1000) } : {}),
     ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}),

@@ -8,8 +8,9 @@ import TransicaoPerfil from '@/components/perfil/TransicaoPerfil'
 import EscolherGrupo from '@/components/perfil/EscolherGrupo'
 import { GRUPOS, GRUPO_PADRAO, ehGrupo, grupoDe, type GrupoId } from '@/lib/grupos'
 import SaudePlataforma from '@/components/admin/SaudePlataforma'
+import { JanelaSenha, situacaoSenha } from '@/components/perfil/Senha'
 
-type Perfil = { id: string; apelido: string; avatar?: string; grupo?: string }
+type Perfil = { id: string; apelido: string; avatar?: string; grupo?: string; protegido?: boolean }
 const GRUPO_KEY = 'prg-grupo-v1'
 const KEY = 'prg-aventureiros-demo-v1'
 const SELECTED_KEY = 'prg-aventureiro-selecionado-v1'
@@ -55,6 +56,8 @@ export default function PortalAventureiros() {
   const [gerenciando, setGerenciando] = useState(false)
   const [senhaAdmin, setSenhaAdmin] = useState('')
   const [entrando, setEntrando] = useState<{ perfil: Perfil; origem: DOMRect; destino: string } | null>(null)
+  // Perfil com senha esperando a senha antes de entrar.
+  const [comSenha, setComSenha] = useState<{ perfil: Perfil; origem: DOMRect; destino: string } | null>(null)
   const router = useRouter()
   const [pedindoSenha, setPedindoSenha] = useState(false)
   const [vendoSaude, setVendoSaude] = useState(false)
@@ -251,6 +254,18 @@ export default function PortalAventureiros() {
     finally { setProcessando(false) }
   }
 
+  async function redefinirSenha(perfil: Perfil) {
+    if (!window.confirm(`Apagar a senha do perfil "${perfil.apelido}"?\n\nTodos os aparelhos dele saem, e o perfil volta a entrar sem senha até criar outra.`)) return
+    setProcessando(true); setErro('')
+    try {
+      const response = await fetch('/api/prg/perfil/' + perfil.id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'redefinir', admin: senhaAdmin }) })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.erro || 'Não foi possível redefinir.')
+      setPerfis(atual => atual.map(p => p.id === perfil.id ? { ...p, protegido: false } : p))
+    } catch (error) { setErro(error instanceof Error ? error.message : 'Falha ao redefinir.') }
+    finally { setProcessando(false) }
+  }
+
   async function removerDaNuvem(perfil: Perfil) {
     if (!window.confirm(`Remover o perfil "${perfil.apelido}" da plataforma?\n\nAs fichas, playlists e participações dele serão apagadas. Isso não pode ser desfeito.`)) return
     setProcessando(true); setErro('')
@@ -313,6 +328,11 @@ export default function PortalAventureiros() {
                   <button onClick={() => removerDaNuvem(perfil)} disabled={processando} aria-label={'Remover perfil ' + perfil.apelido}
                     className="absolute -right-1 -top-2 z-10 rounded-full border border-[#ff9eb5] bg-[#4b253a] px-2 py-1 text-sm shadow-lg disabled:opacity-50">🗑</button>
                 )}
+                {gerenciando && CLOUD_ENABLED && senhaAdmin && perfil.protegido && (
+                  <button onClick={() => redefinirSenha(perfil)} disabled={processando} aria-label={'Apagar a senha de ' + perfil.apelido} title="Apagar a senha (esqueceu)"
+                    className="absolute -left-1 -top-2 z-10 rounded-full border border-[#d4a23a] bg-[#3a2a14] px-2 py-1 text-sm shadow-lg disabled:opacity-50">🔑</button>
+                )}
+
                 <Link href={'/central?personagem=' + encodeURIComponent(perfil.id)}
                   onClick={event => {
                     event.preventDefault()
@@ -323,11 +343,18 @@ export default function PortalAventureiros() {
                     if (entrando) return
                     router.prefetch(destino)
                     const caixa = event.currentTarget.querySelector('div')?.getBoundingClientRect() ?? event.currentTarget.getBoundingClientRect()
+                    if (perfil.protegido) {
+                      // Perfil com senha: se este aparelho ainda não está lembrado, pede a senha antes.
+                      situacaoSenha(perfil.id).then(s => { if (s.conectado) setEntrando({ perfil, origem: caixa, destino }); else setComSenha({ perfil, origem: caixa, destino }) })
+                        .catch(() => setComSenha({ perfil, origem: caixa, destino }))
+                      return
+                    }
                     setEntrando({ perfil, origem: caixa, destino })
                   }}
                   className="flex w-full flex-col items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b99bff]">
-                  <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border-2 border-[#51466a] bg-[#28233e] text-5xl font-bold text-[#b99bff] shadow-xl transition-all duration-200 group-hover:scale-105 group-hover:border-[#b99bff] group-hover:shadow-[0_0_24px_#7654bb66]">
+                  <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border-2 border-[#51466a] bg-[#28233e] text-5xl font-bold text-[#b99bff] shadow-xl transition-all duration-200 group-hover:scale-105 group-hover:border-[#b99bff] group-hover:shadow-[0_0_24px_#7654bb66]">
                     {perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : perfil.apelido[0].toUpperCase()}
+                    {perfil.protegido && <span className="absolute bottom-1.5 right-1.5 rounded-full bg-black/70 px-1.5 py-0.5 text-sm" role="img" aria-label="Perfil com senha">🔒</span>}
                   </div>
                   <span className="max-w-full break-words text-center text-sm font-medium text-[#b4aeca] group-hover:text-white">{perfil.apelido}</span>
                 </Link>
@@ -351,7 +378,7 @@ export default function PortalAventureiros() {
           {CLOUD_ENABLED && <p className="mt-2 text-center text-xs text-[#8f86a8]">Para mudar seu nome ou foto, entre no seu perfil e use “Editar perfil” no menu.</p>}
         </section>
         <div className="flex flex-wrap items-center justify-center gap-3 pb-3 text-xs text-[#b4aeca]">
-          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.29.1'}</Link>
+          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.32.0'}</Link>
           {versao?.revision && <span title="Identificador da implantação">Build {versao.revision}</span>}
           <button type="button" onClick={() => window.location.reload()}
             className="rounded-md border border-[#62527e] px-2 py-1 text-[#b99bff] hover:bg-[#34294f]">
@@ -365,6 +392,7 @@ export default function PortalAventureiros() {
 
       {vendoSaude && senhaAdmin && <SaudePlataforma senha={senhaAdmin} fechar={() => setVendoSaude(false)} />}
 
+      {comSenha && <JanelaSenha perfil={comSenha.perfil} fechar={() => setComSenha(null)} aoEntrar={() => { setEntrando(comSenha); setComSenha(null) }} />}
       {entrando && <TransicaoPerfil perfil={entrando.perfil} origem={entrando.origem} aoTerminar={() => router.push(entrando.destino)} />}
 
       {pedindoSenha && (

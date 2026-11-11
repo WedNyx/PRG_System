@@ -15,6 +15,7 @@ import MapaMesa, { type CursorRemoto, type ModoMesa, type Ping, type TokenMapa }
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import PainelCampanha from './PainelCampanha'
 import PainelMusica from './PainelMusica'
+import PainelTabelas from './PainelTabelas'
 import Sino from '@/components/Sino'
 import TocadorMesa from './TocadorMesa'
 import type { EstadoMusica } from '@/lib/nuvem/musica'
@@ -63,7 +64,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [modo, setModo] = useState<ModoMesa>('mover')
   const [cor, setCor] = useState(CORES[0])
   const [pincel, setPincel] = useState(1)
-  const [aba, setAba] = useState<'chat' | 'fichas' | 'tokens' | 'iniciativa' | 'musica' | 'campanha' | 'mestre'>('chat')
+  const [aba, setAba] = useState<'chat' | 'fichas' | 'tokens' | 'iniciativa' | 'musica' | 'campanha' | 'tabelas' | 'mestre'>('chat')
   const [painel, setPainel] = useState(true)
   const [pings, setPings] = useState<Ping[]>([])
   const [cursores, setCursores] = useState<CursorRemoto[]>([])
@@ -231,7 +232,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     { id: 'editar-mapa', icone: Layers, nome: 'Montar mapa (mover/redimensionar imagens)', so: true },
   ]
   const abas = (espectador ? [['chat', MessageSquare, 'Chat'], ['iniciativa', Swords, 'Iniciativa'], ['musica', Music2, 'Música']]
-    : [['chat', MessageSquare, 'Chat'], ['fichas', ScrollText, 'Fichas'], ['tokens', UserRound, 'Tokens'], ['iniciativa', Swords, 'Iniciativa'], ['musica', Music2, 'Música'], ['campanha', BookOpen, 'Diário'], ...(admin ? [['mestre', Settings2, 'Mestre']] : [])]) as [typeof aba, typeof Hand, string][]
+    : [['chat', MessageSquare, 'Chat'], ['fichas', ScrollText, 'Fichas'], ['tokens', UserRound, 'Tokens'], ['iniciativa', Swords, 'Iniciativa'], ['musica', Music2, 'Música'], ['campanha', BookOpen, 'Diário'], ...(admin ? [['tabelas', Dices, 'Tabelas'], ['mestre', Settings2, 'Mestre']] : [])]) as [typeof aba, typeof Hand, string][]
   async function alternarSessao() {
     if (sessaoAberta && !confirm('Encerrar a sessão? Os jogadores e espectadores saem da mesa e a música para.')) return
     await acao({ acao: 'sessao', aberta: !sessaoAberta }).catch(() => {})
@@ -306,6 +307,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           {aba === 'iniciativa' && <PainelIniciativa e={e} admin={admin} acao={acao} fichas={fichasMesa} atacar={iniciarAtaque} />}
           {aba === 'musica' && <PainelMusica campanhaId={campanhaId} eu={e.eu} admin={admin} espectador={espectador} tocando={e.musica} aoMudar={avisarMudanca} />}
           {aba === 'campanha' && <PainelCampanha campanhaId={campanhaId} e={e} admin={admin} />}
+          {aba === 'tabelas' && admin && <PainelTabelas campanhaId={campanhaId} acao={acao} />}
           {aba === 'mestre' && admin && <><ConfigCombate acerto={e.combate?.acerto ?? 'mestre'} morte={e.combate?.morte ?? 'testes'} acao={acao} /><div className="h-3" /><PainelMestre e={e} acao={acao} campanhaId={campanhaId} setModo={setModo} /></>}
         </div>
       </aside>}

@@ -28,6 +28,8 @@ export type Sistema = {
   oculto?: boolean
   /** Quem criou (sistemas autorais). */
   autor?: string
+  /** Capa enviada pelo autor (sistemas autorais; imagem da plataforma). */
+  capa?: string
   campos: CampoDef[]
   atributos: AtributoDef[]
   /** Modificador do atributo; `X` é o valor do atributo. Sem isso, o modificador é o próprio valor. */
@@ -71,6 +73,8 @@ export type DadosFicha = {
   listas: Record<string, string>
   /** Inventário e poderes estruturados (ver inventario.ts). */
   itens?: unknown[]
+  /** Pontos de atributo que vieram dos níveis e já foram colocados (id do atributo → pontos). */
+  nivelAtributos?: Record<string, number>
   poderes?: unknown[]
   uso?: unknown
   /** Árvore de habilidades (ver arvore.ts). */

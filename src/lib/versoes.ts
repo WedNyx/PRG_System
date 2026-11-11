@@ -6,6 +6,36 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.32.0', data: '2026-11-11', titulo: 'Passar itens e capas dos sistemas',
+    itens: [
+      '🎁 Passar item: na ficha de campanha, toque em “Passar” no item, escolha o personagem e a quantidade. O item sai da sua ficha e entra na outra na hora, e o chat da mesa avisa.',
+      'Quem recebe ganha um aviso. Itens iguais empilham; o item chega desequipado. O mestre também passa itens de e para NPCs (esses avisos ficam só para o mestre).',
+      'Se o mestre travou o inventário de uma das fichas, a troca não acontece.',
+      '🖼️ Capas dos sistemas: cada sistema da plataforma ganhou uma ilustração própria no clima do jogo (fantasia, cidade sombria, faroeste arcano, tempestade, investigação…). As capas aparecem nos cartões e na hora de escolher o sistema.',
+      'Sistemas autorais: o autor envia a capa no construtor (em “Sobre o sistema”). Sem imagem, o sistema ganha uma capa de constelação com uma cor só dele.',
+    ],
+  },
+  {
+    versao: '0.31.0', data: '2026-11-11', titulo: 'Senha do perfil',
+    itens: [
+      '🔒 Senha do perfil (opcional): em Editar perfil → “Senha do perfil”, crie uma senha. Daí em diante, só entra no seu perfil quem souber a senha. Não precisa de e-mail.',
+      'Cada aparelho fica lembrado por 30 dias depois de digitar a senha. Em “Aparelhos lembrados” dá para ver onde você está conectado e desconectar todos.',
+      'No portal, perfis com senha aparecem com 🔒 e pedem a senha antes de entrar. Trocar a senha desconecta os outros aparelhos.',
+      'Esqueceu a senha? O administrador (com a senha de administrador) toca no 🔑 do perfil para apagar a senha, e você cria outra.',
+      'Segurança: a senha fica guardada só embaralhada (scrypt), o servidor confere em todas as ações, e 5 erros seguidos travam as tentativas por 10 minutos.',
+    ],
+  },
+  {
+    versao: '0.30.0', data: '2026-11-11', titulo: 'Tabelas do mestre e subir de nível guiado',
+    itens: [
+      '🎲 Tabelas do mestre (aba “Tabelas” na mesa, só para o mestre): role na hora nomes, personalidade e segredo de NPC, tavernas, rumores, ganchos, complicações, tesouros, encontros, clima e itens curiosos. “NPC completo” e “Missão completa” juntam várias tabelas num resultado só.',
+      '“Rolar” mostra o resultado no chat para todos; “Só eu” fica visível só para o mestre. O sorteio é feito no servidor.',
+      'Crie as tabelas da sua campanha: um resultado por linha, com {1d6} para rolar números e [[código]] para puxar outra tabela.',
+      '⬆️ Subir de nível guiado: ao subir, abre uma janela com tudo o que o nível deu. Se o sistema dá pontos de atributo, dá para distribuir ali mesmo com + e −; se dá pontos da árvore, um botão leva direto para a árvore.',
+      'A ficha avisa quando sobram pontos de atributo para distribuir (e quando há pontos demais depois de descer de nível).',
+    ],
+  },
+  {
     versao: '0.29.1', data: '2026-11-11', titulo: 'Estrelinhas sonhadoras como tema principal',
     itens: [
       'Estrelinhas sonhadoras agora é o tema principal da plataforma. O Céu estrelado saiu; quem estava com ele passa para as Estrelinhas sozinho.',

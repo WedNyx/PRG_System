@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { sistemaPorId } from './catalogo'
 import { calcular, fichaVazia } from './calculo'
-import { bonusEquipados, lerItens, lerPoderes, lerUso, pesoTotal, podeUsar } from './inventario'
+import { bonusEquipados, lerItens, lerPoderes, lerUso, pesoTotal, podeUsar, transferirItem, type ComItens } from './inventario'
 
 describe('inventário', () => {
   it('normaliza e recusa dados ruins', () => {
@@ -45,5 +45,37 @@ describe('itens equipados na ficha', () => {
     d.itens = [{ id: 'm', nome: 'Manopla', bonus: [{ alvo: 'atributo:POT', valor: 3 }] }]; d.uso = { itens: { m: { qtd: 1, equipado: true } } }
     const c = calcular(s, d)
     expect(c.vars.POT).toBe(4); expect(c.limites.every(l => !l.excedido)).toBe(true)
+  })
+})
+
+describe('passar item entre personagens', () => {
+  const arco = { id: 'arco', nome: 'Arco', categoria: 'arma', peso: 1, dano: '1d8', bonus: [] }
+  const pocao = { id: 'p1', nome: 'Poção de cura', categoria: 'consumivel', peso: 0.5, bonus: [] }
+  const lyra: ComItens = { itens: [arco, pocao], uso: { itens: { arco: { qtd: 1, equipado: true }, p1: { qtd: 3, equipado: false } }, poderes: {}, carteira: '' } }
+  const borin: ComItens = { itens: [{ ...pocao, id: 'outra' }], uso: { itens: { outra: { qtd: 2, equipado: false } }, poderes: {}, carteira: '' } }
+  it('passa parte de uma pilha e empilha em quem recebe', () => {
+    const r = transferirItem(lyra, borin, 'p1', 2)
+    if (!r.ok) throw new Error(r.erro)
+    expect((r.de.uso as { itens: Record<string, { qtd: number }> }).itens.p1.qtd).toBe(1)
+    expect((r.para.uso as { itens: Record<string, { qtd: number }> }).itens.outra.qtd).toBe(4)
+    expect(r.para.itens).toHaveLength(1)
+  })
+  it('passar tudo tira o item e quem recebe ganha desequipado', () => {
+    const r = transferirItem(lyra, borin, 'arco', 1)
+    if (!r.ok) throw new Error(r.erro)
+    expect(r.de.itens!.map(i => (i as { id: string }).id)).toEqual(['p1'])
+    expect(r.para.itens).toHaveLength(2)
+    expect((r.para.uso as { itens: Record<string, { qtd: number; equipado: boolean }> }).itens.arco).toEqual({ qtd: 1, equipado: false })
+  })
+  it('recusa quantidade inválida ou item que não existe', () => {
+    expect(transferirItem(lyra, borin, 'p1', 4).ok).toBe(false)
+    expect(transferirItem(lyra, borin, 'p1', 0).ok).toBe(false)
+    expect(transferirItem(lyra, borin, 'nada', 1).ok).toBe(false)
+  })
+  it('id repetido em quem recebe ganha id novo', () => {
+    const r = transferirItem(lyra, { itens: [{ ...arco, nome: 'Arco longo' }], uso: {} } as ComItens, 'arco', 1)
+    if (!r.ok) throw new Error(r.erro)
+    const ids = r.para.itens!.map(i => (i as { id: string }).id)
+    expect(new Set(ids).size).toBe(2)
   })
 })

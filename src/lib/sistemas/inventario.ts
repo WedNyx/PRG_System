@@ -106,3 +106,45 @@ export function podeUsar(p: Poder, uso: Uso, recursoAtual?: number): { ok: boole
   if (p.recurso && (p.custo ?? 0) > 0 && (recursoAtual ?? 0) < (p.custo ?? 0)) return { ok: false, motivo: 'Recurso insuficiente.' }
   return { ok: true }
 }
+
+/** Mesmo item “de verdade” (para empilhar na hora de receber). */
+const mesmoItem = (a: Item, b: Item) => a.nome.trim().toLowerCase() === b.nome.trim().toLowerCase() && a.categoria === b.categoria
+  && (a.dano ?? '') === (b.dano ?? '') && (a.raridade ?? '') === (b.raridade ?? '') && JSON.stringify(a.bonus) === JSON.stringify(b.bonus)
+
+export type ComItens = { itens?: unknown[]; uso?: unknown }
+/**
+ * Passa `quantidade` de um item da ficha `de` para a ficha `para` (v0.32).
+ * Tirar tudo remove o item de quem deu; quem recebe empilha se já tiver o mesmo item, senão ganha uma cópia (desequipada).
+ */
+export function transferirItem<T extends ComItens>(de: T, para: T, itemId: string, quantidade: number):
+  { ok: true; de: T; para: T; item: Item; qtd: number } | { ok: false; erro: string } {
+  const itensDe = lerItens(de.itens), usoDe = lerUso(de.uso)
+  const item = itensDe.find(i => i.id === itemId)
+  if (!item) return { ok: false, erro: 'Esse item não está mais na ficha.' }
+  const tem = usoDe.itens[item.id]?.qtd ?? 1
+  if (tem <= 0) return { ok: false, erro: 'A quantidade desse item é 0.' }
+  const qtd = Math.floor(Number(quantidade))
+  if (!Number.isFinite(qtd) || qtd < 1) return { ok: false, erro: 'Quantidade inválida.' }
+  if (qtd > tem) return { ok: false, erro: `Só há ${tem} desse item.` }
+
+  const itensPara = lerItens(para.itens), usoPara = lerUso(para.uso)
+  const igual = itensPara.find(i => mesmoItem(i, item))
+  if (!igual && itensPara.length >= LIM.itens) return { ok: false, erro: 'O inventário de quem recebe está cheio.' }
+
+  let novoDe: T
+  if (qtd === tem) {
+    const { [item.id]: _, ...resto } = usoDe.itens; void _
+    novoDe = { ...de, itens: itensDe.filter(i => i.id !== item.id), uso: { ...usoDe, itens: resto } }
+  } else novoDe = { ...de, uso: { ...usoDe, itens: { ...usoDe.itens, [item.id]: { qtd: tem - qtd, equipado: usoDe.itens[item.id]?.equipado ?? false } } } }
+
+  let novoPara: T
+  if (igual) {
+    const u = usoPara.itens[igual.id] ?? { qtd: 1, equipado: false }
+    novoPara = { ...para, uso: { ...usoPara, itens: { ...usoPara.itens, [igual.id]: { ...u, qtd: u.qtd + qtd } } } }
+  } else {
+    let idNovo = item.id
+    while (itensPara.some(i => i.id === idNovo)) idNovo = Math.random().toString(36).slice(2, 12)
+    novoPara = { ...para, itens: [...itensPara, { ...item, id: idNovo }], uso: { ...usoPara, itens: { ...usoPara.itens, [idNovo]: { qtd, equipado: false } } } }
+  }
+  return { ok: true, de: novoDe, para: novoPara, item, qtd }
+}

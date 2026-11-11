@@ -1,13 +1,14 @@
 // Somente servidor: nunca importe este arquivo em componentes 'use client'.
 import { NextRequest, NextResponse } from 'next/server'
 import { isUuid, isPapel, type Papel } from './validacao'
+import { hashToken, lerToken } from './senha'
 
 /**
  * Acesso ao Supabase exclusivamente no servidor (service role).
  * IMPORTANTE: nesta fase não há senha/passkey. O aventureiro é indicado pelo
- * cabeçalho `x-prg-aventureiro` (perfil escolhido no portal). Isso NÃO é prova
- * de identidade — decisão consciente para grupo de amigos. As regras abaixo
- * (mestre, membro, dono) impedem bagunça acidental, não ataques deliberados.
+ * cabeçalho `x-prg-aventureiro` (perfil escolhido no portal). Perfis SEM senha não têm
+ * prova de identidade (decisão consciente para grupo de amigos). Perfis COM senha (v0.31)
+ * exigem o cookie do aparelho lembrado (ver senha.ts e ator()).
  */
 export const nuvemAtiva = () => process.env.PRG_SHARED_PROFILES === 'true'
 const url = () => process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -15,7 +16,7 @@ const chave = () => process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABAS
 export const configurado = () => nuvemAtiva() && !!url() && !!chave()
 
 export class ErroApi extends Error {
-  constructor(public status: number, mensagem: string) { super(mensagem) }
+  constructor(public status: number, mensagem: string, public extra?: Record<string, unknown>) { super(mensagem) }
 }
 
 export async function rest<T = unknown>(caminho: string, init: RequestInit & { prefer?: string } = {}): Promise<T> {
@@ -39,13 +40,22 @@ export const rpc = <T = unknown>(fn: string, args: Record<string, unknown>) =>
 
 export const q = (v: string) => encodeURIComponent(v)
 
-/** Aventureiro que está fazendo a requisição (deve existir no catálogo). */
+/** Aventureiro que está fazendo a requisição (deve existir no catálogo; se tiver senha, o aparelho precisa estar lembrado). */
 export async function ator(req: NextRequest): Promise<string> {
   const id = req.headers.get('x-prg-aventureiro')
   if (!isUuid(id)) throw new ErroApi(401, 'Selecione um aventureiro no portal.')
-  const rows = await rest<{ id: string }[]>(`prg_public_adventurers?select=id&id=eq.${q(id)}&limit=1`)
+  const rows = await rest<{ id: string; senha_hash: string | null }[]>(`prg_public_adventurers?select=id,senha_hash&id=eq.${q(id)}&limit=1`)
   if (!rows.length) throw new ErroApi(401, 'Aventureiro não encontrado.')
+  if (rows[0].senha_hash && !(await sessaoValida(req, id))) throw new ErroApi(401, 'Este perfil tem senha. Digite a senha para continuar.', { senha: true, perfil: id })
   return id
+}
+
+/** O cookie deste aparelho vale para o perfil e ainda não venceu? */
+export async function sessaoValida(req: NextRequest, id: string): Promise<boolean> {
+  const t = lerToken(req, id)
+  if (!t) return false
+  const r = await rest<{ id: string }[]>(`prg_perfil_sessoes?select=id&aventureiro_id=eq.${q(id)}&token_hash=eq.${q(hashToken(t))}&expira_em=gt.${q(new Date().toISOString())}&limit=1`)
+  return r.length > 0
 }
 
 /** Membro que pode mexer (não espectador). Erro amigável para espectadores. */
@@ -87,7 +97,7 @@ export function rota<C>(fn: (req: NextRequest, ctx: C) => Promise<NextResponse>)
       const local = `${req.method} ${localDaRota(req.nextUrl.pathname)}`
       if (e instanceof ErroApi) {
         if (e.status >= 500 && e.status !== 503) await registrarErro('servidor', local, e.message)
-        return NextResponse.json({ erro: e.message }, { status: e.status })
+        return NextResponse.json({ ...e.extra, erro: e.message }, { status: e.status })
       }
       const msg = e instanceof Error ? e.message : 'erro desconhecido'
       console.error('[prg-api]', msg)

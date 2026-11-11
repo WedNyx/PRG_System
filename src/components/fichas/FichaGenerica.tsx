@@ -11,6 +11,7 @@ import { enviarImagemNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 import GuiaSistema from '@/components/sistemas/GuiaSistema'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import { InventarioFicha, PoderesFicha } from './Inventario'
+import type { Item } from '@/lib/sistemas/inventario'
 import ArvoreHabilidades from './Arvore'
 import Progressao from './Progressao'
 import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
@@ -21,10 +22,12 @@ const input = 'w-full rounded-lg border border-[#5e4b78] bg-[#151123] p-2 text-w
 const sinal = (n: number | null | undefined) => n === null || n === undefined ? '—' : n >= 0 ? '+' + n : String(n)
 
 /** Ficha que se monta sozinha a partir do modelo do sistema. */
-export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, rolarNaCampanha }: {
+export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, rolarNaCampanha, passarItem }: {
   sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean
   /** Se a ficha é de campanha: rola no servidor e publica no chat da mesa. */
   rolarNaCampanha?: (expressao: string, rotulo: string) => Promise<{ resultados: number[]; total: number } | null>
+  /** Ficha de campanha: passar um item para outro personagem. */
+  passarItem?: (it: Item, tem: number) => void
 }) {
   const c = useMemo(() => calcular(s, d), [s, d])
   const central = useRef<RolagemCentralHandle>(null)
@@ -125,7 +128,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         </label>)}
       </div>
     </section>
-    <Progressao s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
+    <Progressao s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} pontosAtributo={Number(c.vars.prog_atributos) || 0} irPara={ir} />
     {c.limites.some(l => l.excedido) && <section role="alert" className="rounded-2xl border border-[#c98b3a] bg-[#3a2a14] p-4 text-sm text-[#f6dca8]">
       <p className="flex items-center gap-2 font-semibold"><AlertTriangle size={18} /> Acima do limite das regras</p>
       <ul className="mt-2 list-disc pl-5">{c.limites.filter(l => l.excedido).map(l => <li key={l.nome}>{l.nome}: {l.uso} de {l.max}</li>)}</ul>
@@ -204,7 +207,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     </section>
         </>}
         {secao === 'equipamentos' && <>
-    <InventarioFicha {...propsInv} />
+    <InventarioFicha {...propsInv} passarItem={passarItem} />
     {listasDe('equipamentos').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-[#d3adf0]">Anotações livres</h3>}
     <section className="grid gap-4">
       {listasDe('equipamentos').map(l => <label key={l.id} className={card + ' block'}>

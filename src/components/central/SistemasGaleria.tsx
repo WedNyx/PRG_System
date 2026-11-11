@@ -9,13 +9,14 @@ import GuiaSistema from '@/components/sistemas/GuiaSistema'
 import { SISTEMAS_VISIVEIS } from '@/lib/sistemas/catalogo'
 import { ErroNuvem } from '@/lib/nuvem/cliente'
 import { criarEAbrirFicha, GRUPOS_SISTEMA, type GrupoSistema } from '@/lib/sistemas/criar'
+import { ImagemCapa } from '@/components/sistemas/CapaDoSistema'
 
 const SELO: Record<string, { texto: string; cor: string }> = {
   autoral: { texto: 'Autoral', cor: 'bg-[#4a2d63] text-[#e7c6ff]' },
   aberto: { texto: 'Licença aberta', cor: 'bg-[#1f4a35] text-[#a9f0c8]' },
   estrutura: { texto: 'Estrutura de ficha', cor: 'bg-[#3a3352] text-[#d6c8f0]' },
 }
-type Cartao = { id: string; guia: string; nome: string; tipo: string; dados: string; resumo: string; autor?: string; meu?: boolean; rascunho?: boolean }
+type Cartao = { id: string; guia: string; nome: string; tipo: string; dados: string; resumo: string; autor?: string; meu?: boolean; rascunho?: boolean; capa?: string | null }
 
 const PUBLICADOS: Cartao[] = SISTEMAS_VISIVEIS.filter(s => s.tipo !== 'autoral').map(s => ({ id: s.id, guia: s.id, nome: s.nome, tipo: s.tipo, dados: s.dados, resumo: s.resumo }))
 const AUTORAIS: Cartao[] = SISTEMAS_VISIVEIS.filter(s => s.tipo === 'autoral').map(s => ({ id: s.id, guia: s.id, nome: s.nome, tipo: s.tipo, dados: s.dados, resumo: s.resumo }))
@@ -32,7 +33,7 @@ export default function SistemasGaleria({ aventureiroId }: { aventureiroId: stri
     try { await criarEAbrirFicha(sistema, aventureiroId) } catch (e) { setErro(e instanceof ErroNuvem ? e.message : 'Não foi possível criar a ficha.'); setCriando('') }
   }
   const { lista: criados } = useSistemasAutorais()
-  const autorais: Cartao[] = [...AUTORAIS, ...(criados ?? []).map(a => ({ id: a.id, guia: '', nome: a.nome, tipo: 'autoral', dados: a.dados, resumo: a.resumo || 'Sistema criado no construtor.', autor: a.autor, meu: a.meu, rascunho: !a.publicado }))]
+  const autorais: Cartao[] = [...AUTORAIS, ...(criados ?? []).map(a => ({ id: a.id, guia: '', nome: a.nome, tipo: 'autoral', dados: a.dados, resumo: a.resumo || 'Sistema criado no construtor.', autor: a.autor, meu: a.meu, rascunho: !a.publicado, capa: a.capa }))]
   const lista = grupo === 'publicado' ? PUBLICADOS : autorais
   const info = GRUPOS_SISTEMA.find(g => g.id === grupo)!
 
@@ -46,7 +47,12 @@ export default function SistemasGaleria({ aventureiroId }: { aventureiroId: stri
     {erro && <p role="alert" className="text-sm text-red-200">{erro}</p>}
 
     <div className="grid gap-4 md:grid-cols-2">
-      {lista.map(s => <article key={s.id} className="flex flex-col rounded-2xl border border-[#55456e] bg-[#201a32] p-5">
+      {lista.map(s => <article key={s.id} className="flex flex-col overflow-hidden rounded-2xl border border-[#55456e] bg-[#201a32]">
+        <div className="relative aspect-[16/7] overflow-hidden border-b border-[#55456e]">
+          <ImagemCapa id={s.id} nome={s.nome} capa={s.capa} />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#201a32] to-transparent" />
+        </div>
+        <div className="flex flex-1 flex-col p-5 pt-3">
         <div className="flex items-start gap-3"><BookOpen className="mt-1 shrink-0 text-[#c5a7ff]" size={22} />
           <div className="min-w-0 flex-1"><h2 className="font-semibold">{s.nome}</h2>
             <div className="mt-1 flex flex-wrap gap-1 text-xs"><span className={'rounded-full px-2 py-0.5 ' + SELO[s.tipo].cor}>{SELO[s.tipo].texto}</span><span className="rounded-full bg-[#2b2140] px-2 py-0.5 text-[#c4b6d4]">{s.dados}</span>
@@ -60,6 +66,7 @@ export default function SistemasGaleria({ aventureiroId }: { aventureiroId: stri
             : s.meu ? <Link href={'/sistemas/criar?id=' + s.id} className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl border border-[#6d5690] px-3 py-2 text-sm hover:bg-[#2b2140]"><Pencil size={15} /> Editar</Link> : null}
           <button type="button" disabled={!!criando} onClick={() => criar(s.id)} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#7652ac] px-4 py-2 text-sm font-semibold hover:bg-[#8b68c4] disabled:opacity-50">
             {criando === s.id ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />} Criar ficha</button>
+        </div>
         </div>
       </article>)}
     </div>

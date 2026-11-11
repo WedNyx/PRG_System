@@ -1,4 +1,4 @@
-import { lerJson, ok, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
+import { ator, lerJson, ok, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { exigirAdmin } from '@/lib/nuvem/admin'
 import { isUuid } from '@/lib/nuvem/validacao'
 import { validarApelidoAventureiro } from '@/lib/auth/aventureiro'
@@ -13,6 +13,7 @@ export const PATCH = rota<Ctx>(async (req, { params }) => {
   const { id } = await params
   if (!isUuid(id)) throw new ErroApi(404, 'Aventureiro não encontrado.')
   if (req.headers.get('x-prg-aventureiro') !== id) throw new ErroApi(403, 'Você só pode editar o seu próprio perfil.')
+  await ator(req)
   const b = await lerJson(req, 160_000) as Record<string, unknown>
   const mud: Record<string, unknown> = {}
   if (b.apelido !== undefined) {

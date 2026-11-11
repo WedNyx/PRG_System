@@ -3,6 +3,9 @@
 export const NUVEM_ATIVA = process.env.NEXT_PUBLIC_PRG_SHARED_PROFILES === 'true'
 export const SELECTED_KEY = 'prg-aventureiro-selecionado-v1'
 
+/** Disparado quando o servidor diz “este perfil tem senha” (PedirSenhaGlobal mostra a janela). */
+export const EVENTO_SENHA = 'prg:senha'
+
 export class ErroNuvem extends Error {
   constructor(public status: number, mensagem: string, public dados?: Record<string, unknown>) { super(mensagem) }
 }
@@ -21,6 +24,9 @@ export async function api<T = Record<string, unknown>>(caminho: string, init: { 
   })
   let dados: Record<string, unknown> = {}
   try { dados = await r.json() } catch {}
+  if (r.status === 401 && dados.senha === true && typeof dados.perfil === 'string') {
+    try { window.dispatchEvent(new CustomEvent(EVENTO_SENHA, { detail: dados.perfil })) } catch {}
+  }
   if (!r.ok) throw new ErroNuvem(r.status, typeof dados.erro === 'string' ? dados.erro : 'Falha de conexão. Tente novamente.', dados)
   return dados as T
 }

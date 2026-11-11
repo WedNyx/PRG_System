@@ -10,6 +10,9 @@ import { normalizarFicha } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import { CAMPOS } from '@/lib/campanhas/permissoes'
+import { toast } from 'sonner'
+import PassarItem from '@/components/fichas/PassarItem'
+import type { Item } from '@/lib/sistemas/inventario'
 
 const AREAS: Record<string, string> = Object.fromEntries(CAMPOS.map(c => [c.id, c.titulo]))
 
@@ -36,6 +39,7 @@ function Conteudo() {
   const salvando = useRef(false)
   const [aviso, setAviso] = useState<{ texto: string; desfazer: boolean } | null>(null)
   const [campanhaId, setCampanhaId] = useState<string | null>(null)
+  const [passando, setPassando] = useState<{ item: Item; tem: number } | null>(null)
 
   useEffect(() => {
     let ativo = true
@@ -119,8 +123,21 @@ function Conteudo() {
         rolarNaCampanha={campanhaId ? async (expressao, rotulo) => {
           try { const r = await api<{ evento: { resultados: number[]; total: number } }>('mesa/' + campanhaId, { method: 'POST', body: { acao: 'evento', tipo: 'rolagem', expressao, personagem: dados.nome, texto: rotulo } }); return r.evento }
           catch (e) { setErro(e instanceof ErroNuvem ? e.message : 'Falha ao rolar.'); return null }
+        } : undefined}
+        passarItem={campanhaId && nuvem ? async (item, tem) => {
+          // Salva o que estiver pendente antes, para o servidor tirar o item da versão certa.
+          if (timer.current) clearTimeout(timer.current)
+          if (ultimo.current) await enviar()
+          if (ultimo.current) { toast.error('Espere salvar a ficha e tente de novo.'); return }
+          setPassando({ item, tem })
         } : undefined} />
         : estado === 'carregando' && <p className="text-center text-[#b4aeca]">Carregando ficha...</p>}
+      {passando && campanhaId && nuvem && sistema && <PassarItem campanhaId={campanhaId} fichaId={nuvem} item={passando.item} tem={passando.tem} fechar={() => setPassando(null)}
+        feito={r => {
+          versao.current = r.de.versao
+          setDados(normalizarFicha(sistema, r.de.dados as Partial<DadosFicha>)); setEstado('salvo'); setPassando(null)
+          toast.success(`🎁 ${r.qtd > 1 ? r.qtd + '× ' : ''}${r.item} foi para ${r.para}.`)
+        }} />}
     </div>
   </main>
 }

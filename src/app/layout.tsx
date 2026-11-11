@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import RelatorErros from "@/components/RelatorErros";
+import { PedirSenhaGlobal } from "@/components/perfil/Senha";
 import "./globals.css";
 import { SCRIPT_TEMA } from '@/lib/tema'
 
@@ -38,6 +39,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
         <RelatorErros />
+        <PedirSenhaGlobal />
         <Toaster theme="dark" richColors position="top-center" offset={72} mobileOffset={{ top: 70 }} />
       </body>
     </html>

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, Eye, Globe, Loader2, Lock, Plus, Save, Trash2 } from 'lucide-react'
 import FichaGenerica from '@/components/fichas/FichaGenerica'
+import { CapaDoSistema } from './CapaDoSistema'
 import { api } from '@/lib/nuvem/cliente'
 import { SISTEMAS } from '@/lib/sistemas/catalogo'
 import { fichaVazia } from '@/lib/sistemas/calculo'
@@ -21,7 +22,7 @@ import { lerArvore } from '@/lib/sistemas/arvore'
 /* Linhas editáveis: `auto` = o nome na fórmula ainda acompanha o nome (até salvar pela 1ª vez). */
 type Linha = Record<string, unknown> & { id: string; nome: string; auto?: boolean }
 type Def = {
-  nome: string; resumo: string; dados: string; rolagem: 'd20' | 'd100' | 'nenhuma' | 'personalizada'; regraRolagem: { nome: string; formula: string }; creditos?: string
+  nome: string; resumo: string; capa?: string; dados: string; rolagem: 'd20' | 'd100' | 'nenhuma' | 'personalizada'; regraRolagem: { nome: string; formula: string }; creditos?: string
   campos: Linha[]; atributos: Linha[]; formulaModificador: string; derivados: Linha[]
   pericias: { modo: 'treino' | 'valor' | 'nenhuma'; titulo?: string; total: string; treinos: Linha[]; lista: Linha[] }
   recursos: Linha[]; listas: Linha[]; limites: { nome: string; uso: string; max: string }[]; observacoes: string; carga: { formula: string; unidade: string }
@@ -42,7 +43,7 @@ function paraDef(s: Partial<Sistema> & Record<string, unknown>, auto = false): D
   const l = (v: unknown) => (Array.isArray(v) ? v : []).map(x => ({ ...(x as Record<string, unknown>), auto }) as Linha)
   const p = s.pericias as Sistema['pericias'] | undefined
   return {
-    nome: String(s.nome ?? ''), resumo: String(s.resumo ?? ''), dados: String(s.dados ?? 'd20'),
+    nome: String(s.nome ?? ''), resumo: String(s.resumo ?? ''), ...(typeof s.capa === 'string' ? { capa: s.capa } : {}), dados: String(s.dados ?? 'd20'),
     rolagem: (s.rolagem as Def['rolagem']) ?? (String(s.dados ?? '').startsWith('d100') || s.id === 'brp' ? 'd100' : String(s.dados ?? 'd20').startsWith('d20') ? 'd20' : 'nenhuma'),
     regraRolagem: (s.regraRolagem as Def['regraRolagem']) ?? { nome: 'Teste', formula: '1d20+VALOR' },
     creditos: typeof s.creditos === 'string' ? s.creditos : undefined,
@@ -57,7 +58,7 @@ function paraDef(s: Partial<Sistema> & Record<string, unknown>, auto = false): D
 function paraEnvio(d: Def) {
   const tira = (ls: Linha[]) => ls.map(({ auto: _a, ...r }) => r)
   return {
-    nome: d.nome, resumo: d.resumo, dados: d.dados, rolagem: d.rolagem, ...(d.rolagem === 'personalizada' ? { regraRolagem: d.regraRolagem } : {}), creditos: d.creditos,
+    nome: d.nome, resumo: d.resumo, ...(d.capa ? { capa: d.capa } : {}), dados: d.dados, rolagem: d.rolagem, ...(d.rolagem === 'personalizada' ? { regraRolagem: d.regraRolagem } : {}), creditos: d.creditos,
     campos: tira(d.campos), atributos: tira(d.atributos), formulaModificador: d.formulaModificador, derivados: tira(d.derivados),
     pericias: d.pericias.modo === 'nenhuma' ? undefined : { modo: d.pericias.modo, titulo: d.pericias.titulo, total: d.pericias.total, treinos: tira(d.pericias.treinos), lista: tira(d.pericias.lista) },
     recursos: tira(d.recursos), listas: tira(d.listas), limites: d.limites, observacoes: d.observacoes.split('\n').map(x => x.trim()).filter(Boolean),
@@ -172,6 +173,7 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
         <SecaoBase id="sobre" titulo="📘 Sobre o sistema" sub="Nome, descrição e como se rola" aberta={aberta === 'sobre'} alternar={() => setAberta(a => a === 'sobre' ? '' : 'sobre')}>
           <label className="block">Nome<input value={def.nome} maxLength={80} onChange={e => mudar(d => ({ ...d, nome: e.target.value }))} className={input + ' mt-1'} placeholder="Ex.: Crônicas da Névoa" /></label>
           <label className="block">Descrição curta<textarea rows={2} value={def.resumo} maxLength={400} onChange={e => mudar(d => ({ ...d, resumo: e.target.value }))} className={input + ' mt-1'} /></label>
+          <CapaDoSistema nome={def.nome} capa={def.capa} mudar={capa => mudar(d => ({ ...d, capa }))} />
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="block">Como se rola<select value={def.rolagem} onChange={e => mudar(d => ({ ...d, rolagem: e.target.value as Def['rolagem'] }))} className={input + ' mt-1'}>
               <option value="d20">d20 + bônus (toque na perícia para rolar)</option><option value="d100">d100 abaixo do valor (porcentagem)</option><option value="personalizada">🎲 Rolagem personalizada (monte a sua)</option><option value="nenhuma">Sem rolagem automática</option></select></label>

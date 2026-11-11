@@ -4,16 +4,16 @@ import { idAutoral, validarSistema } from '@/lib/sistemas/autoral'
 
 export const dynamic = 'force-dynamic'
 const MAX_POR_PESSOA = 20
-type Linha = { id: string; dono_id: string; nome: string; resumo: string; publicado: boolean; versao: number; atualizado_em: string; definicao?: { dados?: string }; dono?: { apelido: string } | null }
+type Linha = { id: string; dono_id: string; nome: string; resumo: string; publicado: boolean; versao: number; atualizado_em: string; definicao?: { dados?: string; capa?: string }; dono?: { apelido: string } | null }
 const resumo = (l: Linha, eu: string) => ({ id: idAutoral(l.id), nome: l.nome, resumo: l.resumo, publicado: l.publicado, versao: l.versao, atualizado_em: l.atualizado_em,
-  dados: l.definicao?.dados ?? 'd20', autor: l.dono?.apelido ?? 'Alguém', meu: l.dono_id === eu })
+  dados: l.definicao?.dados ?? 'd20', capa: typeof l.definicao?.capa === 'string' ? l.definicao.capa : null, autor: l.dono?.apelido ?? 'Alguém', meu: l.dono_id === eu })
 
 /** Sistemas autorais publicados (de todos) + os meus (inclusive rascunhos). */
 export const GET = rota(async req => {
   const eu = await ator(req)
-  const sel = 'id,dono_id,nome,resumo,publicado,versao,atualizado_em,definicao->dados,dono:prg_public_adventurers(apelido)'
-  const linhas = await rest<(Linha & { dados?: string })[]>(`prg_sistemas_autorais?select=${sel}&or=(publicado.eq.true,dono_id.eq.${q(eu)})&order=nome.asc&limit=300`)
-  return ok({ sistemas: linhas.map(l => resumo({ ...l, definicao: { dados: l.dados } }, eu)) })
+  const sel = 'id,dono_id,nome,resumo,publicado,versao,atualizado_em,definicao->dados,capa:definicao->capa,dono:prg_public_adventurers(apelido)'
+  const linhas = await rest<(Linha & { dados?: string; capa?: string })[]>(`prg_sistemas_autorais?select=${sel}&or=(publicado.eq.true,dono_id.eq.${q(eu)})&order=nome.asc&limit=300`)
+  return ok({ sistemas: linhas.map(l => resumo({ ...l, definicao: { dados: l.dados, capa: l.capa } }, eu)) })
 })
 
 /** Criar, salvar, publicar/despublicar e excluir (só o autor). */

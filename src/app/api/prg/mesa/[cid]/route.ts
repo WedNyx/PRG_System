@@ -6,6 +6,7 @@ import { rolarExpressao } from '@/lib/dice'
 import { aplicarDano, atualizarMorte, avisarMesa, danoComMorte, fichaDeCombate, lerRegrasCombate, mudarFicha, tokenCombate, vidaDasFichas } from '@/lib/nuvem/combateServidor'
 import { aceitarMedida, aoCair, lerMorte, MEDIDAS, testeMorte, type EstadoMorte } from '@/lib/sistemas/morte'
 import { detectarCritico } from '@/lib/dice'
+import { lerTabelas, rolarTabela, TABELAS_PRONTAS } from '@/lib/tabelas'
 import { acertou, ALCANCE_CORPO, distancia, gastarCusto, ordenarIniciativa, regraDeAtaque, regraDeIniciativa, rolarDano, resumoCombate, type EntradaOrdem } from '@/lib/sistemas/combate'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { ehV8 } from '@/lib/nuvem/categorias'
@@ -112,6 +113,12 @@ export const GET = rota<Ctx>(async (req, { params }) => {
   const vis = filtroVisibilidade(eu, admin)
 
   // Aba “Fichas” da mesa: mestre vê todas (jogadores e NPCs); jogador vê as dele. Com vida, defesa e ataques.
+  if (sp.get('tabelas')) {
+    // Tabelas do mestre: as prontas da plataforma + as da campanha (só o mestre vê e rola).
+    if (!admin) throw new ErroApi(403, 'Só o mestre usa as tabelas.')
+    const [c] = await rest<{ tabelas: unknown }[]>(`prg_campanhas?select=tabelas&id=eq.${q(cid)}`)
+    return ok({ prontas: TABELAS_PRONTAS, tabelas: lerTabelas(c?.tabelas) })
+  }
   if (sp.get('fichas')) {
     const fs = await rest<{ id: string; nome: string; sistema: string; dados: Record<string, unknown>; dono_id: string; npc: boolean; oculta: boolean; dono: { apelido: string } | null }[]>(
       `prg_fichas?select=id,nome,sistema,dados,dono_id,npc,oculta,dono:prg_public_adventurers(apelido)&campanha_id=eq.${q(cid)}&status=eq.ativa${admin ? '' : `&dono_id=eq.${q(eu)}&npc=eq.false`}&order=npc.asc,nome.asc&limit=200`)
@@ -366,6 +373,24 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       const c = await cenaDaCampanha(cid, b.cenaId)
       await rest(`prg_desenhos?cena_id=eq.${q(c.id)}`, { method: 'DELETE' })
       return ok({ ok: true })
+    }
+    case 'tabelas_salvar': {
+      exigirAdmin(admin)
+      const tabelas = lerTabelas(b.tabelas)
+      await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify({ tabelas }) })
+      return ok({ tabelas })
+    }
+    case 'tabela_rolar': {
+      exigirAdmin(admin)
+      const [c] = await rest<{ tabelas: unknown }[]>(`prg_campanhas?select=tabelas&id=eq.${q(cid)}`)
+      const todas = [...TABELAS_PRONTAS, ...lerTabelas(c?.tabelas)]
+      const tab = todas.find(x => x.id === b.id)
+      if (!tab) throw new ErroApi(404, 'Tabela não encontrada.')
+      const resultado = rolarTabela(tab.id, todas).slice(0, 900)
+      const visibilidade = b.visibilidade === 'mestre' ? 'mestre' : 'publica'
+      await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade,
+        texto: `${tab.icone} ${tab.nome}: ${resultado}${visibilidade === 'mestre' ? ' (só o mestre vê)' : ''}` }) }).catch(() => {})
+      return ok({ resultado, tabela: { id: tab.id, nome: tab.nome, icone: tab.icone } })
     }
     case 'morte': {
       // À beira da morte: rolar o teste, ajustar na mão (mestre) ou aceitar medidas desesperadas (dono).

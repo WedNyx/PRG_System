@@ -6,6 +6,16 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.30.0', data: '2026-11-11', titulo: 'Tabelas do mestre e subir de nível guiado',
+    itens: [
+      '🎲 Tabelas do mestre (aba “Tabelas” na mesa, só para o mestre): role na hora nomes, personalidade e segredo de NPC, tavernas, rumores, ganchos, complicações, tesouros, encontros, clima e itens curiosos. “NPC completo” e “Missão completa” juntam várias tabelas num resultado só.',
+      '“Rolar” mostra o resultado no chat para todos; “Só eu” fica visível só para o mestre. O sorteio é feito no servidor.',
+      'Crie as tabelas da sua campanha: um resultado por linha, com {1d6} para rolar números e [[código]] para puxar outra tabela.',
+      '⬆️ Subir de nível guiado: ao subir, abre uma janela com tudo o que o nível deu. Se o sistema dá pontos de atributo, dá para distribuir ali mesmo com + e −; se dá pontos da árvore, um botão leva direto para a árvore.',
+      'A ficha avisa quando sobram pontos de atributo para distribuir (e quando há pontos demais depois de descer de nível).',
+    ],
+  },
+  {
     versao: '0.29.1', data: '2026-11-11', titulo: 'Estrelinhas sonhadoras como tema principal',
     itens: [
       'Estrelinhas sonhadoras agora é o tema principal da plataforma. O Céu estrelado saiu; quem estava com ele passa para as Estrelinhas sozinho.',

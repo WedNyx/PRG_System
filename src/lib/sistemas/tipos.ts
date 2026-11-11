@@ -71,6 +71,8 @@ export type DadosFicha = {
   listas: Record<string, string>
   /** Inventário e poderes estruturados (ver inventario.ts). */
   itens?: unknown[]
+  /** Pontos de atributo que vieram dos níveis e já foram colocados (id do atributo → pontos). */
+  nivelAtributos?: Record<string, number>
   poderes?: unknown[]
   uso?: unknown
   /** Árvore de habilidades (ver arvore.ts). */

@@ -12,11 +12,11 @@ import { BookOpen, Castle, ChevronRight, CircleHelp, GraduationCap, Dice5, House
 import EditarPerfil from '@/components/perfil/EditarPerfil'
 import Sino from '@/components/Sino'
 import { CHAVE_ENTRADA } from '@/components/perfil/TransicaoPerfil'
-import { aplicarTema, temaAtual, TEMAS, type Tema } from '@/lib/tema'
+import { aplicarTema, TEMA_PADRAO, temaAtual, TEMAS, type Tema } from '@/lib/tema'
 import { VERSOES } from '@/lib/versoes'
 
 type Perfil = { id: string; apelido: string; avatar?: string; grupo?: string }
-type Section = 'inicio' | 'fichas' | 'campanhas' | 'sistemas' | 'historico'
+type Section = 'inicio' | 'fichas' | 'campanhas' | 'sistemas' | 'historico' | 'temas'
 const SELECTED_KEY = 'prg-aventureiro-selecionado-v1'
 const LOCAL_KEY = 'prg-aventureiros-demo-v1'
 const CLOUD_ENABLED = process.env.NEXT_PUBLIC_PRG_SHARED_PROFILES === 'true'
@@ -32,7 +32,7 @@ const navigation: { id: Section; label: string; icon: typeof House }[] = [
 function CentralContent() {
   const params = useSearchParams()
   // Links diretos (ex.: avisos): /central?secao=campanhas&campanha=<id>
-  const [section, setSection] = useState<Section>(() => { const s = params.get('secao'); return s && ['inicio', 'fichas', 'campanhas', 'sistemas', 'historico'].includes(s) ? s as Section : 'inicio' })
+  const [section, setSection] = useState<Section>(() => { const s = params.get('secao'); return s && ['inicio', 'fichas', 'campanhas', 'sistemas', 'historico', 'temas'].includes(s) ? s as Section : 'inicio' })
   const [fichasTab, setFichasTab] = useState<'independentes' | 'campanhas'>('independentes')
   const [menuOpen, setMenuOpen] = useState(false)
   const [perfil, setPerfil] = useState<Perfil | null>(null)
@@ -41,9 +41,9 @@ function CentralContent() {
   const [editando, setEditando] = useState(false)
   // Veio da animação do portal? Então a Central “aparece” suavemente.
   const [entrada] = useState(() => { try { const v = sessionStorage.getItem(CHAVE_ENTRADA) === '1'; sessionStorage.removeItem(CHAVE_ENTRADA); return v } catch { return false } })
-  const [tema, setTema] = useState<Tema>('ceu')
+  const [tema, setTema] = useState<Tema>(TEMA_PADRAO)
   useEffect(() => { setTema(temaAtual()) }, []) // eslint-disable-line react-hooks/set-state-in-effect
-  const trocarTema = () => { const t: Tema = tema === 'ceu' ? 'classico' : 'ceu'; aplicarTema(t); setTema(t) }
+  const escolherTema = (t: Tema) => { aplicarTema(t); setTema(t) }
 
   useEffect(() => {
     const id = params.get('personagem') || localStorage.getItem(SELECTED_KEY)
@@ -102,7 +102,7 @@ function CentralContent() {
           <div className="mt-8 border-t border-[#49375f] pt-4">
             {CLOUD_ENABLED && <button type="button" onClick={() => { setEditando(true); setMenuOpen(false) }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><Pencil size={19} />Editar perfil</button>}
             <Link href="/portal" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><UserRound size={19} />Trocar aventureiro</Link>
-            <button type="button" onClick={trocarTema} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><Palette size={19} />Tema: {TEMAS.find(t => t.id === tema)?.nome}</button>
+            <button type="button" onClick={() => choose('temas')} aria-current={section === 'temas' ? 'page' : undefined} className={'flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm hover:bg-[#2b213d] ' + (section === 'temas' ? 'border border-[#8b6cba] bg-[#38274e] text-white' : 'text-[#cbb6e5]')}><Palette size={19} /><span className="min-w-0 flex-1 truncate">Temas · {TEMAS.find(t => t.id === tema)?.nome}</span></button>
             <Link href="/guia" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><CircleHelp size={19} />Guia da plataforma</Link>
             <Link href="/tutorial" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><GraduationCap size={19} />Tutoriais práticos</Link>
             <Link href="/novidades" className="mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><Sparkles size={19} />Novidades · v{VERSOES[0].versao}</Link>
@@ -137,6 +137,7 @@ function CentralContent() {
             <h1 className="text-3xl font-bold">Campanhas</h1><p className="mt-2 text-[#bfb2cf]">Prepare suas aventuras e defina as regras de edição das fichas.</p>
             <Campanhas aventureiroId={perfil.id} abrirCampanha={params.get('campanha')} />
           </>}
+          {section === 'temas' && <EscolherTema tema={tema} escolher={escolherTema} />}
           {section === 'sistemas' && <><h1 className="text-3xl font-bold">Sistemas de RPG</h1><p className="mt-2 text-[#bfb2cf]">Escolha um sistema e crie uma ficha que calcula as regras sozinha.</p><SistemasGaleria aventureiroId={perfil.id} /></>}
           {section === 'historico' && <><h1 className="text-3xl font-bold">Histórico de rolagens</h1><p className="mt-2 text-[#bfb2cf]">Onde encontrar suas rolagens.</p><div className="mt-6 rounded-2xl border border-[#55456e] bg-[#201a32] p-6 text-sm text-[#c4b6d4]">As rolagens das campanhas ficam salvas no histórico da mesa: abra a campanha, entre na mesa e toque em “Histórico” no chat (dá para filtrar por pessoa, personagem e tipo). Rolagens feitas em fichas fora de campanha não entram nesse histórico.</div></>}
         </div>
@@ -148,4 +149,23 @@ function CentralContent() {
 
 export default function CentralAventureiro() {
   return <Suspense fallback={<main className="min-h-screen fundo-tema" />}><CentralContent /></Suspense>
+}
+
+/** Aba “Temas”: cada cartão mostra a cara do tema; tocar já aplica (só neste aparelho). */
+function EscolherTema({ tema, escolher }: { tema: Tema; escolher: (t: Tema) => void }) {
+  return <>
+    <h1 className="text-3xl font-bold">🎨 Temas</h1>
+    <p className="mt-2 text-[#bfb2cf]">Escolha o fundo da plataforma. Cada tema tem uma versão para celular (em pé) e outra para computador (deitada). A escolha vale para este aparelho.</p>
+    <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {TEMAS.map(t => { const ativo = t.id === tema
+        return <button key={t.id} type="button" onClick={() => escolher(t.id)} aria-pressed={ativo}
+          className={'group overflow-hidden rounded-2xl border-2 text-left transition hover:-translate-y-0.5 ' + (ativo ? 'border-[#e4d3ff] shadow-[0_0_24px_#9b7bff66]' : 'border-[#48385e] hover:border-[#8b6cba]')}>
+          <span className="relative block h-32 w-full" style={{ background: t.mini }}>
+            {ativo && <span className="absolute right-2 top-2 rounded-full bg-[#7853b4] px-2.5 py-1 text-xs font-bold text-white shadow">✓ Em uso</span>}
+            <span className="absolute inset-x-3 bottom-3 rounded-lg border border-white/10 bg-[#201a32]/85 px-2.5 py-1.5 text-[11px] text-[#e4d3ff] backdrop-blur-sm">Prévia de um cartão da plataforma</span>
+          </span>
+          <span className="block bg-[#201a32]/95 p-3"><span className="block font-semibold">{t.nome}</span><span className="block text-xs text-[#bfb2cf]">{t.descricao}</span></span>
+        </button> })}
+    </div>
+  </>
 }

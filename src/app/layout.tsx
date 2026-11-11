@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import RelatorErros from "@/components/RelatorErros";
 import "./globals.css";
+import { SCRIPT_TEMA } from '@/lib/tema'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +33,7 @@ export default function RootLayout({
     >
       <head>
         {/* Aplica o tema salvo antes de desenhar a página (evita piscar). */}
-        <script dangerouslySetInnerHTML={{ __html: "try{var t=localStorage.getItem('prg-tema');if(t==='classico')document.documentElement.dataset.tema=t}catch(e){}" }} />
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
       </head>
       <body className="min-h-full flex flex-col">
         {children}

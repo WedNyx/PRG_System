@@ -12,7 +12,7 @@ import { BookOpen, Castle, ChevronRight, CircleHelp, GraduationCap, Dice5, House
 import EditarPerfil from '@/components/perfil/EditarPerfil'
 import Sino from '@/components/Sino'
 import { CHAVE_ENTRADA } from '@/components/perfil/TransicaoPerfil'
-import { aplicarTema, temaAtual, TEMAS, type Tema } from '@/lib/tema'
+import { aplicarTema, TEMA_PADRAO, temaAtual, TEMAS, type Tema } from '@/lib/tema'
 import { VERSOES } from '@/lib/versoes'
 
 type Perfil = { id: string; apelido: string; avatar?: string; grupo?: string }
@@ -41,7 +41,7 @@ function CentralContent() {
   const [editando, setEditando] = useState(false)
   // Veio da animação do portal? Então a Central “aparece” suavemente.
   const [entrada] = useState(() => { try { const v = sessionStorage.getItem(CHAVE_ENTRADA) === '1'; sessionStorage.removeItem(CHAVE_ENTRADA); return v } catch { return false } })
-  const [tema, setTema] = useState<Tema>('ceu')
+  const [tema, setTema] = useState<Tema>(TEMA_PADRAO)
   useEffect(() => { setTema(temaAtual()) }, []) // eslint-disable-line react-hooks/set-state-in-effect
   const escolherTema = (t: Tema) => { aplicarTema(t); setTema(t) }
 

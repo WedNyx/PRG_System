@@ -27,8 +27,8 @@ export const GUIA: TopicoGuia[] = [
   },
   {
     id: 'tema', icone: '🎨', titulo: 'Tema da plataforma',
-    resumo: 'Escolha o fundo da plataforma entre 8 temas, do Céu estrelado à Noite clássica.',
-    passos: ['No menu (☰), toque em “🎨 Temas”.', 'Toque no tema que quiser: Céu estrelado, Estrelinhas sonhadoras, Nuvens de algodão, Lua cheia, Céu carmesim, Grimório celestial, Prisma ou Noite clássica. Ele já muda na hora.', 'Cada tema tem uma imagem para celular (tela em pé) e outra para computador (tela deitada).', 'A escolha vale para este aparelho.'],
+    resumo: 'Escolha o fundo da plataforma entre 7 temas. O padrão é Estrelinhas sonhadoras.',
+    passos: ['No menu (☰), toque em “🎨 Temas”.', 'Toque no tema que quiser: Estrelinhas sonhadoras (o padrão), Nuvens de algodão, Lua cheia, Céu carmesim, Grimório celestial, Prisma ou Noite clássica. Ele já muda na hora.', 'Cada tema tem uma imagem para celular (tela em pé) e outra para computador (tela deitada).', 'A escolha vale para este aparelho.'],
   },
   {
     id: 'sistemas', icone: '📚', titulo: 'Sistemas de RPG e guia do mestre', foto: 'sistemas.jpg', legenda: 'Sistemas com o guia do mestre aberto',

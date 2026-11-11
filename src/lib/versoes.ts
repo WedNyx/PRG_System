@@ -6,9 +6,15 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.29.1', data: '2026-11-11', titulo: 'Estrelinhas sonhadoras como tema principal',
+    itens: [
+      'Estrelinhas sonhadoras agora é o tema principal da plataforma. O Céu estrelado saiu; quem estava com ele passa para as Estrelinhas sozinho.',
+    ],
+  },
+  {
     versao: '0.29.0', data: '2026-11-11', titulo: 'Temas para escolher',
     itens: [
-      '🎨 Nova aba Temas (menu → Temas): 8 fundos para escolher com prévia, e o tema muda na hora: Céu estrelado, Estrelinhas sonhadoras, Nuvens de algodão, Lua cheia, Céu carmesim, Grimório celestial, Prisma e Noite clássica.',
+      '🎨 Nova aba Temas (menu → Temas): 8 fundos para escolher com prévia, e o tema muda na hora: Nuvens de algodão, Lua cheia, Céu carmesim, Grimório celestial, Prisma e Noite clássica (e o Céu estrelado, que saiu na v0.29.1).',
       'Cada tema com imagem tem duas versões, uma em pé para o celular e outra deitada para o computador, recortadas e ajustadas para cada tela (sem marca d’água).',
       'Corrigido: no celular (principalmente iPhone), o fundo esticava pela página inteira e ficava borrado. Agora ele fica parado atrás do conteúdo, nítido, em qualquer tela.',
       'Grimório celestial e Prisma são desenhos próprios da plataforma, inspirados nas referências.',

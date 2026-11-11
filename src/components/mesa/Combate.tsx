@@ -41,7 +41,7 @@ export function PainelFichas({ fichas, carregar, tokens, admin, cenaId, acao, at
   const lista = fichas.filter(f => filtro === 'todas' || (filtro === 'npcs' ? f.npc : !f.npc))
   return <div className="space-y-3 text-sm">
     <div className="flex flex-wrap items-center gap-2">
-      <p className="flex-1 text-xs text-[#b4aeca]">{admin ? 'Todas as fichas da campanha. Coloque na mesa para jogar com elas: as armas e poderes viram ataques.' : 'Seus personagens nesta campanha.'}</p>
+      <p className="flex-1 text-xs text-[#b4aeca]">{admin ? 'Todas as fichas da campanha.' : 'Seus personagens nesta campanha.'}</p>
       <button type="button" onClick={carregar} aria-label="Atualizar fichas" className="rounded-lg p-1.5 hover:bg-[#34294f]"><RefreshCw size={14} /></button>
     </div>
     {admin && <div className="flex gap-1">{(['todas', 'jogadores', 'npcs'] as const).map(f => <button key={f} type="button" onClick={() => setFiltro(f)}
@@ -245,7 +245,7 @@ export function PrepararCombate({ tokens, fichas, acao, fechar }: { tokens: Toke
             placeholder={ini !== null ? (ini >= 0 ? '+' + ini : String(ini)) : '+0'} aria-label={'Bônus de iniciativa de ' + t.nome} className={input + ' mt-0.5 !w-16 !p-1.5 text-center'} /></label>
         </li>
       })}</ul>
-      {tokens.length === 0 && <p className="mt-3 text-center text-[#b4aeca]">Não há tokens nesta cena. Coloque as fichas na mesa pela aba “Fichas”.</p>}
+      {tokens.length === 0 && <p className="mt-3 text-center text-[#b4aeca]">Não há tokens nesta cena. Coloque as fichas na mesa pela aba “Jogo → Fichas”.</p>}
       <button type="button" disabled={!escolhidos.length || enviando} onClick={() => void comecar()}
         className="mt-3 w-full rounded-xl bg-gradient-to-r from-[#b91c1c] to-[#7c3aed] p-3 font-bold shadow-[0_0_18px_#b91c1c55] disabled:opacity-40 disabled:shadow-none">
         {enviando ? 'Rolando…' : `🎲 Rolar iniciativa e começar (${escolhidos.length})`}</button>

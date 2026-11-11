@@ -6,6 +6,15 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.32.6', data: '2026-11-11', titulo: 'Mesa organizada',
+    itens: [
+      '🗺️ Mesa reorganizada: o painel agora tem 5 grupos — 💬 Chat, ⚔️ Jogo (Fichas, Iniciativa e Tokens), 🎵 Música, 📖 Diário e 👑 Mestre (Controles, Biblioteca e Tabelas) — em vez de 10 abas espremidas.',
+      '❔ Cada parte do painel tem uma linha explicando para que serve, e a ferramenta escolhida no mapa mostra o nome e o que fazer (ex.: “Régua: arraste para medir a distância”).',
+      'Barra de cima mais limpa: nome da campanha com a cena e a vez do combate embaixo; no celular, Mundo, Histórico de rolagens, som e Dicas ficam no menu “⋯”.',
+      'Em Mestre → Controles, as cenas e o mapa vêm primeiro, depois as regras de combate e o descanso do grupo.',
+    ],
+  },
+  {
     versao: '0.32.5', data: '2026-11-11', titulo: 'Histórico de rolagens e inventário com fotos',
     itens: [
       '🎲 Histórico de rolagens novo: filtre por período (esta sessão, hoje, 7 dias, tudo), tipo (dados, ataques, mensagens, avisos da mesa), pessoa, personagem, texto e “só críticos” ou “só falhas”. Críticos e falhas aparecem destacados.',

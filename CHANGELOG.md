@@ -2,6 +2,13 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.32.3 — Descanso curto e longo (2026-11-11)
+- 🌙 Descanso curto e longo: na ficha, o botão “🌙 Descansar” (em Valores e recursos e em Poderes) abre as duas opções.
+- Descanso longo: vida e recursos voltam ao máximo, valores temporários (como PV temporários) zeram e todos os usos de poderes voltam.
+- Descanso curto: voltam os usos dos poderes marcados “descanso curto” e dá para curar a vida com um número ou com dados (ex.: 1d8+2; na campanha a rolagem vai para o chat).
+- No editor de poderes, escolha se os usos voltam no descanso curto ou só no longo.
+- Mestre: na aba Mestre da mesa, “🌙 Descanso do grupo” dá o descanso curto ou longo para todos de uma vez (NPCs se marcar). O chat mostra o que cada um recuperou, e no longo quem estava caído levanta.
+
 ## v0.32.2 — Primeiros passos e mesa cheia (2026-11-11)
 - ✨ Comece por aqui: quem acabou de chegar vê na Central os primeiros passos (entrar numa campanha, criar o personagem, entrar na mesa e, se quiser, criar uma senha), com o progresso e um botão para cada passo.
 - Convite mais claro: quem abre o link sem perfil vê o passo a passo (criar perfil → volta sozinho para o convite → pedir para entrar). Depois do pedido, aparece o que dá para fazer enquanto o mestre aceita.

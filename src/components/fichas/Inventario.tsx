@@ -16,6 +16,8 @@ const novoId = () => Math.random().toString(36).slice(2, 12)
 export type Rolar = (expressao: string, rotulo: string) => Promise<void>
 
 type Props = { s: Sistema; d: DadosFicha; c: Calculo; onChange: (d: DadosFicha) => void; somenteLeitura: boolean; rolar: Rolar
+  /** Abre a janela de descanso (curto/longo). */
+  abrirDescanso?: () => void
   /** Ficha de campanha: abre a janela para passar o item a outro personagem. */
   passarItem?: (it: Item, tem: number) => void }
 
@@ -100,7 +102,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
 }
 
 /** Seção “Poderes”: magias e habilidades com custo em recurso, usos por descanso e rolagem. */
-export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar }: Props) {
+export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDescanso }: Props) {
   const poderes = lerPoderes(d.poderes), uso = lerUso(d.uso)
   const [editando, setEditando] = useState<Poder | null>(null)
   const nomeRecurso = Object.fromEntries(s.recursos.map(r => [r.id, r.nome]))
@@ -121,7 +123,7 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar }: Props
     if (p.expressao) await rolar(p.expressao, p.nome)
     else toast(`${p.nome} usado`, { description: p.recurso && p.custo ? `−${p.custo} ${nomeRecurso[p.recurso] ?? p.recurso}` : undefined })
   }
-  const descansar = () => { onChange({ ...d, uso: { ...uso, poderes: {} } }); toast.success('Usos recuperados!') }
+  const descansar = () => { if (abrirDescanso) return abrirDescanso(); onChange({ ...d, uso: { ...uso, poderes: {} } }); toast.success('Usos recuperados!') }
   const comUsos = poderes.some(p => p.usosMax && uso.poderes[p.id])
 
   return <section className={card}>
@@ -144,7 +146,7 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar }: Props
           {p.id.startsWith('arv-') && <span className="rounded bg-[#3b2b57] px-1.5 py-0.5 text-[10px] text-amber-200" title="Vem de um hexágono liberado; muda na Árvore de habilidades">🌠 Árvore</span>}
         </div>
         <p className="mt-1 text-xs text-[#c9bcd9]">
-          {[p.recurso && p.custo ? `Custo: ${p.custo} ${nomeRecurso[p.recurso] ?? p.recurso}` : '', p.usosMax ? `Usos: ${p.usosMax - gastos}/${p.usosMax}` : '', p.expressao ? `Rolagem: ${p.expressao}` : ''].filter(Boolean).join(' · ')}
+          {[p.recurso && p.custo ? `Custo: ${p.custo} ${nomeRecurso[p.recurso] ?? p.recurso}` : '', p.usosMax ? `Usos: ${p.usosMax - gastos}/${p.usosMax} (${p.recarga === 'curto' ? 'descanso curto' : 'descanso longo'})` : '', p.expressao ? `Rolagem: ${p.expressao}` : ''].filter(Boolean).join(' · ')}
           {p.descricao && <span className="mt-1 block whitespace-pre-wrap">{p.descricao}</span>}
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -219,6 +221,8 @@ export function EditorPoder({ s, inicial, salvar, fechar }: { s?: Sistema; inici
         <label className="block">Usos até descansar<input type="number" min={0} max={99} value={p.usosMax ?? ''} onChange={e => setP({ ...p, usosMax: Number(e.target.value) || undefined })} className={input + ' mt-1'} placeholder="Sem limite" /></label>
         <label className="block">Rolagem<input value={p.expressao ?? ''} maxLength={40} onChange={e => setP({ ...p, expressao: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: 8d6" /></label>
       </div>
+      {!!p.usosMax && <label className="block">Os usos voltam no<select value={p.recarga ?? 'longo'} onChange={e => setP({ ...p, recarga: e.target.value === 'curto' ? 'curto' : undefined })} className={input + ' mt-1'}>
+        <option value="longo">🌙 Descanso longo</option><option value="curto">☕ Descanso curto (ou longo)</option></select></label>}
       <label className="block">Alcance na mesa (metros)<input type="number" min={0} max={1000} step="1.5" value={p.alcance ?? ''} onChange={e => setP({ ...p, alcance: Number(e.target.value) || undefined })} className={input + ' mt-1'} placeholder="Corpo a corpo (1,5 m)" /></label>
       <label className="block">Descrição<textarea rows={4} value={p.descricao ?? ''} maxLength={2000} onChange={e => setP({ ...p, descricao: e.target.value })} className={input + ' mt-1'} placeholder="Alcance, duração, efeito…" /></label>
       <div className="flex gap-2"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-[#62527e] p-2.5">Cancelar</button>

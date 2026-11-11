@@ -6,6 +6,15 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.29.0', data: '2026-11-11', titulo: 'Temas para escolher',
+    itens: [
+      '🎨 Nova aba Temas (menu → Temas): 8 fundos para escolher com prévia, e o tema muda na hora: Céu estrelado, Estrelinhas sonhadoras, Nuvens de algodão, Lua cheia, Céu carmesim, Grimório celestial, Prisma e Noite clássica.',
+      'Cada tema com imagem tem duas versões, uma em pé para o celular e outra deitada para o computador, recortadas e ajustadas para cada tela (sem marca d’água).',
+      'Corrigido: no celular (principalmente iPhone), o fundo esticava pela página inteira e ficava borrado. Agora ele fica parado atrás do conteúdo, nítido, em qualquer tela.',
+      'Grimório celestial e Prisma são desenhos próprios da plataforma, inspirados nas referências.',
+    ],
+  },
+  {
     versao: '0.28.0', data: '2026-11-10', titulo: 'Mundo da campanha',
     itens: [
       '🌍 Mundo da campanha (botão “🌍 Mundo” na mesa e nas campanhas): o mestre envia o mapa-múndi e toca em “Marcar lugar” para pôr alfinetes. Cada alfinete abre uma página com imagem, descrição e relações.',

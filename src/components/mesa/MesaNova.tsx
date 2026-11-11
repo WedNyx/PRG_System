@@ -16,6 +16,7 @@ import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/Ro
 import PainelCampanha from './PainelCampanha'
 import PainelMusica from './PainelMusica'
 import PainelTabelas from './PainelTabelas'
+import DicasMesa, { deveMostrarDicas } from './DicasMesa'
 import Sino from '@/components/Sino'
 import TocadorMesa from './TocadorMesa'
 import type { EstadoMusica } from '@/lib/nuvem/musica'
@@ -64,6 +65,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [modo, setModo] = useState<ModoMesa>('mover')
   const [cor, setCor] = useState(CORES[0])
   const [pincel, setPincel] = useState(1)
+  const [dicas, setDicas] = useState<'auto' | 'aberto' | 'fechado'>('auto')
   const [aba, setAba] = useState<'chat' | 'fichas' | 'tokens' | 'iniciativa' | 'musica' | 'campanha' | 'tabelas' | 'mestre'>('chat')
   const [painel, setPainel] = useState(true)
   const [pings, setPings] = useState<Ping[]>([])
@@ -256,6 +258,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       <button type="button" onClick={() => setSom(!som)} aria-label={som ? 'Desligar som' : 'Ligar som'} className="rounded-lg p-1.5 hover:bg-[#34294f]">{som ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
       <Link href={'/mundo?campanha=' + campanhaId} className={btn} title="Mapa do mundo, lugares, personagens e relações">🌍 Mundo</Link>
       <button type="button" onClick={() => setPainel(!painel)} className={btn}>{painel ? 'Só o mapa' : 'Painel'}</button>
+      <button type="button" onClick={() => setDicas('aberto')} className={btn} title="Dicas rápidas da mesa">❔ Dicas</button>
     </header>
 
     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
@@ -313,6 +316,8 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       </aside>}
     </div>
 
+    {(() => { const papel = admin ? 'mestre' : espectador ? 'espectador' : 'jogador'
+      return <DicasMesa papel={papel} aberto={dicas === 'aberto' || (dicas === 'auto' && deveMostrarDicas(papel))} fechar={() => setDicas('fechado')} /> })()}
     {token && <TokenModal t={token} admin={admin} eu={e.eu} acao={acao} campanhaId={campanhaId} regraMorte={e.combate?.morte ?? 'testes'} fechar={() => setTokenAberto(null)}
       atacar={!espectador && (admin || token.dono_id === e.eu) ? () => { setTokenAberto(null); iniciarAtaque(token.id) } : undefined} />}
     {historico && <Historico campanhaId={campanhaId} membros={e.membros} fechar={() => setHistorico(false)} />}

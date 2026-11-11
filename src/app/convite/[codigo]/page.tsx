@@ -4,6 +4,9 @@ import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Castle, Loader2, MoonStar, Send } from 'lucide-react'
 import { api, aventureiroAtual, ErroNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
+import { sistemaPorId } from '@/lib/sistemas/catalogo'
+
+const nomeSistema = (id: string) => sistemaPorId(id)?.nome ?? (id.startsWith('autoral-') ? 'Sistema autoral' : id)
 
 type Previa = {
   convite: { codigo: string; situacao: 'valido' | 'revogado' | 'expirado' | 'esgotado' }
@@ -38,15 +41,31 @@ export default function ConvitePage({ params }: { params: Promise<{ codigo: stri
     <div className="w-full max-w-md rounded-3xl border border-[#655079] bg-[#201a32] p-6 text-center sm:p-8">
       <MoonStar className="mx-auto text-[#c5a7ff]" size={40} />
       <p className="mt-3 text-xs uppercase tracking-[.2em] text-[#d3adf0]">Convite de campanha</p>
-      {semPerfil && <><p className="mt-4 text-[#cfc0df]">Escolha seu aventureiro no portal e depois abra este link de novo.</p>
-        <Link href={voltar} className="mt-5 inline-block rounded-xl bg-[#7652ac] px-5 py-3 font-semibold">Escolher aventureiro</Link></>}
+      {semPerfil && <><h1 className="mt-3 text-2xl font-bold">Você foi convidado para uma aventura!</h1>
+        <ol className="mt-4 space-y-2 text-left text-sm text-[#cfc0df]">
+          <li><b className="text-white">1.</b> No portal, toque em <b>“+ Criar perfil”</b> (ou escolha o seu, se já tiver).</li>
+          <li><b className="text-white">2.</b> Toque no seu perfil: você volta para este convite sozinho.</li>
+          <li><b className="text-white">3.</b> Toque em <b>“Pedir para entrar”</b> e espere o mestre aceitar.</li>
+        </ol>
+        <Link href={voltar} className="mt-5 inline-block rounded-xl bg-[#7652ac] px-5 py-3 font-semibold">Ir para o portal</Link>
+        <p className="mt-3 text-xs text-[#a99bbb]">Não precisa de e-mail nem de senha.</p></>}
       {!previa && !erro && !semPerfil && <p className="mt-6 flex items-center justify-center gap-2"><Loader2 className="animate-spin" size={18} /> Carregando convite...</p>}
       {previa?.campanha && <>
         <h1 className="mt-3 break-words text-2xl font-bold">{previa.campanha.nome}</h1>
-        <p className="mt-1 text-sm text-[#c4b6d4]">{previa.campanha.sistema}{previa.campanha.mestre ? ' · Mestre: ' + previa.campanha.mestre.apelido : ''}</p>
+        <p className="mt-1 text-sm text-[#c4b6d4]">{nomeSistema(previa.campanha.sistema)}{previa.campanha.mestre ? ' · Mestre: ' + previa.campanha.mestre.apelido : ''}</p>
         {previa.campanha.descricao && <p className="mt-4 whitespace-pre-wrap break-words text-left text-sm text-[#d1c4df]">{previa.campanha.descricao}</p>}
         {previa.jaParticipa ? <p className="mt-6 text-[#a9f0c8]">Você já participa desta campanha.</p>
-          : enviado || previa.pedidoPendente ? <p className="mt-6 text-[#a9f0c8]">Pedido enviado! Assim que o mestre aceitar, a campanha aparece na sua Central.</p>
+          : enviado || previa.pedidoPendente ? <div className="mt-6 text-left">
+            <p className="text-center text-[#a9f0c8]">Pedido enviado! Assim que o mestre aceitar, a campanha aparece na sua Central.</p>
+            <div className="mt-4 rounded-2xl border border-[#55456e] bg-[#1b1529] p-4 text-sm text-[#cfc0df]">
+              <p className="font-semibold text-white">Enquanto isso:</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                <li>Na Central, o <b>“✨ Comece por aqui”</b> mostra os próximos passos.</li>
+                <li>Se quiser, crie uma senha para o seu perfil (opcional).</li>
+                <li>Dê uma olhada no sistema <b>{nomeSistema(previa.campanha.sistema)}</b> em “Sistemas de RPG”.</li>
+              </ul>
+            </div>
+          </div>
           : previa.convite.situacao !== 'valido' ? <p className="mt-6 text-[#f2a9c3]">{motivo[previa.convite.situacao]}</p>
           : previa.campanha.estado === 'encerrada' ? <p className="mt-6 text-[#f2a9c3]">Esta campanha foi encerrada.</p>
           : <div className="mt-6 space-y-3 text-left">

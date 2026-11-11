@@ -12,7 +12,7 @@ import { lerRaridade } from '@/lib/itensArte'
 export type FichaMesa = { id: string; nome: string; sistema: string; dono_id: string; dono: string | null; npc: boolean; oculta: boolean; retrato: string | null; combate: ResumoCombate | null }
 export type DadosAtaque = {
   atacante: { id: string; nome: string }; alvo: { id: string; nome: string }; arma: string; defesa: number; comparar: string; acerto: boolean
-  dano: { expressao: string; resultados: number[]; total: number } | null; status: 'errou' | 'pendente' | 'aplicado' | 'ignorado'; aplicado: number
+  dano: { expressao: string; resultados: number[]; total: number } | null; status: 'errou' | 'pendente' | 'aplicado' | 'ignorado' | 'resolvendo'; aplicado: number
   vida: { depois: number | null; max: number | null } | null; distancia: number
 }
 type TokenBase = { id: string; nome: string; x: number; y: number; ficha_id: string | null; dono_id: string | null }
@@ -146,6 +146,7 @@ export function CartaoAtaque({ d, eventoId, admin, acao }: { d: DadosAtaque; eve
   const selo = d.status === 'aplicado' ? <span className="rounded-full bg-[#4b253a] px-2 py-0.5 text-[11px] text-red-100">💥 {d.aplicado} de dano{d.vida?.depois !== null && d.vida?.depois !== undefined ? ` · ❤️ ${d.vida.depois}${d.vida.max ? '/' + d.vida.max : ''}` : ''}</span>
     : d.status === 'pendente' ? <span className="rounded-full bg-amber-900/70 px-2 py-0.5 text-[11px] text-amber-100">⏳ Aguardando o mestre</span>
     : d.status === 'ignorado' ? <span className="rounded-full bg-[#2b2140] px-2 py-0.5 text-[11px]">🛡️ Dano anulado</span>
+    : d.status === 'resolvendo' ? <span className="rounded-full bg-amber-900/70 px-2 py-0.5 text-[11px] text-amber-100">⏳ Aplicando…</span>
     : <span className="rounded-full bg-[#2b2140] px-2 py-0.5 text-[11px]">💨 Errou</span>
   return <div className="mt-1 rounded-lg border border-[#5e3a52] bg-[#2a1726] p-2">
     <p><strong>⚔️ {d.atacante.nome}</strong> → <strong>{d.alvo.nome}</strong> <span className="text-xs text-[#d6c8e8]">com {d.arma} · {d.distancia} m</span></p>

@@ -6,6 +6,16 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.32.2', data: '2026-11-11', titulo: 'Primeiros passos e mesa cheia',
+    itens: [
+      '✨ Comece por aqui: quem acabou de chegar vê na Central os primeiros passos (entrar numa campanha, criar o personagem, entrar na mesa e, se quiser, criar uma senha), com o progresso e um botão para cada passo.',
+      'Convite mais claro: quem abre o link sem perfil vê o passo a passo (criar perfil → volta sozinho para o convite → pedir para entrar). Depois do pedido, aparece o que dá para fazer enquanto o mestre aceita.',
+      '❔ Dicas da mesa: na primeira vez na mesa aparecem dicas rápidas para jogador, mestre ou espectador (tocar no token, atacar, terminar o turno, preparar combate…). O botão “❔ Dicas” mostra de novo.',
+      '👥 Mesa cheia: testamos 6 jogadores e o mestre agindo ao mesmo tempo e corrigimos o que aparecia: ataques juntos no mesmo alvo não perdem dano, o clique duplo do mestre não aplica dano duas vezes, “terminar turno” repetido passa só uma vez e vários personagens entrando juntos não ficam na mesma casa.',
+      'Segurança e desempenho: revisão com o verificador do Supabase (tudo fechado para acesso direto) e índices novos para o banco responder mais rápido.',
+    ],
+  },
+  {
     versao: '0.32.1', data: '2026-11-11', titulo: 'Lua dinâmica',
     itens: [
       '🌙 Lua dinâmica: a lua ao lado de “PRG System” (no portal e na Central) agora é a lua de hoje, na fase de verdade, calculada pela data e desenhada como se vê no Brasil.',

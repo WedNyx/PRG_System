@@ -11,6 +11,7 @@ import SistemasGaleria from '@/components/central/SistemasGaleria'
 import { BookOpen, Castle, ChevronRight, CircleHelp, GraduationCap, Dice5, House, Menu, MoonStar, Palette, Pencil, ScrollText, Sparkles, UserRound, X } from 'lucide-react'
 import EditarPerfil from '@/components/perfil/EditarPerfil'
 import LuaLogo, { FraseDaLua } from '@/components/LuaDinamica'
+import ComecePorAqui from '@/components/central/ComecePorAqui'
 import Sino from '@/components/Sino'
 import { CHAVE_ENTRADA } from '@/components/perfil/TransicaoPerfil'
 import { aplicarTema, TEMA_PADRAO, temaAtual, TEMAS, type Tema } from '@/lib/tema'
@@ -121,6 +122,7 @@ function CentralContent() {
                 </div>
               </div>
             </section>
+            {CLOUD_ENABLED && <ComecePorAqui perfilId={perfil.id} abrirPerfil={() => setEditando(true)} irPara={choose} />}
             <h2 className="mt-9 mb-4 text-xl font-bold">Explore sua central</h2>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {navigation.filter(item => item.id !== 'inicio').map(item => <button type="button" key={item.id} onClick={() => choose(item.id)} className={cardClass}>

@@ -23,7 +23,10 @@ export const GET = rota(async req => {
     ])
     for (const x of [...a, ...b, ...c]) { const camp = campanhas.find(k => k.id === x.campanha_id); if (camp) camp.pendencias++ }
   }
-  return ok({ campanhas })
+  // Meus pedidos de entrada ainda esperando o mestre (para o “Comece por aqui”).
+  const pedidos = (await rest<{ campanha_id: string; campanha: { nome: string } | null }[]>(`prg_solicitacoes?select=campanha_id,campanha:prg_campanhas(nome)&aventureiro_id=eq.${q(eu)}&estado=eq.pendente&limit=20`).catch(() => []))
+    .map(p => ({ campanha_id: p.campanha_id, nome: p.campanha?.nome ?? 'Campanha' }))
+  return ok({ campanhas, pedidos })
 })
 
 /** Cria campanha; quem cria vira mestre. */

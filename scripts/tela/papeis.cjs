@@ -22,7 +22,7 @@ const toque=async(pg,nome)=>{ const c=await centro(pg,nome); if(pg.touchscreen &
 
   await call(M,'POST','mesa/'+cid,{acao:'sessao',aberta:true})
   const b = await chromium.launch({ args:['--use-gl=swiftshader','--enable-webgl','--ignore-gpu-blocklist'] })
-  const abrir=async(id, disp)=>{ const ctx=await b.newContext(disp); await ctx.addInitScript(i=>{try{localStorage.setItem('prg-aventureiro-selecionado-v1',i); localStorage.setItem('prg-grupo-v1','lunethernnyis')}catch{}}, id); const p=await ctx.newPage(); p.erros=[]; p.on('pageerror',e=>p.erros.push(e.message)); p.on('response',x=>{ if(x.status()>=500) p.erros.push('HTTP '+x.status()+' '+x.url()) }); return p }
+  const abrir=async(id, disp)=>{ const ctx=await b.newContext(disp); await ctx.addInitScript(i=>{try{localStorage.setItem('prg-aventureiro-selecionado-v1',i); localStorage.setItem('prg-grupo-v1','lunethernnyis'); for (const p of ['mestre','jogador','espectador']) localStorage.setItem('prg-dicas-mesa-v1-'+p,'1')}catch{}}, id); const p=await ctx.newPage(); p.erros=[]; p.on('pageerror',e=>p.erros.push(e.message)); p.on('response',x=>{ if(x.status()>=500) p.erros.push('HTTP '+x.status()+' '+x.url()) }); return p }
   const mestre=await abrir(M, devices['Pixel 7']), jog=await abrir(J, devices['Pixel 7']), esp=await abrir(X, { viewport:{width:1280,height:800} })
 
   // ---------- páginas gerais ----------

@@ -193,6 +193,16 @@ describe('fichas revisadas (v0.32.10)', () => {
     expect(calcular(s, d).limites[0].excedido).toBe(true)
     d.campos.nex = 20; expect(calcular(s, d).limites[0].excedido).toBe(false)
   })
+  it('Ordem Paranormal: ficha antiga com campos.defesa migra para "Outros bônus de Defesa" (v0.33.0)', async () => {
+    const { normalizarFicha } = await import('./calculo')
+    const s = sistemaPorId('ordem-paranormal')!
+    const n = normalizarFicha(s, { atributos: { AGI: 2 }, campos: { defesa: 18 } } as never)
+    expect(n.campos.defesa).toBeUndefined(); expect(n.campos.defesa_outros).toBe(6) // 18 = 10 + AGI(2) + 6
+    expect(calcular(s, n).derivados.defesa).toBe(18)
+    // Ficha já na migrada (ou nova) não é tocada de novo.
+    const n2 = normalizarFicha(s, { campos: { defesa: 18, defesa_outros: 0 } } as never)
+    expect(n2.campos.defesa_outros).toBe(0)
+  })
   it('D&D 5e: classe define o Dado de Vida e a magia; anão +1 PV por nível', () => {
     const s = sistemaPorId('dnd5e-srd')!; const d = fichaVazia(s)
     d.campos.classe = 'Mago'; d.campos.nivel = 3; Object.assign(d.atributos, { CON: 14, INT: 16 })

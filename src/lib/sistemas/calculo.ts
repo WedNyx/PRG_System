@@ -62,6 +62,13 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     for (const [velho, novo] of Object.entries(s.apelidosAtributos)) if (a[velho] !== undefined && a[novo] === undefined) { a[novo] = a[velho]; delete a[velho] }
     d = { ...d, atributos: a }
   }
+  // Ordem Paranormal (v0.32.10): Defesa passou de campo manual a calculada. Fichas antigas tinham o total em campos.defesa;
+  // guarda a diferença em "Outros bônus de Defesa" para a Defesa calculada continuar igual à que a pessoa já tinha.
+  if (s.id === 'ordem-paranormal' && d.campos && typeof d.campos.defesa === 'number' && d.campos.defesa_outros === undefined) {
+    const agi = Number((d.atributos as Record<string, number> | undefined)?.AGI ?? s.atributos.find(a => a.id === 'AGI')?.padrao ?? 0)
+    const { defesa: antiga, ...resto } = d.campos
+    d = { ...d, campos: { ...resto, defesa_outros: Math.round(Number(antiga)) - 10 - agi } }
+  }
   return {
     sistema: s.id, nome: typeof d.nome === 'string' ? d.nome.slice(0, 90) : '',
     ...(imagemDaPlataforma(d.retrato) ? { retrato: d.retrato } : {}),

@@ -65,6 +65,22 @@ describe('rolagem personalizada (v0.16)', () => {
   })
 })
 
+describe('rolagem em parada copiada de um sistema da plataforma (v0.33.0)', () => {
+  const base = { nome: 'Cópia', atributos: [{ nome: 'Corpo', min: 0, max: 5, padrao: 1 }] }
+  it('preserva o modo de rolagem e os lados do dado ao copiar a estrutura de Ordem Paranormal/Blades', () => {
+    const r = validarSistema({ ...base, rolagem: 'parada', parada: { lados: 20 } }, { id: 'autoral-' + '0'.repeat(32) })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.sistema.rolagem).toBe('parada'); expect(r.sistema.parada).toEqual({ lados: 20 }); expect(r.sistema.dados).toBe('Parada de d20')
+  })
+  it('limita os lados do dado a uma faixa razoável', () => {
+    const r = validarSistema({ ...base, rolagem: 'parada', parada: { lados: 99999 } }, { id: 'autoral-' + '0'.repeat(32) })
+    expect(r.ok && r.sistema.parada).toEqual({ lados: 100 })
+    const r2 = validarSistema({ ...base, rolagem: 'parada', parada: { lados: 0 } }, { id: 'autoral-' + '0'.repeat(32) })
+    expect(r2.ok && r2.sistema.parada).toEqual({ lados: 2 })
+  })
+})
+
 describe('campos de escolha (classe, espécie)', () => {
   it('valida opções, tira bônus sem alvo e soma o bônus da opção escolhida', async () => {
     const { validarSistema, sistemaEmBranco } = await import('./autoral')

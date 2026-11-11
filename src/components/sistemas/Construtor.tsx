@@ -22,7 +22,7 @@ import { lerArvore } from '@/lib/sistemas/arvore'
 /* Linhas editáveis: `auto` = o nome na fórmula ainda acompanha o nome (até salvar pela 1ª vez). */
 type Linha = Record<string, unknown> & { id: string; nome: string; auto?: boolean }
 type Def = {
-  nome: string; resumo: string; capa?: string; dados: string; rolagem: 'd20' | 'd100' | 'nenhuma' | 'personalizada'; regraRolagem: { nome: string; formula: string }; creditos?: string
+  nome: string; resumo: string; capa?: string; dados: string; rolagem: 'd20' | 'd100' | 'nenhuma' | 'personalizada' | 'parada'; regraRolagem: { nome: string; formula: string }; parada: { lados: number }; creditos?: string
   campos: Linha[]; atributos: Linha[]; formulaModificador: string; derivados: Linha[]
   pericias: { modo: 'treino' | 'valor' | 'nenhuma'; titulo?: string; total: string; treinos: Linha[]; lista: Linha[] }
   recursos: Linha[]; listas: Linha[]; limites: { nome: string; uso: string; max: string }[]; observacoes: string; carga: { formula: string; unidade: string }
@@ -46,6 +46,7 @@ function paraDef(s: Partial<Sistema> & Record<string, unknown>, auto = false): D
     nome: String(s.nome ?? ''), resumo: String(s.resumo ?? ''), ...(typeof s.capa === 'string' ? { capa: s.capa } : {}), dados: String(s.dados ?? 'd20'),
     rolagem: (s.rolagem as Def['rolagem']) ?? (String(s.dados ?? '').startsWith('d100') || s.id === 'brp' ? 'd100' : String(s.dados ?? 'd20').startsWith('d20') ? 'd20' : 'nenhuma'),
     regraRolagem: (s.regraRolagem as Def['regraRolagem']) ?? { nome: 'Teste', formula: '1d20+VALOR' },
+    parada: (s.parada as Def['parada']) ?? { lados: 20 },
     creditos: typeof s.creditos === 'string' ? s.creditos : undefined,
     campos: l(s.campos), atributos: l(s.atributos), formulaModificador: String(s.formulaModificador ?? ''), derivados: l(s.derivados),
     pericias: p ? { modo: p.modo, titulo: p.titulo, total: p.total, treinos: l(p.treinos), lista: l(p.lista) } : { modo: 'nenhuma', total: 'MOD + TREINO', treinos: [], lista: [] },
@@ -58,7 +59,7 @@ function paraDef(s: Partial<Sistema> & Record<string, unknown>, auto = false): D
 function paraEnvio(d: Def) {
   const tira = (ls: Linha[]) => ls.map(({ auto: _a, ...r }) => r)
   return {
-    nome: d.nome, resumo: d.resumo, ...(d.capa ? { capa: d.capa } : {}), dados: d.dados, rolagem: d.rolagem, ...(d.rolagem === 'personalizada' ? { regraRolagem: d.regraRolagem } : {}), creditos: d.creditos,
+    nome: d.nome, resumo: d.resumo, ...(d.capa ? { capa: d.capa } : {}), dados: d.dados, rolagem: d.rolagem, ...(d.rolagem === 'personalizada' ? { regraRolagem: d.regraRolagem } : {}), ...(d.rolagem === 'parada' ? { parada: d.parada } : {}), creditos: d.creditos,
     campos: tira(d.campos), atributos: tira(d.atributos), formulaModificador: d.formulaModificador, derivados: tira(d.derivados),
     pericias: d.pericias.modo === 'nenhuma' ? undefined : { modo: d.pericias.modo, titulo: d.pericias.titulo, total: d.pericias.total, treinos: tira(d.pericias.treinos), lista: tira(d.pericias.lista) },
     recursos: tira(d.recursos), listas: tira(d.listas), limites: d.limites, observacoes: d.observacoes.split('\n').map(x => x.trim()).filter(Boolean),
@@ -176,10 +177,13 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
           <CapaDoSistema nome={def.nome} capa={def.capa} mudar={capa => mudar(d => ({ ...d, capa }))} />
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="block">Como se rola<select value={def.rolagem} onChange={e => mudar(d => ({ ...d, rolagem: e.target.value as Def['rolagem'] }))} className={input + ' mt-1'}>
-              <option value="d20">d20 + bônus (toque na perícia para rolar)</option><option value="d100">d100 abaixo do valor (porcentagem)</option><option value="personalizada">🎲 Rolagem personalizada (monte a sua)</option><option value="nenhuma">Sem rolagem automática</option></select></label>
+              <option value="d20">d20 + bônus (toque na perícia para rolar)</option><option value="d100">d100 abaixo do valor (porcentagem)</option><option value="personalizada">🎲 Rolagem personalizada (monte a sua)</option>
+              <option value="parada">🎲 Parada de dados (um dado por ponto, fica com o maior)</option><option value="nenhuma">Sem rolagem automática</option></select></label>
             <label className="block">Dados (texto que aparece no cartão)<input value={def.dados} maxLength={40} onChange={e => mudar(d => ({ ...d, dados: e.target.value }))} className={input + ' mt-1'} placeholder="Ex.: d20, 2d6, d100" /></label>
           </div>
           {def.rolagem === 'personalizada' && <EditorRolagem regra={def.regraRolagem} mudar={r => mudar(d => ({ ...d, regraRolagem: r }))} />}
+          {def.rolagem === 'parada' && <label className="block">Lados do dado da parada (ex.: 20 como Ordem Paranormal, 6 como Blades)
+            <input type="number" min={2} max={100} value={def.parada.lados} onChange={e => mudar(d => ({ ...d, parada: { lados: Number(e.target.value) || 20 } }))} className={input + ' mt-1 max-w-[8rem]'} /></label>}
           {def.creditos && <p className="rounded-lg bg-(--s-171325) p-2 text-[11px] text-(--a-a998bd)">Créditos do modelo usado (licença aberta): {def.creditos}</p>}
         </SecaoBase>
 

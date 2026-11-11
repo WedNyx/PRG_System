@@ -128,14 +128,17 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   })
   const observacoes = (Array.isArray(e.observacoes) ? e.observacoes : []).map(o => txt(o, 300)).filter(Boolean).slice(0, LIMITES.observacoes)
   const formulaModificador = txt(e.formulaModificador, LIMITES.formula) || undefined
-  let rolagem: Sistema['rolagem'] = e.rolagem === 'd100' || e.rolagem === 'nenhuma' || e.rolagem === 'personalizada' ? e.rolagem : 'd20'
+  let rolagem: Sistema['rolagem'] = e.rolagem === 'd100' || e.rolagem === 'nenhuma' || e.rolagem === 'personalizada' || e.rolagem === 'parada' ? e.rolagem : 'd20'
   let regraRolagem: Sistema['regraRolagem']
+  let parada: Sistema['parada']
   if (rolagem === 'personalizada') {
     const r = e.regraRolagem && typeof e.regraRolagem === 'object' ? e.regraRolagem as Record<string, unknown> : {}
     const formula = txt(r.formula, 60).trim(), erro = erroDaFormula(formula)
     if (erro) { erros.push('Rolagem personalizada: ' + erro); rolagem = 'd20' }
     else regraRolagem = { nome: txt(r.nome, 40).trim() || 'Teste', formula: formula.replace(/\s+/g, '') }
   }
+  // Parada (ex.: copiada de Ordem Paranormal ou Blades): um d<lados> por ponto, fica com o maior.
+  if (rolagem === 'parada') parada = { lados: Math.round(num((e.parada as Record<string, unknown> | undefined)?.lados, 2, 100, 20)) }
   const cargaF = e.carga && typeof e.carga === 'object' ? e.carga as Record<string, unknown> : null
   const carga = cargaF && txt(cargaF.formula, LIMITES.formula) ? { formula: txt(cargaF.formula, LIMITES.formula), unidade: txt(cargaF.unidade, 16) || 'kg' } : undefined
   const creditos = txt(e.creditos, 1500) || undefined
@@ -183,7 +186,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   const sistema: Sistema = {
     id: meta.id, nome, resumo: txt(e.resumo, 400), tipo: 'autoral', ...(imagemDaPlataforma(e.capa) ? { capa: e.capa } : {}),
     licenca: 'Sistema autoral' + (meta.autor ? ' de ' + meta.autor : ''), ...(creditos ? { creditos } : {}),
-    dados: txt(e.dados, 40) || (rolagem === 'd100' ? 'd100' : rolagem === 'd20' ? 'd20' : regraRolagem ? regraRolagem.formula.replace(/VALOR/gi, 'X') : 'Livre'), rolagem, ...(regraRolagem ? { regraRolagem } : {}),
+    dados: txt(e.dados, 40) || (rolagem === 'd100' ? 'd100' : rolagem === 'd20' ? 'd20' : parada ? `Parada de d${parada.lados}` : regraRolagem ? regraRolagem.formula.replace(/VALOR/gi, 'X') : 'Livre'), rolagem, ...(regraRolagem ? { regraRolagem } : {}), ...(parada ? { parada } : {}),
     campos, atributos, ...(formulaModificador ? { formulaModificador } : {}), derivados, ...(pericias ? { pericias } : {}),
     recursos, ...(limites.length ? { limites } : {}), listas: listas.length ? listas : [{ id: 'anotacoes', nome: 'Anotações' }],
     ...(observacoes.length ? { observacoes } : {}), ...(carga ? { carga } : {}), ...(progressoes ? { progressoes } : {}),

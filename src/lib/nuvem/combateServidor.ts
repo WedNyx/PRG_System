@@ -1,5 +1,5 @@
 // Somente servidor: combate na mesa (ataque, dano, vida dos tokens ligados a fichas).
-import { buscarFicha, ErroApi, q, rest, type FichaRow } from './servidor'
+import { buscarFicha, ErroApi, q, rest, rpc, type FichaRow } from './servidor'
 import { carregarSistema } from './sistemasServidor'
 import { validarFichaDados } from './validacao'
 import { aplicarNaVida, resumoCombate, type ResumoCombate } from '../sistemas/combate'
@@ -32,7 +32,9 @@ export async function fichaDeCombate(fichaId: string | null): Promise<{ f: Ficha
 
 /** Muda os dados de uma ficha com controle de versão (tenta de novo se alguém salvou junto). */
 export async function mudarFicha(fichaId: string, fn: (dados: Record<string, unknown>) => Record<string, unknown> | null): Promise<Record<string, unknown> | null> {
-  for (let tentativa = 0; tentativa < 4; tentativa++) {
+  // Mesa cheia: vários ataques no mesmo alvo ao mesmo tempo. Tenta de novo com uma espera curta e aleatória.
+  for (let tentativa = 0; tentativa < 12; tentativa++) {
+    if (tentativa) await new Promise(r => setTimeout(r, 15 + Math.random() * 40 * Math.min(tentativa, 5)))
     const f = await buscarFicha(fichaId)
     if (!f) return null
     const dados = fn(f.dados ?? {})
@@ -56,11 +58,10 @@ export async function aplicarDano(t: TokenCombate, dano: number): Promise<{ ante
     return { antes: atual, depois, max }
   }
   if (t.hp_atual === null && t.hp_max === null) return { antes: null, depois: null, max: null }
-  const antes = t.hp_atual ?? t.hp_max ?? 0
-  let depois = Math.max(0, antes - dano)
-  if (t.hp_max !== null) depois = Math.min(depois, Math.max(t.hp_max, antes))
-  await rest(`prg_tokens?id=eq.${q(t.id)}`, { method: 'PATCH', body: JSON.stringify({ hp_atual: depois }) })
-  return { antes, depois, max: t.hp_max }
+  // Uma operação só no banco: dois ataques juntos não “apagam” o dano um do outro (migração 024).
+  const [r] = await rpc<{ antes: number; depois: number; maximo: number | null }[]>('prg_token_dano', { p_token: t.id, p_dano: Math.round(dano) })
+  if (!r) throw new ErroApi(404, 'Token não encontrado.')
+  return { antes: r.antes, depois: r.depois, max: r.maximo }
 }
 
 /** Vida ao vivo dos tokens ligados a fichas (a ficha é quem manda). */

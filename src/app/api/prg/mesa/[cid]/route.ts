@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { ator, buscarFicha, nomeDaCampanha, notificar, participantes, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
+import { ator, buscarFicha, nomeDaCampanha, notificar, participantes, lerJson, ok, papelNaCampanha, q, rest, rota, rpc, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar, type Papel } from '@/lib/nuvem/validacao'
 import { aplicarNevoa, corValida, filtroVisibilidade, normalizarCamadas, normalizarCondicoes, normalizarIniciativa, normalizarPontos, podeMoverToken, todasCelulas, urlValida, type Movimento, type Visibilidade } from '@/lib/nuvem/mesa'
 import { rolarExpressao } from '@/lib/dice'
@@ -305,6 +305,11 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         visivel: !(admin && b.visivel === false), hp_max: hp, hp_atual: hp,
         tamanho: inteiro(b.tamanho, 1, 4) ?? 1, movimento: admin && (b.movimento === 'todos' || b.movimento === 'mestre') ? b.movimento : 'dono',
       }) })
+      // Casa escolhida pelo servidor: o banco acha a casa livre com a cena travada (vários tokens entrando juntos não empilham).
+      if (inteiro(b.x, 0, 1e6) === null || inteiro(b.y, 0, 1e6) === null) {
+        const [casa] = await rpc<{ x: number; y: number }[]>('prg_token_casa_livre', { p_token: (t as { id: string }).id }).catch(() => [])
+        if (casa) Object.assign(t as object, casa)
+      }
       return ok({ token: t }, 201)
     }
     case 'token_mover': {
@@ -520,9 +525,12 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         const [tk] = await rest<{ dono_id: string | null }[]>(`prg_tokens?select=dono_id&id=eq.${q(antes.tokenId)}&campanha_id=eq.${q(cid)}`)
         if (!tk || tk.dono_id !== eu) throw new ErroApi(403, 'Não é a sua vez.')
       }
+      const filtroAntes = `&mesa->>turno=${c.mesa.turno === undefined || c.mesa.turno === null ? 'is.null' : 'eq.' + q(String(c.mesa.turno))}&mesa->>rodada=${c.mesa.rodada === undefined || c.mesa.rodada === null ? 'is.null' : 'eq.' + q(String(c.mesa.rodada))}`
       if (b.direcao === -1) { turno--; if (turno < 0) { turno = lista.length - 1; rodada = Math.max(1, rodada - 1) } }
       else { turno++; if (turno >= lista.length) { turno = 0; rodada++ } }
-      await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify({ mesa: { iniciativa: lista, turno, rodada } }) })
+      // Só passa se o turno ainda for o mesmo (toque duplo, ou jogador e mestre ao mesmo tempo, passam uma vez só).
+      const passou = await rest<unknown[]>(`prg_campanhas?id=eq.${q(cid)}${filtroAntes}`, { method: 'PATCH', prefer: 'return=representation', body: JSON.stringify({ mesa: { iniciativa: lista, turno, rodada } }) })
+      if (!passou.length) throw new ErroApi(409, 'O turno já passou.')
       if (b.direcao !== -1) {
         // Fim do turno de quem jogou: as condições com duração perdem 1 rodada.
         const avisos: string[] = []
@@ -559,6 +567,9 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       const [ev] = await rest<{ id: number; dados: Record<string, unknown> | null; texto: string }[]>(`prg_mesa_eventos?select=id,dados,texto&id=eq.${id}&campanha_id=eq.${q(cid)}&tipo=eq.ataque`)
       const d = ev?.dados
       if (!d || (d.status !== 'pendente' && d.status !== 'errou')) throw new ErroApi(409, 'Este ataque já foi resolvido.')
+      // Reserva o ataque (clique duplo ou dois mestres ao mesmo tempo: só um aplica).
+      const reservado = await rest<unknown[]>(`prg_mesa_eventos?id=eq.${id}&dados->>status=eq.${q(String(d.status))}`, { method: 'PATCH', prefer: 'return=representation', body: JSON.stringify({ dados: { ...d, status: 'resolvendo' } }) })
+      if (!reservado.length) throw new ErroApi(409, 'Este ataque já foi resolvido.')
       const fator = b.fator === 0.5 ? 0.5 : b.fator === 0 ? 0 : 1
       const dano = d.dano as { total: number } | null
       // “Errou” também pode virar acerto, se o mestre quiser (ex.: regra especial do sistema).
@@ -566,7 +577,8 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       if (!dano && fator > 0) total = inteiro(b.dano, 0, 100000) ?? 0
       const aplicado = Math.floor(total * fator)
       let vida: Awaited<ReturnType<typeof aplicarDano>> | null = null
-      if (aplicado > 0) { const al = await tokenCombate(cid, (d.alvo as { id: string }).id); vida = await danoComMorte(cid, eu, al, aplicado, d.critico === true) }
+      try { if (aplicado > 0) { const al = await tokenCombate(cid, (d.alvo as { id: string }).id); vida = await danoComMorte(cid, eu, al, aplicado, d.critico === true) } }
+      catch (e) { await rest(`prg_mesa_eventos?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ dados: d }) }).catch(() => {}); throw e }
       const novo = { ...d, status: fator === 0 ? 'ignorado' : 'aplicado', aplicado, vida: vida ? { depois: vida.depois, max: vida.max } : null }
       await rest(`prg_mesa_eventos?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ dados: novo }) })
       const alvo = (d.alvo as { nome: string }).nome

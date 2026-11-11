@@ -119,6 +119,12 @@ export const GUIA: TopicoGuia[] = [
     passos: ['Na mesa (ou na lista de campanhas), toque em “🌍 Mundo”.', 'Mestre: em “🗺️ Mapa”, envie a imagem do mapa. Toque em “Marcar lugar” e depois no mapa para criar um alfinete com nome, ícone, descrição e imagem. Arraste os alfinetes para ajustar.', 'Em “📖 Páginas”, crie personagens, facções, perigos, segredos e relíquias. Procure e filtre por tipo.', 'Em “🕸️ Relações”, ligue quem é aliado, inimigo, rival, família, amor ou quem serve a quem. Arraste para organizar.', 'Marque “🙈 Só o mestre vê” em páginas e ligações secretas: os jogadores só descobrem quando você mostrar.', 'Jogadores: toque nos alfinetes e nas pessoas da teia para ler tudo o que o mestre revelou.'],
   },
   {
+    id: 'primeiros-passos', icone: '✨', titulo: 'Primeiros passos (para quem foi convidado)', quem: 'todos',
+    resumo: 'Do link de convite até a primeira rolagem na mesa.',
+    passos: ['Abra o link de convite que o mestre mandou. Se ainda não tem perfil, toque em “Ir para o portal”, crie o seu (só o apelido e, se quiser, uma foto) e toque nele: você volta sozinho para o convite.', 'Toque em “Pedir para entrar” e espere o mestre aceitar.', 'Na Central, o “✨ Comece por aqui” mostra o que falta: criar o personagem na campanha, entrar na mesa e, se quiser, criar uma senha.', 'Na mesa, as dicas da primeira vez explicam o básico. O botão “❔ Dicas” mostra de novo quando quiser.'],
+    dica: 'Não precisa de e-mail. A senha é opcional, mas protege o seu perfil.',
+  },
+  {
     id: 'senha', icone: '🔒', titulo: 'Senha do perfil', quem: 'todos',
     resumo: 'Opcional: proteja o seu perfil para ninguém mais entrar nele.',
     passos: ['Na Central, toque na sua foto no topo (ou no menu → “Editar perfil”).', 'Em “🔒 Senha do perfil”, toque em “Criar senha”, digite duas vezes (6 a 72 caracteres) e salve.', 'No portal, o seu perfil passa a mostrar 🔒. Em outro aparelho, a plataforma pede a senha uma vez e lembra dele por 30 dias.', 'Para trocar ou remover, use a senha atual. Trocar a senha desconecta os outros aparelhos; “Desconectar todos os aparelhos” sai de todos.', 'Esqueceu? Peça ao administrador da plataforma: ele apaga a senha pelo 🔑 no portal e você cria outra.'],

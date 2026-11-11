@@ -2,6 +2,13 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.32.7 — Central e menus (2026-11-11)
+- 🧭 Central reorganizada: o menu lateral mostra seu perfil no topo, cada seção com uma descrição curta e os atalhos separados em “Conta” (Editar perfil, Temas, Trocar aventureiro) e “Ajuda” (Guia, Tutoriais, Novidades).
+- 📱 No celular, uma barra fixa embaixo leva direto para Início, Fichas, Campanhas, Sistemas e Rolagens — sem precisar abrir o menu.
+- ❔ Cada seção da Central tem um título com explicação e um botão “Como funciona?” com o passo a passo.
+- ↩️ “Continuar de onde parou” no Início: suas campanhas (com botão para a Mesa) e as últimas fichas mexidas, a um toque.
+- 📜 Fichas com nomes mais claros: “Avulsas” (só suas) e “Em campanhas”.
+
 ## v0.32.6 — Mesa organizada (2026-11-11)
 - 🗺️ Mesa reorganizada: o painel agora tem 5 grupos — 💬 Chat, ⚔️ Jogo (Fichas, Iniciativa e Tokens), 🎵 Música, 📖 Diário e 👑 Mestre (Controles, Biblioteca e Tabelas) — em vez de 10 abas espremidas.
 - ❔ Cada parte do painel tem uma linha explicando para que serve, e a ferramenta escolhida no mapa mostra o nome e o que fazer (ex.: “Régua: arraste para medir a distância”).

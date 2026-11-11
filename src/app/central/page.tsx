@@ -13,6 +13,8 @@ import EditarPerfil from '@/components/perfil/EditarPerfil'
 import LuaLogo, { FraseDaLua } from '@/components/LuaDinamica'
 import ComecePorAqui from '@/components/central/ComecePorAqui'
 import RolagensCampanhas from '@/components/central/RolagensCampanhas'
+import CabecalhoSecao from '@/components/central/CabecalhoSecao'
+import ContinuarJornada from '@/components/central/ContinuarJornada'
 import Sino from '@/components/Sino'
 import { CHAVE_ENTRADA } from '@/components/perfil/TransicaoPerfil'
 import { aplicarTema, TEMA_PADRAO, temaAtual, TEMAS, type Tema } from '@/lib/tema'
@@ -24,13 +26,39 @@ const SELECTED_KEY = 'prg-aventureiro-selecionado-v1'
 const LOCAL_KEY = 'prg-aventureiros-demo-v1'
 const CLOUD_ENABLED = process.env.NEXT_PUBLIC_PRG_SHARED_PROFILES === 'true'
 
-const navigation: { id: Section; label: string; icon: typeof House }[] = [
-  { id: 'inicio', label: 'Início', icon: House },
-  { id: 'fichas', label: 'Fichas', icon: ScrollText },
-  { id: 'campanhas', label: 'Campanhas', icon: Castle },
-  { id: 'sistemas', label: 'Sistemas de RPG', icon: BookOpen },
-  { id: 'historico', label: 'Histórico', icon: Dice5 },
+const navigation: { id: Section; label: string; curto: string; descricao: string; icon: typeof House }[] = [
+  { id: 'inicio', label: 'Início', curto: 'Início', descricao: 'Resumo e atalhos', icon: House },
+  { id: 'fichas', label: 'Fichas', curto: 'Fichas', descricao: 'Seus personagens', icon: ScrollText },
+  { id: 'campanhas', label: 'Campanhas', curto: 'Campanhas', descricao: 'Aventuras e mesa virtual', icon: Castle },
+  { id: 'sistemas', label: 'Sistemas de RPG', curto: 'Sistemas', descricao: 'Criar ficha de um sistema', icon: BookOpen },
+  { id: 'historico', label: 'Histórico', curto: 'Rolagens', descricao: 'Dados rolados nas mesas', icon: Dice5 },
 ]
+
+/** Explicação curta de cada seção (cabeçalho + “Como funciona?”). */
+const SECOES: Record<Exclude<Section, 'inicio'>, { icone: string; titulo: string; descricao: string; ajuda: string[] }> = {
+  fichas: { icone: '📜', titulo: 'Minhas fichas', descricao: 'Todos os seus personagens. Abra uma ficha para editar, rolar dados e cuidar do inventário.', ajuda: [
+    '“Avulsas” são fichas só suas, fora de campanha — boas para testar ou guardar personagens.',
+    '“Em campanhas” são as fichas ligadas a uma aventura; o mestre pode aprovar mudanças nelas.',
+    'Para criar uma ficha nova, vá em Sistemas de RPG e escolha o sistema.',
+    'Dentro da ficha, toque em um atributo ou perícia para rolar o dado na hora.'] },
+  campanhas: { icone: '🏰', titulo: 'Campanhas', descricao: 'Crie uma aventura como mestre ou entre na de alguém com um código de convite.', ajuda: [
+    'Mestre: crie a campanha, escolha o sistema e gere um convite para os jogadores.',
+    'Jogador: cole o código do convite; o mestre aprova seu pedido.',
+    'Na campanha você define quem pode editar as fichas e acompanha os pedidos.',
+    'O botão “Mesa” abre a mesa virtual: mapa, chat, dados, iniciativa e música.'] },
+  sistemas: { icone: '📚', titulo: 'Sistemas de RPG', descricao: 'Escolha um sistema e crie uma ficha que calcula as regras sozinha.', ajuda: [
+    'Toque em um sistema para ver o resumo das regras e o guia do mestre.',
+    '“Criar ficha” abre uma ficha nova já com os campos daquele sistema.',
+    'A ficha nasce avulsa; depois você pode levá-la para uma campanha.'] },
+  historico: { icone: '🎲', titulo: 'Histórico de rolagens', descricao: 'Escolha a campanha para ver tudo o que foi rolado nas mesas, com filtros e o resumo da sessão.', ajuda: [
+    'Filtre por pessoa, personagem, tipo (dados, ataques, mensagens) e período.',
+    '“Só críticos” e “Só falhas” mostram os 20 e os 1 naturais.',
+    'O resumo mostra rolagens, acertos, maior dano e a média de d20 de cada um.',
+    'Rolagens feitas em fichas fora de campanha não ficam salvas.'] },
+  temas: { icone: '🎨', titulo: 'Temas', descricao: 'Escolha o fundo da plataforma. A escolha vale só para este aparelho.', ajuda: [
+    'Toque em um cartão para aplicar o tema na hora.',
+    'Cada tema tem uma versão para celular (em pé) e outra para computador (deitada).'] },
+}
 
 function CentralContent() {
   const params = useSearchParams()
@@ -73,7 +101,8 @@ function CentralContent() {
   }, [params])
 
   const choose = (next: Section) => { setSection(next); setMenuOpen(false) }
-  const cardClass = 'group rounded-2xl border border-[#55456e] bg-[#201a32]/90 p-5 text-left transition hover:-translate-y-0.5 hover:border-[#b79aff] hover:bg-[#2b2143] focus-visible:outline-2 focus-visible:outline-[#c5a7ff]'
+  const itemMenu = 'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-[#cbb6e5] hover:bg-[#2b213d]'
+  const cardClass = 'group rounded-2xl border border-[#55456e] bg-[#201a32]/90 p-4 sm:p-5 text-left transition hover:-translate-y-0.5 hover:border-[#b79aff] hover:bg-[#2b2143] focus-visible:outline-2 focus-visible:outline-[#c5a7ff]'
 
   if (loading) return <main className="flex min-h-screen items-center justify-center fundo-tema text-[#e8dff7]">Carregando sua jornada...</main>
   if (!perfil) return <main className="flex min-h-screen flex-col items-center justify-center gap-4 fundo-tema px-5 text-center text-[#e8dff7]"><MoonStar size={48} className="text-[#bda0f5]" /><h1 className="text-2xl font-bold">Aventureiro não encontrado</h1><p className="text-[#bdb1ce]">{error || 'Selecione um perfil no portal para continuar.'}</p><Link href="/portal" className="rounded-xl bg-[#7853b4] px-5 py-3 font-semibold">Voltar aos perfis</Link></main>
@@ -97,21 +126,35 @@ function CentralContent() {
       </header>
       <div className="mx-auto flex max-w-[1500px]">
         {menuOpen && <button className="fixed inset-0 z-20 bg-black/60 lg:hidden" aria-label="Fechar navegação" onClick={() => setMenuOpen(false)} />}
-        <aside className={`fixed bottom-0 left-0 top-16 z-20 w-64 border-r border-[#48385e] bg-[#171225] p-4 lg:sticky lg:top-16 lg:block lg:h-[calc(100vh-4rem)] ${menuOpen ? 'block' : 'hidden'}`}>
-          <p className="mb-4 px-3 text-xs uppercase tracking-[.2em] text-[#aa8ecb]">Sua jornada</p>
-          <nav aria-label="Navegação da Central" className="space-y-2">
-            {navigation.map(item => <button key={item.id} type="button" onClick={() => choose(item.id)} aria-current={section === item.id ? 'page' : undefined} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition ${section === item.id ? 'border border-[#8b6cba] bg-[#38274e] text-white' : 'text-[#c9bdd9] hover:bg-[#2b213d]'}`}><item.icon size={19} aria-hidden="true" />{item.label}</button>)}
+        <aside className={`fixed bottom-0 left-0 top-16 z-20 w-72 overflow-y-auto border-r border-[#48385e] bg-[#171225]/95 p-4 pb-24 backdrop-blur lg:pb-4 lg:sticky lg:top-16 lg:block lg:h-[calc(100vh-4rem)] lg:w-64 ${menuOpen ? 'block' : 'hidden'}`}>
+          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-[#4b3b62] bg-gradient-to-br from-[#2b1f40] to-[#1b1629] p-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#8d70b6] bg-[#342749] font-semibold text-[#d8c0ff]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : perfil.apelido[0]?.toUpperCase()}</span>
+            <span className="min-w-0 flex-1"><span className="block truncate font-semibold">{perfil.apelido}</span><span className="block truncate text-[11px] text-[#aa8ecb]">{perfil.grupo || 'Aventureiro'}</span></span>
+          </div>
+          <p className="mb-2 px-3 text-[11px] uppercase tracking-[.2em] text-[#aa8ecb]">Sua jornada</p>
+          <nav aria-label="Navegação da Central" className="space-y-1">
+            {navigation.map(item => { const ativo = section === item.id
+              return <button key={item.id} type="button" onClick={() => choose(item.id)} aria-current={ativo ? 'page' : undefined} className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${ativo ? 'border-[#8b6cba] bg-[#38274e] text-white shadow-[inset_3px_0_0_#c5a7ff]' : 'border-transparent text-[#c9bdd9] hover:bg-[#2b213d]'}`}>
+                <item.icon size={19} aria-hidden="true" className={ativo ? 'text-[#e4d3ff]' : 'text-[#a98fd0]'} />
+                <span className="min-w-0 flex-1"><span className="block text-sm font-medium">{item.label}</span><span className="block truncate text-[11px] text-[#9f93b5]" aria-hidden="true">{item.descricao}</span></span>
+              </button> })}
           </nav>
-          <div className="mt-8 border-t border-[#49375f] pt-4">
-            {CLOUD_ENABLED && <button type="button" onClick={() => { setEditando(true); setMenuOpen(false) }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><Pencil size={19} />Editar perfil</button>}
-            <Link href="/portal" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><UserRound size={19} />Trocar aventureiro</Link>
-            <button type="button" onClick={() => choose('temas')} aria-current={section === 'temas' ? 'page' : undefined} className={'flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm hover:bg-[#2b213d] ' + (section === 'temas' ? 'border border-[#8b6cba] bg-[#38274e] text-white' : 'text-[#cbb6e5]')}><Palette size={19} /><span className="min-w-0 flex-1 truncate">Temas · {TEMAS.find(t => t.id === tema)?.nome}</span></button>
-            <Link href="/guia" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><CircleHelp size={19} />Guia da plataforma</Link>
-            <Link href="/tutorial" className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><GraduationCap size={19} />Tutoriais práticos</Link>
-            <Link href="/novidades" className="mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-[#cbb6e5] hover:bg-[#2b213d]"><Sparkles size={19} />Novidades · v{VERSOES[0].versao}</Link>
+          <p className="mb-2 mt-6 px-3 text-[11px] uppercase tracking-[.2em] text-[#aa8ecb]">Conta</p>
+          <div className="space-y-1">
+            {CLOUD_ENABLED && <button type="button" onClick={() => { setEditando(true); setMenuOpen(false) }} className={itemMenu}><Pencil size={18} />Editar perfil</button>}
+            <button type="button" onClick={() => choose('temas')} aria-current={section === 'temas' ? 'page' : undefined} className={itemMenu + (section === 'temas' ? ' border border-[#8b6cba] bg-[#38274e] text-white' : '')}><Palette size={18} /><span className="min-w-0 flex-1 truncate">Temas · {TEMAS.find(t => t.id === tema)?.nome}</span></button>
+            <Link href="/portal" className={itemMenu}><UserRound size={18} />Trocar aventureiro</Link>
+          </div>
+          <p className="mb-2 mt-6 px-3 text-[11px] uppercase tracking-[.2em] text-[#aa8ecb]">Ajuda</p>
+          <div className="space-y-1">
+            <Link href="/guia" className={itemMenu}><CircleHelp size={18} />Guia da plataforma</Link>
+            <Link href="/tutorial" className={itemMenu}><GraduationCap size={18} />Tutoriais práticos</Link>
+            <Link href="/novidades" className={itemMenu}><Sparkles size={18} /><span className="flex-1">Novidades</span><span className="rounded-full bg-[#3a2c58] px-2 py-0.5 text-[10px] text-[#e4d3ff]">v{VERSOES[0].versao}</span></Link>
           </div>
         </aside>
-        <div className="min-w-0 flex-1 px-4 py-8 sm:px-7 lg:px-10">
+        <div className="min-w-0 flex-1 px-4 pb-28 pt-6 sm:px-7 lg:px-10 lg:pb-10 lg:pt-8">
           {section === 'inicio' && <>
             <section className="relative overflow-hidden rounded-3xl border border-[#655079] bg-gradient-to-br from-[#302044] to-[#1b172b] p-6 shadow-[0_10px_40px_#09050b55] sm:p-9">
               <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
@@ -124,32 +167,37 @@ function CentralContent() {
               </div>
             </section>
             {CLOUD_ENABLED && <ComecePorAqui perfilId={perfil.id} abrirPerfil={() => setEditando(true)} irPara={choose} />}
-            <h2 className="mt-9 mb-4 text-xl font-bold">Explore sua central</h2>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {navigation.filter(item => item.id !== 'inicio').map(item => <button type="button" key={item.id} onClick={() => choose(item.id)} className={cardClass}>
-                <item.icon className="mb-5 text-[#c3a4f5]" size={30} aria-hidden="true" />
-                <div className="flex items-center justify-between gap-2"><h3 className="font-semibold">{item.label}</h3><ChevronRight size={18} className="text-[#b69ad4]" /></div>
-                <p className="mt-2 text-sm text-[#bfb2cf]">{item.id === 'fichas' ? 'Independentes e de campanhas' : item.id === 'campanhas' ? 'Entre ou crie uma aventura' : item.id === 'sistemas' ? 'D&D, Pathfinder, Fate, Tormenta20 e mais' : 'Consulte suas rolagens'}</p>
-                <p className="mt-4 text-xs text-[#a99bbb]">{item.id === 'fichas' ? 'Personagens de todos os sistemas' : item.id === 'campanhas' ? 'Convites, mesa virtual e música' : item.id === 'sistemas' ? 'Com guia do mestre' : 'Rolagens no histórico de cada mesa'}</p>
-              </button>)}
+            {CLOUD_ENABLED && <ContinuarJornada aventureiroId={perfil.id} />}
+            <h2 className="mb-1 mt-9 text-xl font-bold">Explore sua central</h2>
+            <p className="mb-4 text-sm text-[#bfb2cf]">Cada parte da Central tem um “Como funciona?” logo abaixo do título.</p>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+              {navigation.filter(item => item.id !== 'inicio').map(item => { const info = SECOES[item.id as Exclude<Section, 'inicio'>]
+                return <button type="button" key={item.id} onClick={() => choose(item.id)} className={cardClass}>
+                  <span className="mb-3 flex h-11 w-11 items-center sm:mb-4 sm:h-12 sm:w-12 justify-center rounded-2xl border border-[#6d5690] bg-gradient-to-br from-[#3a2a5c] to-[#211a35] text-2xl" aria-hidden="true">{info.icone}</span>
+                  <div className="flex items-center justify-between gap-2"><h3 className="font-semibold">{item.label}</h3><ChevronRight size={18} className="text-[#b69ad4] transition group-hover:translate-x-0.5" /></div>
+                  <p className="mt-1.5 text-xs text-[#bfb2cf] sm:mt-2 sm:text-sm"><span className="sm:hidden">{item.descricao}</span><span className="hidden sm:inline">{info.descricao}</span></p>
+                </button> })}
             </div>
           </>}
+          {section !== 'inicio' && <CabecalhoSecao {...SECOES[section]} />}
           {section === 'fichas' && <>
-            <h1 className="text-3xl font-bold">Minhas fichas</h1><p className="mt-2 text-[#bfb2cf]">Seus personagens, organizados por tipo.</p>
-            <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Tipos de ficha">
-              {(['independentes', 'campanhas'] as const).map(tab => <button type="button" key={tab} role="tab" aria-selected={fichasTab === tab} onClick={() => setFichasTab(tab)} className={`rounded-xl px-5 py-3 text-sm font-semibold ${fichasTab === tab ? 'bg-[#7652ac] text-white' : 'border border-[#55456e] text-[#cfc0df]'}`}>{tab === 'independentes' ? 'Independentes' : 'Campanhas'}</button>)}
+            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Tipos de ficha">
+              {(['independentes', 'campanhas'] as const).map(tab => <button type="button" key={tab} role="tab" aria-selected={fichasTab === tab} onClick={() => setFichasTab(tab)} className={`rounded-xl px-5 py-3 text-sm font-semibold transition ${fichasTab === tab ? 'bg-[#7652ac] text-white shadow-[0_4px_16px_#7652ac55]' : 'border border-[#55456e] text-[#cfc0df] hover:bg-[#2b213d]'}`}>{tab === 'independentes' ? '🧙 Avulsas' : '🏰 Em campanhas'}</button>)}
             </div>
+            <p className="mt-2 text-xs text-[#a99bbb]">{fichasTab === 'independentes' ? 'Fichas só suas, fora de qualquer campanha.' : 'Fichas ligadas às suas aventuras, separadas por campanha.'}</p>
             {fichasTab === 'independentes' ? <FichasIndependentes aventureiroId={perfil.id} /> : CLOUD_ENABLED ? <FichasNuvem aventureiroId={perfil.id} tipo="campanhas" /> : <section className="mt-5 rounded-2xl border border-[#55456e] bg-[#201a32] p-6"><h2 className="text-xl font-semibold">Fichas de campanhas</h2><p className="mt-2 text-sm text-[#c4b6d4]">Quando o módulo de campanhas estiver conectado, suas fichas atribuídas aparecerão aqui, separadas por aventura.</p></section>}
           </>}
-          {section === 'campanhas' && <>
-            <h1 className="text-3xl font-bold">Campanhas</h1><p className="mt-2 text-[#bfb2cf]">Prepare suas aventuras e defina as regras de edição das fichas.</p>
-            <Campanhas aventureiroId={perfil.id} abrirCampanha={params.get('campanha')} />
-          </>}
+          {section === 'campanhas' && <Campanhas aventureiroId={perfil.id} abrirCampanha={params.get('campanha')} />}
           {section === 'temas' && <EscolherTema tema={tema} escolher={escolherTema} />}
-          {section === 'sistemas' && <><h1 className="text-3xl font-bold">Sistemas de RPG</h1><p className="mt-2 text-[#bfb2cf]">Escolha um sistema e crie uma ficha que calcula as regras sozinha.</p><SistemasGaleria aventureiroId={perfil.id} /></>}
-          {section === 'historico' && <><h1 className="text-3xl font-bold">Histórico de rolagens</h1><p className="mt-2 text-[#bfb2cf]">Escolha a campanha para ver as rolagens, filtrar por pessoa, personagem, tipo e período e ver o resumo da sessão (críticos, falhas, maior dano). Rolagens de fichas fora de campanha não ficam salvas.</p>{CLOUD_ENABLED && <RolagensCampanhas />}</>}
+          {section === 'sistemas' && <SistemasGaleria aventureiroId={perfil.id} />}
+          {section === 'historico' && CLOUD_ENABLED && <RolagensCampanhas />}
         </div>
       </div>
+      <nav aria-label="Atalhos da Central" className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[#4b3b62] bg-[#151123]/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+        {navigation.map(item => { const ativo = section === item.id
+          return <button key={item.id} type="button" onClick={() => choose(item.id)} aria-current={ativo ? 'page' : undefined} className={'flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition ' + (ativo ? 'text-white' : 'text-[#a99bbb]')}>
+            <span className={'flex h-7 w-12 items-center justify-center rounded-full transition ' + (ativo ? 'bg-[#4a3470]' : '')}><item.icon size={18} aria-hidden="true" /></span>{item.curto}</button> })}
+      </nav>
       {editando && <EditarPerfil perfil={perfil} fechar={() => setEditando(false)} salvo={p => setPerfil({ id: p.id, apelido: p.apelido, avatar: p.avatar ?? undefined, grupo: p.grupo })} />}
     </main>
   )
@@ -162,9 +210,7 @@ export default function CentralAventureiro() {
 /** Aba “Temas”: cada cartão mostra a cara do tema; tocar já aplica (só neste aparelho). */
 function EscolherTema({ tema, escolher }: { tema: Tema; escolher: (t: Tema) => void }) {
   return <>
-    <h1 className="text-3xl font-bold">🎨 Temas</h1>
-    <p className="mt-2 text-[#bfb2cf]">Escolha o fundo da plataforma. Cada tema tem uma versão para celular (em pé) e outra para computador (deitada). A escolha vale para este aparelho.</p>
-    <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {TEMAS.map(t => { const ativo = t.id === tema
         return <button key={t.id} type="button" onClick={() => escolher(t.id)} aria-pressed={ativo}
           className={'group overflow-hidden rounded-2xl border-2 text-left transition hover:-translate-y-0.5 ' + (ativo ? 'border-[#e4d3ff] shadow-[0_0_24px_#9b7bff66]' : 'border-[#48385e] hover:border-[#8b6cba]')}>

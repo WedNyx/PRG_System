@@ -1,7 +1,8 @@
 'use client'
 
+import { ImagemCapa } from '@/components/sistemas/CapaDoSistema'
 import { useState } from 'react'
-import { BookOpen, Loader2, X } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
 import { GRUPOS_SISTEMA, criarEAbrirFicha } from '@/lib/sistemas/criar'
 import { useOpcoesSistema } from '@/lib/sistemas/cliente'
 
@@ -24,7 +25,8 @@ export default function EscolherSistema({ aventureiroId, onFechar }: { aventurei
         <h3 className="text-xs font-bold uppercase tracking-wide text-[#d3adf0]">{g.nome}</h3>
         <ul className="mt-2 space-y-2">{opcoes.filter(o => o.grupo === g.id).map(o => <li key={o.id}>
           <button type="button" disabled={!!criando} onClick={() => criar(o.id)} className="flex w-full items-center gap-3 rounded-xl border border-[#55456e] bg-[#201a32] p-3 text-left hover:border-[#b79aff] disabled:opacity-60">
-            {criando === o.id ? <Loader2 className="animate-spin text-[#c5a7ff]" size={20} /> : <BookOpen className="text-[#c5a7ff]" size={20} />}
+            <span className="relative h-11 w-20 shrink-0 overflow-hidden rounded-lg border border-[#55456e]"><ImagemCapa id={o.id} nome={o.nome} capa={'capa' in o ? (o.capa as string | null) : null} />
+              {criando === o.id && <span className="absolute inset-0 flex items-center justify-center bg-black/60"><Loader2 className="animate-spin text-[#c5a7ff]" size={20} /></span>}</span>
             <span className="text-sm font-semibold">{o.nome}</span>
           </button></li>)}</ul>
       </section>)}

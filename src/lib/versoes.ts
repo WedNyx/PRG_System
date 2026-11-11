@@ -6,6 +6,16 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.32.0', data: '2026-11-11', titulo: 'Passar itens e capas dos sistemas',
+    itens: [
+      '🎁 Passar item: na ficha de campanha, toque em “Passar” no item, escolha o personagem e a quantidade. O item sai da sua ficha e entra na outra na hora, e o chat da mesa avisa.',
+      'Quem recebe ganha um aviso. Itens iguais empilham; o item chega desequipado. O mestre também passa itens de e para NPCs (esses avisos ficam só para o mestre).',
+      'Se o mestre travou o inventário de uma das fichas, a troca não acontece.',
+      '🖼️ Capas dos sistemas: cada sistema da plataforma ganhou uma ilustração própria no clima do jogo (fantasia, cidade sombria, faroeste arcano, tempestade, investigação…). As capas aparecem nos cartões e na hora de escolher o sistema.',
+      'Sistemas autorais: o autor envia a capa no construtor (em “Sobre o sistema”). Sem imagem, o sistema ganha uma capa de constelação com uma cor só dele.',
+    ],
+  },
+  {
     versao: '0.31.0', data: '2026-11-11', titulo: 'Senha do perfil',
     itens: [
       '🔒 Senha do perfil (opcional): em Editar perfil → “Senha do perfil”, crie uma senha. Daí em diante, só entra no seu perfil quem souber a senha. Não precisa de e-mail.',

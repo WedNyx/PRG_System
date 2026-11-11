@@ -9,6 +9,7 @@ import { lerArvore } from './arvore'
 import { alvosDeBonus } from './inventario'
 import { avaliar, variaveisDaFormula } from './formula'
 import type { Sistema } from './tipos'
+import { imagemDaPlataforma } from '../nuvem/validacao'
 
 export const PREFIXO_AUTORAL = 'autoral-'
 export const ehAutoral = (id: unknown): id is string => typeof id === 'string' && /^autoral-[0-9a-f]{32}$/.test(id)
@@ -175,7 +176,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   }
 
   const sistema: Sistema = {
-    id: meta.id, nome, resumo: txt(e.resumo, 400), tipo: 'autoral',
+    id: meta.id, nome, resumo: txt(e.resumo, 400), tipo: 'autoral', ...(imagemDaPlataforma(e.capa) ? { capa: e.capa } : {}),
     licenca: 'Sistema autoral' + (meta.autor ? ' de ' + meta.autor : ''), ...(creditos ? { creditos } : {}),
     dados: txt(e.dados, 40) || (rolagem === 'd100' ? 'd100' : rolagem === 'd20' ? 'd20' : regraRolagem ? regraRolagem.formula.replace(/VALOR/gi, 'X') : 'Livre'), rolagem, ...(regraRolagem ? { regraRolagem } : {}),
     campos, atributos, ...(formulaModificador ? { formulaModificador } : {}), derivados, ...(pericias ? { pericias } : {}),

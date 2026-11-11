@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import ArteItem from './ArteItem'
 import { arteDoItem, CORES_FORJA, corDaRaridade, FORMAS, nomeAleatorio, RARIDADES, type ArteItem as ArteItemT } from '@/lib/itensArte'
-import { Backpack, Dice5, Minus, Moon, Pencil, Plus, Shield, Sparkles, Trash2, X } from 'lucide-react'
+import { Backpack, Dice5, Gift, Minus, Moon, Pencil, Plus, Shield, Sparkles, Trash2, X } from 'lucide-react'
 import type { Calculo } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { alvosDeBonus, CATEGORIAS_ITEM, lerItens, lerPoderes, lerUso, normalizarItem, normalizarPoder, podeUsar, TIPOS_PODER, type Bonus, type Item, type Poder, type Uso } from '@/lib/sistemas/inventario'
@@ -15,10 +15,12 @@ const botao = 'inline-flex items-center gap-1 rounded-lg border border-[#5e4b78]
 const novoId = () => Math.random().toString(36).slice(2, 12)
 export type Rolar = (expressao: string, rotulo: string) => Promise<void>
 
-type Props = { s: Sistema; d: DadosFicha; c: Calculo; onChange: (d: DadosFicha) => void; somenteLeitura: boolean; rolar: Rolar }
+type Props = { s: Sistema; d: DadosFicha; c: Calculo; onChange: (d: DadosFicha) => void; somenteLeitura: boolean; rolar: Rolar
+  /** Ficha de campanha: abre a janela para passar o item a outro personagem. */
+  passarItem?: (it: Item, tem: number) => void }
 
 /** Seção “Inventário”: itens com quantidade, peso, equipado, dano e bônus automáticos. */
-export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar }: Props) {
+export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, passarItem }: Props) {
   const itens = lerItens(d.itens), uso = lerUso(d.uso)
   const [editando, setEditando] = useState<Item | null>(null)
   const salvarUso = (u: Uso) => onChange({ ...d, uso: u })
@@ -85,6 +87,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar }: Pr
               {it.categoria !== 'consumivel' && it.categoria !== 'tesouro' && <button type="button" className={botao} disabled={somenteLeitura || n <= 0} onClick={() => equipar(it)}><Shield size={13} /> {eq ? 'Desequipar' : 'Equipar'}</button>}
               {it.categoria === 'consumivel' && <button type="button" className={botao} disabled={somenteLeitura || n <= 0} onClick={() => void usarConsumivel(it)}><Sparkles size={13} /> Usar</button>}
               {it.dano && it.categoria !== 'consumivel' && <button type="button" className={botao} onClick={() => void rolar(it.dano!, it.nome)}><Dice5 size={13} /> {it.dano}</button>}
+              {passarItem && !somenteLeitura && n > 0 && <button type="button" className={botao} onClick={() => passarItem(it, n)} aria-label={'Passar ' + it.nome + ' para outro personagem'}><Gift size={13} /> Passar</button>}
               {!somenteLeitura && <><button type="button" className={botao} onClick={() => setEditando(it)} aria-label={'Editar ' + it.nome}><Pencil size={13} /></button>
                 <button type="button" className={botao} onClick={() => remover(it)} aria-label={'Remover ' + it.nome}><Trash2 size={13} /></button></>}
             </div>

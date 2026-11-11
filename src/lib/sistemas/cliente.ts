@@ -6,7 +6,7 @@ import { OPCOES_SISTEMA } from './criar'
 import { ehAutoral } from './autoral'
 import type { Sistema } from './tipos'
 
-export type ResumoAutoral = { id: string; nome: string; resumo: string; publicado: boolean; versao: number; dados: string; autor: string; meu: boolean; atualizado_em: string }
+export type ResumoAutoral = { id: string; nome: string; resumo: string; publicado: boolean; versao: number; dados: string; autor: string; meu: boolean; atualizado_em: string; capa?: string | null }
 const cache = new Map<string, Promise<Sistema | undefined>>()
 
 /** Sistema do catálogo ou autoral (busca no servidor e guarda em memória). */
@@ -35,7 +35,7 @@ export function useSistemasAutorais(): { lista: ResumoAutoral[] | null; recarreg
 /** Opções para escolher sistema: catálogo + autorais (publicados e meus rascunhos). */
 export function useOpcoesSistema() {
   const { lista } = useSistemasAutorais()
-  const autorais = (lista ?? []).map(a => ({ id: a.id, nome: `${a.nome} · criado por ${a.autor}${a.publicado ? '' : ' (rascunho)'}`, grupo: 'autoral' as const }))
+  const autorais = (lista ?? []).map(a => ({ id: a.id, nome: `${a.nome} · criado por ${a.autor}${a.publicado ? '' : ' (rascunho)'}`, grupo: 'autoral' as const, capa: a.capa ?? null }))
   const opcoes = [...OPCOES_SISTEMA, ...autorais]
   const nomes: Record<string, string> = Object.fromEntries([...OPCOES_SISTEMA.map(o => [o.id, o.nome]), ...(lista ?? []).map(a => [a.id, a.nome])])
   return { opcoes, nomeDe: (id: string) => nomes[id] ?? sistemaPorId(id)?.nome ?? (ehAutoral(id) ? 'Sistema autoral' : id), carregando: lista === null }

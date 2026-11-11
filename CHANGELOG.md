@@ -2,6 +2,14 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.32.0 — Passar itens e capas dos sistemas (2026-11-11)
+- 🎁 Passar item: na ficha de campanha, toque em “Passar” no item, escolha o personagem e a quantidade. O item sai da sua ficha e entra na outra na hora, e o chat da mesa avisa.
+- Quem recebe ganha um aviso. Itens iguais empilham; o item chega desequipado. O mestre também passa itens de e para NPCs (esses avisos ficam só para o mestre).
+- Se o mestre travou o inventário de uma das fichas, a troca não acontece.
+- 🖼️ Capas dos sistemas: cada sistema da plataforma ganhou uma ilustração própria no clima do jogo (fantasia, cidade sombria, faroeste arcano, tempestade, investigação…). As capas aparecem nos cartões e na hora de escolher o sistema.
+- Sistemas autorais: o autor envia a capa no construtor (em “Sobre o sistema”). Sem imagem, o sistema ganha uma capa de constelação com uma cor só dele.
+- As capas são desenhos da plataforma, não as capas oficiais dos livros.
+
 ## v0.31.0 — Senha do perfil (2026-11-11)
 - 🔒 Senha do perfil (opcional): em Editar perfil → “Senha do perfil”, crie uma senha. Daí em diante, só entra no seu perfil quem souber a senha. Não precisa de e-mail.
 - Cada aparelho fica lembrado por 30 dias depois de digitar a senha. Em “Aparelhos lembrados” dá para ver onde você está conectado e desconectar todos.

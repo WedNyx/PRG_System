@@ -28,6 +28,8 @@ export type Sistema = {
   oculto?: boolean
   /** Quem criou (sistemas autorais). */
   autor?: string
+  /** Capa enviada pelo autor (sistemas autorais; imagem da plataforma). */
+  capa?: string
   campos: CampoDef[]
   atributos: AtributoDef[]
   /** Modificador do atributo; `X` é o valor do atributo. Sem isso, o modificador é o próprio valor. */

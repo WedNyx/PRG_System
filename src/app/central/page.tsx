@@ -10,6 +10,7 @@ import FichasNuvem from '@/components/central/FichasNuvem'
 import SistemasGaleria from '@/components/central/SistemasGaleria'
 import { BookOpen, Castle, ChevronRight, CircleHelp, GraduationCap, Dice5, House, Menu, MoonStar, Palette, Pencil, ScrollText, Sparkles, UserRound, X } from 'lucide-react'
 import EditarPerfil from '@/components/perfil/EditarPerfil'
+import LuaLogo, { FraseDaLua } from '@/components/LuaDinamica'
 import Sino from '@/components/Sino'
 import { CHAVE_ENTRADA } from '@/components/perfil/TransicaoPerfil'
 import { aplicarTema, TEMA_PADRAO, temaAtual, TEMAS, type Tema } from '@/lib/tema'
@@ -80,7 +81,7 @@ function CentralContent() {
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#4b3b62] bg-[#151123]/95 px-4 backdrop-blur lg:px-8">
         <div className="flex items-center gap-2 sm:gap-3">
           <button type="button" onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg p-2 hover:bg-[#342749] lg:hidden" aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuOpen}>{menuOpen ? <X /> : <Menu />}</button>
-          <MoonStar className="text-[#c5a7ff] drop-shadow-[0_0_9px_#a76aff]" size={30} aria-hidden="true" />
+          <LuaLogo />
           <span className="whitespace-nowrap text-sm font-bold tracking-wide sm:text-base">PRG <span className="text-[#c5a7ff]">System</span></span>
         </div>
         <div className="flex items-center gap-2 text-sm sm:gap-3">
@@ -111,10 +112,14 @@ function CentralContent() {
         <div className="min-w-0 flex-1 px-4 py-8 sm:px-7 lg:px-10">
           {section === 'inicio' && <>
             <section className="relative overflow-hidden rounded-3xl border border-[#655079] bg-gradient-to-br from-[#302044] to-[#1b172b] p-6 shadow-[0_10px_40px_#09050b55] sm:p-9">
-              <MoonStar className="absolute -right-3 -top-8 h-44 w-44 text-[#b89aff]/10" aria-hidden="true" />
-              <p className="text-xs font-semibold uppercase tracking-[.22em] text-[#d3adf0]">Sua próxima aventura começa aqui</p>
-              <h1 className="relative mt-3 text-2xl font-bold sm:text-4xl">Bem-vindo, {perfil.apelido}!</h1>
-              <p className="relative mt-3 max-w-xl text-sm leading-relaxed text-[#cfc0df]">Suas histórias, personagens e campanhas em um só lugar. Escolha o próximo capítulo da sua jornada.</p>
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-[.22em] text-[#d3adf0]">Sua próxima aventura começa aqui</p>
+                  <h1 className="relative mt-3 text-2xl font-bold sm:text-4xl">Bem-vindo, {perfil.apelido}!</h1>
+                  <p className="relative mt-3 max-w-xl text-sm leading-relaxed text-[#cfc0df]">Suas histórias, personagens e campanhas em um só lugar. Escolha o próximo capítulo da sua jornada.</p>
+                  <p className="relative mt-3 max-w-xl text-sm italic text-[#e9d6ff]"><FraseDaLua /></p>
+                </div>
+              </div>
             </section>
             <h2 className="mt-9 mb-4 text-xl font-bold">Explore sua central</h2>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

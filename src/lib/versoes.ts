@@ -6,6 +6,14 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.32.1', data: '2026-11-11', titulo: 'Lua dinâmica',
+    itens: [
+      '🌙 Lua dinâmica: a lua ao lado de “PRG System” (no portal e na Central) agora é a lua de hoje, na fase de verdade, calculada pela data e desenhada como se vê no Brasil.',
+      'Toque nela para ver a fase, a porcentagem iluminada, quantos dias faltam para a lua cheia e as datas das próximas fases (nova, quarto crescente, cheia e quarto minguante).',
+      'Cada fase traz uma frase de clima para a sessão (ex.: na lua cheia, cuidado com lobisomens), que aparece também nas boas-vindas da Central.',
+    ],
+  },
+  {
     versao: '0.32.0', data: '2026-11-11', titulo: 'Passar itens e capas dos sistemas',
     itens: [
       '🎁 Passar item: na ficha de campanha, toque em “Passar” no item, escolha o personagem e a quantidade. O item sai da sua ficha e entra na outra na hora, e o chat da mesa avisa.',

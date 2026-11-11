@@ -2,6 +2,11 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.32.1 — Lua dinâmica (2026-11-11)
+- 🌙 Lua dinâmica: a lua ao lado de “PRG System” (no portal e na Central) agora é a lua de hoje, na fase de verdade, calculada pela data e desenhada como se vê no Brasil.
+- Toque nela para ver a fase, a porcentagem iluminada, quantos dias faltam para a lua cheia e as datas das próximas fases (nova, quarto crescente, cheia e quarto minguante).
+- Cada fase traz uma frase de clima para a sessão (ex.: na lua cheia, cuidado com lobisomens), que aparece também nas boas-vindas da Central.
+
 ## v0.32.0 — Passar itens e capas dos sistemas (2026-11-11)
 - 🎁 Passar item: na ficha de campanha, toque em “Passar” no item, escolha o personagem e a quantidade. O item sai da sua ficha e entra na outra na hora, e o chat da mesa avisa.
 - Quem recebe ganha um aviso. Itens iguais empilham; o item chega desequipado. O mestre também passa itens de e para NPCs (esses avisos ficam só para o mestre).

@@ -9,6 +9,7 @@ import EscolherGrupo from '@/components/perfil/EscolherGrupo'
 import { GRUPOS, GRUPO_PADRAO, ehGrupo, grupoDe, type GrupoId } from '@/lib/grupos'
 import SaudePlataforma from '@/components/admin/SaudePlataforma'
 import { JanelaSenha, situacaoSenha } from '@/components/perfil/Senha'
+import LuaLogo from '@/components/LuaDinamica'
 
 type Perfil = { id: string; apelido: string; avatar?: string; grupo?: string; protegido?: boolean }
 const GRUPO_KEY = 'prg-grupo-v1'
@@ -283,7 +284,7 @@ export default function PortalAventureiros() {
     <main className="min-h-screen fundo-tema text-[#f4f0ff] px-4 py-5 sm:py-8">
       <div className="mx-auto max-w-6xl">
         <header className="flex items-center justify-between gap-3">
-          <Link href="/portal" className="font-bold tracking-wide text-lg sm:text-xl"><span className="text-[#b99bff]">☾</span> PRG System</Link>
+          <span className="flex items-center gap-2 font-bold tracking-wide text-lg sm:text-xl"><LuaLogo /><Link href="/portal">PRG System</Link></span>
           <button onClick={abrirCriacao} className="rounded-lg border border-[#62527e] bg-[#34294f] px-3 py-2 text-xs sm:text-sm font-semibold hover:bg-[#4b396f] focus-visible:outline-2 focus-visible:outline-[#b99bff]">
             + Criar perfil
           </button>
@@ -378,7 +379,7 @@ export default function PortalAventureiros() {
           {CLOUD_ENABLED && <p className="mt-2 text-center text-xs text-[#8f86a8]">Para mudar seu nome ou foto, entre no seu perfil e use “Editar perfil” no menu.</p>}
         </section>
         <div className="flex flex-wrap items-center justify-center gap-3 pb-3 text-xs text-[#b4aeca]">
-          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.32.0'}</Link>
+          <Link href="/novidades" title="Ver novidades desta versão" className="underline underline-offset-2">PRG System v{versao?.version ?? '0.32.1'}</Link>
           {versao?.revision && <span title="Identificador da implantação">Build {versao.revision}</span>}
           <button type="button" onClick={() => window.location.reload()}
             className="rounded-md border border-[#62527e] px-2 py-1 text-[#b99bff] hover:bg-[#34294f]">

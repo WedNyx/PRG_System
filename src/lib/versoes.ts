@@ -6,6 +6,15 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.33.3', data: '2026-11-12', titulo: 'Dois sistemas novos',
+    itens: [
+      '🩸 Novo sistema: RPG PUNK — MÖRK BORG (estrutura). Agilidade, Presença, Força e Resistência de −3 a +6, testes de d20 contra CD 12 ao tocar no valor, as seis classes opcionais (com dado de PV, Presságios e prata na descrição), armadura que muda a CD da defesa e dos testes de Agilidade, carga de Força + 8 itens e listas para armas e pergaminhos.',
+      '🧬 Novo sistema: Assimilação RPG (estrutura). Origens, Geração, Propósitos, os seis Instintos, Conhecimentos e Práticas, o cabo de guerra entre Determinação e Assimilação, Pressões e os seis níveis de Saúde calculados por Potência e Resolução. A ficha avisa se passar dos pontos da criação.',
+      '🎲 Dados de Assimilação: a ficha monta a pilha (d6 do Instinto + d10 do Conhecimento ou Prática), rola e mostra Sucessos, Adaptações e Pressões em cada dado, com ícones próprios da plataforma (pegada no d6, broto no d10 e esporo no d12). Toque para escolher os mantidos (a ficha sugere os melhores). Gastar Determinação, ativar as Origens e Agir por Instinto (tudo vira d12) mantêm mais dados, até 4, e os pontos gastos saem da ficha. Tem também o Teste de Assimilação (1d10 + 1d12 por nível, que anota as Pressões) e a rolagem de dano. Na campanha, os dados vão para o chat da mesa.',
+      '🖼️ Os dois sistemas novos já chegam com capa própria.',
+    ],
+  },
+  {
     versao: '0.33.2', data: '2026-11-12', titulo: 'Sua conta nas suas mãos',
     itens: [
       '🗝️ Código de recuperação: ao criar a senha do perfil você recebe um código (como ABCD-EFGH-JKLM-NPQR). Guarde num lugar seguro: se esquecer a senha, toque em “Esqueci a senha”, digite o código e escolha outra, sem precisar do administrador. Cada código vale uma vez; dá para gerar um novo em Editar perfil.',

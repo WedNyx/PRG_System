@@ -177,6 +177,26 @@ describe('fichas revisadas (v0.32.10)', () => {
     d.atributos.FOR = -1; expect(calcular(s, d).carga.max).toBe(9)
     d.atributos.FOR = 3; expect(calcular(s, d).carga.max).toBe(16)
   })
+  it('MÖRK BORG: armadura e Desertor feroz mudam as CDs; carga = Força + 8', () => {
+    const s = sistemaPorId('mork-borg')!; const d = fichaVazia(s)
+    expect(calcular(s, d).derivados.cd_defesa).toBe(12)
+    d.campos.armadura_tipo = 'Pesada (grau 3, −d6 de dano)'; d.campos.classe = 'Desertor feroz'; d.atributos.FOR = 2
+    const c = calcular(s, d)
+    expect(c.derivados.cd_defesa).toBe(14); expect(c.derivados.cd_agilidade).toBe(18); expect(c.derivados.pv_criacao).toBe(10)
+    expect(c.carga.max).toBe(10)
+  })
+  it('Assimilação: Saúde por nível, Determinação + Assimilação = 10 e limites da criação', () => {
+    const s = sistemaPorId('assimilacao')!; const d = fichaVazia(s)
+    Object.assign(d.atributos, { POT: 2, RSL: 3 })
+    let c = calcular(s, d)
+    expect(c.derivados.saude_nivel).toBe(6); expect(c.recursosMax.saude1).toBe(6); expect(c.derivados.regeneracao).toBe(3)
+    expect(c.recursosMax.determinacao).toBe(9); expect(c.recursosMax.assimilacao).toBe(1)
+    expect(c.limites.every(l => !l.excedido)).toBe(true)
+    Object.assign(d.pericias, { medicina: 2, armas: 2, biologia: 2, furtividade: 2 })
+    c = calcular(s, d)
+    expect(c.limites.find(l => l.nome.startsWith('Pontos em Conhecimentos'))!.excedido).toBe(true)
+    d.atributos.PER = 4; expect(calcular(s, d).limites.find(l => l.nome.startsWith('Instinto acima'))!.excedido).toBe(true)
+  })
   it('Ordem Paranormal: Combatente NEX 10% → PV 20+Vig+4+Vig, PE, SAN, DT e Defesa', () => {
     const s = sistemaPorId('ordem-paranormal')!; const d = fichaVazia(s)
     d.campos.classe = 'Combatente'; d.campos.nex = 10; Object.assign(d.atributos, { VIG: 3, PRE: 2, AGI: 2 })

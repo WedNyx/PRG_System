@@ -4,6 +4,8 @@
  * sem capa, usam a constelação com uma cor tirada do nome.
  */
 const PRONTAS = ['dnd5e-srd', 'pf2e', 'fate-core', 'blades', 'brp', 'faroeste-arcano', 'ordem-paranormal', 'tormenta20', 'livre']
+/** Capas em imagem (arte enviada pelo Wed). */
+const EM_IMAGEM: Record<string, string> = { 'mork-borg': '/capas/sistemas/mork-borg.webp', assimilacao: '/capas/sistemas/assimilacao.webp' }
 
 export type Capa = { src: string; matiz: number }
 
@@ -16,6 +18,7 @@ export function matizDoNome(nome: string): number {
 
 export function capaDoSistema(id: string, nome = '', capaEnviada?: string | null): Capa {
   if (capaEnviada) return { src: capaEnviada, matiz: 0 }
+  if (EM_IMAGEM[id]) return { src: EM_IMAGEM[id], matiz: 0 }
   if (PRONTAS.includes(id)) return { src: `/capas/sistemas/${id}.svg`, matiz: 0 }
   return { src: '/capas/sistemas/autoral.svg', matiz: matizDoNome(nome || id) }
 }

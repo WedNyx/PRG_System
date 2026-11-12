@@ -158,14 +158,14 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
   calcDerivados()
 
   const pericias: Record<string, number | null> = {}
-  let custo = 0, maiorValor = 0
+  let custo = 0, maiorValor = 0, somaValor = 0
   const qtd: Record<string, number> = {}
   if (s.pericias) {
     const treinos = Object.fromEntries((s.pericias.treinos ?? []).map(t => [t.id, t]))
     for (const p of s.pericias.lista) {
       const escolha = d.pericias[p.id]
       let treino = 0, valor = 0
-      if (s.pericias.modo === 'valor') { valor = num(escolha); if (valor > maiorValor) maiorValor = valor }
+      if (s.pericias.modo === 'valor') { valor = num(escolha); somaValor += valor; if (valor > maiorValor) maiorValor = valor }
       else {
         const t = treinos[String(escolha)] ?? s.pericias.treinos?.[0]
         if (t) { treino = avaliarSeguro(t.formula, vars) ?? 0; custo += t.custo ?? 0; qtd[t.id] = (qtd[t.id] ?? 0) + 1 }
@@ -181,7 +181,7 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
       vars['tot_' + p.id] = pericias[p.id] ?? 0
     }
   }
-  vars.custo_pericias = custo; vars.maior_valor_pericia = maiorValor
+  vars.custo_pericias = custo; vars.maior_valor_pericia = maiorValor; vars.soma_valor_pericias = somaValor
   for (const t of s.pericias?.treinos ?? []) vars['qtd_' + t.id] = qtd[t.id] ?? 0
   calcDerivados() // de novo, agora com as perícias disponíveis (ex.: Percepção passiva)
 

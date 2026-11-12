@@ -7,7 +7,7 @@ describe('capas dos sistemas', () => {
   it('todo sistema da plataforma tem capa própria e o arquivo existe', () => {
     for (const s of SISTEMAS_VISIVEIS.filter(x => x.tipo !== 'autoral')) {
       const c = capaDoSistema(s.id, s.nome)
-      expect(c.src).toBe(`/capas/sistemas/${s.id}.svg`)
+      expect(c.src).toMatch(new RegExp(`^/capas/sistemas/${s.id}\\.(svg|webp)$`))
       expect(existsSync('public' + c.src)).toBe(true)
     }
   })

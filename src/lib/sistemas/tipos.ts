@@ -24,8 +24,8 @@ export type Sistema = {
   licenca: string
   creditos?: string
   dados: string
-  /** Como a ficha rola: d20 + bônus, d100 abaixo do valor, ou sem rolagem. Sem isso, deduz por `dados`. */
-  rolagem?: 'd20' | 'd100' | 'nenhuma' | 'personalizada' | 'parada'
+  /** Como a ficha rola: d20 + bônus, d100 abaixo do valor, ou sem rolagem ('assimilacao' = dados de símbolos do Assimilação RPG). Sem isso, deduz por `dados`. */
+  rolagem?: 'd20' | 'd100' | 'nenhuma' | 'personalizada' | 'parada' | 'assimilacao'
   /** Com rolagem 'parada': rola tantos dados quanto o atributo e fica com o maior (0 = rola 2 e fica com o menor). Ex.: Ordem Paranormal (d20), Blades (d6). */
   parada?: { lados: number; /** Como ler o resultado (Blades: 6 = sucesso, 4–5 = parcial, dois 6 = crítico). */ leitura?: 'blades' }
   /** Valores calculados que também se rolam como parada (ex.: atributos de resistência do Blades). */

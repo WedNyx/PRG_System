@@ -15,6 +15,11 @@ Não reutilizar a compra de nós para a progressão oficial do D&D. A visualiza�
 - Mestre: passo a passo de criação conjunta; o que é automático; o que exige escolha; exemplos de multiclasse, descanso, combate, magias e avanço.
 - Suplementos ficam desabilitados na primeira fase; depois entram via seleção de fontes por campanha.
 
+## Modo de progressão padrão aprovado
+- **Híbrido** é o padrão para novas configurações de progressão da campanha; o mestre pode escolher Automático ou Manual e configurar exceções por ficha.
+- Híbrido combina marcos oficiais sincronizados com habilidades personalizadas autorizadas pelo mestre. Não altera os dados oficiais do catálogo.
+- O padrão está no módulo de regras; ainda não há seletor na UI nem persistência conectada à campanha. Não alterar fichas existentes silenciosamente ao integrar.
+
 ## Contrato desta primeira PR
 Esta PR adiciona **somente a fundação de dados e testes da progressão visual**. Não integra a UI, não altera fichas existentes e não afirma que o catálogo completo do livro já foi implementado. O código usa marcos fictícios nos testes, não reproduz regras comerciais.
 

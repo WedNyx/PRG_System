@@ -8,6 +8,7 @@ import { normalizarFicha } from '@/lib/sistemas/calculo'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { lerConfiguracaoProgressao } from '@/lib/sistemas/modoProgressao'
 import { lerEscolhasDnd, validarAlteracoesEscolhasDnd } from '@/lib/sistemas/dnd2024Ficha'
+import { lerMagiasDnd, validarAlteracoesMagiasDnd } from '@/lib/sistemas/dnd2024Conjuracao'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
@@ -81,9 +82,16 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
       { campos: antigo.campos ?? {}, dndEscolhas: antigo.dndEscolhas },
       { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas },
     )
+    erros.push(...validarAlteracoesMagiasDnd(
+      { campos: antigo.campos ?? {}, dndEscolhas: antigo.dndEscolhas, dndMagias: antigo.dndMagias },
+      { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas, dndMagias: candidato.dndMagias },
+    ))
     if (erros.length) throw new ErroApi(400, erros.join(' '))
     if (candidato.dndEscolhas !== undefined) {
       v.valor.dados = { ...v.valor.dados, dndEscolhas: lerEscolhasDnd(candidato.dndEscolhas) }
+    }
+    if (candidato.dndMagias !== undefined) {
+      v.valor.dados = { ...v.valor.dados, dndMagias: lerMagiasDnd(candidato.dndMagias) }
     }
   }
 
@@ -120,6 +128,10 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
       { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas },
       { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas },
     )
+    erros.push(...validarAlteracoesMagiasDnd(
+      { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas, dndMagias: anterior.dndMagias },
+      { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas, dndMagias: autorizado.dndMagias },
+    ))
     if (erros.length) throw new ErroApi(400, 'A escolha não foi liberada no nível autorizado: ' + erros.join(' '))
   }
 

@@ -23,6 +23,7 @@ import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
 import { GUIAS } from '@/lib/sistemas/guias'
 import { expressaoParada, leituraBlades, leituraD100 } from '@/lib/sistemas/combate'
 import TesteAssimilacao from './TesteAssimilacao'
+import MagiasDnd2024 from './MagiasDnd2024'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
@@ -274,6 +275,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
               rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0} />}
         </div>}
         {secao === 'habilidades' && <>
+    {s.id === 'dnd5e-srd' && <MagiasDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} semLimites={modoProgressao === 'manual'} rolar={(x, r) => void rolarExpr(x, r)} />}
     <PoderesFicha {...propsInv} />
     {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
     <section className="grid gap-4">

@@ -3,6 +3,7 @@ import { imagemDaPlataforma } from '../nuvem/validacao'
 import type { DadosFicha, Sistema } from './tipos'
 import { bonusEquipados, lerItens, lerPoderes, lerUso, pesoTotal } from './inventario'
 import { lerEscolhasDnd } from './dnd2024Ficha'
+import { lerMagiasDnd } from './dnd2024Conjuracao'
 import { efeitosDnd2024, VARS_DND, type EfeitosDnd } from './dnd2024Efeitos'
 import { bonusDaArvore, lerArvore, sincronizarPoderes, somarBonus } from './arvore'
 
@@ -84,6 +85,7 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     // Inventário só entra quando existe (fichas antigas continuam iguais) e sempre limpo/validado.
     ...(d.itens !== undefined ? { itens: lerItens(d.itens) } : {}), ...(d.uso !== undefined ? { uso: lerUso(d.uso) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndEscolhas !== undefined ? { dndEscolhas: lerEscolhasDnd(d.dndEscolhas) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dndMagias !== undefined ? { dndMagias: lerMagiasDnd(d.dndMagias) } : {}),
     // Habilidades da árvore entram/saem dos poderes conforme os hexágonos liberados.
     ...(d.arvore !== undefined ? { arvore: lerArvore(d.arvore), poderes: sincronizarPoderes(lerPoderes(d.poderes), lerArvore(d.arvore)) }
       : d.poderes !== undefined ? { poderes: lerPoderes(d.poderes) } : {}),

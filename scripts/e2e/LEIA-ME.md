@@ -49,6 +49,7 @@ Simulam três aventureiros (mestre, jogador e intruso) contra um banco real.
    PRG_BASE=http://localhost:3000 node scripts/e2e/v33-contas.mjs   # migração 026
    PRG_BASE=http://localhost:3000 node scripts/e2e/v33-mesa-assimilacao.mjs
    PRG_BASE=http://localhost:3000 node scripts/e2e/v33-progressao-dnd.mjs   # migração 027
+   PRG_BASE=http://localhost:3000 node scripts/e2e/v33-magias-dnd.mjs
    ```
 Nunca rode contra o banco de produção: os testes criam campanhas e fichas.
 

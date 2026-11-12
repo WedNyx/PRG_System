@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lerEscolhasDnd, progressoDaFichaDnd } from './dnd2024Ficha'
+import { lerEscolhasDnd, progressoDaFichaDnd, validarAlteracoesEscolhasDnd } from './dnd2024Ficha'
 import { MARCOS_DND_2024 } from './dnd2024Marcos'
 import { progressaoVisivel, validarMarcos } from './dnd2024Progressao'
 
@@ -20,6 +20,35 @@ describe('adaptação da ficha D&D', () => {
   it('não atribui marcos de Guerreiro a outras classes', () => {
     const p = progressoDaFichaDnd({ campos: { classe: 'Mago', nivel: 5 } })
     expect(progressaoVisivel(MARCOS_DND_2024, p)).toEqual([])
+  })
+  it('não permite subclasse antes do nível 3', () => {
+    expect(validarAlteracoesEscolhasDnd(
+      { campos: { classe: 'Guerreiro', nivel: 2 }, dndEscolhas: {} },
+      { campos: { classe: 'Guerreiro', nivel: 2 }, dndEscolhas: { 'guerreiro-subclasse': 'campeao' } },
+    )[0]).toMatch(/nível 3/)
+  })
+  it('aceita subclasse catalogada na classe e nível corretos', () => {
+    expect(validarAlteracoesEscolhasDnd(
+      { campos: { classe: 'Ladino', nivel: 2 }, dndEscolhas: {} },
+      { campos: { classe: 'Ladino', nivel: 3 }, dndEscolhas: { 'ladino-subclasse': 'ladrao' } },
+    )).toEqual([])
+  })
+  it('impede classe errada ou subclasse inexistente', () => {
+    expect(validarAlteracoesEscolhasDnd(
+      { campos: { classe: 'Mago', nivel: 3 }, dndEscolhas: {} },
+      { campos: { classe: 'Mago', nivel: 3 }, dndEscolhas: { 'guerreiro-subclasse': 'campeao' } },
+    )).not.toEqual([])
+    expect(validarAlteracoesEscolhasDnd(
+      { campos: { classe: 'Guerreiro', nivel: 3 }, dndEscolhas: {} },
+      { campos: { classe: 'Guerreiro', nivel: 3 }, dndEscolhas: { 'guerreiro-subclasse': 'inexistente' } },
+    )).not.toEqual([])
+  })
+  it('preserva escolhas antigas desconhecidas quando não alteradas', () => {
+    const antiga = { 'marco-legado': 'opcao-legada' }
+    expect(validarAlteracoesEscolhasDnd(
+      { campos: { classe: 'Guerreiro', nivel: 5 }, dndEscolhas: antiga },
+      { campos: { classe: 'Guerreiro', nivel: 5 }, dndEscolhas: antiga },
+    )).toEqual([])
   })
   it('possui catálogo de marcos válido', () => expect(validarMarcos(MARCOS_DND_2024)).toEqual([]))
 })

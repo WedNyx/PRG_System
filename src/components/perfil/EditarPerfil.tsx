@@ -76,7 +76,7 @@ export default function EditarPerfil({ perfil, fechar, salvo }: { perfil: Perfil
 
   return <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/75 p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
     <form onSubmit={salvar} role="dialog" aria-modal="true" aria-labelledby="editar-perfil-titulo" onKeyDown={e => { if (e.key === 'Escape') fechar() }}
-      className="my-auto w-full max-w-md space-y-4 rounded-2xl border border-[var(--borda-forte,#62527e)] bg-[var(--painel,#19172c)] p-5 shadow-2xl sm:p-7">
+      className="my-auto w-full max-w-md space-y-4 rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-5 shadow-2xl sm:p-7">
       <div className="flex items-center justify-between"><h2 id="editar-perfil-titulo" className="text-xl font-bold">Editar perfil</h2>
         <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 hover:bg-white/10"><X size={20} /></button></div>
       <div className="flex flex-col items-center gap-3">

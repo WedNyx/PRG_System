@@ -27,8 +27,8 @@ export const GUIA: TopicoGuia[] = [
   },
   {
     id: 'tema', icone: '🎨', titulo: 'Aparência: tema e personalização',
-    resumo: 'Escolha um dos 7 temas (cada um muda o fundo e as cores da plataforma) ou personalize com a sua foto e as suas cores.',
-    passos: ['No menu (☰), toque em “🎨 Aparência”.', 'Toque no tema que quiser: Estrelinhas sonhadoras (o padrão), Nuvens de algodão, Lua cheia, Céu carmesim, Grimório celestial, Prisma ou Noite clássica. O fundo e as cores mudam na hora.', 'Em “Foto de fundo”, escolha uma imagem da sua galeria; use “Escurecer” e “Desfocar” para o texto continuar fácil de ler.', 'Em “Cor principal” e “Cartões”, escolha as cores, a claridade e a transparência dos quadros. “Do tema” volta às cores do tema.', 'Em “Texto”, escolha a fonte dos títulos e o tamanho das letras.', 'Fica salvo no seu perfil e vale em qualquer aparelho. “Voltar ao padrão do tema” desfaz tudo.'],
+    resumo: 'Escolha um dos 11 temas (cada um muda o fundo e as cores da plataforma) ou personalize com a sua foto e as suas cores.',
+    passos: ['No menu (☰), toque em “🎨 Aparência”.', 'Toque no tema que quiser: Estrelinhas sonhadoras (o padrão), Nuvens de algodão, Lua cheia, Céu carmesim, Grimório celestial, Prisma, Floresta encantada, Fundo do mar, Taverna, Sombrio ou Noite clássica. O fundo e as cores mudam na hora.', 'Em “Foto de fundo”, escolha uma imagem da sua galeria; use “Escurecer” e “Desfocar” para o texto continuar fácil de ler.', 'Em “Cor principal” e “Cartões”, escolha as cores, a claridade e a transparência dos quadros. “Do tema” volta às cores do tema.', 'Em “Texto”, escolha a fonte dos títulos e o tamanho das letras.', 'Fica salvo no seu perfil e vale em qualquer aparelho. “Voltar ao padrão do tema” desfaz tudo.'],
   },
   {
     id: 'sistemas', icone: '📚', titulo: 'Sistemas de RPG e guia do mestre', foto: 'sistemas.jpg', legenda: 'Sistemas com o guia do mestre aberto',

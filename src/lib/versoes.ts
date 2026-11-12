@@ -6,6 +6,17 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.33.1', data: '2026-11-12', titulo: 'Temas novos e visual revisado',
+    itens: [
+      '🌲 Quatro temas novos que mudam a plataforma inteira: Floresta encantada (verde, com riacho e arco de runas), Fundo do mar (turquesa, com ruínas submersas e águas-vivas), Taverna (âmbar, com lareira e velas) e Sombrio (roxo e vermelho, com castelo sob a lua vermelha). Agora são 11 temas em Central → Aparência.',
+      '💎 Prisma ganhou imagem nova: o dado de cristal que divide a luz num arco-íris de dados.',
+      '🔍 Revisão do visual nas telas que faltavam (Guia, Tutoriais, Novidades, Sistemas, criar sistema, convite, histórico, rolagens, Mundo e janelas) em todos os temas.',
+      'A janela de Editar perfil agora acompanha as cores do tema (antes ficava sempre roxa).',
+      'Mundo sem mapa: o aviso ganhou um cartão, para ler bem sobre qualquer fundo.',
+      'Prisma: os botões e destaques voltaram a ter cor (antes ficavam cinza demais).',
+    ],
+  },
+  {
     versao: '0.33.0', data: '2026-11-11', titulo: 'Fichas de acordo com as regras (parte 2)',
     itens: [
       '📜 Fichas de acordo com as regras, parte 2: Fate, Blades in the Dark, BRP e Faroeste Arcano.',

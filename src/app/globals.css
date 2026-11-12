@@ -30,7 +30,11 @@
 [data-tema="lua"] { --giro: -48; --sat: 1.05; --cartao-alfa: 0.8; }
 [data-tema="carmesim"] { --giro: 62; --sat: 1.15; --cartao-sat: 0.9; }
 [data-tema="celestial"] { --giro: -22; --sat: 1.1; --cartao-alfa: 0.86; }
-[data-tema="prisma"] { --giro: 0; --sat: 0.25; --cartao-alfa: 0.78; }
+[data-tema="prisma"] { --giro: 0; --sat: 0.55; --cartao-sat: 0.2; --cartao-alfa: 0.78; }
+[data-tema="floresta"] { --giro: -145; --sat: 1; --cartao-sat: 0.85; }
+[data-tema="mar"] { --giro: -100; --sat: 1.05; --cartao-alfa: 0.8; }
+[data-tema="taverna"] { --giro: 120; --sat: 1; --cartao-sat: 0.9; --cartao-alfa: 0.86; }
+[data-tema="sombrio"] { --giro: 60; --sat: 1.1; --cartao-giro: 0; --cartao-sat: 0.55; --cartao-luz: -0.03; --cartao-alfa: 0.82; }
 [data-tema="classico"] { --cartao-alfa: 1; --vidro: 0px; }
 [data-fonte="elegante"] { --fonte-titulo: var(--font-cormorant), Georgia, serif; }
 [data-fonte="simples"] { --fonte-titulo: var(--font-geist-sans), system-ui, sans-serif; }
@@ -87,8 +91,16 @@ body {
   --tema-pc: url('/temas/carmesim-pc.webp'); --tema-cel: url('/temas/carmesim-cel.webp'); --tema-tam: cover; --tema-rep: no-repeat; --tema-pos: center; --tema-pos-cel: center; }
 [data-tema="celestial"] { --tema-cor: #160f38; --tema-veu: radial-gradient(ellipse at 50% 0%, rgba(217, 180, 90, 0.18), transparent 55%);
   --tema-pc: url('/temas/celestial.svg'), linear-gradient(160deg, #1b1446, #2a1650); --tema-cel: var(--tema-pc); --tema-tam: 520px auto; --tema-rep: repeat; --tema-pos: center top; --tema-pos-cel: center top; }
-[data-tema="prisma"] { --tema-cor: #05060b; --tema-veu: linear-gradient(180deg, rgba(5, 6, 11, 0.25), rgba(5, 6, 11, 0.5));
-  --tema-pc: url('/temas/prisma-pc.svg'); --tema-cel: url('/temas/prisma-cel.svg'); --tema-tam: cover; --tema-rep: no-repeat; --tema-pos: center; --tema-pos-cel: center; }
+[data-tema="floresta"] { --tema-cor: #0b2a2a; --tema-veu: linear-gradient(180deg, rgba(3, 14, 10, 0.5), rgba(3, 14, 10, 0.72));
+  --tema-pc: url('/temas/floresta-pc.webp'); --tema-cel: url('/temas/floresta-cel.webp'); --tema-tam: cover; --tema-rep: no-repeat; --tema-pos: center; --tema-pos-cel: center; }
+[data-tema="mar"] { --tema-cor: #062b4a; --tema-veu: linear-gradient(180deg, rgba(2, 14, 30, 0.45), rgba(2, 14, 30, 0.7));
+  --tema-pc: url('/temas/mar-pc.webp'); --tema-cel: url('/temas/mar-cel.webp'); --tema-tam: cover; --tema-rep: no-repeat; --tema-pos: center; --tema-pos-cel: center; }
+[data-tema="taverna"] { --tema-cor: #1c0f08; --tema-veu: linear-gradient(180deg, rgba(14, 7, 2, 0.4), rgba(14, 7, 2, 0.65));
+  --tema-pc: url('/temas/taverna-pc.webp'); --tema-cel: url('/temas/taverna-cel.webp'); --tema-tam: cover; --tema-rep: no-repeat; --tema-pos: center; --tema-pos-cel: center; }
+[data-tema="sombrio"] { --tema-cor: #0b0b0e; --tema-veu: linear-gradient(180deg, rgba(8, 4, 10, 0.35), rgba(8, 4, 10, 0.6));
+  --tema-pc: url('/temas/sombrio-pc.webp'); --tema-cel: url('/temas/sombrio-cel.webp'); --tema-tam: cover; --tema-rep: no-repeat; --tema-pos: center; --tema-pos-cel: center; }
+[data-tema="prisma"] { --tema-cor: #05060b; --tema-veu: linear-gradient(180deg, rgba(4, 4, 10, 0.4), rgba(4, 4, 10, 0.62));
+  --tema-pc: url('/temas/prisma-pc.webp'); --tema-cel: url('/temas/prisma-cel.webp'); --tema-tam: cover; --tema-rep: no-repeat; --tema-pos: center; --tema-pos-cel: center; }
 
 .fundo-tema { position: relative; isolation: isolate; background-color: var(--tema-cor); }
 .fundo-tema::before {

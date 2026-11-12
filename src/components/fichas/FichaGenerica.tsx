@@ -266,7 +266,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
               }}
             />
             <p className="rounded-lg border border-amber-400/30 p-3 text-xs text-amber-100">
-              Catálogo em construção: nesta etapa há apenas marcos selecionados do Guerreiro, não a progressão completa das 12 classes.
+              Catálogo em construção: a progressão visual inclui marcos de Guerreiro, Ladino e Mago até o nível 20. As outras classes, escolhas detalhadas, magias e efeitos ainda precisam ser implementados.
               A visualização não concede poderes nem bônus automaticamente.
             </p>
           </>}

@@ -12,6 +12,10 @@ export type MarcoDnd = {
   descricao?: string
   opcoes?: { id: string; nome: string }[]
   fonte: string
+  /** Só aparece depois desta escolha (ex.: características da subclasse escolhida). */
+  requer?: { marco: string; opcao: string }
+  /** Some quando este marco de escolha já foi feito (ex.: “Característica de subclasse” genérica). */
+  ocultarSe?: string
 }
 export type EstadoMarco = 'adquirido' | 'escolher' | 'futuro' | 'pendente'
 export type ProgressoDnd = {
@@ -29,7 +33,10 @@ export function nivelTotal(niveis: Record<string, number>): number {
 }
 export function progressaoVisivel(marcos: MarcoDnd[], ficha: ProgressoDnd): MarcoVisivel[] {
   const total = nivelTotal(ficha.nivelPorClasse)
+  const escolhido = (id: string) => !!ficha.escolhas[id] && marcos.some(x => x.id === id && x.opcoes?.some(o => o.id === ficha.escolhas[id]))
   return marcos.filter(m => {
+    if (m.requer && ficha.escolhas[m.requer.marco] !== m.requer.opcao) return false
+    if (m.ocultarSe && escolhido(m.ocultarSe)) return false
     if (m.origem === 'classe' || m.origem === 'subclasse') return m.origemId in ficha.nivelPorClasse
     if (m.origem === 'especie') return m.origemId === ficha.especieId
     return m.origemId === ficha.antecedenteId

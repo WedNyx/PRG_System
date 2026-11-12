@@ -6,9 +6,12 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
-    versao: '0.33.6', data: '2026-11-12', titulo: 'Progressão de D&D na campanha',
+    versao: '0.33.6', data: '2026-11-12', titulo: 'Progressão de D&D 2024',
     itens: [
-      '🌳 D&D 2024 — modo de progressão da campanha: o mestre escolhe Híbrido (padrão), Automático ou Manual em Editar campanha. Na aba Árvore da ficha aparecem os marcos oficiais (Guerreiro, Ladino e Mago até o nível 20) e a escolha de subclasse das 12 classes, com selos de Adquirida, Escolha pendente e Futura.',
+      '📚 Catálogo completo do SRD 5.2.1 na aba Árvore: as 12 classes do nível 1 ao 20, com a subclasse aberta de cada uma (as características dela aparecem quando é escolhida), as 9 espécies com traços e escolhas (linhagem élfica e gnômica, ancestral dracônico e gigante, legado ínfero, talento do Humano) e os 4 antecedentes com atributos, talento de origem, perícias, ferramenta e equipamento.',
+      '✋ Escolhas de verdade: Estilo de Luta, Ordem Divina, Ordem Primal, Golpes Abençoados, Fúria Elemental, Presa do Caçador e outras viraram seletores; Aumento de Atributo e Dádiva Épica agora pedem a escolha do talento (antes apareciam como “Adquirida”). A ficha avisa quantas escolhas estão pendentes.',
+      '📊 A Árvore mostra a tabela da classe no nível atual (fúrias, dado de inspiração, truques, magias preparadas, espaços de magia, pontos de foco…) e agrupa as características por nível, com os próximos níveis escondidos até você pedir.',
+      '🌳 D&D 2024 — modo de progressão da campanha: o mestre escolhe Híbrido (padrão), Automático ou Manual em Editar campanha. Na aba Árvore da ficha aparecem os marcos oficiais com selos de Adquirida, Escolha pendente e Futura.',
       '🛡️ O servidor confere a escolha de subclasse: só a partir do nível 3, da classe certa e de uma opção existente. Um nível pedido pelo jogador e ainda não aprovado não libera escolhas.',
       'Armadura pesada não usa mais a Destreza na CA (nem quando ela é negativa).',
       'Campanhas antigas continuam iguais e passam a usar o modo Híbrido. Trocar o modo não apaga as exceções feitas para uma ficha.',

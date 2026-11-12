@@ -240,7 +240,7 @@ function EditorNo({ inicial, a, alvos, recursos, gravar, fechar }: {
   const podeAdd = n.efeitos.length < LIM_ARVORE.efeitos
   return <NaTela><div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-3 sm:p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
     <form role="dialog" aria-modal="true" aria-label="Hexágono" onSubmit={e => { e.preventDefault(); if (n.nome.trim()) gravar({ ...n, nome: n.nome.trim() }) }} onKeyDown={e => { if (e.key === 'Escape') fechar() }}
-      className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-(--a-62527e) bg-(--s-19172c) p-5 text-(--a-f4f0ff) shadow-2xl sm:rounded-2xl">
+      className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-5 text-(--a-f4f0ff) shadow-2xl">
       <div className="flex items-center gap-2"><h2 className="flex-1 text-lg font-bold">{a.nos.some(x => x.id === n.id) ? 'Editar hexágono' : 'Novo hexágono'}</h2>
         <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 hover:bg-(--s-2b2140)"><X size={20} /></button></div>
       <label className="mt-3 block text-sm">Nome<input autoFocus required maxLength={LIM_ARVORE.nome} value={n.nome} onChange={e => setN({ ...n, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Habilidade de Raio" /></label>

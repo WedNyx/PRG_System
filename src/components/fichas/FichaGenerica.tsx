@@ -265,10 +265,6 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
                 onChange({ ...d, dndEscolhas: escolhas })
               }}
             />
-            <p className="rounded-lg border border-amber-400/30 p-3 text-xs text-amber-100">
-              Catálogo em construção: a progressão visual inclui marcos de Guerreiro, Ladino e Mago até o nível 20. As outras classes, escolhas detalhadas, magias e efeitos ainda precisam ser implementados.
-              A visualização não concede poderes nem bônus automaticamente.
-            </p>
           </>}
           {(s.id !== 'dnd5e-srd' || modoProgressao !== 'automatico') &&
             <ArvoreHabilidades s={s} d={d} onChange={onChange}

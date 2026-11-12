@@ -10,7 +10,8 @@ export type MarcoDnd = {
   origemId: string
   modo: 'automatico' | 'escolha'
   descricao?: string
-  opcoes?: { id: string; nome: string }[]
+  /** `fonte` = id da fonte comercial (dnd2024Fontes); sem ela, SRD. */
+  opcoes?: { id: string; nome: string; fonte?: string }[]
   fonte: string
   /** Só aparece depois desta escolha (ex.: características da subclasse escolhida). */
   requer?: { marco: string; opcao: string }

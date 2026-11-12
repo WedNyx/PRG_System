@@ -9,6 +9,7 @@ import { obterSistema } from '@/lib/sistemas/cliente'
 import { normalizarFicha } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { lerConfiguracaoProgressao, modoDaFicha, type ConfiguracaoProgressao, type ModoProgressao } from '@/lib/sistemas/modoProgressao'
+import { fontesLiberadas } from '@/lib/sistemas/dnd2024Fontes'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import { CAMPOS } from '@/lib/campanhas/permissoes'
 import { toast } from 'sonner'
@@ -163,6 +164,7 @@ function Conteudo() {
       {aviso && <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-(--a-62527e) bg-(--s-1f2a40) p-3 text-sm">
         <span className="flex-1">{aviso.texto}</span>{aviso.desfazer && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-(--a-b99bff) px-3 py-1">Desfazer (voltar ao salvo)</button>}</p>}
       {sistema && dados ? <FichaGenerica sistema={sistema} dados={dados} onChange={mudar} somenteLeitura={estado === 'leitura'} modoProgressao={modoProgressao} podeEditarArvore={podeEditarArvore}
+        fontesDnd={campanhaId && config && !souMestre ? fontesLiberadas(config.fontes) : null}
         excecaoModo={campanhaId && nuvem && souMestre && config && sistema.id === 'dnd5e-srd' ? {
           campanha: config.modo, atual: config.excecoesPorFicha?.[nuvem] ?? null,
           mudar: async modo => {

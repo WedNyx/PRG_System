@@ -11,6 +11,7 @@ import { lerConfiguracaoProgressao } from '@/lib/sistemas/modoProgressao'
 import { lerEscolhasDnd, validarAlteracoesEscolhasDnd } from '@/lib/sistemas/dnd2024Ficha'
 import { lerMagiasDnd, validarAlteracoesMagiasDnd } from '@/lib/sistemas/dnd2024Conjuracao'
 import { idDe, lerMulticlasseDnd, validarAlteracoesMulticlasseDnd } from '@/lib/sistemas/dnd2024Classes'
+import { fontesLiberadas, validarFontesCamposDnd } from '@/lib/sistemas/dnd2024Fontes'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
@@ -75,6 +76,12 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
   if (!Number.isInteger(body.versao)) throw new ErroApi(400, 'Versão ausente.')
   const v = validarFichaDados(body.dados)
   if (!v.ok) throw new ErroApi(400, v.erro)
+  // Fontes liberadas pelo mestre (D&D em campanha). Mestre e ficha avulsa: todas.
+  let liberadas: Set<string> | null = null
+  if (f.sistema === 'dnd5e-srd' && f.campanha_id && !admin) {
+    const [cc] = await rest<{ config_progressao?: unknown }[]>(`prg_campanhas?select=config_progressao&id=eq.${q(f.campanha_id)}&limit=1`).catch(() => [])
+    liberadas = fontesLiberadas(lerConfiguracaoProgressao(cc?.config_progressao).fontes)
+  }
   // Valida mudanças em escolhas D&D ANTES da aplicação de permissão/aprovação.
   // Personagens antigos podem conservar escolhas históricas sem bloqueios retroativos.
   if (f.sistema === 'dnd5e-srd') {
@@ -83,11 +90,13 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const erros = validarAlteracoesEscolhasDnd(
       { campos: antigo.campos ?? {}, dndEscolhas: antigo.dndEscolhas, dndMulticlasse: antigo.dndMulticlasse },
       { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas, dndMulticlasse: candidato.dndMulticlasse },
+      liberadas
     )
     erros.push(...validarAlteracoesMagiasDnd(
       { campos: antigo.campos ?? {}, dndEscolhas: antigo.dndEscolhas, dndMagias: antigo.dndMagias, dndMulticlasse: antigo.dndMulticlasse },
       { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas, dndMagias: candidato.dndMagias, dndMulticlasse: candidato.dndMulticlasse },
     ))
+    erros.push(...validarFontesCamposDnd({ campos: antigo.campos ?? {} }, { campos: candidato.campos ?? {} }, liberadas))
     erros.push(...validarAlteracoesMulticlasseDnd(
       { campos: antigo.campos ?? {}, atributos: antigo.atributos ?? {}, dndMulticlasse: antigo.dndMulticlasse },
       { campos: candidato.campos ?? {}, atributos: candidato.atributos ?? {}, dndMulticlasse: candidato.dndMulticlasse },
@@ -144,6 +153,7 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const erros = validarAlteracoesEscolhasDnd(
       { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas, dndMulticlasse: anterior.dndMulticlasse },
       { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas, dndMulticlasse: autorizado.dndMulticlasse },
+      liberadas
     )
     erros.push(...validarAlteracoesMagiasDnd(
       { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas, dndMagias: anterior.dndMagias, dndMulticlasse: anterior.dndMulticlasse },

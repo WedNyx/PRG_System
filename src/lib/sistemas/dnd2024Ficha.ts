@@ -2,6 +2,7 @@ import type { DadosFicha } from './tipos'
 import { progressaoVisivel, type ProgressoDnd } from './dnd2024Progressao'
 import { MARCOS_DND_2024 } from './dnd2024Marcos'
 import { classesDaFicha, idDe } from './dnd2024Classes'
+import { fontePermitida, nomeDaFonte } from './dnd2024Fontes'
 
 export function lerEscolhasDnd(valor: unknown): Record<string, string> {
   const resultado: Record<string, string> = {}
@@ -35,6 +36,8 @@ export function progressoDaFichaDnd(d: Pick<DadosFicha, 'campos' | 'dndEscolhas'
 export function validarAlteracoesEscolhasDnd(
   antes: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>,
   depois: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>,
+  /** Fontes liberadas pelo mestre (null = ficha avulsa ou mestre: todas). */
+  liberadas: Set<string> | null = null,
 ): string[] {
   const anteriores = lerEscolhasDnd(antes.dndEscolhas)
   const novas = lerEscolhasDnd(depois.dndEscolhas)
@@ -53,7 +56,9 @@ export function validarAlteracoesEscolhasDnd(
     const marco = escolhasVisiveis.get(id)
     if (!marco) { erros.push('Escolha sem característica permitida: ' + id); continue }
     if (marco.estado === 'futuro') { erros.push('Escolha indisponível antes do nível ' + marco.nivel + ': ' + id); continue }
-    if (marco.estado !== 'adquirido') erros.push('Opção não reconhecida para a característica: ' + id)
+    if (marco.estado !== 'adquirido') { erros.push('Opção não reconhecida para a característica: ' + id); continue }
+    const fonte = marco.opcoes?.find(o => o.id === opcao)?.fonte
+    if (!fontePermitida(fonte, liberadas)) erros.push(`${marco.nome}: a fonte “${nomeDaFonte(fonte!)}” não foi liberada pelo mestre nesta campanha.`)
   }
 
   if (depois.dndEscolhas && typeof depois.dndEscolhas === 'object' && !Array.isArray(depois.dndEscolhas)) {

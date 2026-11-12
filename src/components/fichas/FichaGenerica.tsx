@@ -27,16 +27,19 @@ import MagiasDnd2024 from './MagiasDnd2024'
 import MulticlasseDnd2024 from './MulticlasseDnd2024'
 import ExcecaoModo from './ExcecaoModo'
 import ConferenciaDnd from './ConferenciaDnd'
+import { fontePermitida } from '@/lib/sistemas/dnd2024Fontes'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
 const sinal = (n: number | null | undefined) => n === null || n === undefined ? '—' : n >= 0 ? '+' + n : String(n)
 
 /** Ficha que se monta sozinha a partir do modelo do sistema. */
-export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, excecaoModo, rolarNaCampanha, passarItem }: {
+export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, excecaoModo, fontesDnd = null, rolarNaCampanha, passarItem }: {
   sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean; modoProgressao?: ModoProgressao; podeEditarArvore?: boolean
   /** Mestre de campanha de D&D: troca o modo só desta ficha (exceção). */
   excecaoModo?: { campanha: ModoProgressao; atual: ModoProgressao | null; mudar: (m: ModoProgressao | null) => void | Promise<void> }
+  /** D&D em campanha: fontes que o mestre liberou (null = todas: ficha avulsa ou mestre). */
+  fontesDnd?: Set<string> | null
   /** Se a ficha é de campanha: rola no servidor e publica no chat da mesa. */
   rolarNaCampanha?: (expressao: string, rotulo: string, extra?: { estilo: 'assimilacao'; manter?: number; todos?: boolean }) => Promise<{ resultados: number[]; total: number } | null>
   /** Ficha de campanha: passar um item para outro personagem. */
@@ -175,7 +178,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
           <input value={d.nome} maxLength={90} disabled={somenteLeitura} onChange={e => set('nome', e.target.value)} className={input + ' mt-1 text-lg font-bold'} placeholder="Ex.: Lyra Nyx" /></label>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3 lg:grid-cols-3">
-        {s.campos.map(f => f.tipo === 'escolha' ? <div key={f.id} className="col-span-2 sm:col-span-1"><CampoEscolha s={s} f={f} valor={d.campos[f.id]} somenteLeitura={somenteLeitura} mudar={v => set('campos', { ...d.campos, [f.id]: v })} /></div> : <label key={f.id} className={'flex flex-col justify-end text-sm text-(--a-d6c8e8) ' + (f.tipo === 'area' ? 'col-span-2 lg:col-span-3' : f.tipo === 'numero' ? '' : 'col-span-2 sm:col-span-1')}>{f.nome}
+        {s.campos.map(f => f.tipo === 'escolha' ? <div key={f.id} className="col-span-2 sm:col-span-1"><CampoEscolha s={s} f={f} valor={d.campos[f.id]} somenteLeitura={somenteLeitura} fontes={s.id === 'dnd5e-srd' ? fontesDnd : null} mudar={v => set('campos', { ...d.campos, [f.id]: v })} /></div> : <label key={f.id} className={'flex flex-col justify-end text-sm text-(--a-d6c8e8) ' + (f.tipo === 'area' ? 'col-span-2 lg:col-span-3' : f.tipo === 'numero' ? '' : 'col-span-2 sm:col-span-1')}>{f.nome}
           {f.tipo === 'area'
             ? <textarea rows={3} value={String(d.campos[f.id] ?? '')} disabled={somenteLeitura} onChange={e => set('campos', { ...d.campos, [f.id]: e.target.value.slice(0, 4000) })} className={input + ' mt-1'} />
             : <input type={f.tipo === 'numero' ? 'number' : 'text'} value={d.campos[f.id] ?? ''} disabled={somenteLeitura} maxLength={120}
@@ -268,6 +271,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
               marcos={MARCOS_DND_2024}
               ficha={progressoDaFichaDnd(d)}
               modo={modoProgressao}
+              fontes={fontesDnd}
               somenteLeitura={somenteLeitura}
               onEscolha={(marcoId, opcaoId) => {
                 const escolhas = { ...d.dndEscolhas }
@@ -344,7 +348,7 @@ function Retrato({ url, nome, somenteLeitura, onChange }: { url?: string; nome: 
 }
 
 /** Campo de escolha (classe, espécie…): lista de opções com descrição e os bônus que a opção dá, ou um nome digitado fora da lista. */
-function CampoEscolha({ s, f, valor, mudar, somenteLeitura }: { s: Sistema; f: Sistema['campos'][number]; valor: unknown; mudar: (v: string) => void; somenteLeitura: boolean }) {
+function CampoEscolha({ s, f, valor, mudar, somenteLeitura, fontes = null }: { s: Sistema; f: Sistema['campos'][number]; valor: unknown; mudar: (v: string) => void; somenteLeitura: boolean; fontes?: Set<string> | null }) {
   const op = opcaoEscolhida(f, valor)
   const nomes = useMemo(() => Object.fromEntries(alvosDeBonus(s).map(a => [a.id, a.nome])), [s])
   const texto = typeof valor === 'string' ? valor : ''
@@ -355,7 +359,7 @@ function CampoEscolha({ s, f, valor, mudar, somenteLeitura }: { s: Sistema; f: S
       <select value={op ? op.nome : outro ? '__outro' : ''} disabled={somenteLeitura}
         onChange={e => { if (e.target.value === '__outro') { setForcarOutro(true); mudar('') } else { setForcarOutro(false); mudar(e.target.value) } }} className={input + ' mt-1'}>
         <option value="">Escolha…</option>
-        {f.opcoes?.map(o => <option key={o.nome} value={o.nome}>{o.nome}</option>)}
+        {f.opcoes?.filter(o => fontePermitida(o.fonte, fontes) || o.nome === op?.nome).map(o => <option key={o.nome} value={o.nome}>{o.nome}{o.fonte ? ' 📕' : ''}</option>)}
         <option value="__outro">✍️ Outro (fora da lista)</option>
       </select></label>
     {outro && <input value={texto} disabled={somenteLeitura} maxLength={90} onChange={e => mudar(e.target.value)} className={input + ' mt-1.5'} placeholder={`Nome de ${f.nome.toLowerCase()} fora da lista`} autoFocus={forcarOutro} />}

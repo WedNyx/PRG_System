@@ -18,10 +18,10 @@ export const GUIAS: Record<string, GuiaSistema> = {
   },
   'dnd5e-srd': {
     passos: [
-      'Antes de criar: confirme com o grupo que a campanha usa a revisão de 2024. Nesta etapa a plataforma implementa a base aberta do SRD 5.2.1; opções exclusivas do Livro do Jogador comercial e suplementos ainda não estão todas cadastradas.',
+      'Antes de criar: confirme com o grupo que a campanha usa a revisão de 2024. A plataforma traz as regras abertas do SRD 5.2.1. Em Editar campanha, o mestre marca os livros que a mesa usa (Livro do Jogador, Guia do Mestre, Manual dos Monstros e outros pelo nome): com o Livro do Jogador liberado, as outras 36 subclasses, o Aasimar e mais 12 antecedentes aparecem nas escolhas (📕), só com o nome — as regras ficam no livro.',
       'Conversem sobre a ideia do personagem: qual é o papel dele na história e no grupo? Definam juntos expectativas, tom da aventura e quais fontes de regras o mestre autoriza.',
       'Escolha a classe. Veja o Dado de Vida, proficiências e atributo de conjuração na descrição. As escolhas de proficiências e equipamentos ainda precisam ser conferidas com o SRD e registradas manualmente.',
-      'Escolha a espécie entre as 9 do SRD 5.2.1 (o Livro do Jogador tem 10; Aasimar não está no SRD). Na aba Árvore aparecem os traços dela e as escolhas: linhagem do Elfo e do Gnomo, ancestral do Draconato e do Golias, legado do Tiferino e o talento do Humano.',
+      'Escolha a espécie entre as 9 do SRD 5.2.1 (o Aasimar, do Livro do Jogador, aparece quando o mestre libera o livro). Na aba Árvore aparecem os traços dela e as escolhas: linhagem do Elfo e do Gnomo, ancestral do Draconato e do Golias, legado do Tiferino e o talento do Humano.',
       'Escolha o antecedente (Acólito, Criminoso, Sábio ou Soldado, os 4 do SRD). A aba Árvore mostra os atributos que ele melhora, o talento de origem, as perícias, a ferramenta e o equipamento inicial.',
       'Defina os seis atributos. Use o conjunto padrão (15, 14, 13, 12, 10, 8), a compra de 27 pontos ou a rolagem permitida pelo mestre (4d6, descartando o menor). Distribua os valores ANTES dos aumentos do antecedente.',
       'Aplique manualmente os aumentos de atributo do antecedente: +2/+1 em dois atributos permitidos ou +1/+1/+1 nos três atributos permitidos. Não aplique esse bônus novamente ao escolher a espécie.',
@@ -47,7 +47,7 @@ export const GUIAS: Record<string, GuiaSistema> = {
     dicas: [
       'Regra de mesa: escolha entre Híbrido, Automático e Manual nas configurações da campanha. O modo Híbrido é o padrão e preserva a árvore autoral do mestre.',
       'A árvore oficial é uma linha do tempo, NÃO uma árvore de compra por pontos. Um Guerreiro recebe Ataque Extra no nível indicado sem gastar pontos da árvore.',
-      'Todas as 12 classes do SRD estão catalogadas, com uma subclasse aberta cada. Subclasses, espécies e antecedentes exclusivos do Livro do Jogador entram depois, pelo seletor de fontes.',
+      'Todas as 12 classes do SRD estão catalogadas, com uma subclasse aberta cada. As outras subclasses, o Aasimar e os outros antecedentes do Livro do Jogador entram pelo seletor de fontes da campanha, só com o nome: nesses casos a ficha não calcula nada sozinha, marque à mão o que o livro der.',
       'Os marcos de subclasse e de talentos não aplicam efeitos automaticamente neste estágio. Consulte o livro e mantenha o histórico das escolhas.',
       'Exemplo: Guerreiro nível 3 tem a escolha de subclasse aberta no SRD. Se o jogador tentar selecioná-la no nível 2, a API rejeita a nova escolha.',
       'Multiclasse: na aba Árvore, “Classes” sobe o nível em cada classe e pega o 1º nível de uma classe nova (13 no atributo principal da nova e das atuais; o mestre pode liberar sem). A ficha soma os PV pela média do dado de cada classe, usa a tabela de Conjurador Multiclasse para os espaços e deixa cada classe preparar as próprias magias. Ganhos de proficiência ao entrar (perícia do Bardo, Ladino e Patrulheiro) ficam à mão.',

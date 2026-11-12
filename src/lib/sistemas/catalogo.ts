@@ -1,4 +1,5 @@
 import type { PericiaDef, Sistema } from './tipos'
+import { ANTECEDENTES_PHB, ESPECIES_PHB, FONTE_PHB } from './dnd2024Fontes'
 
 /*
  * Catálogo de sistemas. Regras de sistemas com licença aberta usam apenas o que a
@@ -109,12 +110,15 @@ export const SISTEMAS: Sistema[] = [
         { nome: 'Humano', descricao: 'Médio ou Pequeno, 9 m. Engenhoso (Inspiração Heroica ao descansar), habilidoso, versátil.' },
         { nome: 'Orc', descricao: 'Médio, 9 m. Pico de adrenalina, visão no escuro, resistência implacável.' },
         { nome: 'Tiferino', descricao: 'Médio ou Pequeno, 9 m. Visão no escuro, legado infernal, presença sobrenatural.' },
+        // Livro do Jogador (2024): só o nome; os traços ficam no livro.
+        ...ESPECIES_PHB.map(([, nome]) => ({ nome, descricao: 'Livro do Jogador (2024): os traços ficam no livro.', fonte: FONTE_PHB })),
       ] },
       { id: 'antecedente', nome: 'Antecedente', tipo: 'escolha', opcoes: [
         { nome: 'Acólito', descricao: 'Atributos: Inteligência, Sabedoria, Carisma (+2/+1 ou +1/+1/+1). Talento: Iniciado em Magia (Clérigo). Perícias: Intuição e Religião.' },
         { nome: 'Criminoso', descricao: 'Atributos: Destreza, Constituição, Inteligência. Talento: Alerta. Perícias: Furtividade e Prestidigitação.' },
         { nome: 'Sábio', descricao: 'Atributos: Constituição, Inteligência, Sabedoria. Talento: Iniciado em Magia (Mago). Perícias: Arcanismo e História.' },
         { nome: 'Soldado', descricao: 'Atributos: Força, Destreza, Constituição. Talento: Atacante Selvagem. Perícias: Atletismo e Intimidação.' },
+        ...ANTECEDENTES_PHB.map(([, nome]) => ({ nome, descricao: 'Livro do Jogador (2024): atributos, talento, perícias e ferramenta no livro (marque à mão).', fonte: FONTE_PHB })),
       ] },
       { id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 },
       { id: 'xp', nome: 'XP', tipo: 'numero', padrao: 0 },

@@ -46,7 +46,7 @@ export const PATCH = rota<Ctx>(async (req, { params }) => {
     const excecoesPorFicha = { ...cfg.excecoesPorFicha }
     if (ex.modo) excecoesPorFicha[ficha.id] = ex.modo as ModoProgressao; else delete excecoesPorFicha[ficha.id]
     const [campanha] = await rest<Record<string, unknown>[]>(`prg_campanhas?id=eq.${q(id)}`, {
-      method: 'PATCH', prefer: 'return=representation', body: JSON.stringify({ config_progressao: { modo: cfg.modo, excecoesPorFicha }, atualizada_em: new Date().toISOString() }),
+      method: 'PATCH', prefer: 'return=representation', body: JSON.stringify({ config_progressao: { ...cfg, excecoesPorFicha }, atualizada_em: new Date().toISOString() }),
     })
     return ok({ campanha })
   }
@@ -58,7 +58,10 @@ export const PATCH = rota<Ctx>(async (req, { params }) => {
     const [atual] = await rest<{ config_progressao?: unknown }[]>(`prg_campanhas?select=config_progressao&id=eq.${q(id)}&limit=1`)
       .catch(() => { throw new ErroApi(409, 'O modo de progressão precisa da migração 027 no banco. Avise o administrador.') })
     const antes = lerConfiguracaoProgressao(atual?.config_progressao)
-    v.valor.config_progressao = { ...v.valor.config_progressao, excecoesPorFicha: { ...antes.excecoesPorFicha, ...v.valor.config_progressao.excecoesPorFicha } }
+    v.valor.config_progressao = { ...v.valor.config_progressao, excecoesPorFicha: { ...antes.excecoesPorFicha, ...v.valor.config_progressao.excecoesPorFicha },
+      // Fontes: só mudam quando vierem no pedido.
+      ...(v.valor.config_progressao.fontes === undefined && antes.fontes ? { fontes: antes.fontes } : {}),
+      ...(v.valor.config_progressao.fontesExtras === undefined && antes.fontesExtras ? { fontesExtras: antes.fontesExtras } : {}) }
   }
   const [campanha] = await rest<Record<string, unknown>[]>(`prg_campanhas?id=eq.${q(id)}`, {
     method: 'PATCH', prefer: 'return=representation', body: JSON.stringify({ ...v.valor, atualizada_em: new Date().toISOString() }),

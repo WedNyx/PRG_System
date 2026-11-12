@@ -88,6 +88,7 @@ function Conteudo() {
           const salvo = JSON.parse(localStorage.getItem(LOCAL + local) || 'null')
           const s = sistemaPorId(salvo?.sistema ?? q.get('sistema') ?? '')
           if (!s) throw new ErroNuvem(404, 'Ficha não encontrada neste navegador.')
+          setModoProgressao('hibrido'); setPodeEditarArvore(true)
           setSistema(s); setDados(normalizarFicha(s, salvo)); setEstado('local')
         } else throw new ErroNuvem(404, 'Ficha não encontrada.')
       } catch (e) { if (ativo) { setErro(e instanceof ErroNuvem ? e.message : 'Falha de conexão.'); setEstado('erro') } }

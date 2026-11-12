@@ -74,9 +74,9 @@ export default function CampanhasNuvem({ aventureiroId, abrirCampanha }: { avent
   return <div className="mt-6 space-y-5">
     <div className="flex flex-wrap gap-3">
       <button type="button" onClick={() => setTela({ tipo: 'form' })} className={btnPrim}><Plus size={18} /> Criar campanha</button>
-      <form className="flex flex-wrap items-center gap-2" onSubmit={e => { e.preventDefault(); const c = codigo.trim(); if (c) window.location.assign('/convite/' + encodeURIComponent(c)) }}>
+      <form className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none" onSubmit={e => { e.preventDefault(); const c = codigo.trim(); if (c) window.location.assign('/convite/' + encodeURIComponent(c)) }}>
         <input value={codigo} onChange={e => setCodigo(e.target.value.toUpperCase())} maxLength={12} placeholder="Código de convite"
-          aria-label="Código de convite" className="w-44 rounded-xl border border-(--a-70588c) bg-(--s-151123) p-3 font-mono tracking-widest text-white" />
+          aria-label="Código de convite" className="min-w-0 flex-1 rounded-xl placeholder:tracking-normal sm:w-44 sm:flex-none border border-(--a-70588c) bg-(--s-151123) p-3 font-mono tracking-widest text-white" />
         <button type="submit" className={btn}><DoorOpen size={16} /> Entrar</button>
       </form>
     </div>

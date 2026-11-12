@@ -14,13 +14,13 @@ type Props = {
   podeEditar: boolean
 }
 export default function SeletorModoProgressao({ valor, onChange, podeEditar }: Props) {
-  return <fieldset className="space-y-2 rounded-2xl border border-white/15 p-4" disabled={!podeEditar}>
+  return <fieldset className="space-y-2 rounded-2xl border border-(--a-55456e) p-4" disabled={!podeEditar}>
     <legend className="px-1 font-semibold text-white">Modo de progressão da campanha</legend>
-    {opcoes.map(op => <label key={op.valor} className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/15 p-3">
+    {opcoes.map(op => <label key={op.valor} className="flex cursor-pointer items-start gap-3 rounded-xl border border-(--a-55456e) p-3">
       <input type="radio" name="modo-progressao" className="mt-1" checked={valor === op.valor}
         onChange={() => onChange(op.valor)} />
-      <span><strong className="block text-sm text-white">{op.titulo}</strong><span className="text-xs text-white/70">{op.descricao}</span></span>
+      <span><strong className="block text-sm text-white">{op.titulo}</strong><span className="text-xs text-(--a-c4b6d4)">{op.descricao}</span></span>
     </label>)}
-    {!podeEditar && <p className="text-xs text-white/60">Somente o mestre pode alterar esta configuração.</p>}
+    {!podeEditar && <p className="text-xs text-(--a-a998bd)">Somente o mestre pode alterar esta configuração.</p>}
   </fieldset>
 }

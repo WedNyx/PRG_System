@@ -15,7 +15,7 @@ on:
       - 'src/app/api/prg/campanhas/**'
       - 'src/components/fichas/**'
       - 'src/components/central/CampanhasNuvem.tsx'
-      - 'supabase/migrations/*dnd*'
+      - 'supabase/migrations/*progressao*'
       - '.github/workflows/dnd-progression-checks.yml'
   workflow_dispatch:
 

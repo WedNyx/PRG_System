@@ -1,3 +1,4 @@
+-- v0.33.6 (PR #42): modo de progressão da campanha (D&D 2024). Aditiva e idempotente.
 -- D&D 2024: configuração de progressão por campanha.
 -- Não reescreve fichas antigas nem altera os modos de outros sistemas.
 alter table public.prg_campanhas

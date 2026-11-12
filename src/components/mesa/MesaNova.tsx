@@ -26,6 +26,7 @@ import RecorteImagem from './RecorteImagem'
 import { btn, input, msg } from './estilos'
 import RolagemAssim, { marcaAssim } from '@/components/dados/RolagemAssim'
 import { CartaoAtaque, ConfigCombate, DescansoGrupo, JanelaAtaque, PainelFichas, PainelMorte, PrepararCombate, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type FichaMesa, type Morte } from './Combate'
+import NaTela from '@/components/NaTela'
 
 type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean }
 type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; condicoes_rodadas?: Record<string, number> | null; condicoes_dano?: Record<string, string> | null; morte?: Morte | null; dono_id: string | null; ficha_id: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number }
@@ -533,7 +534,7 @@ function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar, regraMorte
   const pode = admin || t.dono_id === eu
   const [dano, setDano] = useState('')
   const hp = t.hp_atual ?? 0
-  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label={'Token ' + t.nome} onClick={fechar}>
+  return <NaTela><div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4" role="dialog" aria-modal="true" aria-label={'Token ' + t.nome} onClick={fechar}>
     <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-4" onClick={x => x.stopPropagation()}>
       <div className="flex items-center gap-2"><span className="h-8 w-8 rounded-full" style={{ background: t.imagem_url ? `center/cover url(${t.imagem_url})` : t.cor }} /><h2 className="flex-1 font-bold">{t.nome}</h2>
         <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-(--s-34294f)"><X size={18} /></button></div>
@@ -576,7 +577,7 @@ function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar, regraMorte
       </div>}
       {!pode && <p className="mt-3 flex items-center gap-1 text-xs text-(--a-b4aeca)"><Lock size={12} /> Só o mestre ou o dono deste token altera.</p>}
     </div>
-  </div>
+  </div></NaTela>
 }
 
 function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHistorico }: { e: Estado; nomes: Record<string, string>; papelDe: Record<string, string>; admin: boolean; espectador: boolean; acao: Acao; destacar: (ev: Evento) => void; abrirHistorico: () => void }) {
@@ -591,13 +592,14 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
   const ehConversa = (ev: Evento) => ev.tipo === 'chat'
   const lista = e.eventos.filter(ev => aba === 'conversa' ? ehConversa(ev) : !ehConversa(ev))
   const [visto, setVisto] = useState<Record<'conversa' | 'mesa', number>>({ conversa: 0, mesa: 0 })
-  const ultimo = (t: 'conversa' | 'mesa') => e.eventos.reduce((m, ev) => (t === 'conversa') === ehConversa(ev) ? Math.max(m, ev.id) : m, 0)
+  const ultimoConversa = e.eventos.reduce((m, ev) => ev.tipo === 'chat' ? Math.max(m, ev.id) : m, 0)
+  const ultimoMesa = e.eventos.reduce((m, ev) => ev.tipo !== 'chat' ? Math.max(m, ev.id) : m, 0)
   const iniciado = useRef(false)
   useEffect(() => {
     // O que já estava na mesa ao entrar não conta como novo.
-    if (!iniciado.current && e.eventos.length) { setVisto({ conversa: ultimo('conversa'), mesa: ultimo('mesa') }); iniciado.current = true; return }
-    setVisto(v => ({ ...v, [aba]: Math.max(v[aba], ultimo(aba)) }))
-  }, [aba, e.eventos.length])
+    if (!iniciado.current && (ultimoConversa || ultimoMesa)) { setVisto({ conversa: ultimoConversa, mesa: ultimoMesa }); iniciado.current = true; return }
+    setVisto(v => ({ ...v, [aba]: Math.max(v[aba], aba === 'conversa' ? ultimoConversa : ultimoMesa) }))
+  }, [aba, ultimoConversa, ultimoMesa])
   const novos = (t: 'conversa' | 'mesa') => t === aba ? 0 : e.eventos.filter(ev => (t === 'conversa') === ehConversa(ev) && ev.id > visto[t] && ev.autor_id !== e.eu).length
   useEffect(() => { fim.current?.scrollIntoView({ block: 'end' }) }, [lista.length, aba])
   const meus = e.fichas.filter(f => f.dono_id === e.eu || (admin && f.npc))
@@ -694,14 +696,14 @@ function PainelIniciativa({ e, admin, acao, fichas, atacar }: { e: Estado; admin
 }
 
 function Historico({ campanhaId, membros, fechar }: { campanhaId: string; membros: Estado['membros']; fechar: () => void }) {
-  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="Histórico de rolagens">
+  return <NaTela><div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4" role="dialog" aria-modal="true" aria-label="Histórico de rolagens">
     <div className="flex max-h-[90vh] w-full max-w-xl flex-col rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-4">
       <div className="mb-2 flex items-center justify-between gap-2"><h2 className="font-bold">📜 Histórico de rolagens</h2>
         <a href={'/rolagens?campanha=' + campanhaId} className="ml-auto text-xs text-(--a-c7a8ff) underline">Abrir em tela cheia</a>
         <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-(--s-34294f)"><X size={18} /></button></div>
       <HistoricoRolagens campanhaId={campanhaId} membros={membros} />
     </div>
-  </div>
+  </div></NaTela>
 }
 
 /** Campo do dano por turno de uma condição (salva ao sair do campo ou com Enter). */

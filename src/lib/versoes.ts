@@ -6,6 +6,17 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.33.6', data: '2026-11-12', titulo: 'Progressão de D&D na campanha',
+    itens: [
+      '🌳 D&D 2024 — modo de progressão da campanha: o mestre escolhe Híbrido (padrão), Automático ou Manual em Editar campanha. Na aba Árvore da ficha aparecem os marcos oficiais (Guerreiro, Ladino e Mago até o nível 20) e a escolha de subclasse das 12 classes, com selos de Adquirida, Escolha pendente e Futura.',
+      '🛡️ O servidor confere a escolha de subclasse: só a partir do nível 3, da classe certa e de uma opção existente. Um nível pedido pelo jogador e ainda não aprovado não libera escolhas.',
+      'Armadura pesada não usa mais a Destreza na CA (nem quando ela é negativa).',
+      'Campanhas antigas continuam iguais e passam a usar o modo Híbrido. Trocar o modo não apaga as exceções feitas para uma ficha.',
+      '🪟 Janelas da ficha e da mesa (novo poder, novo item, descanso, passar item, árvore, combate, biblioteca e outras) agora abrem centralizadas por cima de tudo e rolam por dentro. Antes, dentro de um cartão com efeito de vidro, a janela ficava presa e cortada no celular, e não dava para chegar nos outros campos.',
+      '📱 Ajustes para celular: o campo do código de convite cabe inteiro e as janelas não grudam mais no rodapé.',
+    ],
+  },
+  {
     versao: '0.33.5', data: '2026-11-12', titulo: 'Chat separado na mesa',
     itens: [
       '💬 Chat separado na mesa: a aba Chat agora tem “Conversa”, só com as mensagens do grupo, e “Dados e mesa”, com as rolagens, ataques, turnos e avisos. Cada uma mostra quantas novidades chegaram na outra, e os dados para rolar ficam em “Dados e mesa” (o /r da conversa continua funcionando).',

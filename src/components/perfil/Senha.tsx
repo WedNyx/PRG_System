@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Copy, Eye, EyeOff, KeyRound, Lock, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { EVENTO_SENHA } from '@/lib/nuvem/cliente'
+import NaTela from '@/components/NaTela'
 
 type PerfilCurto = { id: string; apelido?: string; avatar?: string | null }
 const campo = 'w-full rounded-lg border border-(--a-4a4267) bg-(--s-100f20) p-3 text-white outline-none focus:border-(--a-b99bff)'
@@ -64,7 +65,7 @@ export function JanelaSenha({ perfil, aoEntrar, fechar }: { perfil: PerfilCurto;
     } catch (er) { setErro(er instanceof Error ? er.message : 'Senha incorreta.'); setSenha('') }
     finally { setOcupado(false) }
   }
-  return <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/75 p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
+  return <NaTela><div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/75 p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
     <form onSubmit={entrar} role="dialog" aria-modal="true" aria-labelledby="senha-perfil-titulo" onKeyDown={e => { if (e.key === 'Escape') fechar() }}
       className="w-full max-w-sm rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-5 text-(--a-f4f0ff) shadow-2xl">
       <div className="flex items-center gap-3">
@@ -86,7 +87,7 @@ export function JanelaSenha({ perfil, aoEntrar, fechar }: { perfil: PerfilCurto;
       <p className="mt-2 text-center text-[11px] text-(--a-8f88a8)">{recuperar ? 'O código foi mostrado quando a senha foi criada. Sem ele, peça ao administrador para apagar a senha.' : 'Este aparelho fica lembrado por 30 dias.'}</p>
       </>}
     </form>
-  </div>
+  </div></NaTela>
 }
 
 /** Fica na página toda: se alguma chamada responder “este perfil tem senha”, pede a senha e recarrega. */

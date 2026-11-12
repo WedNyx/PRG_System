@@ -45,7 +45,7 @@ export const GET = rota<Ctx>(async (req, { params }) => {
   }
   const podeEditar = f.campanha_id ? (admin || (dono && f.status !== 'recusada' && !f.bloqueada)) : dono
   const [configCampanha] = f.campanha_id && f.sistema === 'dnd5e-srd'
-    ? await rest<{ config_progressao?: unknown }[]>(`prg_campanhas?select=config_progressao&id=eq.${q(f.campanha_id)}&limit=1`)
+    ? await rest<{ config_progressao?: unknown }[]>(`prg_campanhas?select=config_progressao&id=eq.${q(f.campanha_id)}&limit=1`).catch(() => [])
     : []
   const configProgressao = lerConfiguracaoProgressao(configCampanha?.config_progressao)
   return ok({ ficha: f, podeEditar, souMestre: admin, regras, pendentes, configProgressao })

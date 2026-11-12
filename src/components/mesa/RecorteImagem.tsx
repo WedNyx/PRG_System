@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { Check, Maximize, X } from 'lucide-react'
 import { btn } from './estilos'
+import NaTela from '@/components/NaTela'
 
 export type Recorte = { cx: number; cy: number; cw: number; ch: number }
 type Alca = 'mover' | 'no' | 'ne' | 'so' | 'se'
@@ -42,7 +43,7 @@ export default function RecorteImagem({ url, inicial, onSalvar, onCancelar }: {
   const pct = (n: number) => n * 100 + '%'
   const cantos: [Alca, string][] = [['no', '-left-2 -top-2 cursor-nwse-resize'], ['ne', '-right-2 -top-2 cursor-nesw-resize'], ['so', '-left-2 -bottom-2 cursor-nesw-resize'], ['se', '-right-2 -bottom-2 cursor-nwse-resize']]
 
-  return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-3" role="dialog" aria-modal="true" aria-label="Recortar imagem do mapa">
+  return <NaTela><div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-3" role="dialog" aria-modal="true" aria-label="Recortar imagem do mapa">
     <div className="flex max-h-full w-full max-w-3xl flex-col rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-4">
       <div className="flex items-center justify-between gap-2"><h2 className="font-bold">✂️ Escolha a parte da imagem</h2>
         <button type="button" onClick={onCancelar} aria-label="Fechar" className="rounded p-1 hover:bg-(--s-34294f)"><X size={18} /></button></div>
@@ -64,5 +65,5 @@ export default function RecorteImagem({ url, inicial, onSalvar, onCancelar }: {
         <button type="button" className={btn + ' border-(--a-b99bff) bg-(--a-5b4380)'} onClick={() => onSalvar(r, ar)}><Check size={14} /> Usar este recorte</button>
       </div>
     </div>
-  </div>
+  </div></NaTela>
 }

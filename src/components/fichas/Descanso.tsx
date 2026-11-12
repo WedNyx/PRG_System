@@ -6,6 +6,7 @@ import { Moon, Sunrise, X } from 'lucide-react'
 import { aplicarDescanso, recursoDeVida, type TipoDescanso } from '@/lib/sistemas/descanso'
 import { lerPoderes } from '@/lib/sistemas/inventario'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
+import NaTela from '@/components/NaTela'
 
 /** Janela “Descansar”: escolhe curto ou longo; no curto dá para curar um pouco (número ou dados). */
 export default function JanelaDescanso({ s, d, onChange, rolarTotal, fechar }: {
@@ -35,7 +36,7 @@ export default function JanelaDescanso({ s, d, onChange, rolarTotal, fechar }: {
     } finally { setOcupado(false) }
   }
 
-  return <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 p-3 sm:items-center" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
+  return <NaTela><div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-3 sm:p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
     <div role="dialog" aria-modal="true" aria-labelledby="descanso-titulo" onKeyDown={e => { if (e.key === 'Escape') fechar() }}
       className="max-h-[88vh] w-full max-w-md overflow-y-auto rounded-2xl border border-(--a-8b6cba) bg-(--s-19152a) p-5 text-(--a-f2ebff) shadow-2xl">
       <div className="flex items-center gap-2">
@@ -58,5 +59,5 @@ export default function JanelaDescanso({ s, d, onChange, rolarTotal, fechar }: {
       </section>
       <p className="mt-3 text-[11px] text-(--a-8f88a8)">Em campanha, o mestre também pode dar o descanso para o grupo todo (Mestre → Controles, na mesa).</p>
     </div>
-  </div>
+  </div></NaTela>
 }

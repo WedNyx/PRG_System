@@ -5,6 +5,7 @@ import { Gift, Minus, Plus, X } from 'lucide-react'
 import ArteItem from './ArteItem'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import type { Item } from '@/lib/sistemas/inventario'
+import NaTela from '@/components/NaTela'
 
 type Destino = { id: string; nome: string; npc: boolean; jogador: string | null; meu: boolean }
 export type ResultadoPassar = { item: string; qtd: number; para: string; de: { versao: number; dados: Record<string, unknown> } }
@@ -35,7 +36,7 @@ export default function PassarItem({ campanhaId, fichaId, item, tem, fechar, fei
     } catch (e) { setErro(e instanceof ErroNuvem ? e.message : 'Falha de conexão.') } finally { setOcupado(false) }
   }
 
-  return <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 p-3 sm:items-center" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
+  return <NaTela><div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-3 sm:p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
     <div role="dialog" aria-modal="true" aria-labelledby="passar-titulo" onKeyDown={e => { if (e.key === 'Escape') fechar() }}
       className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-(--a-8b6cba) bg-(--s-19152a) p-5 text-(--a-f2ebff) shadow-2xl">
       <div className="flex items-center gap-3">
@@ -70,5 +71,5 @@ export default function PassarItem({ campanhaId, fichaId, item, tem, fechar, fei
         <Gift size={16} /> {ocupado ? 'Passando…' : para ? `Passar ${qtd > 1 ? qtd + '× ' : ''}para ${destinos?.find(x => x.id === para)?.nome}` : 'Escolha quem recebe'}</button>
       <p className="mt-2 text-center text-[11px] text-(--a-8f88a8)">O item sai da sua ficha e entra na outra na hora. O chat da mesa avisa.</p>
     </div>
-  </div>
+  </div></NaTela>
 }

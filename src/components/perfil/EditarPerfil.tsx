@@ -7,6 +7,7 @@ import EscolherGrupo from './EscolherGrupo'
 import { ConfigSenha } from './Senha'
 import ApagarPerfil from './ApagarPerfil'
 import { ehGrupo, GRUPO_PADRAO, type GrupoId } from '@/lib/grupos'
+import NaTela from '@/components/NaTela'
 
 type Perfil = { id: string; apelido: string; avatar?: string | null; grupo?: string }
 const CROP = 256, SAIDA = 320
@@ -75,7 +76,7 @@ export default function EditarPerfil({ perfil, fechar, salvo }: { perfil: Perfil
     } catch (er) { setErro(er instanceof Error ? er.message : 'Falha ao salvar.') } finally { setOcupado(false) }
   }
 
-  return <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/75 p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
+  return <NaTela><div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/75 p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
     <form onSubmit={salvar} role="dialog" aria-modal="true" aria-labelledby="editar-perfil-titulo" onKeyDown={e => { if (e.key === 'Escape') fechar() }}
       className="my-auto w-full max-w-md space-y-4 rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-5 shadow-2xl sm:p-7">
       <div className="flex items-center justify-between"><h2 id="editar-perfil-titulo" className="text-xl font-bold">Editar perfil</h2>
@@ -117,5 +118,5 @@ export default function EditarPerfil({ perfil, fechar, salvo }: { perfil: Perfil
         <button type="submit" disabled={ocupado || !!crop} className="flex-1 rounded-lg bg-(--a-7654bb) px-3 py-3 font-semibold hover:bg-(--a-8a67ce) disabled:opacity-50">{ocupado ? 'Salvando…' : 'Salvar'}</button>
       </div>
     </form>
-  </div>
+  </div></NaTela>
 }

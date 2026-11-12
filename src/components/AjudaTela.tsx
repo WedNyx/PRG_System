@@ -19,7 +19,7 @@ export default function AjudaTela({ titulo, intro, passos, rotulo = 'Ajuda', cla
       className={'inline-flex shrink-0 items-center gap-1.5 rounded-full border border-(--a-8d70b6) px-3 py-1.5 text-sm text-(--a-e4d3ff) hover:bg-(--s-342749) ' + className}>
       <CircleHelp size={16} aria-hidden="true" /><span className="hidden sm:inline">{rotulo}</span></button>
     {/* Vai para o <body>: dentro de um cabeçalho com desfoque, o “fixed” ficaria preso nele. */}
-    {aberto && createPortal(<div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-3 sm:items-center" onMouseDown={e => { if (e.target === e.currentTarget) setAberto(false) }}>
+    {aberto && createPortal(<div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/70 p-3 sm:p-4" onMouseDown={e => { if (e.target === e.currentTarget) setAberto(false) }}>
       <div role="dialog" aria-modal="true" aria-labelledby="ajuda-tela-titulo" onKeyDown={e => { if (e.key === 'Escape') setAberto(false) }}
         className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-(--a-8b6cba) bg-(--s-19152a) p-5 text-(--a-f2ebff) shadow-2xl">
         <div className="flex items-start gap-3">

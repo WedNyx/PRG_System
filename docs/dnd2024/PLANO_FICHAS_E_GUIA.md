@@ -24,7 +24,7 @@ Não reutilizar a compra de nós para a progressão oficial do D&D. A visualiza�
 Esta PR agora inclui a fundação, um seletor de modo de progressão no formulário de campanhas na nuvem, persistência em `config_progressao`, leitura do modo pela ficha genérica de D&D, visão dos marcos e escolhas na aba Árvore e testes. Não altera fichas antigas em massa. O catálogo é **parcial**: características da progressão de Guerreiro, Ladino e Mago até o nível 20, mais uma escolha de subclasse aberta do SRD para cada uma das 12 classes. As características das outras nove classes ainda não foram catalogadas, e nada aqui concede bônus automaticamente.
 
 ## Integração pronta nesta branch (depende de migração)
-- **Banco:** aplicar `supabase/migrations/20261112120000_dnd_progression_mode.sql` antes de subir o código. Adiciona `config_progressao jsonb` em `prg_campanhas` com padrão Híbrido.
+- **Banco:** aplicar `supabase/migrations/027_progressao_dnd.sql` antes de subir o código. Adiciona `config_progressao jsonb` em `prg_campanhas` com padrão Híbrido.
 - **API:** criação/edição de campanha valida `configProgressao`, inclui a coluna na listagem; GET da ficha de campanha D&D retorna `configProgressao` após verificar acesso.
 - **UI campanha:** Editar campanha → Seletor de modo de progressão (D&D 2024). O mestre/co-mestre já autorizado salva o modo pela rota existente.
 - **UI ficha:** Árvore mostra a progressão guiada conforme o modo, com a árvore personalizada ao lado apenas em Híbrido ou Manual. A árvore personalizada não é editável por jogadores na campanha D&D; as escolhas da progressão ficam sujeitas às permissões de habilidades já existentes.

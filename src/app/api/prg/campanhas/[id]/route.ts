@@ -1,5 +1,6 @@
 import { ator, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { podeAdministrar, situacaoConvite, validarCampanha, type ConviteRow } from '@/lib/nuvem/validacao'
+import { lerConfiguracaoProgressao } from '@/lib/sistemas/modoProgressao'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
@@ -34,6 +35,13 @@ export const PATCH = rota<Ctx>(async (req, { params }) => {
   const v = validarCampanha(await lerJson(req), true)
   if (!v.ok) throw new ErroApi(400, v.erro)
   if (!Object.keys(v.valor).length) throw new ErroApi(400, 'Nada para alterar.')
+  if (v.valor.config_progressao) {
+    // Trocar o modo da campanha não apaga as exceções por ficha já autorizadas (só troca as que vierem no pedido).
+    const [atual] = await rest<{ config_progressao?: unknown }[]>(`prg_campanhas?select=config_progressao&id=eq.${q(id)}&limit=1`)
+      .catch(() => { throw new ErroApi(409, 'O modo de progressão precisa da migração 027 no banco. Avise o administrador.') })
+    const antes = lerConfiguracaoProgressao(atual?.config_progressao)
+    v.valor.config_progressao = { ...v.valor.config_progressao, excecoesPorFicha: { ...antes.excecoesPorFicha, ...v.valor.config_progressao.excecoesPorFicha } }
+  }
   const [campanha] = await rest<Record<string, unknown>[]>(`prg_campanhas?id=eq.${q(id)}`, {
     method: 'PATCH', prefer: 'return=representation', body: JSON.stringify({ ...v.valor, atualizada_em: new Date().toISOString() }),
   })

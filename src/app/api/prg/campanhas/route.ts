@@ -10,7 +10,7 @@ type Membro = { papel: string; campanha: Record<string, unknown> | null }
 export const GET = rota(async req => {
   const eu = await ator(req)
   const rows = await rest<Membro[]>(
-    `prg_campanha_membros?select=papel,campanha:prg_campanhas(id,nome,descricao,sistema,modelo_padrao,permissoes,estado,mestre_id,criada_em,sessao_aberta,capa_url)&aventureiro_id=eq.${q(eu)}&order=entrou_em.desc&limit=200`)
+    `prg_campanha_membros?select=papel,campanha:prg_campanhas(id,nome,descricao,sistema,modelo_padrao,permissoes,config_progressao,estado,mestre_id,criada_em,sessao_aberta,capa_url)&aventureiro_id=eq.${q(eu)}&order=entrou_em.desc&limit=200`)
   const campanhas = rows.filter(r => r.campanha).map(r => ({ ...r.campanha, meuPapel: r.papel, pendencias: 0 })) as (Record<string, unknown> & { id: string; meuPapel: string; pendencias: number })[]
   // Notificações para o mestre: pedidos de entrada, fichas para aprovar e pedidos de alteração.
   const adm = campanhas.filter(c => c.meuPapel === 'mestre' || c.meuPapel === 'comestre').map(c => c.id)

@@ -17,9 +17,11 @@ describe('adaptação da ficha D&D', () => {
   it('filtra escolhas inválidas', () => {
     expect(lerEscolhasDnd({ 'guerreiro-subclasse': 'campeao', foo: '<script>' })).toEqual({ 'guerreiro-subclasse': 'campeao' })
   })
-  it('não atribui marcos de Guerreiro a outras classes', () => {
+  it('não mistura progressões de classes diferentes', () => {
     const p = progressoDaFichaDnd({ campos: { classe: 'Mago', nivel: 5 } })
-    expect(progressaoVisivel(MARCOS_DND_2024, p)).toEqual([])
+    const marcos = progressaoVisivel(MARCOS_DND_2024, p)
+    expect(marcos.some(m => m.origemId === 'guerreiro')).toBe(false)
+    expect(marcos.some(m => m.origemId === 'mago')).toBe(true)
   })
   it('não permite subclasse antes do nível 3', () => {
     expect(validarAlteracoesEscolhasDnd(

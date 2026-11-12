@@ -7,6 +7,7 @@ import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { normalizarFicha } from '@/lib/sistemas/calculo'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { lerConfiguracaoProgressao } from '@/lib/sistemas/modoProgressao'
+import { lerEscolhasDnd, validarAlteracoesEscolhasDnd } from '@/lib/sistemas/dnd2024Ficha'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
@@ -71,6 +72,20 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
   if (!Number.isInteger(body.versao)) throw new ErroApi(400, 'Versão ausente.')
   const v = validarFichaDados(body.dados)
   if (!v.ok) throw new ErroApi(400, v.erro)
+  // Valida mudanças em escolhas D&D ANTES da aplicação de permissão/aprovação.
+  // Personagens antigos podem conservar escolhas históricas sem bloqueios retroativos.
+  if (f.sistema === 'dnd5e-srd') {
+    const antigo = f.dados as Partial<DadosFicha>
+    const candidato = v.valor.dados as Partial<DadosFicha>
+    const erros = validarAlteracoesEscolhasDnd(
+      { campos: antigo.campos ?? {}, dndEscolhas: antigo.dndEscolhas },
+      { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas },
+    )
+    if (erros.length) throw new ErroApi(400, erros.join(' '))
+    if (candidato.dndEscolhas !== undefined) {
+      v.valor.dados = { ...v.valor.dados, dndEscolhas: lerEscolhasDnd(candidato.dndEscolhas) }
+    }
+  }
 
   let final: Record<string, unknown> = v.valor.dados
   let pendentes: Mudanca[] = [], ignoradas: Mudanca[] = [], salvas: Mudanca[] = []

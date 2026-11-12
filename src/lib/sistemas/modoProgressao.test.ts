@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { configuracaoProgressaoPadrao, lerConfiguracaoProgressao, modoDaFicha, permissoesDoModo } from './modoProgressao'
 
 describe('modo de progressão por campanha', () => {
-  it('usa automático como padrão seguro', () => {
-    expect(configuracaoProgressaoPadrao().modo).toBe('automatico')
-    expect(lerConfiguracaoProgressao({ modo: 'desconhecido' }).modo).toBe('automatico')
+  it('usa híbrido como padrão da campanha', () => {
+    expect(configuracaoProgressaoPadrao().modo).toBe('hibrido')
+    expect(lerConfiguracaoProgressao({ modo: 'desconhecido' }).modo).toBe('hibrido')
   })
   it('permite escolha manual ou híbrida', () => {
     expect(permissoesDoModo('manual').aplicarCaracteristicasAutomaticas).toBe(false)

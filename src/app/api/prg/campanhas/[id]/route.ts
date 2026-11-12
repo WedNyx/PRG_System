@@ -39,3 +39,20 @@ export const PATCH = rota<Ctx>(async (req, { params }) => {
   })
   return ok({ campanha })
 })
+
+/**
+ * Excluir a campanha (v0.33.2): só o mestre, escrevendo o nome dela. Some tudo da campanha
+ * (mesa, diário, convites, cópias das fichas); as fichas avulsas originais dos jogadores continuam.
+ */
+export const DELETE = rota<Ctx>(async (req, { params }) => {
+  const { id } = await params
+  const eu = await ator(req)
+  const [c] = await rest<{ nome: string; mestre_id: string }[]>(`prg_campanhas?select=nome,mestre_id&id=eq.${q(id)}&limit=1`)
+  if (!c || !(await papelNaCampanha(id, eu))) throw new ErroApi(404, 'Campanha não encontrada.')
+  if (c.mestre_id !== eu) throw new ErroApi(403, 'Só o mestre pode excluir a campanha.')
+  const b = await lerJson(req, 1000) as { confirmar?: unknown }
+  if (typeof b.confirmar !== 'string' || b.confirmar.trim().toLowerCase() !== c.nome.trim().toLowerCase())
+    throw new ErroApi(400, 'Para confirmar, escreva o nome da campanha exatamente como ele é.')
+  await rest(`prg_campanhas?id=eq.${q(id)}`, { method: 'DELETE' })
+  return ok({ ok: true })
+})

@@ -254,7 +254,28 @@ function Gerenciar({ aventureiroId, id, onVoltar, onEditar }: { aventureiroId: s
       {d.convites.length === 0 && <p className="mt-3 text-sm text-(--a-c4b6d4)">Nenhum convite ainda.</p>}
     </section>}
     <button type="button" onClick={carregar} className={btn}><RefreshCw size={16} /> Atualizar</button>
+    {mestre && <ExcluirCampanha nome={c.nome} excluir={async confirmar => { await call('campanhas/' + id, 'DELETE', { confirmar }); onVoltar() }} />}
   </div>
+}
+
+/** Zona de perigo do mestre: excluir a campanha escrevendo o nome dela. */
+function ExcluirCampanha({ nome, excluir }: { nome: string; excluir: (confirmar: string) => Promise<void> }) {
+  const [aberto, setAberto] = useState(false), [texto, setTexto] = useState(''), [erro, setErro] = useState(''), [ocupado, setOcupado] = useState(false)
+  const confere = texto.trim().toLowerCase() === nome.trim().toLowerCase()
+  return <section className="rounded-2xl border border-red-900/60 bg-[#1d0f17]/90 p-4" aria-label="Excluir campanha">
+    <h3 className="flex items-center gap-1.5 font-semibold text-red-200"><Trash2 size={16} /> Excluir campanha</h3>
+    <p className="mt-1 text-xs text-(--a-c4b6d4)">Some tudo da campanha: mesa, mapas, diário, músicas, convites e as fichas que estão nela. As fichas avulsas originais dos jogadores continuam com eles. Para só parar de jogar, prefira “Encerrada”.</p>
+    {!aberto ? <button type="button" onClick={() => setAberto(true)} className="mt-2 rounded-lg border border-red-800/70 px-3 py-1.5 text-sm text-red-200 hover:bg-red-950/50">Excluir campanha…</button> : <div className="mt-3 space-y-2">
+      <label className="block text-sm text-(--a-c4b6d4)">Para confirmar, escreva <b className="text-white">{nome}</b>
+        <input value={texto} onChange={e => setTexto(e.target.value)} autoComplete="off" className="mt-1 w-full rounded-lg border border-(--a-70588c) bg-(--s-151123) p-2.5 text-white" /></label>
+      {erro && <p role="alert" className="text-sm text-red-200">{erro}</p>}
+      <div className="flex gap-2">
+        <button type="button" disabled={ocupado} onClick={() => { setAberto(false); setTexto('') }} className={btn}>Cancelar</button>
+        <button type="button" disabled={!confere || ocupado} onClick={async () => { setOcupado(true); setErro(''); try { await excluir(texto) } catch (e) { setErro(msg(e)); setOcupado(false) } }}
+          className="rounded-lg bg-red-700 px-3 py-2 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-40">{ocupado ? 'Excluindo…' : 'Excluir para sempre'}</button>
+      </div>
+    </div>}
+  </section>
 }
 
 function Excecoes({ campanha, membro, ocupado, salvar }: { campanha: Campanha; membro: Membro; ocupado: boolean; salvar: (ex: Partial<Permissoes>) => void }) {

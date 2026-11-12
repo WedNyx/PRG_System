@@ -19,6 +19,16 @@ export function validarSenhaNova(v: unknown): { ok: true; senha: string } | { ok
   return { ok: true, senha: v }
 }
 
+/** Letras e números sem os que se confundem (0/O, 1/I/L). */
+const ALFABETO = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+/** Código de recuperação: 16 caracteres em 4 grupos (ex.: K7QM-2XPB-9RTD-W4HN), ~78 bits. Mostrado uma vez só. */
+export function novoCodigoRecuperacao(): string {
+  const b = randomBytes(16)
+  return [...b].map(x => ALFABETO[x % ALFABETO.length]).join('').match(/.{4}/g)!.join('-')
+}
+/** Aceita o código com ou sem traços, minúsculas ou espaços. */
+export const normalizarCodigo = (v: unknown) => typeof v === 'string' ? v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 32) : ''
+
 /** Guarda como `scrypt$N$r$p$sal$hash` (base64url). */
 export async function gerarHash(senha: string): Promise<string> {
   const sal = randomBytes(16)

@@ -125,10 +125,22 @@ export const GUIA: TopicoGuia[] = [
     dica: 'Não precisa de e-mail. A senha é opcional, mas protege o seu perfil.',
   },
   {
-    id: 'senha', icone: '🔒', titulo: 'Senha do perfil', quem: 'todos',
-    resumo: 'Opcional: proteja o seu perfil para ninguém mais entrar nele.',
-    passos: ['Na Central, toque na sua foto no topo (ou no menu → “Editar perfil”).', 'Em “🔒 Senha do perfil”, toque em “Criar senha”, digite duas vezes (6 a 72 caracteres) e salve.', 'No portal, o seu perfil passa a mostrar 🔒. Em outro aparelho, a plataforma pede a senha uma vez e lembra dele por 30 dias.', 'Para trocar ou remover, use a senha atual. Trocar a senha desconecta os outros aparelhos; “Desconectar todos os aparelhos” sai de todos.', 'Esqueceu? Peça ao administrador da plataforma: ele apaga a senha pelo 🔑 no portal e você cria outra.'],
+    id: 'senha', icone: '🔒', titulo: 'Senha do perfil e código de recuperação', quem: 'todos',
+    resumo: 'Opcional: proteja o seu perfil para ninguém mais entrar nele. Se esquecer a senha, use o código de recuperação.',
+    passos: ['Na Central, toque na sua foto no topo (ou no menu → “Editar perfil”).', 'Em “🔒 Senha do perfil”, toque em “Criar senha”, digite duas vezes (6 a 72 caracteres) e salve.', 'Aparece o seu código de recuperação (ex.: K7QM-2XPB-9RTD-W4HN). Guarde num lugar seguro: ele aparece só uma vez.', 'No portal, o seu perfil passa a mostrar 🔒. Em outro aparelho, a plataforma pede a senha uma vez e lembra dele por 30 dias.', 'Esqueceu a senha? Na janela da senha, toque em “Esqueci a senha”, digite o código e escolha uma senha nova (ou deixe vazio para ficar sem senha). Você recebe um código novo.', 'Perdeu o código? Com a senha, gere outro em Editar perfil. Sem os dois, só o administrador consegue apagar a senha.'],
     dica: 'Não existe recuperação por e-mail. Use uma senha que você lembre e que não use em outros sites.',
+  },
+  {
+    id: 'apagar-perfil', icone: '🗑️', titulo: 'Apagar o meu perfil', quem: 'todos',
+    resumo: 'Apaga o seu perfil e tudo dele, de vez. Os personagens das campanhas podem ficar com o mestre.',
+    passos: ['Quer guardar algum personagem? Abra a ficha e toque em ⬇️ “Baixar”.', 'Na Central, abra “Editar perfil” e, no fim, toque em “Apagar perfil…”.', 'Se você for mestre de alguma campanha, a janela mostra quais e pede para marcar que elas serão apagadas junto.', 'Escolha se os seus personagens nas campanhas de outros mestres ficam com eles, como NPC, escreva o nome do perfil e confirme.'],
+    dica: 'Não dá para desfazer. Fichas baixadas podem ser importadas de novo num perfil novo.',
+  },
+  {
+    id: 'ficha-arquivo', icone: '💾', titulo: 'Baixar e importar ficha', quem: 'todos',
+    resumo: 'Guarde uma cópia do personagem num arquivo e traga de volta quando quiser.',
+    passos: ['Abra a ficha e toque em ⬇️ “Baixar” no topo: o celular ou o computador salva um arquivo .json.', 'Para trazer de volta, vá em Central → Fichas → Avulsas e toque em “Importar ficha”.', 'A ficha importada vira uma ficha avulsa nova; a original não muda. Para usar numa campanha, envie para a campanha normalmente.'],
+    dica: 'Serve de backup e para levar o personagem para outro perfil. Fichas de sistemas criados por outra pessoa só importam se o sistema estiver publicado.',
   },
   {
     id: 'biblioteca', icone: '📚', titulo: 'Biblioteca da campanha', quem: 'mestre',

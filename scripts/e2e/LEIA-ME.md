@@ -46,6 +46,7 @@ Simulam três aventureiros (mestre, jogador e intruso) contra um banco real.
    PRG_BASE=http://localhost:3000 node scripts/e2e/v32-historico-itens.mjs
    PRG_BASE=http://localhost:3000 node scripts/e2e/v32-visual.mjs   # migração 025
    PRG_BASE=http://localhost:3000 node scripts/e2e/v32-fichas-sistemas.mjs
+   PRG_BASE=http://localhost:3000 node scripts/e2e/v33-contas.mjs   # migração 026
    ```
 Nunca rode contra o banco de produção: os testes criam campanhas e fichas.
 

@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight, Cloud, History, Loader2, Plus, Send, Trash2, Upload } from 'lucide-react'
+import { ChevronRight, Cloud, FileUp, History, Loader2, Plus, Send, Trash2, Upload } from 'lucide-react'
+import { toast } from 'sonner'
+import { lerArquivo } from '@/lib/fichaArquivo'
 import CartaoCapa, { selo } from './CartaoCapa'
 import EscolherSistema from './EscolherSistema'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
@@ -32,6 +34,18 @@ export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: st
     try { setFichas((await api<{ fichas: Ficha[] }>('fichas', { aventureiro: aventureiroId })).fichas); setErro('') }
     catch (e) { setErro(msg(e)); setFichas([]) }
   }, [aventureiroId])
+
+  /** Importa um arquivo baixado pelo “Baixar ficha”: vira uma ficha avulsa nova (a original não muda). */
+  async function importarArquivo(arq: File) {
+    setOcupado(true); setAviso(''); setErro('')
+    try {
+      const r = lerArquivo(await arq.text())
+      if (!r.ok) { setErro(r.erro); return }
+      await api('fichas', { method: 'POST', aventureiro: aventureiroId, body: { sistema: r.sistema, dados: r.dados } })
+      toast.success(`📥 ${r.nome || 'Personagem'} importado como ficha avulsa.`)
+      await carregar()
+    } catch (e) { setErro(msg(e)) } finally { setOcupado(false) }
+  }
 
   const lerLocais = useCallback((nuvem: Ficha[]) => setLocais(fichasLocais(new Set(nuvem.map(f => f.id)))), [])
   useEffect(() => { carregar() }, [carregar])
@@ -96,7 +110,13 @@ export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: st
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div><h2 className="flex items-center gap-2 text-xl font-semibold"><Cloud size={20} className="text-(--a-c3a4f5)" /> {tipo === 'independentes' ? 'Personagens independentes' : 'Fichas de campanhas'}</h2>
         <p className="mt-1 text-sm text-(--a-c4b6d4)">Sincronizadas: abra no celular ou no computador.</p></div>
-      {tipo === 'independentes' && <button type="button" disabled={ocupado} onClick={() => setEscolher(true)} className="inline-flex items-center gap-2 rounded-xl bg-(--a-7652ac) px-4 py-3 text-sm font-semibold hover:bg-(--a-8b68c4) disabled:opacity-50"><Plus size={18} /> Nova ficha</button>}
+      {tipo === 'independentes' && <div className="flex flex-wrap gap-2">
+        <label className={'inline-flex cursor-pointer items-center gap-2 rounded-xl border border-(--a-70588c) px-4 py-3 text-sm font-semibold hover:bg-(--s-38294d) ' + (ocupado ? 'pointer-events-none opacity-50' : '')} title="Abrir um arquivo .json baixado pelo botão “Baixar ficha”">
+          <FileUp size={18} /> Importar ficha
+          <input type="file" accept="application/json,.json" className="sr-only" aria-label="Importar ficha de um arquivo" disabled={ocupado} onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void importarArquivo(f) }} />
+        </label>
+        <button type="button" disabled={ocupado} onClick={() => setEscolher(true)} className="inline-flex items-center gap-2 rounded-xl bg-(--a-7652ac) px-4 py-3 text-sm font-semibold hover:bg-(--a-8b68c4) disabled:opacity-50"><Plus size={18} /> Nova ficha</button>
+      </div>}
     </div>
     {locais.length > 0 && <div className="mt-4 rounded-xl border border-(--a-67517f) bg-(--s-2b2140) p-4 text-sm">
       <p className="font-semibold">Fichas salvas só neste navegador</p>

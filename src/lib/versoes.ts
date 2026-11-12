@@ -6,6 +6,15 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.33.2', data: '2026-11-12', titulo: 'Sua conta nas suas mãos',
+    itens: [
+      '🗝️ Código de recuperação: ao criar a senha do perfil você recebe um código (como ABCD-EFGH-JKLM-NPQR). Guarde num lugar seguro: se esquecer a senha, toque em “Esqueci a senha”, digite o código e escolha outra, sem precisar do administrador. Cada código vale uma vez; dá para gerar um novo em Editar perfil.',
+      '🗑️ Apagar o próprio perfil: em Editar perfil → “Apagar perfil…”. Você escolhe se os personagens das campanhas de outros mestres ficam com eles como NPC e confirma digitando o nome do perfil. Se você for mestre de alguma campanha, ela vai junto (a janela avisa quais).',
+      '👑 O mestre pode excluir a própria campanha (no fim da campanha, em Central → Campanhas), digitando o nome dela para confirmar.',
+      '⬇️ Baixar e importar fichas: na ficha, toque em “Baixar” para guardar um arquivo .json do personagem. Em Central → Fichas, “Importar ficha” traz o arquivo de volta como ficha nova (serve para backup ou para passar a ficha para outro perfil).',
+    ],
+  },
+  {
     versao: '0.33.1', data: '2026-11-12', titulo: 'Temas novos e visual revisado',
     itens: [
       '🌲 Quatro temas novos que mudam a plataforma inteira: Floresta encantada (verde, com riacho e arco de runas), Fundo do mar (turquesa, com ruínas submersas e águas-vivas), Taverna (âmbar, com lareira e velas) e Sombrio (roxo e vermelho, com castelo sob a lua vermelha). Agora são 11 temas em Central → Aparência.',

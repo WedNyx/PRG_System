@@ -111,6 +111,18 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     }
   }
 
+  // Revalida contra o estado EFETIVAMENTE autorizado depois da separação
+  // livre/aprovação/bloqueado. Evita usar um nível rejeitado para liberar escolha.
+  if (f.sistema === 'dnd5e-srd') {
+    const anterior = f.dados as Partial<DadosFicha>
+    const autorizado = final as Partial<DadosFicha>
+    const erros = validarAlteracoesEscolhasDnd(
+      { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas },
+      { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas },
+    )
+    if (erros.length) throw new ErroApi(400, 'A escolha não foi liberada no nível autorizado: ' + erros.join(' '))
+  }
+
   let versao = f.versao
   if (!f.campanha_id || salvas.length) {
     const vf = validarFichaDados(final)

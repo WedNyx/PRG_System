@@ -127,9 +127,9 @@ export const SISTEMAS: Sistema[] = [
     formulaModificador: 'piso((X - 10) / 2)',
     derivados: [
       { id: 'prof', nome: 'Bônus de proficiência', formula: 'piso((max(1, nivel) - 1) / 4) + 2' },
-      { id: 'ca', nome: 'Classe de Armadura', formula: 'ca_base + se(des_max, min(mod_DES, des_max), 0) + armadura', dica: 'Base da armadura + Destreza (até o limite) + escudo' },
-      { id: 'pv_sugerido', nome: 'PV máximos (média fixa)', formula: 'se(dv, dv, dado_vida) + mod_CON + (max(1, nivel) - 1) * (piso(se(dv, dv, dado_vida) / 2) + 1 + mod_CON) + robusto * max(1, nivel)', dica: 'Nível 1: dado cheio + CON; depois a média do dado + CON por nível' },
-      { id: 'iniciativa', nome: 'Iniciativa', formula: 'mod_DES' },
+      { id: 'ca', nome: 'Classe de Armadura', formula: 'ca_base + se(des_max, min(mod_DES, des_max), 0) + armadura + dnd_ca_extra', dica: 'Base da armadura + Destreza (até o limite) + escudo; sem armadura, soma a Defesa sem Armadura da classe' },
+      { id: 'pv_sugerido', nome: 'PV máximos (média fixa)', formula: 'se(dv, dv, dado_vida) + mod_CON + (max(1, nivel) - 1) * (piso(se(dv, dv, dado_vida) / 2) + 1 + mod_CON) + robusto * max(1, nivel) + dnd_pv_extra', dica: 'Nível 1: dado cheio + CON; depois a média do dado + CON por nível (com a Robustez Anã e a Resiliência Dracônica)' },
+      { id: 'iniciativa', nome: 'Iniciativa', formula: 'mod_DES + dnd_ini_extra', dica: 'Destreza (+ proficiência com o talento Alerta)' }, { id: 'deslocamento_total', nome: 'Deslocamento com bônus (m)', formula: 'deslocamento + dnd_desl_extra', dica: 'Deslocamento digitado + Movimento Rápido, Movimento sem Armadura, Andarilho ou Elfo da Floresta' },
       { id: 'percepcao_passiva', nome: 'Percepção passiva', formula: '10 + tot_percepcao' },
       { id: 'cd_magia', nome: 'CD de resistência das magias', formula: '8 + prof + conj_int * mod_INT + conj_sab * mod_SAB + conj_car * mod_CAR', dica: '8 + proficiência + atributo de conjuração da classe' },
       { id: 'ataque_magia', nome: 'Bônus de ataque mágico', formula: 'prof + conj_int * mod_INT + conj_sab * mod_SAB + conj_car * mod_CAR', dica: 'Proficiência + atributo de conjuração da classe' },
@@ -147,6 +147,14 @@ export const SISTEMAS: Sistema[] = [
     },
     recursos: [
       { id: 'pv', nome: 'Pontos de Vida', sugerido: 'pv_sugerido' }, { id: 'pv_temp', nome: 'PV temporários' }, { id: 'dados_vida', nome: 'Dados de Vida', formula: 'max(1, nivel)' },
+      // Recursos da classe (v0.33.6): o máximo vem da tabela do SRD 5.2.1 e só aparecem para quem tem.
+      { id: 'furias', nome: 'Fúrias', formula: 'dnd_furias', ocultarSemMax: true }, { id: 'inspiracao_bardo', nome: 'Inspiração de Bardo', formula: 'dnd_inspiracao', ocultarSemMax: true },
+      { id: 'canalizar', nome: 'Canalizar Divindade', formula: 'dnd_canalizar', ocultarSemMax: true }, { id: 'forma_selvagem', nome: 'Forma Selvagem', formula: 'dnd_forma_selvagem', ocultarSemMax: true },
+      { id: 'retomar_folego', nome: 'Retomar o Fôlego', formula: 'dnd_retomar', ocultarSemMax: true }, { id: 'surto_acao', nome: 'Surto de Ação', formula: 'dnd_surto', ocultarSemMax: true, voltaNoCurto: true },
+      { id: 'indomavel', nome: 'Indomável', formula: 'dnd_indomavel', ocultarSemMax: true }, { id: 'foco', nome: 'Pontos de Foco', formula: 'dnd_foco', ocultarSemMax: true, voltaNoCurto: true },
+      { id: 'feiticaria', nome: 'Pontos de Feitiçaria', formula: 'dnd_feiticaria', ocultarSemMax: true }, { id: 'cura_maos', nome: 'Cura pelas Mãos', formula: 'dnd_cura_maos', ocultarSemMax: true },
+      { id: 'marca_cacador', nome: 'Marca do Caçador sem espaço', formula: 'dnd_inimigo', ocultarSemMax: true }, { id: 'pacto', nome: 'Espaços de Magia de Pacto', formula: 'dnd_pacto', ocultarSemMax: true, voltaNoCurto: true },
+      ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => ({ id: 'espacos_' + n, nome: `Espaços de magia de ${n}º nível`, formula: 'dnd_espacos_' + n, ocultarSemMax: true })),
       { id: 'inspiracao', nome: 'Inspiração Heroica', maxFixo: 1, contador: true }, { id: 'exaustao', nome: 'Exaustão (−2 nos testes de d20 por nível)', maxFixo: 6, contador: true, baixaNoDescanso: 1 },
     ],
     limites: [

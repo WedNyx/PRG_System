@@ -42,7 +42,7 @@ export const GUIAS: Record<string, GuiaSistema> = {
       'CA calculada com base da armadura, Destreza até seu limite e bônus registrado; armaduras especiais podem exigir ajustes manuais.',
       'Iniciativa e Percepção passiva, com base nos valores registrados.',
       'CD de resistência das magias e bônus de ataque mágico conforme a classe selecionada.',
-      'Progressão das 12 classes do SRD 5.2.1 (1–20), subclasses, espécies e antecedentes, com a tabela da classe no nível atual e o aviso de escolhas pendentes (ainda sem aplicar os bônus sozinha).',
+      'Progressão das 12 classes do SRD 5.2.1 (1–20), subclasses, espécies e antecedentes, com a tabela da classe no nível atual e o aviso de escolhas pendentes.', 'Proficiência automática nas salvaguardas da classe e nas perícias do antecedente e das escolhas (sem somar de novo se você também marcar).', 'Recursos da classe pela tabela: Fúrias, Inspiração de Bardo, Canalizar Divindade, Forma Selvagem, Retomar o Fôlego, Surto de Ação, Indomável, Pontos de Foco e de Feitiçaria, Cura pelas Mãos, Marca do Caçador e espaços de magia (o descanso curto enche Surto, Foco e Magia de Pacto).', 'Defesa sem Armadura (Bárbaro e Monge) e Resiliência Dracônica na CA e nos PV, Alerta na Iniciativa, Pau para Toda Obra e o deslocamento com Movimento Rápido, Movimento sem Armadura, Andarilho e Elfo da Floresta.',
     ],
     dicas: [
       'Regra de mesa: escolha entre Híbrido, Automático e Manual nas configurações da campanha. O modo Híbrido é o padrão e preserva a árvore autoral do mestre.',
@@ -52,7 +52,7 @@ export const GUIAS: Record<string, GuiaSistema> = {
       'Exemplo: Guerreiro nível 3 tem a escolha de subclasse aberta no SRD. Se o jogador tentar selecioná-la no nível 2, a API rejeita a nova escolha.',
       'Multiclasse exige pré-requisitos e regras próprias para PV e magia. O cálculo simples de PV da ficha ainda não contempla corretamente todas as combinações; confira no SRD antes de aprovar.',
       'Exemplo de CA: uma cota de malha pesada não usa o modificador de Destreza, mesmo se negativo. Armaduras médias têm limite de Destreza; armaduras leves normalmente não têm limite.',
-      'Não confunda registro com efeito automático: escolher a linhagem do Elfo registra a escolha e mostra as magias, mas o truque e a perícia ainda vão para a ficha à mão.',
+      'O que fica à mão: aumentos de atributo (Aumento no Valor de Atributo, Campeão Primal, Corpo e Mente), truques e magias escolhidos, Especialização e equipamento. A ficha não soma esses valores sozinha para não contar duas vezes.', 'No modo Manual da campanha os efeitos automáticos ficam desligados: o mestre controla tudo.',
       'Use a aprovação de habilidades da campanha para revisar alterações feitas por jogadores. As escolhas novas são verificadas contra classe e nível no servidor.',
       'Em caso de dúvida, abra o SRD oficial: https://www.dndbeyond.com/srd — licença CC BY 4.0. Os conteúdos comerciais não são reproduzidos integralmente neste guia.',
     ],

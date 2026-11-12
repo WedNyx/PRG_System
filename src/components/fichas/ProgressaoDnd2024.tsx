@@ -67,6 +67,6 @@ export default function ProgressaoDnd2024({ marcos, ficha, modo, somenteLeitura 
       </li>)}
     </ol></div>)}
     {futuras.length > 0 && <button type="button" onClick={() => setVerFuturas(v => !v)} className="w-full rounded-xl border border-dashed border-(--a-6d5690) p-2 text-sm text-(--a-d6c8f0) hover:bg-(--s-2b2140)">{verFuturas ? 'Esconder os próximos níveis' : `Ver os próximos níveis (${futuras.length})`}</button>}
-    <p className="text-[11px] text-(--a-a998bd)">Fonte: SRD 5.2.1 (CC BY 4.0). Resumos próprios; o texto completo fica no SRD. Os marcos registram o que o personagem tem e as escolhas: os bônus ainda são lançados na ficha à mão.</p>
+    <p className="text-[11px] text-(--a-a998bd)">Fonte: SRD 5.2.1 (CC BY 4.0). Resumos próprios; o texto completo fica no SRD. Automático: salvaguardas da classe, perícias do antecedente e das escolhas, recursos da tabela (fúrias, foco, espaços de magia…), Defesa sem Armadura, Iniciativa com Alerta e deslocamento. À mão: aumentos de atributo, magias escolhidas e equipamento.</p>
   </section>
 }

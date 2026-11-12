@@ -36,7 +36,7 @@ export function resumoCombate(s: Sistema, bruto: unknown): ResumoCombate {
   const c = calcular(s, d)
   const maxDe = (id: string) => c.recursosMax[id] ?? (d.recursos[id]?.max !== undefined ? Number(d.recursos[id]?.max) : null)
     ?? (/^(pv|vida|hp)/.test(id) ? (c.derivados.pv_max ?? c.derivados.pv_sugerido ?? null) : null)
-  const recursos = s.recursos.map(r => ({ id: r.id, nome: r.nome, atual: Number(d.recursos[r.id]?.atual ?? 0) || 0, max: maxDe(r.id) }))
+  const recursos = s.recursos.filter(r => !(r.ocultarSemMax && !(c.recursosMax[r.id] ?? 0))).map(r => ({ id: r.id, nome: r.nome, atual: Number(d.recursos[r.id]?.atual ?? 0) || 0, max: maxDe(r.id) }))
   const vidaDef = s.recursos.find(r => /^(pv|vida|hp|pontos_de_vida)$/i.test(r.id)) ?? s.recursos.find(r => /^(pv|vida|hp)/i.test(r.id)) ?? s.recursos[0]
   // Assimilação: a vida são os seis níveis de Saúde somados (o dano desce do nível 6 para o 1).
   const assimilacao = s.rolagem === 'assimilacao'

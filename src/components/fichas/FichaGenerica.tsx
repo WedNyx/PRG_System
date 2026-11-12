@@ -36,7 +36,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
   /** Ficha de campanha: passar um item para outro personagem. */
   passarItem?: (it: Item, tem: number) => void
 }) {
-  const c = useMemo(() => calcular(s, d), [s, d])
+  const efeitosDnd = modoProgressao !== 'manual'
+  const c = useMemo(() => calcular(s, d, { efeitosDnd }), [s, d, efeitosDnd])
   const central = useRef<RolagemCentralHandle>(null)
   const naMesa = rolarNaCampanha ? 'Também foi para o chat da mesa' : null
   const regra = s.rolagem === 'personalizada' ? s.regraRolagem : undefined
@@ -49,7 +50,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     const novo = { ...d, [k]: v }
     // Escolheu a classe (ou mudou o nível) e a vida/mana ganhou um máximo agora? Começa cheia, se estava zerada.
     if (k === 'campos') {
-      const depois = calcular(s, novo)
+      const depois = calcular(s, novo, { efeitosDnd })
       for (const r of s.recursos) {
         if (r.contador) continue
         const antes = c.recursosMax[r.id], max = depois.recursosMax[r.id]
@@ -189,7 +190,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
           {x.dica && <p className="text-[10px] text-(--a-a998bd)">{x.dica}</p>}</div>)}
       </div>}
       {s.recursos.length > 0 && <div className="mt-3 grid gap-3 lg:grid-cols-2">
-        {s.recursos.map(r => {
+        {s.recursos.filter(r => !(r.ocultarSemMax && !(c.recursosMax[r.id] ?? 0))).map(r => {
           const calc = !!r.formula || r.maxFixo !== undefined
           const max = c.recursosMax[r.id] ?? (calc ? null : (d.recursos[r.id]?.max ?? null)) ?? (/^(pv|vida|hp)$/.test(r.id) ? (c.derivados.pv_max ?? c.derivados.pv_sugerido ?? null) : null)
           const atual = Number(d.recursos[r.id]?.atual ?? 0) || 0
@@ -238,7 +239,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         {g && <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{g}</h3>}
         <div className="grid gap-2 sm:grid-cols-2">
           {lista.map(p => <div key={p.id} className="flex items-center gap-2 rounded-lg bg-(--s-171325) px-3 py-2">
-            <span className="min-w-0 flex-1 truncate text-sm">{p.nome}{p.atributo && <span className="ml-1 text-[10px] text-(--a-a998bd)">({p.atributo})</span>}</span>
+            <span className="min-w-0 flex-1 truncate text-sm">{p.nome}{p.atributo && <span className="ml-1 text-[10px] text-(--a-a998bd)">({p.atributo})</span>}
+              {c.automaticos?.[p.id] && <span className="block truncate text-[10px] text-emerald-300" title="Vem da regra: não precisa marcar">✔ {c.automaticos[p.id]}</span>}</span>
             {s.pericias!.modo === 'valor'
               ? <input type="number" aria-label={p.nome} min={0} max={200} value={d.pericias[p.id] ?? 0} disabled={somenteLeitura} onChange={e => set('pericias', { ...d.pericias, [p.id]: Number(e.target.value) || 0 })} className={input + ' !w-16 shrink-0 text-center'} />
               : <select aria-label={'Treino em ' + p.nome} value={String(d.pericias[p.id] ?? '')} disabled={somenteLeitura} onChange={e => set('pericias', { ...d.pericias, [p.id]: e.target.value })} className="max-w-[9.5rem] rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-1 text-xs text-white">

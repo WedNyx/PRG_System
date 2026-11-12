@@ -42,7 +42,14 @@ export function aplicarDescanso(s: Sistema, bruto: Partial<DadosFicha>, tipo: Ti
       const m = max[r.id]
       if (m !== null && m > 0 && atual < m) { recursos[r.id] = { ...recursos[r.id], atual: m }; mudancas.push(`${r.nome}: ${atual} → ${m}`) }
     }
-  } else if (opcoes.cura && opcoes.cura > 0) {
+  } else {
+    // Descanso curto: recursos marcados (Surto de Ação, Foco, Magia de Pacto…) voltam ao máximo.
+    for (const r of s.recursos) if (r.voltaNoCurto) {
+      const atual = Number(recursos[r.id]?.atual ?? 0) || 0, m = max[r.id]
+      if (m !== null && m > 0 && atual < m) { recursos[r.id] = { ...recursos[r.id], atual: m }; mudancas.push(`${r.nome}: ${atual} → ${m}`) }
+    }
+  }
+  if (tipo === 'curto' && opcoes.cura && opcoes.cura > 0) {
     const v = recursoDeVida(s)
     if (v) {
       const atual = Number(recursos[v.id]?.atual ?? 0) || 0, m = max[v.id]

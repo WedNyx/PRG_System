@@ -12,7 +12,8 @@ export type PericiaDef = { id: string; nome: string; atributo?: string; grupo?: 
 export type DerivadoDef = { id: string; nome: string; formula: string; dica?: string }
 /** `sugerido`: id de um valor calculado usado como máximo enquanto a pessoa não digitar outro (ex.: PV pela classe). */
 /** `contador`: marcador que começa em 0 e não enche no descanso (Morrendo, Exaustão, Estresse…); `baixaNoDescanso`: quanto cai no descanso longo. */
-export type RecursoDef = { id: string; nome: string; formula?: string; maxFixo?: number; sugerido?: string; contador?: boolean; baixaNoDescanso?: number }
+/** `ocultarSemMax`: some da ficha quando o máximo é 0 (ex.: Fúrias para quem não é Bárbaro); `voltaNoCurto`: enche também no descanso curto. */
+export type RecursoDef = { id: string; nome: string; formula?: string; maxFixo?: number; sugerido?: string; contador?: boolean; baixaNoDescanso?: number; ocultarSemMax?: boolean; voltaNoCurto?: boolean }
 export type LimiteDef = { nome: string; uso: string; max: string }
 
 export type Sistema = {

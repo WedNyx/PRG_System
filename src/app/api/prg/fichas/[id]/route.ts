@@ -6,6 +6,7 @@ import type { Campo } from '@/lib/campanhas/permissoes'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { normalizarFicha } from '@/lib/sistemas/calculo'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
+import { lerConfiguracaoProgressao } from '@/lib/sistemas/modoProgressao'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
@@ -42,7 +43,11 @@ export const GET = rota<Ctx>(async (req, { params }) => {
     pendentes = p?.categorias ?? []
   }
   const podeEditar = f.campanha_id ? (admin || (dono && f.status !== 'recusada' && !f.bloqueada)) : dono
-  return ok({ ficha: f, podeEditar, souMestre: admin, regras, pendentes })
+  const [configCampanha] = f.campanha_id && f.sistema === 'dnd5e-srd'
+    ? await rest<{ config_progressao?: unknown }[]>(`prg_campanhas?select=config_progressao&id=eq.${q(f.campanha_id)}&limit=1`)
+    : []
+  const configProgressao = lerConfiguracaoProgressao(configCampanha?.config_progressao)
+  return ok({ ficha: f, podeEditar, souMestre: admin, regras, pendentes, configProgressao })
 })
 
 function resumoHistorico(mudancas: Mudanca[]) {

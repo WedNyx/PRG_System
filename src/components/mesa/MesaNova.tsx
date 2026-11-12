@@ -17,6 +17,7 @@ import PainelCampanha from './PainelCampanha'
 import PainelMusica from './PainelMusica'
 import PainelTabelas from './PainelTabelas'
 import PainelBiblioteca from './PainelBiblioteca'
+import { sistemaDaCampanha } from '@/lib/sistemas/catalogo'
 import HistoricoRolagens from './HistoricoRolagens'
 import DicasMesa, { deveMostrarDicas } from './DicasMesa'
 import Sino from '@/components/Sino'
@@ -359,6 +360,8 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           {parteAtual.id === 'campanha' && <PainelCampanha campanhaId={campanhaId} e={e} admin={admin} />}
           {parteAtual.id === 'biblioteca' && admin && <PainelBiblioteca campanhaId={campanhaId} e={e} />}
           {parteAtual.id === 'tabelas' && admin && <PainelTabelas campanhaId={campanhaId} acao={acao} />}
+          {parteAtual.id === 'mestre' && admin && sistemaDaCampanha(e.campanha.sistema ?? '') === 'dnd5e-srd' && <a href={'/mestre/dnd?campanha=' + campanhaId} className="mb-3 flex items-center gap-3 rounded-xl border border-(--a-b99bff)/60 bg-(--s-2b2140) p-3 text-sm hover:brightness-110">
+            <span className="text-2xl" aria-hidden>🧰</span><span className="min-w-0 flex-1"><strong className="block text-white">Ferramentas do mestre (D&D 2024)</strong><span className="text-xs text-(--a-cfc0df)">Encontro pelo XP do grupo, CDs, XP e níveis, condições e conferir fichas.</span></span><span aria-hidden>→</span></a>}
           {parteAtual.id === 'mestre' && admin && <><PainelMestre e={e} acao={acao} campanhaId={campanhaId} setModo={setModo} /><div className="h-3" /><ConfigCombate acerto={e.combate?.acerto ?? 'mestre'} morte={e.combate?.morte ?? 'testes'} acao={acao} /><div className="h-3" /><DescansoGrupo acao={acao} carregar={() => void carregarFichas()} /></>}
         </div>
       </aside>}

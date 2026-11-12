@@ -28,7 +28,7 @@ const sinal = (n: number | null | undefined) => n === null || n === undefined ? 
 export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, rolarNaCampanha, passarItem }: {
   sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean
   /** Se a ficha é de campanha: rola no servidor e publica no chat da mesa. */
-  rolarNaCampanha?: (expressao: string, rotulo: string) => Promise<{ resultados: number[]; total: number } | null>
+  rolarNaCampanha?: (expressao: string, rotulo: string, extra?: { estilo: 'assimilacao'; manter?: number; todos?: boolean }) => Promise<{ resultados: number[]; total: number } | null>
   /** Ficha de campanha: passar um item para outro personagem. */
   passarItem?: (it: Item, tem: number) => void
 }) {

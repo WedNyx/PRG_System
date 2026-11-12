@@ -2,8 +2,12 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
-## v0.33.4 — Cartões ilustrados dos sistemas (2026-11-12)
+## v0.33.5 — Chat separado na mesa (2026-11-12)
+- 💬 Chat separado na mesa: a aba Chat agora tem “Conversa”, só com as mensagens do grupo, e “Dados e mesa”, com as rolagens, ataques, turnos e avisos. Cada uma mostra quantas novidades chegaram na outra, e os dados para rolar ficam em “Dados e mesa” (o /r da conversa continua funcionando).
+
+## v0.33.4 — Cartões ilustrados e Assimilação na mesa (2026-11-12)
 - 🃏 Cartões dos sistemas no estilo ilustrado, com as capas novas de todos os sistemas (artes do Wed): a ilustração fica à direita e se funde com o fundo, com título grande, selos, descrição e os botões “Guia do mestre” e “Criar ficha” por cima. Cada sistema ganhou a sua cor na borda brilhante e no botão de criar ficha (vermelho no D&D, azul no Pathfinder, verde no BRP, âmbar no Faroeste…).
+- 🧬 Assimilação na mesa virtual: o ataque rola o Instinto em d6 e a aptidão em d10 (escolha a dupla, como Reação + Armas), mantém o melhor dado e acerta com pelo menos 1 Sucesso. O dano das armas em d10 conta um ponto por símbolo e desce pelos níveis de Saúde (do 6 ao 1); a cura enche de volta. A ordem do combate usa a Reação em d6. No chat e no histórico, as rolagens de Assimilação aparecem com os dados e os símbolos (Sucesso, Adaptação e Pressão), em vez da soma dos números.
 
 ## v0.33.3 — Dois sistemas novos (2026-11-12)
 - 🩸 Novo sistema: RPG PUNK — MÖRK BORG (estrutura). Agilidade, Presença, Força e Resistência de −3 a +6, testes de d20 contra CD 12 ao tocar no valor, as seis classes opcionais (com dado de PV, Presságios e prata na descrição), armadura que muda a CD da defesa e dos testes de Agilidade, carga de Força + 8 itens e listas para armas e pergaminhos.

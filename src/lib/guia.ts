@@ -95,7 +95,7 @@ export const GUIA: TopicoGuia[] = [
   {
     id: 'rolagens', icone: '🎲', titulo: 'Chat e rolagens', foto: 'mesa-chat.jpg', legenda: 'Chat com rolagens',
     resumo: 'Todas as rolagens são feitas no servidor e aparecem para o grupo com cada dado que caiu.',
-    passos: ['Na aba “Chat”, toque em um dado rápido (d4 a d100) ou escreva uma expressão como 2d6+3 (também vale 2d20kh1, 6d6s5 para contar sucessos e 4dF). Os dados rolam no meio da tela para todos, com o total bem grande; toque para fechar.', 'Escolha quem vê: todos, só o mestre ou só você.', 'Toque em “Histórico” para procurar rolagens antigas por pessoa, personagem ou tipo.'],
+    passos: ['A aba “Chat” tem duas partes: “💬 Conversa”, para o grupo conversar, e “🎲 Dados e mesa”, com rolagens, ataques, turnos e avisos. O número vermelho mostra o que chegou na outra.', 'Em “Dados e mesa”, toque em um dado rápido (d4 a d100) ou escreva uma expressão como 2d6+3 (também vale 2d20kh1, 6d6s5 para contar sucessos e 4dF). Os dados rolam no meio da tela para todos, com o total bem grande; toque para fechar.', 'Escolha quem vê: todos, só o mestre ou só você.', 'Toque em “Histórico” para procurar rolagens antigas por pessoa, personagem ou tipo.'],
   },
   {
     id: 'musica', icone: '🎵', titulo: 'Música na mesa', foto: 'mesa-musica.jpg', legenda: 'Aba Música com playlists',

@@ -33,3 +33,15 @@ describe('dados de Assimilação', () => {
     expect(penalidadeSaude(2)).toEqual({ sucessos: 2, determinacao: true })
   })
 })
+
+describe('Assimilação na mesa', () => {
+  it('lê expressões e calcula o resultado e o dano', async () => {
+    const { gruposDaExpressao, resultadoAssim, danoAssim } = await import('./assimilacao')
+    expect(gruposDaExpressao('3d6+2d10')).toEqual([{ lados: 6, qtd: 3 }, { lados: 10, qtd: 2 }])
+    expect(gruposDaExpressao('1d20+2')).toBeNull()
+    const r = resultadoAssim('2d6+1d10', [1, 6, 10], 1)
+    expect(r.mantidos).toEqual([2]); expect(r.total).toEqual({ a: 2, b: 0, c: 1 })
+    expect(danoAssim('2d10', [9, 3])).toBe(4)
+    expect(danoAssim('1d8+2', [5])).toBeNull()
+  })
+})

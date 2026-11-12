@@ -1,5 +1,6 @@
 'use client'
 
+import RolagemAssim, { marcaAssim } from '@/components/dados/RolagemAssim'
 import { useEffect, useState } from 'react'
 import { BarChart3, Search } from 'lucide-react'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
@@ -85,7 +86,9 @@ export default function HistoricoRolagens({ campanhaId, membros }: { campanhaId:
       const crit = ev.expressao && ev.resultados ? detectarCritico(ev.expressao, ev.resultados) : null
       return <li key={ev.id} className={'rounded-lg border p-2 ' + (crit === 'critico' ? 'border-emerald-700/70 bg-emerald-950/30' : crit === 'falha' ? 'border-red-800/70 bg-red-950/30' : 'border-transparent bg-(--s-1e1a30)')}>
         <span className="text-[11px] text-(--a-b4aeca)">{new Date(ev.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · {ev.personagem || ev.autor?.apelido || 'Mesa'}{ev.personagem && ev.autor?.apelido ? ` (${ev.autor.apelido})` : ''}{ev.visibilidade !== 'publica' && ' · 🔒'}{crit === 'critico' ? ' · 🎯 crítico' : crit === 'falha' ? ' · 💀 falha' : ''}</span><br />
-        {ev.tipo === 'rolagem' ? <>{ev.texto && <span className="text-(--a-e4d3ff)">{ev.texto}: </span>}🎲 {ev.expressao} → [{ev.resultados?.join(', ')}] = <strong>{ev.total}</strong></>
+        {marcaAssim(ev.dados) && ev.expressao && ev.resultados ? <>{ev.tipo === 'ataque' && ev.dados ? <>⚔️ {(ev.dados as { arma?: string }).arma} em <b>{(ev.dados as { alvo?: { nome: string } }).alvo?.nome}</b> → {(ev.dados as { acerto?: boolean }).acerto ? <span className="text-emerald-300">acertou</span> : <span className="text-red-300">errou</span>}</> : ev.texto && <span className="text-(--a-e4d3ff)">{ev.texto}</span>}
+            <RolagemAssim expressao={ev.expressao} resultados={ev.resultados} {...marcaAssim(ev.dados)!} compacto /></>
+          : ev.tipo === 'rolagem' ? <>{ev.texto && <span className="text-(--a-e4d3ff)">{ev.texto}: </span>}🎲 {ev.expressao} → [{ev.resultados?.join(', ')}] = <strong>{ev.total}</strong></>
           : ev.tipo === 'ataque' && ev.dados ? <>⚔️ {ev.dados.arma} em <b>{ev.dados.alvo?.nome}</b>: {ev.total} → {ev.dados.acerto ? <span className="text-emerald-300">acertou{ev.dados.dano ? `, ${ev.dados.dano.total} de dano` : ''}{ev.dados.status === 'ignorado' ? ' (anulado)' : ''}</span> : <span className="text-red-300">errou</span>}</>
           : <span className="whitespace-pre-wrap">{ev.texto}</span>}
       </li>

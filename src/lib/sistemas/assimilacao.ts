@@ -77,3 +77,31 @@ export function nivelDeSaude(recursos: Record<string, { atual: number } | undefi
   for (let n = 6; n >= 1; n--) if ((Number(recursos['saude' + n]?.atual) || 0) > 0) return n
   return 0
 }
+
+/** Lê os grupos de uma expressão “3d6+2d10” (só d6, d10 e d12). Null se tiver outra coisa. */
+export function gruposDaExpressao(expr: string): { lados: LadoAssim; qtd: number }[] | null {
+  const partes = expr.toLowerCase().replace(/\s+/g, '').split('+').filter(Boolean)
+  const out: { lados: LadoAssim; qtd: number }[] = []
+  for (const p of partes) {
+    const m = p.match(/^(\d*)d(6|10|12)$/)
+    if (!m) return null
+    out.push({ lados: Number(m[2]) as LadoAssim, qtd: Math.max(1, Number(m[1] || 1)) })
+  }
+  return out.length ? out : null
+}
+
+/** Resultado de uma rolagem de Assimilação: todos os dados, os sugeridos para manter e o total deles. */
+export function resultadoAssim(expr: string, resultados: number[], manter = 1) {
+  const grupos = gruposDaExpressao(expr) ?? []
+  const dados = lerResultados(grupos, resultados)
+  const mantidos = sugerirMantidos(dados, Math.max(1, Math.min(MAX_MANTIDOS, manter)))
+  return { dados, mantidos, total: somar(mantidos.map(i => dados[i].face)) }
+}
+
+/** Dano em Assimilação: cada símbolo nos dados (d6/d10/d12) vale 1. Outras expressões não são de símbolos (null). */
+export function danoAssim(expr: string, resultados: number[]): number | null {
+  const grupos = gruposDaExpressao(expr)
+  if (!grupos) return null
+  const t = somar(lerResultados(grupos, resultados).map(d => d.face))
+  return t.a + t.b + t.c
+}

@@ -3,9 +3,14 @@ import { imagemDaPlataforma } from '../nuvem/validacao'
 import type { DadosFicha, Sistema } from './tipos'
 import { bonusEquipados, lerItens, lerPoderes, lerUso, pesoTotal } from './inventario'
 import { lerEscolhasDnd } from './dnd2024Ficha'
+import { lerMagiasDnd } from './dnd2024Conjuracao'
+import { idDe, lerMulticlasseDnd } from './dnd2024Classes'
+import { efeitosDnd2024, VARS_DND, type EfeitosDnd } from './dnd2024Efeitos'
 import { bonusDaArvore, lerArvore, sincronizarPoderes, somarBonus } from './arvore'
 
 export type Calculo = {
+  /** D&D 2024: perícias/salvaguardas com proficiência dada pela regra (id → de onde veio) e bônus automáticos. */
+  automaticos?: Record<string, string>
   vars: Variaveis
   mods: Record<string, number>
   derivados: Record<string, number | null>
@@ -81,6 +86,8 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     // Inventário só entra quando existe (fichas antigas continuam iguais) e sempre limpo/validado.
     ...(d.itens !== undefined ? { itens: lerItens(d.itens) } : {}), ...(d.uso !== undefined ? { uso: lerUso(d.uso) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndEscolhas !== undefined ? { dndEscolhas: lerEscolhasDnd(d.dndEscolhas) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dndMagias !== undefined ? { dndMagias: lerMagiasDnd(d.dndMagias) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dndMulticlasse !== undefined ? { dndMulticlasse: lerMulticlasseDnd(d.dndMulticlasse, idDe(d.campos?.classe)) } : {}),
     // Habilidades da árvore entram/saem dos poderes conforme os hexágonos liberados.
     ...(d.arvore !== undefined ? { arvore: lerArvore(d.arvore), poderes: sincronizarPoderes(lerPoderes(d.poderes), lerArvore(d.arvore)) }
       : d.poderes !== undefined ? { poderes: lerPoderes(d.poderes) } : {}),
@@ -121,7 +128,7 @@ export function bonusDasEscolhas(s: Sistema, d: Pick<DadosFicha, 'campos'>): Rec
   return out
 }
 
-export function calcular(s: Sistema, d: DadosFicha): Calculo {
+export function calcular(s: Sistema, d: DadosFicha, opcoes: { efeitosDnd?: boolean } = {}): Calculo {
   const vars: Variaveis = {}
   const itens = lerItens(d.itens), uso = lerUso(d.uso)
   const bonus = somarBonus(bonusEquipados(itens, uso), bonusDaArvore(lerArvore(d.arvore)), bonusDasEscolhas(s, d))
@@ -141,6 +148,13 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
     vars['mod_' + a.id] = mods[a.id]
   }
   vars.soma_atributos = soma; vars.atributos_zero = zeros; vars.maior_atributo = maior === -Infinity ? 0 : maior
+  // D&D 2024: efeitos da progressão (proficiências mínimas, recursos da classe, CA/PV/iniciativa extras). Modo Manual desliga.
+  let dnd: EfeitosDnd | null = null
+  for (const k of VARS_DND) vars[k] = 0
+  if (s.id === 'dnd5e-srd') {
+    if (opcoes.efeitosDnd !== false) { dnd = efeitosDnd2024(d, vars); Object.assign(vars, dnd.vars) }
+  }
+  const automaticos: Record<string, string> = {}
 
   if (s.progressoes) {
     let total = 0
@@ -169,8 +183,13 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
       let treino = 0, valor = 0
       if (s.pericias.modo === 'valor') { valor = num(escolha); somaValor += valor; if (valor > maiorValor) maiorValor = valor }
       else {
-        const t = treinos[String(escolha)] ?? s.pericias.treinos?.[0]
-        if (t) { treino = avaliarSeguro(t.formula, vars) ?? 0; custo += t.custo ?? 0; qtd[t.id] = (qtd[t.id] ?? 0) + 1 }
+        let t = treinos[String(escolha)] ?? s.pericias.treinos?.[0]
+        if (t) { custo += t.custo ?? 0; qtd[t.id] = (qtd[t.id] ?? 0) + 1 }
+        // Proficiência dada pela regra: vale como mínimo (nunca soma com a marcada à mão).
+        const auto = dnd?.treino[p.id]
+        const ordem = (id?: string) => id === 'especialista' ? 2 : id === 'proficiente' ? 1 : 0
+        if (auto && treinos[auto.treino] && ordem(auto.treino) > ordem(t?.id)) { t = treinos[auto.treino]; automaticos[p.id] = auto.fonte }
+        if (t) treino = avaliarSeguro(t.formula, vars) ?? 0
       }
       // 'FOR/DES' = usa o melhor dos dois
       const opcoes = p.atributo ? p.atributo.split('/') : []
@@ -178,7 +197,9 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
       const atr = melhor ? vars[melhor] ?? 0 : 0
       const mod = melhor ? mods[melhor] ?? 0 : 0
       const tot = avaliarSeguro(s.pericias.total, { ...vars, ATR: atr, MOD: mod, TREINO: treino, VALOR: valor })
-      pericias[p.id] = tot === null ? null : tot + b('pericia:' + p.id)
+      const extra = dnd ? (dnd.bonus['pericia:' + p.id]?.valor ?? 0) + (treino === 0 && p.grupo === 'Perícias' ? dnd.meiaProficiencia : 0) : 0
+      if (dnd?.bonus['pericia:' + p.id]) automaticos[p.id] ??= dnd.bonus['pericia:' + p.id].fonte
+      pericias[p.id] = tot === null ? null : tot + b('pericia:' + p.id) + extra
       vars['per_' + p.id] = s.pericias.modo === 'valor' ? valor : treino
       vars['tot_' + p.id] = pericias[p.id] ?? 0
     }
@@ -201,5 +222,5 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
     const uso = avaliarSeguro(l.uso, vars) ?? 0, max = avaliarSeguro(l.max, vars) ?? 0
     return { nome: l.nome, uso, max, excedido: uso > max }
   })
-  return { vars, mods, derivados, pericias, recursosMax, limites, bonus, carga }
+  return { vars, mods, derivados, pericias, recursosMax, limites, bonus, carga, ...(Object.keys(automaticos).length ? { automaticos } : {}) }
 }

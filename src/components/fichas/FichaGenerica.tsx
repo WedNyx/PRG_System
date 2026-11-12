@@ -23,20 +23,27 @@ import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
 import { GUIAS } from '@/lib/sistemas/guias'
 import { expressaoParada, leituraBlades, leituraD100 } from '@/lib/sistemas/combate'
 import TesteAssimilacao from './TesteAssimilacao'
+import MagiasDnd2024 from './MagiasDnd2024'
+import MulticlasseDnd2024 from './MulticlasseDnd2024'
+import ExcecaoModo from './ExcecaoModo'
+import ConferenciaDnd from './ConferenciaDnd'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
 const sinal = (n: number | null | undefined) => n === null || n === undefined ? '—' : n >= 0 ? '+' + n : String(n)
 
 /** Ficha que se monta sozinha a partir do modelo do sistema. */
-export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, rolarNaCampanha, passarItem }: {
+export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, excecaoModo, rolarNaCampanha, passarItem }: {
   sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean; modoProgressao?: ModoProgressao; podeEditarArvore?: boolean
+  /** Mestre de campanha de D&D: troca o modo só desta ficha (exceção). */
+  excecaoModo?: { campanha: ModoProgressao; atual: ModoProgressao | null; mudar: (m: ModoProgressao | null) => void | Promise<void> }
   /** Se a ficha é de campanha: rola no servidor e publica no chat da mesa. */
   rolarNaCampanha?: (expressao: string, rotulo: string, extra?: { estilo: 'assimilacao'; manter?: number; todos?: boolean }) => Promise<{ resultados: number[]; total: number } | null>
   /** Ficha de campanha: passar um item para outro personagem. */
   passarItem?: (it: Item, tem: number) => void
 }) {
-  const c = useMemo(() => calcular(s, d), [s, d])
+  const efeitosDnd = modoProgressao !== 'manual'
+  const c = useMemo(() => calcular(s, d, { efeitosDnd }), [s, d, efeitosDnd])
   const central = useRef<RolagemCentralHandle>(null)
   const naMesa = rolarNaCampanha ? 'Também foi para o chat da mesa' : null
   const regra = s.rolagem === 'personalizada' ? s.regraRolagem : undefined
@@ -49,7 +56,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     const novo = { ...d, [k]: v }
     // Escolheu a classe (ou mudou o nível) e a vida/mana ganhou um máximo agora? Começa cheia, se estava zerada.
     if (k === 'campos') {
-      const depois = calcular(s, novo)
+      const depois = calcular(s, novo, { efeitosDnd })
       for (const r of s.recursos) {
         if (r.contador) continue
         const antes = c.recursosMax[r.id], max = depois.recursosMax[r.id]
@@ -160,6 +167,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       <div className="min-w-0 flex-1 space-y-4">
         {atual && <p className="flex gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-2 text-xs text-(--a-cfc0df)"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></p>}
         {secao === 'principal' && <>
+    {s.id === 'dnd5e-srd' && <ConferenciaDnd d={d} c={c} efeitos={efeitosDnd} ir={ir} />}
     <section className={card}>
       <div className="flex items-start gap-4">
         <Retrato url={d.retrato} nome={d.nome} somenteLeitura={somenteLeitura} onChange={u => onChange({ ...d, retrato: u ?? undefined })} />
@@ -189,7 +197,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
           {x.dica && <p className="text-[10px] text-(--a-a998bd)">{x.dica}</p>}</div>)}
       </div>}
       {s.recursos.length > 0 && <div className="mt-3 grid gap-3 lg:grid-cols-2">
-        {s.recursos.map(r => {
+        {s.recursos.filter(r => !(r.ocultarSemMax && !(c.recursosMax[r.id] ?? 0))).map(r => {
           const calc = !!r.formula || r.maxFixo !== undefined
           const max = c.recursosMax[r.id] ?? (calc ? null : (d.recursos[r.id]?.max ?? null)) ?? (/^(pv|vida|hp)$/.test(r.id) ? (c.derivados.pv_max ?? c.derivados.pv_sugerido ?? null) : null)
           const atual = Number(d.recursos[r.id]?.atual ?? 0) || 0
@@ -238,7 +246,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         {g && <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{g}</h3>}
         <div className="grid gap-2 sm:grid-cols-2">
           {lista.map(p => <div key={p.id} className="flex items-center gap-2 rounded-lg bg-(--s-171325) px-3 py-2">
-            <span className="min-w-0 flex-1 truncate text-sm">{p.nome}{p.atributo && <span className="ml-1 text-[10px] text-(--a-a998bd)">({p.atributo})</span>}</span>
+            <span className="min-w-0 flex-1 truncate text-sm">{p.nome}{p.atributo && <span className="ml-1 text-[10px] text-(--a-a998bd)">({p.atributo})</span>}
+              {c.automaticos?.[p.id] && <span className="block truncate text-[10px] text-emerald-300" title="Vem da regra: não precisa marcar">✔ {c.automaticos[p.id]}</span>}</span>
             {s.pericias!.modo === 'valor'
               ? <input type="number" aria-label={p.nome} min={0} max={200} value={d.pericias[p.id] ?? 0} disabled={somenteLeitura} onChange={e => set('pericias', { ...d.pericias, [p.id]: Number(e.target.value) || 0 })} className={input + ' !w-16 shrink-0 text-center'} />
               : <select aria-label={'Treino em ' + p.nome} value={String(d.pericias[p.id] ?? '')} disabled={somenteLeitura} onChange={e => set('pericias', { ...d.pericias, [p.id]: e.target.value })} className="max-w-[9.5rem] rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-1 text-xs text-white">
@@ -252,6 +261,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     </section>}
         </>}
         {secao === 'arvore' && <div className="space-y-4">
+          {excecaoModo && <ExcecaoModo {...excecaoModo} />}
+          {s.id === 'dnd5e-srd' && <MulticlasseDnd2024 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
           {s.id === 'dnd5e-srd' && modoProgressao !== 'manual' && <>
             <ProgressaoDnd2024
               marcos={MARCOS_DND_2024}
@@ -265,17 +276,15 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
                 onChange({ ...d, dndEscolhas: escolhas })
               }}
             />
-            <p className="rounded-lg border border-amber-400/30 p-3 text-xs text-amber-100">
-              Catálogo em construção: a progressão visual inclui marcos de Guerreiro, Ladino e Mago até o nível 20. As outras classes, escolhas detalhadas, magias e efeitos ainda precisam ser implementados.
-              A visualização não concede poderes nem bônus automaticamente.
-            </p>
           </>}
           {(s.id !== 'dnd5e-srd' || modoProgressao !== 'automatico') &&
             <ArvoreHabilidades s={s} d={d} onChange={onChange}
               somenteLeitura={somenteLeitura || (s.id === 'dnd5e-srd' && !podeEditarArvore)}
-              rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0} />}
+              rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0}
+              mestre={podeEditarArvore} nivel={s.campos.some(x => x.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null} />}
         </div>}
         {secao === 'habilidades' && <>
+    {s.id === 'dnd5e-srd' && <MagiasDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} semLimites={modoProgressao === 'manual'} rolar={(x, r) => void rolarExpr(x, r)} />}
     <PoderesFicha {...propsInv} />
     {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
     <section className="grid gap-4">

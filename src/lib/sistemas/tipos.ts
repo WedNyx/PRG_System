@@ -12,7 +12,8 @@ export type PericiaDef = { id: string; nome: string; atributo?: string; grupo?: 
 export type DerivadoDef = { id: string; nome: string; formula: string; dica?: string }
 /** `sugerido`: id de um valor calculado usado como máximo enquanto a pessoa não digitar outro (ex.: PV pela classe). */
 /** `contador`: marcador que começa em 0 e não enche no descanso (Morrendo, Exaustão, Estresse…); `baixaNoDescanso`: quanto cai no descanso longo. */
-export type RecursoDef = { id: string; nome: string; formula?: string; maxFixo?: number; sugerido?: string; contador?: boolean; baixaNoDescanso?: number }
+/** `ocultarSemMax`: some da ficha quando o máximo é 0 (ex.: Fúrias para quem não é Bárbaro); `voltaNoCurto`: enche também no descanso curto. */
+export type RecursoDef = { id: string; nome: string; formula?: string; maxFixo?: number; sugerido?: string; contador?: boolean; baixaNoDescanso?: number; ocultarSemMax?: boolean; voltaNoCurto?: boolean }
 export type LimiteDef = { nome: string; uso: string; max: string }
 
 export type Sistema = {
@@ -91,6 +92,10 @@ export type DadosFicha = {
   uso?: unknown
   /** Escolhas de marcos D&D. A progressão visual não concede bônus por si só. */
   dndEscolhas?: Record<string, string>
+  /** Magias de D&D 2024: id da magia do SRD → 'preparada' (conta no limite) ou 'extra' (veio de outra fonte). */
+  dndMagias?: Record<string, string>
+  /** Multiclasse de D&D 2024: id da outra classe → níveis nela (a classe inicial fica com o resto do nível total). */
+  dndMulticlasse?: Record<string, number>
   /** Árvore de habilidades (ver arvore.ts). */
   arvore?: unknown
 }

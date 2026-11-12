@@ -9,8 +9,10 @@ type Membro = { papel: string; campanha: Record<string, unknown> | null }
 /** Lista as campanhas em que o aventureiro participa (como mestre ou jogador). */
 export const GET = rota(async req => {
   const eu = await ator(req)
-  const rows = await rest<Membro[]>(
-    `prg_campanha_membros?select=papel,campanha:prg_campanhas(id,nome,descricao,sistema,modelo_padrao,permissoes,estado,mestre_id,criada_em,sessao_aberta,capa_url)&aventureiro_id=eq.${q(eu)}&order=entrou_em.desc&limit=200`)
+  const consulta = (extra: string) => rest<Membro[]>(
+    `prg_campanha_membros?select=papel,campanha:prg_campanhas(id,nome,descricao,sistema,modelo_padrao,permissoes,${extra}estado,mestre_id,criada_em,sessao_aberta,capa_url)&aventureiro_id=eq.${q(eu)}&order=entrou_em.desc&limit=200`)
+  // Sem a migração 027 a coluna config_progressao não existe: a lista continua funcionando (modo padrão Híbrido).
+  const rows = await consulta('config_progressao,').catch(() => consulta(''))
   const campanhas = rows.filter(r => r.campanha).map(r => ({ ...r.campanha, meuPapel: r.papel, pendencias: 0 })) as (Record<string, unknown> & { id: string; meuPapel: string; pendencias: number })[]
   // Notificações para o mestre: pedidos de entrada, fichas para aprovar e pedidos de alteração.
   const adm = campanhas.filter(c => c.meuPapel === 'mestre' || c.meuPapel === 'comestre').map(c => c.id)
@@ -36,10 +38,12 @@ export const POST = rota(async req => {
   if (!v.ok) throw new ErroApi(400, v.erro)
   const minhas = await rest<unknown[]>(`prg_campanhas?select=id&mestre_id=eq.${q(eu)}&limit=${MAX_CAMPANHAS_MESTRE}`)
   if (minhas.length >= MAX_CAMPANHAS_MESTRE) throw new ErroApi(429, `Limite de ${MAX_CAMPANHAS_MESTRE} campanhas por mestre.`)
-  const [campanha] = await rest<Record<string, unknown>[]>('prg_campanhas', {
-    method: 'POST', prefer: 'return=representation',
-    body: JSON.stringify({ ...v.valor, mestre_id: eu }),
+  const criar = (dados: Record<string, unknown>) => rest<Record<string, unknown>[]>('prg_campanhas', {
+    method: 'POST', prefer: 'return=representation', body: JSON.stringify({ ...dados, mestre_id: eu }),
   })
+  // Sem a migração 027 (coluna config_progressao), cria sem o modo: a campanha usa o padrão Híbrido.
+  const { config_progressao, ...semModo } = v.valor
+  const [campanha] = config_progressao ? await criar(v.valor).catch(() => criar(semModo)) : await criar(v.valor)
   try {
     await rest('prg_campanha_membros', { method: 'POST', body: JSON.stringify({ campanha_id: campanha.id, aventureiro_id: eu, papel: 'mestre' }) })
   } catch (e) {

@@ -10,13 +10,15 @@ import PainelFichasCampanha from './PainelFichasCampanha'
 import CartaoCapa, { selo } from './CartaoCapa'
 import { enviarImagemNuvem } from '@/lib/nuvem/cliente'
 import SeletorSistemaCampanha from './SeletorSistemaCampanha'
+import SeletorModoProgressao from '@/components/fichas/SeletorModoProgressao'
+import { lerConfiguracaoProgressao, type ConfiguracaoProgressao, type ModoProgressao } from '@/lib/sistemas/modoProgressao'
 import { SISTEMAS, sistemaDaCampanha } from '@/lib/sistemas/catalogo'
 import { useSistemasAutorais } from '@/lib/sistemas/cliente'
 import { campanhasLocais, marcarImportado, type CampanhaLocal } from '@/lib/nuvem/locais'
 
 type Campanha = {
   id: string; nome: string; descricao: string; sistema: string; modelo_padrao: Modelo
-  permissoes: Permissoes; estado: EstadoCampanha; mestre_id: string; meuPapel: 'mestre' | 'comestre' | 'jogador' | 'espectador'; pendencias?: number; sessao_aberta?: boolean; capa_url?: string | null
+  permissoes: Permissoes; config_progressao?: ConfiguracaoProgressao; estado: EstadoCampanha; mestre_id: string; meuPapel: 'mestre' | 'comestre' | 'jogador' | 'espectador'; pendencias?: number; sessao_aberta?: boolean; capa_url?: string | null
 }
 type Membro = { aventureiro_id: string; papel: string; excecoes?: Partial<Permissoes>; aventureiro: { apelido: string; avatar: string | null } | null }
 type Convite = { codigo: string; expira_em: string; usos: number; max_usos: number; situacao: string }
@@ -72,9 +74,9 @@ export default function CampanhasNuvem({ aventureiroId, abrirCampanha }: { avent
   return <div className="mt-6 space-y-5">
     <div className="flex flex-wrap gap-3">
       <button type="button" onClick={() => setTela({ tipo: 'form' })} className={btnPrim}><Plus size={18} /> Criar campanha</button>
-      <form className="flex flex-wrap items-center gap-2" onSubmit={e => { e.preventDefault(); const c = codigo.trim(); if (c) window.location.assign('/convite/' + encodeURIComponent(c)) }}>
+      <form className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none" onSubmit={e => { e.preventDefault(); const c = codigo.trim(); if (c) window.location.assign('/convite/' + encodeURIComponent(c)) }}>
         <input value={codigo} onChange={e => setCodigo(e.target.value.toUpperCase())} maxLength={12} placeholder="Código de convite"
-          aria-label="Código de convite" className="w-44 rounded-xl border border-(--a-70588c) bg-(--s-151123) p-3 font-mono tracking-widest text-white" />
+          aria-label="Código de convite" className="min-w-0 flex-1 rounded-xl placeholder:tracking-normal sm:w-44 sm:flex-none border border-(--a-70588c) bg-(--s-151123) p-3 font-mono tracking-widest text-white" />
         <button type="submit" className={btn}><DoorOpen size={16} /> Entrar</button>
       </form>
     </div>
@@ -111,12 +113,13 @@ function FormCampanha({ aventureiroId, campanha, onFechar }: { aventureiroId: st
   const [sistema, setSistema] = useState(campanha?.sistema ?? '')
   const [modelo, setModelo] = useState<Modelo>(campanha?.modelo_padrao ?? 'C')
   const [regras, setRegras] = useState<Permissoes>(campanha?.permissoes ?? permissoesPadrao('C'))
+  const [modoProgressao, setModoProgressao] = useState<ModoProgressao>(lerConfiguracaoProgressao(campanha?.config_progressao).modo)
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
   async function salvar(e: React.FormEvent) {
     e.preventDefault(); setSalvando(true); setErro('')
     try {
-      const body = { nome, descricao, sistema, modeloPadrao: modelo, permissoes: regras }
+      const body = { nome, descricao, sistema, modeloPadrao: modelo, permissoes: regras, ...(sistemaDaCampanha(sistema) === 'dnd5e-srd' ? { configProgressao: { modo: modoProgressao } } : {}) }
       await api(campanha ? 'campanhas/' + campanha.id : 'campanhas', { method: campanha ? 'PATCH' : 'POST', body, aventureiro: aventureiroId })
       onFechar(true)
     } catch (e) { setErro(msg(e)); setSalvando(false) }
@@ -126,6 +129,7 @@ function FormCampanha({ aventureiroId, campanha, onFechar }: { aventureiroId: st
     <label className="block text-sm font-medium">Nome da campanha<input required minLength={3} maxLength={80} value={nome} onChange={e => setNome(e.target.value)} className="mt-2 w-full rounded-xl border border-(--a-70588c) bg-(--s-151123) p-3 text-white" placeholder="Ex.: Ecos da Lua Partida" /></label>
     <label className="block text-sm font-medium">Descrição<textarea maxLength={600} rows={3} value={descricao} onChange={e => setDescricao(e.target.value)} className="mt-2 w-full rounded-xl border border-(--a-70588c) bg-(--s-151123) p-3 text-white" /></label>
     <div className="block text-sm font-medium">Sistema de RPG<SeletorSistemaCampanha valor={sistema} onChange={setSistema} classe="mt-2 w-full rounded-xl border border-(--a-70588c) bg-(--s-151123) p-3 text-white" /></div>
+    {sistemaDaCampanha(sistema) === 'dnd5e-srd' && <SeletorModoProgressao valor={modoProgressao} onChange={setModoProgressao} podeEditar />}
     <fieldset className="space-y-3"><legend className="mb-3 font-semibold">Modelo padrão de edição das fichas</legend>
       {modelos.map(m => <label key={m.id} className={'flex cursor-pointer gap-3 rounded-xl border p-4 ' + (modelo === m.id ? 'border-(--a-b79aff) bg-(--s-3a2a53)' : 'border-(--a-55456e)')}>
         <input type="radio" name="modelo" checked={modelo === m.id} onChange={() => { setModelo(m.id); setRegras(permissoesPadrao(m.id)) }} className="accent-(--a-b79aff)" />

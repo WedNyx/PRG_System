@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import ArteItem from '@/components/fichas/ArteItem'
 import { lerRaridade } from '@/lib/itensArte'
 import RolagemAssim from '@/components/dados/RolagemAssim'
+import NaTela from '@/components/NaTela'
 
 export type FichaMesa = { id: string; nome: string; sistema: string; dono_id: string; dono: string | null; npc: boolean; oculta: boolean; retrato: string | null; combate: ResumoCombate | null }
 export type DadosAtaque = {
@@ -113,7 +114,7 @@ export function JanelaAtaque({ estado, mudar, tokens, ficha, admin, acao, fechar
       fechar()
     } catch { /* o aviso já aparece */ } finally { setEnviando(false) }
   }
-  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="Atacar" onClick={fechar}>
+  return <NaTela><div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4" role="dialog" aria-modal="true" aria-label="Atacar" onClick={fechar}>
     <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-4 text-sm" onClick={x => x.stopPropagation()}>
       <div className="flex items-center gap-2"><Swords size={18} className="text-[#f2a9c3]" /><h2 className="flex-1 font-bold">{at.nome} vai atacar</h2>
         <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-(--s-34294f)"><X size={18} /></button></div>
@@ -139,7 +140,7 @@ export function JanelaAtaque({ estado, mudar, tokens, ficha, admin, acao, fechar
         className="mt-4 w-full rounded-xl bg-gradient-to-r from-[#b91c1c] to-(--a-7c3aed) p-3 text-base font-bold shadow-[0_0_18px_#b91c1c55] disabled:opacity-40 disabled:shadow-none">
         {enviando ? 'Rolando…' : '⚔️ Atacar!'}</button>
     </div>
-  </div>
+  </div></NaTela>
 }
 
 /** Ataque no chat: resultado, dano e (para o mestre) os botões para aplicar quando ele confirma. */
@@ -229,7 +230,7 @@ export function PrepararCombate({ tokens, fichas, acao, fechar }: { tokens: Toke
       fechar()
     } catch { /* aviso já aparece */ } finally { setEnviando(false) }
   }
-  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="Preparar combate" onClick={fechar}>
+  return <NaTela><div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4" role="dialog" aria-modal="true" aria-label="Preparar combate" onClick={fechar}>
     <div className="flex max-h-[90vh] w-full max-w-md flex-col rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-4 text-sm" onClick={x => x.stopPropagation()}>
       <div className="flex items-center gap-2"><Swords size={18} className="text-[#f2a9c3]" /><h2 className="flex-1 font-bold">Preparar combate</h2>
         <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-(--s-34294f)"><X size={18} /></button></div>
@@ -255,7 +256,7 @@ export function PrepararCombate({ tokens, fichas, acao, fechar }: { tokens: Toke
         className="mt-3 w-full rounded-xl bg-gradient-to-r from-[#b91c1c] to-(--a-7c3aed) p-3 font-bold shadow-[0_0_18px_#b91c1c55] disabled:opacity-40 disabled:shadow-none">
         {enviando ? 'Rolando…' : `🎲 Rolar iniciativa e começar (${escolhidos.length})`}</button>
     </div>
-  </div>
+  </div></NaTela>
 }
 
 export type Morte = { estado?: 'caido' | 'estavel' | 'morto'; sucessos?: number; falhas?: number; futuras?: number }

@@ -2,6 +2,7 @@ import { avaliarSeguro, type Variaveis } from './formula'
 import { imagemDaPlataforma } from '../nuvem/validacao'
 import type { DadosFicha, Sistema } from './tipos'
 import { bonusEquipados, lerItens, lerPoderes, lerUso, pesoTotal } from './inventario'
+import { lerEscolhasDnd } from './dnd2024Ficha'
 import { bonusDaArvore, lerArvore, sincronizarPoderes, somarBonus } from './arvore'
 
 export type Calculo = {
@@ -79,6 +80,7 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     listas: { ...base.listas, ...(d.listas ?? {}) },
     // Inventário só entra quando existe (fichas antigas continuam iguais) e sempre limpo/validado.
     ...(d.itens !== undefined ? { itens: lerItens(d.itens) } : {}), ...(d.uso !== undefined ? { uso: lerUso(d.uso) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dndEscolhas !== undefined ? { dndEscolhas: lerEscolhasDnd(d.dndEscolhas) } : {}),
     // Habilidades da árvore entram/saem dos poderes conforme os hexágonos liberados.
     ...(d.arvore !== undefined ? { arvore: lerArvore(d.arvore), poderes: sincronizarPoderes(lerPoderes(d.poderes), lerArvore(d.arvore)) }
       : d.poderes !== undefined ? { poderes: lerPoderes(d.poderes) } : {}),

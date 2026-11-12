@@ -6,6 +6,7 @@ import { ligarZoomSuave } from '@/lib/zoomRoda'
 import { Dice5, Link2, Minus, Pencil, Plus, Sparkles, Trash2, Undo2, X } from 'lucide-react'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { alvosDeBonus, lerPoderes, TIPOS_PODER, type TipoPoder } from '@/lib/sistemas/inventario'
+import NaTela from '@/components/NaTela'
 import {
   arvoreExemplo, CORES_NO, difereDoSistema, disponiveis, gastos, lerArvore, LIM_ARVORE, mesclarArvore, novoIdNo, podeDevolver, podeLiberar, sincronizarPoderes,
   type Arvore, type EfeitoNo, type NoArvore,
@@ -237,7 +238,7 @@ function EditorNo({ inicial, a, alvos, recursos, gravar, fechar }: {
   const outros = a.nos.filter(x => x.id !== n.id)
   const mudarEfeito = (i: number, e: EfeitoNo) => setN({ ...n, efeitos: n.efeitos.map((x, k) => k === i ? e : x) })
   const podeAdd = n.efeitos.length < LIM_ARVORE.efeitos
-  return <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
+  return <NaTela><div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-3 sm:p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
     <form role="dialog" aria-modal="true" aria-label="Hexágono" onSubmit={e => { e.preventDefault(); if (n.nome.trim()) gravar({ ...n, nome: n.nome.trim() }) }} onKeyDown={e => { if (e.key === 'Escape') fechar() }}
       className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-(--a-62527e) bg-(--s-19172c) p-5 text-(--a-f4f0ff) shadow-2xl sm:rounded-2xl">
       <div className="flex items-center gap-2"><h2 className="flex-1 text-lg font-bold">{a.nos.some(x => x.id === n.id) ? 'Editar hexágono' : 'Novo hexágono'}</h2>
@@ -284,5 +285,5 @@ function EditorNo({ inicial, a, alvos, recursos, gravar, fechar }: {
         <button type="submit" disabled={!n.nome.trim()} className="flex-1 rounded-xl bg-(--a-7652ac) p-2.5 font-semibold hover:bg-(--a-8b68c4) disabled:opacity-50">Salvar hexágono</button>
       </div>
     </form>
-  </div>
+  </div></NaTela>
 }

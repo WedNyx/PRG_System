@@ -2,6 +2,7 @@
 import { CAMPOS, REGRAS, permissoesPadrao, type Campo, type Modelo, type Permissoes, type Regra } from '../campanhas/permissoes'
 import { lerItens, lerPoderes } from '../sistemas/inventario'
 import { imagemDaPlataforma } from '../imagens'
+import { lerConfiguracaoProgressao, type ConfiguracaoProgressao } from '../sistemas/modoProgressao'
 
 export const ESTADOS = ['planejada', 'ativa', 'pausada', 'encerrada'] as const
 export type EstadoCampanha = typeof ESTADOS[number]
@@ -39,7 +40,7 @@ export function normalizarExcecoes(valor: unknown): Partial<Permissoes> {
   return out
 }
 
-export type DadosCampanha = { nome: string; descricao: string; sistema: string; modelo_padrao: Modelo; permissoes: Permissoes; estado?: EstadoCampanha; capa_url?: string | null }
+export type DadosCampanha = { nome: string; descricao: string; sistema: string; modelo_padrao: Modelo; permissoes: Permissoes; estado?: EstadoCampanha; capa_url?: string | null; config_progressao?: ConfiguracaoProgressao }
 
 /** Imagem enviada pela própria plataforma (bucket público prg-mesa do Supabase). */
 export { imagemDaPlataforma }
@@ -64,6 +65,12 @@ export function validarCampanha(body: unknown, parcial = false): Ok<Partial<Dado
     out.modelo_padrao = b.modeloPadrao
   }
   if (b.permissoes !== undefined || !parcial) out.permissoes = normalizarPermissoes(b.permissoes, out.modelo_padrao ?? 'C')
+  if (b.configProgressao !== undefined) {
+    const cp = b.configProgressao
+    if (!cp || typeof cp !== 'object' || Array.isArray(cp) || !['automatico', 'manual', 'hibrido'].includes((cp as Record<string, unknown>).modo as string))
+      return { ok: false, erro: 'Modo de progressão inválido.' }
+    out.config_progressao = lerConfiguracaoProgressao(cp)
+  }
   if (b.estado !== undefined) {
     if (!isEstado(b.estado)) return { ok: false, erro: 'Estado da campanha inválido.' }
     out.estado = b.estado

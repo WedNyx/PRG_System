@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Minus, Plus, X } from 'lucide-react'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { escolhasDeClassePendentes, progressaoAtiva } from '@/lib/sistemas/calculo'
 import { moverPonto, pontosColocados } from '@/lib/sistemas/nivel'
+import NaTela from '@/components/NaTela'
 
 const NOMES_PADRAO: Record<string, string> = {
   arvore: '🌠 Pontos da árvore', vida: '❤️ Vida', atributos: '💪 Pontos de atributo', pericias: '🎯 Pontos de perícia',
@@ -77,7 +78,7 @@ export default function Progressao({ s, d, onChange, somenteLeitura, pontosAtrib
     })}</div>
     {ativas.some(a => 'arvore' in a.cl.tabela) && <p className="mt-2 text-xs text-(--a-a998bd)">Os pontos da árvore do nível já aparecem em “🌠 Árvore de habilidades”.</p>}
 
-    {janelaAberta && <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 sm:items-center" onClick={fechar}>
+    {janelaAberta && <NaTela><div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4" onClick={fechar}>
       <div role="dialog" aria-modal="true" aria-label={subida?.titulo ?? 'Distribuir pontos de atributo'} onClick={ev => ev.stopPropagation()}
         className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-(--a-b99bff) bg-gradient-to-b from-(--s-2b2045) to-(--s-161224) p-5 shadow-2xl">
         <div className="flex items-start gap-2">
@@ -108,6 +109,6 @@ export default function Progressao({ s, d, onChange, somenteLeitura, pontosAtrib
           <button type="button" onClick={fechar} className="ml-auto rounded-lg bg-gradient-to-r from-(--a-7652ac) to-[#b45309] px-4 py-1.5 text-sm font-semibold">{sobrando > 0 && usaAtributos ? 'Depois' : 'Pronto'}</button>
         </div>
       </div>
-    </div>}
+    </div></NaTela>}
   </section>
 }

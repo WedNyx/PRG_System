@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Loader2, X } from 'lucide-react'
 import { GRUPOS_SISTEMA, criarEAbrirFicha } from '@/lib/sistemas/criar'
 import { useOpcoesSistema } from '@/lib/sistemas/cliente'
+import NaTela from '@/components/NaTela'
 
 /** Janela para escolher o sistema antes de criar uma ficha. */
 export default function EscolherSistema({ aventureiroId, onFechar }: { aventureiroId: string; onFechar: () => void }) {
@@ -15,7 +16,7 @@ export default function EscolherSistema({ aventureiroId, onFechar }: { aventurei
     setCriando(id); setErro('')
     try { await criarEAbrirFicha(id, aventureiroId) } catch (e) { setErro(e instanceof Error ? e.message : 'Não foi possível criar a ficha.'); setCriando('') }
   }
-  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 sm:items-center" role="dialog" aria-modal="true" aria-label="Escolha o sistema da ficha">
+  return <NaTela><div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-4" role="dialog" aria-modal="true" aria-label="Escolha o sistema da ficha">
     <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-(--a-6d5690) bg-(--s-1b1529) p-5">
       <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-bold">Qual sistema?</h2>
         <button type="button" onClick={onFechar} aria-label="Fechar" className="rounded-lg p-2 hover:bg-(--s-38294d)"><X size={20} /></button></div>
@@ -31,5 +32,5 @@ export default function EscolherSistema({ aventureiroId, onFechar }: { aventurei
           </button></li>)}</ul>
       </section>)}
     </div>
-  </div>
+  </div></NaTela>
 }

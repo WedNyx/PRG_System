@@ -12,6 +12,7 @@ import { EditorItem, EditorPoder } from '@/components/fichas/Inventario'
 import ArteItem from '@/components/fichas/ArteItem'
 import type { Estado } from './MesaNova'
 import { btn, input, msg } from './estilos'
+import NaTela from '@/components/NaTela'
 
 type Entrada = { id: string; tipo: 'item' | 'poder'; nome: string; dados: Record<string, unknown> }
 const MAX_DAR = 20
@@ -149,7 +150,7 @@ function JanelaDar({ campanhaId, e, b, fechar }: { campanhaId: string; e: Estado
   const linha = (f: Estado['fichas'][number]) => <label key={f.id} className={'flex cursor-pointer items-center gap-2 rounded-lg border p-2 text-sm ' + (sel.includes(f.id) ? 'border-(--a-b99bff) bg-(--s-3a2c58)' : 'border-(--a-3d3152) bg-(--s-201a32)')}>
     <input type="checkbox" checked={sel.includes(f.id)} onChange={() => alternar(f.id)} className="accent-(--a-b99bff)" />
     <span className="flex-1 truncate">{f.npc ? '🎭' : '🧙'} {f.nome || 'Sem nome'}</span><span className="text-[11px] text-(--a-b4aeca)">{f.npc ? 'NPC' : nomes[f.dono_id]}</span></label>
-  return <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 p-3 sm:items-center" onMouseDown={ev => { if (ev.target === ev.currentTarget) fechar() }}>
+  return <NaTela><div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-3 sm:p-4" onMouseDown={ev => { if (ev.target === ev.currentTarget) fechar() }}>
     <div role="dialog" aria-modal="true" aria-labelledby="dar-titulo" onKeyDown={ev => { if (ev.key === 'Escape') fechar() }} className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-(--a-8b6cba) bg-(--s-19152a) p-5 text-(--a-f2ebff) shadow-2xl">
       <div className="flex items-center gap-3"><Icone b={b} />
         <div className="min-w-0 flex-1"><h2 id="dar-titulo" className="flex items-center gap-1.5 text-lg font-bold"><Gift size={18} /> Dar</h2><p className="truncate text-sm text-(--a-c4b6d4)">{b.nome}</p></div>
@@ -167,5 +168,5 @@ function JanelaDar({ campanhaId, e, b, fechar }: { campanhaId: string; e: Estado
       <button type="button" disabled={!sel.length || ocupado} onClick={() => void dar()} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-(--a-7652ac) to-[#b45309] p-2.5 font-semibold disabled:opacity-40">
         <Gift size={16} /> {ocupado ? 'Entregando…' : sel.length ? `Dar para ${sel.length} ${sel.length === 1 ? 'personagem' : 'personagens'}` : 'Escolha quem recebe'}</button>
     </div>
-  </div>
+  </div></NaTela>
 }

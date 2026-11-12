@@ -12,6 +12,7 @@ import { TransformComponent, TransformWrapper, type ReactZoomPanPinchRef } from 
 import { api, enviarImagemNuvem, ErroNuvem } from '@/lib/nuvem/cliente'
 import { ICONES, lerMundo, novoId, posicaoNaTeia, TIPOS_PAGINA, TIPOS_RELACAO, type Mundo, type Pagina, type Relacao } from '@/lib/mundo'
 import { ligarZoomSuave } from '@/lib/zoomRoda'
+import NaTela from '@/components/NaTela'
 
 const btn = 'inline-flex items-center gap-1.5 rounded-lg border border-(--a-5e4b78) px-2.5 py-1.5 text-xs hover:bg-(--s-34294f) disabled:opacity-50'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-100f20) p-2 text-sm text-white'
@@ -271,7 +272,7 @@ function PainelPagina({ p, mundo, admin, fechar, abrir, verNoMapa, editar, remov
 }) {
   const rels = mundo.relacoes.filter(r => r.de === p.id || r.para === p.id)
   const nome = (id: string) => mundo.paginas.find(x => x.id === id)
-  return <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/55 sm:items-stretch sm:justify-end" onClick={fechar}>
+  return <NaTela><div className="fixed inset-0 z-40 flex items-end justify-center bg-black/55 sm:items-stretch sm:justify-end" onClick={fechar}>
     <article role="dialog" aria-modal="true" aria-label={p.nome} onClick={x => x.stopPropagation()}
       className="max-h-[88vh] w-full overflow-y-auto rounded-t-3xl border border-(--a-62527e) bg-(--s-19172c) sm:max-h-none sm:max-w-md sm:rounded-none sm:rounded-l-3xl">
       {p.imagem && /* eslint-disable-next-line @next/next/no-img-element */ <img src={p.imagem} alt="" className="h-48 w-full object-cover" />}
@@ -302,17 +303,17 @@ function PainelPagina({ p, mundo, admin, fechar, abrir, verNoMapa, editar, remov
         </div>
       </div>
     </article>
-  </div>
+  </div></NaTela>
 }
 
 /* ---------------- Editores ---------------- */
 function Janela({ titulo, fechar, children }: { titulo: string; fechar: () => void; children: React.ReactNode }) {
-  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-3 sm:items-center" onMouseDown={x => { if (x.target === x.currentTarget) fechar() }}>
+  return <NaTela><div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-4" onMouseDown={x => { if (x.target === x.currentTarget) fechar() }}>
     <div role="dialog" aria-modal="true" aria-label={titulo} className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-(--a-6d5690) bg-(--s-1b1529) p-5 text-sm">
       <div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-bold">{titulo}</h2><button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1.5 hover:bg-(--s-38294d)"><X size={18} /></button></div>
       {children}
     </div>
-  </div>
+  </div></NaTela>
 }
 
 function EditorPagina({ inicial, campanhaId, salvar, fechar }: { inicial: Pagina; campanhaId: string; salvar: (p: Pagina) => void; fechar: () => void }) {

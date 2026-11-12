@@ -88,7 +88,7 @@ export const SISTEMAS: Sistema[] = [
     nome: 'D&D 5ª edição (SRD 5.2)',
     resumo: 'O RPG de fantasia mais jogado do mundo (regras de 2024). Escolha classe, espécie e antecedente: proficiência, perícias, salvaguardas, CA, PV, CD e ataque de magia calculados.',
     tipo: 'aberto', licenca: 'CC-BY-4.0',
-    creditos: 'Este trabalho inclui material do System Reference Document 5.2 ("SRD 5.2") da Wizards of the Coast LLC, disponível em https://www.dndbeyond.com/srd. O SRD 5.2 está licenciado sob a Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/legalcode).',
+    creditos: 'Este trabalho inclui material do System Reference Document 5.2.1 ("SRD 5.2.1") da Wizards of the Coast LLC, disponível em https://www.dndbeyond.com/srd. O SRD 5.2 está licenciado sob a Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/legalcode).',
     dados: 'd20 (dano: d4–d12)',
     campos: [
       { id: 'classe', nome: 'Classe', tipo: 'escolha', opcoes: ([
@@ -127,7 +127,7 @@ export const SISTEMAS: Sistema[] = [
     formulaModificador: 'piso((X - 10) / 2)',
     derivados: [
       { id: 'prof', nome: 'Bônus de proficiência', formula: 'piso((max(1, nivel) - 1) / 4) + 2' },
-      { id: 'ca', nome: 'Classe de Armadura', formula: 'ca_base + min(mod_DES, des_max) + armadura', dica: 'Base da armadura + Destreza (até o limite) + escudo' },
+      { id: 'ca', nome: 'Classe de Armadura', formula: 'ca_base + se(des_max, min(mod_DES, des_max), 0) + armadura', dica: 'Base da armadura + Destreza (até o limite) + escudo' },
       { id: 'pv_sugerido', nome: 'PV máximos (média fixa)', formula: 'se(dv, dv, dado_vida) + mod_CON + (max(1, nivel) - 1) * (piso(se(dv, dv, dado_vida) / 2) + 1 + mod_CON) + robusto * max(1, nivel)', dica: 'Nível 1: dado cheio + CON; depois a média do dado + CON por nível' },
       { id: 'iniciativa', nome: 'Iniciativa', formula: 'mod_DES' },
       { id: 'percepcao_passiva', nome: 'Percepção passiva', formula: '10 + tot_percepcao' },

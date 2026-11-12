@@ -6,6 +6,8 @@ import type { Campo } from '@/lib/campanhas/permissoes'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { normalizarFicha } from '@/lib/sistemas/calculo'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
+import { lerConfiguracaoProgressao } from '@/lib/sistemas/modoProgressao'
+import { lerEscolhasDnd, validarAlteracoesEscolhasDnd } from '@/lib/sistemas/dnd2024Ficha'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
@@ -42,7 +44,11 @@ export const GET = rota<Ctx>(async (req, { params }) => {
     pendentes = p?.categorias ?? []
   }
   const podeEditar = f.campanha_id ? (admin || (dono && f.status !== 'recusada' && !f.bloqueada)) : dono
-  return ok({ ficha: f, podeEditar, souMestre: admin, regras, pendentes })
+  const [configCampanha] = f.campanha_id && f.sistema === 'dnd5e-srd'
+    ? await rest<{ config_progressao?: unknown }[]>(`prg_campanhas?select=config_progressao&id=eq.${q(f.campanha_id)}&limit=1`).catch(() => [])
+    : []
+  const configProgressao = lerConfiguracaoProgressao(configCampanha?.config_progressao)
+  return ok({ ficha: f, podeEditar, souMestre: admin, regras, pendentes, configProgressao })
 })
 
 function resumoHistorico(mudancas: Mudanca[]) {
@@ -66,6 +72,20 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
   if (!Number.isInteger(body.versao)) throw new ErroApi(400, 'Versão ausente.')
   const v = validarFichaDados(body.dados)
   if (!v.ok) throw new ErroApi(400, v.erro)
+  // Valida mudanças em escolhas D&D ANTES da aplicação de permissão/aprovação.
+  // Personagens antigos podem conservar escolhas históricas sem bloqueios retroativos.
+  if (f.sistema === 'dnd5e-srd') {
+    const antigo = f.dados as Partial<DadosFicha>
+    const candidato = v.valor.dados as Partial<DadosFicha>
+    const erros = validarAlteracoesEscolhasDnd(
+      { campos: antigo.campos ?? {}, dndEscolhas: antigo.dndEscolhas },
+      { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas },
+    )
+    if (erros.length) throw new ErroApi(400, erros.join(' '))
+    if (candidato.dndEscolhas !== undefined) {
+      v.valor.dados = { ...v.valor.dados, dndEscolhas: lerEscolhasDnd(candidato.dndEscolhas) }
+    }
+  }
 
   let final: Record<string, unknown> = v.valor.dados
   let pendentes: Mudanca[] = [], ignoradas: Mudanca[] = [], salvas: Mudanca[] = []
@@ -89,6 +109,18 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
       salvas = sep.livres; pendentes = sep.aprovacao; ignoradas = sep.bloqueadas
       final = aplicar(f.dados ?? {}, salvas)
     }
+  }
+
+  // Revalida contra o estado EFETIVAMENTE autorizado depois da separação
+  // livre/aprovação/bloqueado. Evita usar um nível rejeitado para liberar escolha.
+  if (f.sistema === 'dnd5e-srd') {
+    const anterior = f.dados as Partial<DadosFicha>
+    const autorizado = final as Partial<DadosFicha>
+    const erros = validarAlteracoesEscolhasDnd(
+      { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas },
+      { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas },
+    )
+    if (erros.length) throw new ErroApi(400, 'A escolha não foi liberada no nível autorizado: ' + erros.join(' '))
   }
 
   let versao = f.versao

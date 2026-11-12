@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { acertou, aplicarNaVida, distancia, gastarCusto, ordenarIniciativa, regraDeAtaque, regraDeIniciativa, resumoCombate } from './combate'
+import { acertou, aplicarNaVida, criticoBlades, distancia, gastarCusto, ordenarIniciativa, regraDeAtaque, regraDeIniciativa, resumoCombate } from './combate'
 import { sistemaPorId } from './catalogo'
 import type { Sistema } from './tipos'
 
@@ -84,5 +84,15 @@ describe('leituras (v0.33.0)', () => {
     const r = resumoCombate(s, { pericias: { escaramucar: 'd2' } })
     expect(r.testes.find(t => t.id === 'pericia:escaramucar')).toMatchObject({ valor: 0, dados: 2 })
     expect(regraDeAtaque(s, 0, 2).expressao).toBe('2d6kh1')
+  })
+  it('Blades na mesa: acerto é pelo próprio dado (4+), não contra Defesa (não existe em Blades)', () => {
+    const s = sistemaPorId('blades')!
+    const regra = regraDeAtaque(s, 0, 2)
+    expect(regra.comparar).toBe('blades')
+    // Antes da correção, caía no fallback "maior_igual" e comparava com uma Defesa inexistente (10 fixo) — 5 e 6 sempre "erravam".
+    expect(acertou(regra, 6, 10, 0)).toBe(true); expect(acertou(regra, 5, 10, 0)).toBe(true)
+    expect(acertou(regra, 4, 10, 0)).toBe(true); expect(acertou(regra, 3, 10, 0)).toBe(false)
+    expect(criticoBlades(2, [6, 6, 2])).toBe(true); expect(criticoBlades(2, [6, 3])).toBe(false)
+    expect(criticoBlades(0, [6, 6])).toBe(false) // 0 dados: vale o menor, nunca é crítico
   })
 })

@@ -82,10 +82,19 @@ export function resumoCombate(s: Sistema, bruto: unknown): ResumoCombate {
 function dadosDaPericia(s: Sistema, vars: Record<string, number>, atributo?: string) {
   return Math.max(0, ...(atributo ? atributo.split('/') : []).map(a => Number(vars[a]) || 0))
 }
+/** Nº de dados realmente rolados numa parada (0–20; clampado), igual ao usado em expressaoParada. */
+function paradaN(dados: number) {
+  return Math.max(0, Math.min(20, Math.floor(dados)))
+}
 /** Parada de dados: N dados ficando com o maior; com 0 dados, rola 2 e fica com o menor. Soma o bônus. */
 export function expressaoParada(lados: number, dados: number, bonus = 0) {
-  const n = Math.max(0, Math.min(20, Math.floor(dados))), b = Math.round(bonus) || 0
+  const n = paradaN(dados), b = Math.round(bonus) || 0
   return (n > 0 ? `${n}d${lados}kh1` : `2d${lados}kl1`) + (b ? (b > 0 ? '+' + b : String(b)) : '')
+}
+
+/** Crítico de Blades: dois 6 entre os dados rolados (com 0 dados vale o menor, nunca é crítico). */
+export function criticoBlades(dados: number, resultados: number[]): boolean {
+  return paradaN(dados) > 0 && resultados.filter(r => r === 6).length >= 2
 }
 
 /**
@@ -96,7 +105,7 @@ export function expressaoParada(lados: number, dados: number, bonus = 0) {
 export function leituraBlades(dados: number, resultados: number[], resistencia = false): string {
   if (!resultados.length) return ''
   const valor = dados > 0 ? Math.max(...resultados) : Math.min(...resultados)
-  const critico = dados > 0 && resultados.filter(r => r === 6).length >= 2
+  const critico = criticoBlades(dados, resultados)
   if (resistencia) return critico ? '✨ Crítico: recupera 1 de estresse' : `Custa ${6 - valor} de estresse`
   return critico ? '✨ Crítico! Efeito maior' : valor === 6 ? '✅ Sucesso total' : valor >= 4 ? '⚖️ Sucesso com custo' : '❌ Falha (com consequência)'
 }
@@ -113,11 +122,15 @@ export function leituraD100(valor: number, rolado: number): string {
   return '❌ Falha'
 }
 
-export type RegraAtaque = { expressao: string; comparar: 'maior_igual' | 'menor_igual' | 'sucessos' }
+export type RegraAtaque = { expressao: string; comparar: 'maior_igual' | 'menor_igual' | 'sucessos' | 'blades' }
 /** Como rolar o ataque neste sistema, com o bônus do teste escolhido. */
 export function regraDeAtaque(s: Sistema | undefined, bonus: number, dados?: number): RegraAtaque {
   const b = Math.round(bonus) || 0
-  if (s?.rolagem === 'parada') return { expressao: expressaoParada(s.parada?.lados ?? 20, dados ?? 1, b), comparar: 'maior_igual' }
+  if (s?.rolagem === 'parada') {
+    const expressao = expressaoParada(s.parada?.lados ?? 20, dados ?? 1, b)
+    // Blades não tem Defesa: acerto é o próprio resultado da ação (ver acertou()), não uma comparação contra o alvo.
+    return { expressao, comparar: s.parada?.leitura === 'blades' ? 'blades' : 'maior_igual' }
+  }
   if (s?.rolagem === 'personalizada' && s.regraRolagem) {
     const expressao = montarRolagem(s.regraRolagem.formula, b)
     return { expressao, comparar: /s\d/.test(expressao) ? 'sucessos' : 'maior_igual' }
@@ -126,10 +139,11 @@ export function regraDeAtaque(s: Sistema | undefined, bonus: number, dados?: num
   return { expressao: '1d20' + (b >= 0 ? '+' + b : String(b)), comparar: 'maior_igual' }
 }
 
-/** Acertou? d20: total ≥ defesa. d100: total ≤ valor do teste. Sucessos: pelo menos 1 (ou a defesa, se for maior). */
+/** Acertou? d20: total ≥ defesa. d100: total ≤ valor do teste. Sucessos: pelo menos 1 (ou a defesa, se for maior). Blades: 4+ no dado (sucesso, com ou sem custo). */
 export function acertou(regra: RegraAtaque, total: number, defesa: number, bonus: number): boolean {
   if (regra.comparar === 'menor_igual') return total <= bonus
   if (regra.comparar === 'sucessos') return total >= Math.max(1, defesa)
+  if (regra.comparar === 'blades') return total >= 4
   return total >= defesa
 }
 

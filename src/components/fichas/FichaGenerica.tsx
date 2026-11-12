@@ -14,6 +14,10 @@ import { InventarioFicha, PoderesFicha } from './Inventario'
 import JanelaDescanso from './Descanso'
 import type { Item } from '@/lib/sistemas/inventario'
 import ArvoreHabilidades from './Arvore'
+import ProgressaoDnd2024 from './ProgressaoDnd2024'
+import { MARCOS_DND_2024 } from '@/lib/sistemas/dnd2024Marcos'
+import { progressoDaFichaDnd } from '@/lib/sistemas/dnd2024Ficha'
+import type { ModoProgressao } from '@/lib/sistemas/modoProgressao'
 import Progressao from './Progressao'
 import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
 import { GUIAS } from '@/lib/sistemas/guias'
@@ -25,8 +29,8 @@ const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 
 const sinal = (n: number | null | undefined) => n === null || n === undefined ? '—' : n >= 0 ? '+' + n : String(n)
 
 /** Ficha que se monta sozinha a partir do modelo do sistema. */
-export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, rolarNaCampanha, passarItem }: {
-  sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean
+export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, rolarNaCampanha, passarItem }: {
+  sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean; modoProgressao?: ModoProgressao; podeEditarArvore?: boolean
   /** Se a ficha é de campanha: rola no servidor e publica no chat da mesa. */
   rolarNaCampanha?: (expressao: string, rotulo: string, extra?: { estilo: 'assimilacao'; manter?: number; todos?: boolean }) => Promise<{ resultados: number[]; total: number } | null>
   /** Ficha de campanha: passar um item para outro personagem. */
@@ -247,7 +251,30 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       </div>)}
     </section>}
         </>}
-        {secao === 'arvore' && <ArvoreHabilidades s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0} />}
+        {secao === 'arvore' && <div className="space-y-4">
+          {s.id === 'dnd5e-srd' && modoProgressao !== 'manual' && <>
+            <ProgressaoDnd2024
+              marcos={MARCOS_DND_2024}
+              ficha={progressoDaFichaDnd(d)}
+              modo={modoProgressao}
+              somenteLeitura={somenteLeitura}
+              onEscolha={(marcoId, opcaoId) => {
+                const escolhas = { ...d.dndEscolhas }
+                if (opcaoId) escolhas[marcoId] = opcaoId
+                else delete escolhas[marcoId]
+                onChange({ ...d, dndEscolhas: escolhas })
+              }}
+            />
+            <p className="rounded-lg border border-amber-400/30 p-3 text-xs text-amber-100">
+              Catálogo em construção: nesta etapa há apenas marcos selecionados do Guerreiro, não a progressão completa das 12 classes.
+              A visualização não concede poderes nem bônus automaticamente.
+            </p>
+          </>}
+          {(s.id !== 'dnd5e-srd' || modoProgressao !== 'automatico') &&
+            <ArvoreHabilidades s={s} d={d} onChange={onChange}
+              somenteLeitura={somenteLeitura || (s.id === 'dnd5e-srd' && !podeEditarArvore)}
+              rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0} />}
+        </div>}
         {secao === 'habilidades' && <>
     <PoderesFicha {...propsInv} />
     {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}

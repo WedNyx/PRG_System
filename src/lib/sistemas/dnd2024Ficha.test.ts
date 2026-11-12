@@ -50,5 +50,12 @@ describe('adaptação da ficha D&D', () => {
       { campos: { classe: 'Guerreiro', nivel: 5 }, dndEscolhas: antiga },
     )).toEqual([])
   })
+  it('revalidação rejeita subclasse se o aumento de nível foi negado pelo mestre', () => {
+    const anterior = { campos: { classe: 'Guerreiro', nivel: 2 }, dndEscolhas: {} }
+    const solicitado = { campos: { classe: 'Guerreiro', nivel: 3 }, dndEscolhas: { 'guerreiro-subclasse': 'campeao' } }
+    expect(validarAlteracoesEscolhasDnd(anterior, solicitado)).toEqual([])
+    const aposPermissoes = { ...solicitado, campos: { classe: 'Guerreiro', nivel: 2 } }
+    expect(validarAlteracoesEscolhasDnd(anterior, aposPermissoes)).not.toEqual([])
+  })
   it('possui catálogo de marcos válido', () => expect(validarMarcos(MARCOS_DND_2024)).toEqual([]))
 })

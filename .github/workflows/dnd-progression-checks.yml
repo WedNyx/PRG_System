@@ -1,0 +1,44 @@
+name: D&D 2024 — testes de progressão
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/lib/sistemas/dnd2024*'
+      - 'src/lib/sistemas/modoProgressao*'
+      - 'src/lib/sistemas/catalogo.ts'
+      - 'src/lib/sistemas/calculo.ts'
+      - 'src/lib/sistemas/guias.ts'
+      - 'src/lib/nuvem/**'
+      - 'src/app/ficha/page.tsx'
+      - 'src/app/api/prg/fichas/**'
+      - 'src/app/api/prg/campanhas/**'
+      - 'src/components/fichas/**'
+      - 'src/components/central/CampanhasNuvem.tsx'
+      - 'supabase/migrations/*dnd*'
+      - '.github/workflows/dnd-progression-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  testar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Instalar dependências sem modificar o lockfile
+        run: npm ci
+      - name: Testes unitários
+        run: npm test -- src/lib/sistemas/dnd2024Marcos.test.ts src/lib/sistemas/dnd2024Ficha.test.ts src/lib/sistemas/dnd2024Progressao.test.ts src/lib/sistemas/modoProgressao.test.ts src/lib/sistemas/dnd2024Armadura.test.ts src/lib/nuvem/validacaoProgressao.test.ts
+      - name: Checar tipos
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build

@@ -79,6 +79,19 @@ describe('rolagem em parada copiada de um sistema da plataforma (v0.33.0)', () =
     const r2 = validarSistema({ ...base, rolagem: 'parada', parada: { lados: 0 } }, { id: 'autoral-' + '0'.repeat(32) })
     expect(r2.ok && r2.sistema.parada).toEqual({ lados: 2 })
   })
+  it('preserva a leitura Blades e as resistências ao copiar a estrutura de Blades', () => {
+    const comResistencia = { ...base, derivados: [{ nome: 'Perspicácia', formula: '2' }], rolagem: 'parada', parada: { lados: 6, leitura: 'blades' }, resistencias: ['perspicacia'] }
+    const r = validarSistema(comResistencia, { id: 'autoral-' + '0'.repeat(32) })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.sistema.parada).toEqual({ lados: 6, leitura: 'blades' }); expect(r.sistema.resistencias).toEqual(['perspicacia'])
+  })
+  it('ignora leitura desconhecida e resistências que não apontam para um derivado do sistema', () => {
+    const r = validarSistema({ ...base, rolagem: 'parada', parada: { lados: 6, leitura: 'outra-coisa' }, resistencias: ['nao_existe'] }, { id: 'autoral-' + '0'.repeat(32) })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    expect(r.sistema.parada).toEqual({ lados: 6 }); expect(r.sistema.resistencias).toBeUndefined()
+  })
 })
 
 describe('valor inicial de perícia copiado de um sistema da plataforma (v0.33.0)', () => {

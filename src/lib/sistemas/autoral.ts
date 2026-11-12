@@ -140,7 +140,13 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
     else regraRolagem = { nome: txt(r.nome, 40).trim() || 'Teste', formula: formula.replace(/\s+/g, '') }
   }
   // Parada (ex.: copiada de Ordem Paranormal ou Blades): um d<lados> por ponto, fica com o maior.
-  if (rolagem === 'parada') parada = { lados: Math.round(num((e.parada as Record<string, unknown> | undefined)?.lados, 2, 100, 20)) }
+  if (rolagem === 'parada') {
+    const p = e.parada as Record<string, unknown> | undefined
+    parada = { lados: Math.round(num(p?.lados, 2, 100, 20)), ...(p?.leitura === 'blades' ? { leitura: 'blades' as const } : {}) }
+  }
+  // Resistências (ex.: copiadas de Blades): derivados que também rolam como parada (Perspicácia, Proeza…).
+  const idsDerivados = new Set(derivados.map(d => d.id))
+  const resistencias = (Array.isArray(e.resistencias) ? e.resistencias : []).filter((id): id is string => typeof id === 'string' && idsDerivados.has(id)).slice(0, LIMITES.derivados)
   const cargaF = e.carga && typeof e.carga === 'object' ? e.carga as Record<string, unknown> : null
   const carga = cargaF && txt(cargaF.formula, LIMITES.formula) ? { formula: txt(cargaF.formula, LIMITES.formula), unidade: txt(cargaF.unidade, 16) || 'kg' } : undefined
   const creditos = txt(e.creditos, 1500) || undefined
@@ -188,7 +194,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   const sistema: Sistema = {
     id: meta.id, nome, resumo: txt(e.resumo, 400), tipo: 'autoral', ...(imagemDaPlataforma(e.capa) ? { capa: e.capa } : {}),
     licenca: 'Sistema autoral' + (meta.autor ? ' de ' + meta.autor : ''), ...(creditos ? { creditos } : {}),
-    dados: txt(e.dados, 40) || (rolagem === 'd100' ? 'd100' : rolagem === 'd20' ? 'd20' : parada ? `Parada de d${parada.lados}` : regraRolagem ? regraRolagem.formula.replace(/VALOR/gi, 'X') : 'Livre'), rolagem, ...(regraRolagem ? { regraRolagem } : {}), ...(parada ? { parada } : {}),
+    dados: txt(e.dados, 40) || (rolagem === 'd100' ? 'd100' : rolagem === 'd20' ? 'd20' : parada ? `Parada de d${parada.lados}` : regraRolagem ? regraRolagem.formula.replace(/VALOR/gi, 'X') : 'Livre'), rolagem, ...(regraRolagem ? { regraRolagem } : {}), ...(parada ? { parada } : {}), ...(resistencias.length ? { resistencias } : {}),
     campos, atributos, ...(formulaModificador ? { formulaModificador } : {}), derivados, ...(pericias ? { pericias } : {}),
     recursos, ...(limites.length ? { limites } : {}), listas: listas.length ? listas : [{ id: 'anotacoes', nome: 'Anotações' }],
     ...(observacoes.length ? { observacoes } : {}), ...(carga ? { carga } : {}), ...(progressoes ? { progressoes } : {}),

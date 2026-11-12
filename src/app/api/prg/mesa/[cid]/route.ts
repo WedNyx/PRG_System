@@ -9,7 +9,7 @@ import { detectarCritico } from '@/lib/dice'
 import { lerTabelas, rolarTabela, TABELAS_PRONTAS } from '@/lib/tabelas'
 import { aplicarDescanso } from '@/lib/sistemas/descanso'
 import { filtroResultado, resumirRolagens, type EventoResumo } from '@/lib/historico'
-import { acertou, ALCANCE_CORPO, distancia, gastarCusto, ordenarIniciativa, regraDeAtaque, regraDeIniciativa, rolarDano, resumoCombate, type EntradaOrdem } from '@/lib/sistemas/combate'
+import { acertou, ALCANCE_CORPO, criticoBlades, distancia, gastarCusto, ordenarIniciativa, regraDeAtaque, regraDeIniciativa, rolarDano, resumoCombate, type EntradaOrdem } from '@/lib/sistemas/combate'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { ehV8 } from '@/lib/nuvem/categorias'
 import { condicoesDisponiveis, emojiCondicao, nomeCondicao, normalizarDanos, normalizarRodadas, passarRodada } from '@/lib/condicoes'
@@ -517,10 +517,10 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       const dano = hit ? rolarDano(danoExpr) : null
       const status: 'errou' | 'pendente' | 'aplicado' = hit ? (regras.acerto === 'automatico' ? 'aplicado' : 'pendente') : 'errou'
       let vida: Awaited<ReturnType<typeof aplicarDano>> | null = null
-      const critico = hit && detectarCritico(regra.expressao, rolagem.resultados) === 'critico'
+      const critico = hit && (regra.comparar === 'blades' ? criticoBlades(teste?.dados ?? 1, rolagem.resultados) : detectarCritico(regra.expressao, rolagem.resultados) === 'critico')
       if (status === 'aplicado' && dano) vida = await danoComMorte(cid, eu, al, dano.total, critico)
       const arma = opcao?.nome ?? 'Ataque'
-      const texto = `⚔️ ${at.nome} atacou ${al.nome} com ${arma}: ${rolagem.total}${regra.comparar === 'maior_igual' ? ` contra Defesa ${defesa}` : regra.comparar === 'menor_igual' ? ` (precisava ≤ ${bonus})` : ' sucesso(s)'} → `
+      const texto = `⚔️ ${at.nome} atacou ${al.nome} com ${arma}: ${rolagem.total}${regra.comparar === 'maior_igual' ? ` contra Defesa ${defesa}` : regra.comparar === 'menor_igual' ? ` (precisava ≤ ${bonus})` : regra.comparar === 'blades' ? '' : ' sucesso(s)'} → `
         + (!hit ? 'errou.' : status === 'aplicado' ? `acertou! ${dano?.total ?? 0} de dano.` : `acertou! ${dano?.total ?? 0} de dano (aguardando o mestre).`)
       const dados = { atacante: { id: at.id, nome: at.nome }, alvo: { id: al.id, nome: al.nome }, arma, defesa, comparar: regra.comparar, acerto: hit,
         dano: dano ? { expressao: dano.expressao, resultados: dano.resultados.slice(0, 60), total: dano.total } : null, status, aplicado: status === 'aplicado' ? dano?.total ?? 0 : 0,

@@ -2,6 +2,9 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.33.4 — Cartões ilustrados dos sistemas (2026-11-12)
+- 🃏 Cartões dos sistemas no estilo ilustrado, com as capas novas de todos os sistemas (artes do Wed): a ilustração fica à direita e se funde com o fundo, com título grande, selos, descrição e os botões “Guia do mestre” e “Criar ficha” por cima. Cada sistema ganhou a sua cor na borda brilhante e no botão de criar ficha (vermelho no D&D, azul no Pathfinder, verde no BRP, âmbar no Faroeste…).
+
 ## v0.33.3 — Dois sistemas novos (2026-11-12)
 - 🩸 Novo sistema: RPG PUNK — MÖRK BORG (estrutura). Agilidade, Presença, Força e Resistência de −3 a +6, testes de d20 contra CD 12 ao tocar no valor, as seis classes opcionais (com dado de PV, Presságios e prata na descrição), armadura que muda a CD da defesa e dos testes de Agilidade, carga de Força + 8 itens e listas para armas e pergaminhos.
 - 🧬 Novo sistema: Assimilação RPG (estrutura). Origens, Geração, Propósitos, os seis Instintos, Conhecimentos e Práticas, o cabo de guerra entre Determinação e Assimilação, Pressões e os seis níveis de Saúde calculados por Potência e Resolução. A ficha avisa se passar dos pontos da criação.

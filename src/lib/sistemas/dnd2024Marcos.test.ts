@@ -14,6 +14,15 @@ describe('marcos D&D 2024 (dados abertos, visual)', () => {
       expect(Math.max(...daClasse.map(m => m.nivel))).toBe(20)
     }
   })
+  it('inclui uma escolha de subclasse aberta do SRD para cada uma das doze classes', () => {
+    const classes = ['barbaro', 'bardo', 'bruxo', 'clerigo', 'druida', 'feiticeiro', 'guerreiro', 'ladino', 'mago', 'monge', 'paladino', 'patrulheiro']
+    for (const classe of classes) {
+      const m = MARCOS_DND_2024.find(m => m.id === classe + '-subclasse')
+      expect(m?.nivel).toBe(3)
+      expect(m?.modo).toBe('escolha')
+      expect(m?.opcoes).toHaveLength(1)
+    }
+  })
   it('libera a escolha aberta de subclasse no nível 3, não antes', () => {
     const antes = progressaoVisivel(MARCOS_DND_2024, { nivelPorClasse: { ladino: 2 }, escolhas: {} })
     const depois = progressaoVisivel(MARCOS_DND_2024, { nivelPorClasse: { ladino: 3 }, escolhas: {} })

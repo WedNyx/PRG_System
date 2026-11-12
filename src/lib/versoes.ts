@@ -6,9 +6,10 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
-    versao: '0.33.4', data: '2026-11-12', titulo: 'Cartões ilustrados dos sistemas',
+    versao: '0.33.4', data: '2026-11-12', titulo: 'Cartões ilustrados e Assimilação na mesa',
     itens: [
       '🃏 Cartões dos sistemas no estilo ilustrado, com as capas novas de todos os sistemas (artes do Wed): a ilustração fica à direita e se funde com o fundo, com título grande, selos, descrição e os botões “Guia do mestre” e “Criar ficha” por cima. Cada sistema ganhou a sua cor na borda brilhante e no botão de criar ficha (vermelho no D&D, azul no Pathfinder, verde no BRP, âmbar no Faroeste…).',
+      '🧬 Assimilação na mesa virtual: o ataque rola o Instinto em d6 e a aptidão em d10 (escolha a dupla, como Reação + Armas), mantém o melhor dado e acerta com pelo menos 1 Sucesso. O dano das armas em d10 conta um ponto por símbolo e desce pelos níveis de Saúde (do 6 ao 1); a cura enche de volta. A ordem do combate usa a Reação em d6. No chat e no histórico, as rolagens de Assimilação aparecem com os dados e os símbolos (Sucesso, Adaptação e Pressão), em vez da soma dos números.',
     ],
   },
   {

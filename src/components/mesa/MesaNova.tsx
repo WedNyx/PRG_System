@@ -24,6 +24,7 @@ import TocadorMesa from './TocadorMesa'
 import type { EstadoMusica } from '@/lib/nuvem/musica'
 import RecorteImagem from './RecorteImagem'
 import { btn, input, msg } from './estilos'
+import RolagemAssim, { marcaAssim } from '@/components/dados/RolagemAssim'
 import { CartaoAtaque, ConfigCombate, DescansoGrupo, JanelaAtaque, PainelFichas, PainelMorte, PrepararCombate, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type FichaMesa, type Morte } from './Combate'
 
 type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean }
@@ -96,6 +97,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   /** Mostra a rolagem no meio da tela: dados 3D + cartão com o total e cada dado. */
   const destacar = useCallback((ev: Evento) => {
     if (!ev.expressao || !ev.resultados) return
+    if (marcaAssim(ev.dados)) return // dados de símbolos (Assimilação): o chat já mostra cada dado
     const a = ev.tipo === 'ataque' ? ev.dados : null
     dados.current?.mostrar({ rotulo: a ? `⚔️ ${a.arma} → ${a.alvo.nome}` : ev.texto, quem: ev.personagem || ev.autor?.apelido, expressao: ev.expressao, resultados: ev.resultados, total: ev.total ?? 0,
       privada: ev.visibilidade !== 'publica', nota: a ? (a.acerto ? `✅ Acertou!${a.comparar === 'maior_igual' ? ` (Defesa ${a.defesa})` : ''}` : `❌ Errou${a.comparar === 'maior_igual' ? ` (Defesa ${a.defesa})` : ''}`) : null })
@@ -603,9 +605,10 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
     <ul className="space-y-2 text-sm">{e.eventos.map(ev => <li key={ev.id} className={'rounded-lg p-2 ' + (ev.visibilidade === 'publica' ? 'bg-(--s-1e1a30)' : 'border border-(--a-7a5a9a) bg-(--s-261c38)')}>
       <p className="text-[11px] text-(--a-b4aeca)">{hora(ev.criado_em)} · {ev.tipo === 'sistema' ? <strong className="text-(--a-e4d3ff)">Mesa</strong> : (() => { const st = estiloPapel(papelDe[ev.autor_id ?? '']); return <strong className={st.cor} title={st.nome}>{st.icone} {ev.personagem || ev.autor?.apelido || '?'}</strong> })()}{ev.personagem && ev.autor ? ` (${ev.autor.apelido})` : ''}
         {ev.visibilidade === 'mestre' && ' · 🔒 só o mestre'}{ev.visibilidade === 'privada' && ` · 🔒 privado para ${nomes[ev.destinatario_id ?? ''] ?? '?'}`}</p>
-      {ev.tipo === 'rolagem' ? <p><span className="text-(--a-b99bff)">🎲 {ev.expressao}</span> → [{ev.resultados?.join(', ')}] = <strong className="text-lg text-(--a-ed9cd8)">{ev.total}</strong>
+      {ev.tipo === 'rolagem' && marcaAssim(ev.dados) && ev.expressao && ev.resultados ? <div>{ev.texto && <p className="text-xs text-(--a-c4b6d4)">🎲 {ev.texto}</p>}<RolagemAssim expressao={ev.expressao} resultados={ev.resultados} {...marcaAssim(ev.dados)!} /></div>
+        : ev.tipo === 'rolagem' ? <p><span className="text-(--a-b99bff)">🎲 {ev.expressao}</span> → [{ev.resultados?.join(', ')}] = <strong className="text-lg text-(--a-ed9cd8)">{ev.total}</strong>
         {ev.expressao?.includes('d20') && ev.resultados?.[0] === 20 && ' ✨ 20 natural!'}{ev.expressao?.includes('d20') && ev.resultados?.[0] === 1 && ' 💀 1 natural'}{ev.texto && <span className="block text-xs text-(--a-c4b6d4)">{ev.texto}</span>}</p>
-        : ev.tipo === 'ataque' && ev.dados ? <CartaoAtaque d={ev.dados} eventoId={ev.id} admin={admin} acao={acao} />
+        : ev.tipo === 'ataque' && ev.dados ? <CartaoAtaque d={ev.dados} eventoId={ev.id} admin={admin} acao={acao} rolagem={ev.expressao && ev.resultados ? { expressao: ev.expressao, resultados: ev.resultados } : undefined} />
         : <p className="whitespace-pre-wrap break-words">{ev.texto}</p>}
     </li>)}<div ref={fim} /></ul>
     {e.eventos.length === 0 && <p className="text-center text-sm text-(--a-b4aeca)">Nada por aqui ainda. Role um dado!</p>}

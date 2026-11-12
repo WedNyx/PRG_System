@@ -96,3 +96,28 @@ describe('leituras (v0.33.0)', () => {
     expect(criticoBlades(0, [6, 6])).toBe(false) // 0 dados: vale o menor, nunca é crítico
   })
 })
+
+describe('combate com Assimilação (v0.33.4)', () => {
+  it('vida = soma dos níveis de Saúde; dano desce do 6 para o 1 e a cura enche de baixo', async () => {
+    const { resumoCombate, aplicarNaVida, vidaAtual, regraDeAtaque, acertou, regraDeIniciativa, rolarDano } = await import('./combate')
+    const { sistemaPorId } = await import('./catalogo')
+    const s = sistemaPorId('assimilacao')!
+    const cheio = { saude6: { atual: 3 }, saude5: { atual: 3 }, saude4: { atual: 3 }, saude3: { atual: 3 }, saude2: { atual: 3 }, saude1: { atual: 3 } }
+    const ficha = { nome: 'Hugo', atributos: { POT: 1, RSL: 1, REA: 2 }, pericias: { armas: 2 }, recursos: cheio }
+    const r = resumoCombate(s, ficha)
+    expect(r.vida).toEqual({ id: 'saude', nome: 'Saúde', atual: 18, max: 18 })
+    expect(r.defesa).toBeNull()
+    expect(r.testes.find(t => t.id === 'combo:REA:armas')?.assim).toEqual({ d6: 2, d10: 2 })
+    expect(r.testePadrao).toMatch(/:armas$/)
+    let d = aplicarNaVida(ficha as never, 'saude', 4, 18) as { recursos: Record<string, { atual: number }> }
+    expect(d.recursos.saude6.atual).toBe(0); expect(d.recursos.saude5.atual).toBe(2); expect(vidaAtual(d, 'saude')).toBe(14)
+    d = aplicarNaVida(d as never, 'saude', -2, 18) as typeof d
+    expect(d.recursos.saude5.atual).toBe(3); expect(d.recursos.saude6.atual).toBe(1)
+    const regra = regraDeAtaque(s, 0, undefined, { d6: 2, d10: 1 })
+    expect(regra).toEqual({ expressao: '2d6+1d10', comparar: 'assimilacao' })
+    expect(acertou(regra, 1, 10, 0)).toBe(true); expect(acertou(regra, 0, 10, 0)).toBe(false)
+    expect(regraDeIniciativa(s, 0, 2)).toBe('2d6')
+    const dano = rolarDano('3d10', s)!
+    expect(dano.total).toBeLessThanOrEqual(9); expect(dano.total).toBeGreaterThanOrEqual(0)
+  })
+})

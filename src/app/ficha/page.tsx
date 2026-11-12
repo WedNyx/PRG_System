@@ -151,8 +151,8 @@ function Conteudo() {
       {aviso && <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-(--a-62527e) bg-(--s-1f2a40) p-3 text-sm">
         <span className="flex-1">{aviso.texto}</span>{aviso.desfazer && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-(--a-b99bff) px-3 py-1">Desfazer (voltar ao salvo)</button>}</p>}
       {sistema && dados ? <FichaGenerica sistema={sistema} dados={dados} onChange={mudar} somenteLeitura={estado === 'leitura'}
-        rolarNaCampanha={campanhaId ? async (expressao, rotulo) => {
-          try { const r = await api<{ evento: { resultados: number[]; total: number } }>('mesa/' + campanhaId, { method: 'POST', body: { acao: 'evento', tipo: 'rolagem', expressao, personagem: dados.nome, texto: rotulo } }); return r.evento }
+        rolarNaCampanha={campanhaId ? async (expressao, rotulo, extra) => {
+          try { const r = await api<{ evento: { resultados: number[]; total: number } }>('mesa/' + campanhaId, { method: 'POST', body: { acao: 'evento', tipo: 'rolagem', expressao, personagem: dados.nome, texto: rotulo, ...extra } }); return r.evento }
           catch (e) { setErro(e instanceof ErroNuvem ? e.message : 'Falha ao rolar.'); return null }
         } : undefined}
         passarItem={campanhaId && nuvem ? async (item, tem) => {

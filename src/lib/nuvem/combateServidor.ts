@@ -2,7 +2,7 @@
 import { buscarFicha, ErroApi, q, rest, rpc, type FichaRow } from './servidor'
 import { carregarSistema } from './sistemasServidor'
 import { validarFichaDados } from './validacao'
-import { aplicarNaVida, resumoCombate, type ResumoCombate } from '../sistemas/combate'
+import { aplicarNaVida, resumoCombate, vidaAtual, type ResumoCombate } from '../sistemas/combate'
 import { ehV8 } from './categorias'
 import { aoCair, aoLevantar, danoCaido, lerMorte, lerRegraMorte, type RegraMorte } from '../sistemas/morte'
 import type { Sistema } from '../sistemas/tipos'
@@ -53,7 +53,7 @@ export async function aplicarDano(t: TokenCombate, dano: number): Promise<{ ante
   if (fc?.r.vida) {
     const { id, atual, max } = fc.r.vida
     const novos = await mudarFicha(fc.f.id, d => aplicarNaVida(d, id, dano, max))
-    const depois = Number((novos?.recursos as Record<string, { atual: number }> | undefined)?.[id]?.atual ?? atual)
+    const depois = novos ? vidaAtual(novos, id) : atual
     await rest(`prg_tokens?id=eq.${q(t.id)}`, { method: 'PATCH', body: JSON.stringify({ hp_atual: depois, hp_max: max }) }).catch(() => {})
     return { antes: atual, depois, max }
   }

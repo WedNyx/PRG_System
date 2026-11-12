@@ -8,12 +8,15 @@ import { btn, input, msg } from './estilos'
 import { toast } from 'sonner'
 import ArteItem from '@/components/fichas/ArteItem'
 import { lerRaridade } from '@/lib/itensArte'
+import RolagemAssim from '@/components/dados/RolagemAssim'
 
 export type FichaMesa = { id: string; nome: string; sistema: string; dono_id: string; dono: string | null; npc: boolean; oculta: boolean; retrato: string | null; combate: ResumoCombate | null }
 export type DadosAtaque = {
   atacante: { id: string; nome: string }; alvo: { id: string; nome: string }; arma: string; defesa: number; comparar: string; acerto: boolean
   dano: { expressao: string; resultados: number[]; total: number } | null; status: 'errou' | 'pendente' | 'aplicado' | 'ignorado' | 'resolvendo'; aplicado: number
   vida: { depois: number | null; max: number | null } | null; distancia: number
+  /** Assimilação: ataque com dados de símbolos (o chat mostra cada dado). */
+  assimilacao?: { manter: number }
 }
 type TokenBase = { id: string; nome: string; x: number; y: number; ficha_id: string | null; dono_id: string | null }
 type Acao = (b: Record<string, unknown>) => Promise<Record<string, unknown>>
@@ -124,7 +127,7 @@ export function JanelaAtaque({ estado, mudar, tokens, ficha, admin, acao, fechar
       {!c && <p className="mt-2 text-xs text-(--a-a99bbb)">Este token não tem ficha ligada: informe o bônus e o dano.</p>}
       {estado.fonte === 'livre' && <label className="mt-2 block">Dano<input value={estado.dano} onChange={x => mudar({ ...estado, dano: x.target.value })} maxLength={40} className={input + ' mt-1 font-mono'} placeholder="Ex.: 1d8+3" /></label>}
       {c && c.testes.length > 0 ? <label className="mt-2 block">Teste de ataque<select value={estado.teste} onChange={x => mudar({ ...estado, teste: x.target.value })} className={input + ' mt-1'}>
-        {c.testes.map(t => <option key={t.id} value={t.id}>{t.nome} ({t.valor >= 0 ? '+' : ''}{t.valor})</option>)}</select></label>
+        {c.testes.map(t => <option key={t.id} value={t.id}>{t.nome} ({t.assim ? [t.assim.d6 ? t.assim.d6 + 'd6' : '', t.assim.d10 ? t.assim.d10 + 'd10' : ''].filter(Boolean).join(' + ') : (t.valor >= 0 ? '+' : '') + t.valor})</option>)}</select></label>
         : <label className="mt-2 block">Bônus de ataque<input value={estado.bonus} onChange={x => mudar({ ...estado, bonus: x.target.value })} inputMode="numeric" className={input + ' mt-1'} placeholder="0" /></label>}
       <div className="mt-3 rounded-xl border border-(--a-3d3152) bg-(--s-151123) p-3">
         {al ? <p>🎯 Alvo: <strong>{al.nome}</strong> · {dist} m{alcance !== null && <> de {alcance} m</>}</p> : <p className="text-(--a-c4b6d4)">Nenhum alvo escolhido.</p>}
@@ -140,7 +143,7 @@ export function JanelaAtaque({ estado, mudar, tokens, ficha, admin, acao, fechar
 }
 
 /** Ataque no chat: resultado, dano e (para o mestre) os botões para aplicar quando ele confirma. */
-export function CartaoAtaque({ d, eventoId, admin, acao }: { d: DadosAtaque; eventoId: number; admin: boolean; acao: Acao }) {
+export function CartaoAtaque({ d, eventoId, admin, acao, rolagem }: { d: DadosAtaque; eventoId: number; admin: boolean; acao: Acao; rolagem?: { expressao: string; resultados: number[] } }) {
   const [ocupado, setOcupado] = useState(false)
   const decidir = async (fator: number) => { setOcupado(true); try { await acao({ acao: 'ataque_decidir', eventoId, fator }) } catch (e) { toast.error(msg(e)) } finally { setOcupado(false) } }
   const selo = d.status === 'aplicado' ? <span className="rounded-full bg-[#4b253a] px-2 py-0.5 text-[11px] text-red-100">💥 {d.aplicado} de dano{d.vida?.depois !== null && d.vida?.depois !== undefined ? ` · ❤️ ${d.vida.depois}${d.vida.max ? '/' + d.vida.max : ''}` : ''}</span>
@@ -150,8 +153,10 @@ export function CartaoAtaque({ d, eventoId, admin, acao }: { d: DadosAtaque; eve
     : <span className="rounded-full bg-(--s-2b2140) px-2 py-0.5 text-[11px]">💨 Errou</span>
   return <div className="mt-1 rounded-lg border border-[#5e3a52] bg-(--s-2a1726) p-2">
     <p><strong>⚔️ {d.atacante.nome}</strong> → <strong>{d.alvo.nome}</strong> <span className="text-xs text-(--a-d6c8e8)">com {d.arma} · {d.distancia} m</span></p>
+    {d.assimilacao && rolagem && <RolagemAssim expressao={rolagem.expressao} resultados={rolagem.resultados} manter={d.assimilacao.manter} compacto />}
     <p className="mt-1 text-xs text-(--a-e4d3ff)">{d.acerto ? '✅ Acertou' : '❌ Errou'}{d.comparar === 'maior_igual' ? ` (Defesa ${d.defesa})` : ''}
-      {d.dano && <> · dano <span className="font-mono">{d.dano.expressao}</span> [{d.dano.resultados.join(', ')}] = <strong className="text-base text-(--a-ed9cd8)">{d.dano.total}</strong></>}</p>
+      {d.dano && <> · dano <span className="font-mono">{d.dano.expressao}</span>{!d.assimilacao && <> [{d.dano.resultados.join(', ')}]</>} = <strong className="text-base text-(--a-ed9cd8)">{d.dano.total}</strong>{d.assimilacao && <span className="text-(--a-c4b6d4)"> (1 por símbolo)</span>}</>}</p>
+    {d.assimilacao && d.dano && /d(6|10|12)\b/.test(d.dano.expressao) && <RolagemAssim expressao={d.dano.expressao} resultados={d.dano.resultados} todos compacto />}
     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">{selo}
       {admin && d.status === 'pendente' && d.dano && <>
         <button type="button" disabled={ocupado} onClick={() => void decidir(1)} className="rounded-md bg-[#b91c1c] px-2 py-1 text-[11px] font-semibold text-white disabled:opacity-50">Aplicar {d.dano.total}</button>

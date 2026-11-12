@@ -11,7 +11,7 @@ import { lerResultados, montarTeste, montarTesteAssimilacao, nivelDeSaude, penal
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
 const sel = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-sm text-white disabled:opacity-60'
-type Rolar = (expressao: string, rotulo: string) => Promise<{ resultados: number[] } | null>
+type Rolar = (expressao: string, rotulo: string, extra?: { estilo: 'assimilacao'; manter?: number; todos?: boolean }) => Promise<{ resultados: number[] } | null>
 
 /** Símbolos de uma face: Sucesso, Adaptação e Pressão. */
 export function Simbolos({ face, tamanho = 16 }: { face: Face; tamanho?: number }) {
@@ -75,8 +75,8 @@ export default function TesteAssimilacao({ s, d, c, onChange, somenteLeitura, ro
   const nivel = nivelDeSaude(d.recursos), pena = penalidadeSaude(nivel || 1)
   const nome = (id: string) => s.atributos.find(a => a.id === id)?.nome ?? id
 
-  async function jogar(expressao: string, rotulo: string) {
-    if (rolarNaCampanha) return (await rolarNaCampanha(expressao, rotulo))?.resultados ?? null
+  async function jogar(expressao: string, rotulo: string, extra: { manter?: number; todos?: boolean } = {}) {
+    if (rolarNaCampanha) return (await rolarNaCampanha(expressao, rotulo, { estilo: 'assimilacao', ...extra }))?.resultados ?? null
     return rolarExpressao(expressao)?.resultados ?? null
   }
 
@@ -86,7 +86,7 @@ export default function TesteAssimilacao({ s, d, c, onChange, somenteLeitura, ro
     const rotulo = `${nome(inst)} + ${assimilada ? nome(inst2) + ' (Agir por Instinto)' : apt ? lista.find(p => p.id === apt)?.nome : 'sem aptidão'} · mantém ${m.manter}`
     setOcupado(true)
     try {
-      const r = await jogar(m.expressao, 'Assimilação: ' + rotulo)
+      const r = await jogar(m.expressao, rotulo, { manter: m.manter })
       if (!r) { toast.error('Não deu para rolar agora.'); return }
       const dados = lerResultados(m.grupos, r)
       setTeste({ rotulo, dados, manter: m.manter, mantidos: sugerirMantidos(dados, m.manter) })
@@ -114,7 +114,7 @@ export default function TesteAssimilacao({ s, d, c, onChange, somenteLeitura, ro
     const t = montarTesteAssimilacao(v('nivel_assimilacao'))
     setOcupado(true)
     try {
-      const r = await jogar(t.expressao, 'Teste de Assimilação')
+      const r = await jogar(t.expressao, 'Teste de Assimilação', { todos: true })
       if (r) setAssim({ dados: lerResultados(t.grupos, r), anotado: false })
     } finally { setOcupado(false) }
   }
@@ -130,7 +130,7 @@ export default function TesteAssimilacao({ s, d, c, onChange, somenteLeitura, ro
     const n = Math.max(1, Math.min(20, qtdDano))
     const grupos = [{ lados: 10 as LadoAssim, qtd: n }]
     setOcupado(true)
-    try { const r = await jogar(`${n}d10`, 'Dano (Assimilação)'); if (r) setDano(lerResultados(grupos, r)) } finally { setOcupado(false) }
+    try { const r = await jogar(`${n}d10`, 'Dano', { todos: true }); if (r) setDano(lerResultados(grupos, r)) } finally { setOcupado(false) }
   }
 
   const mantidos = teste ? teste.mantidos.map(i => teste.dados[i].face) : []

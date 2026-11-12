@@ -9,6 +9,7 @@ import { detectarCritico } from '@/lib/dice'
 import { lerTabelas, rolarTabela, TABELAS_PRONTAS } from '@/lib/tabelas'
 import { aplicarDescanso } from '@/lib/sistemas/descanso'
 import { filtroResultado, resumirRolagens, type EventoResumo } from '@/lib/historico'
+import { gruposDaExpressao, resultadoAssim } from '@/lib/sistemas/assimilacao'
 import { acertou, ALCANCE_CORPO, criticoBlades, distancia, gastarCusto, ordenarIniciativa, regraDeAtaque, regraDeIniciativa, rolarDano, resumoCombate, type EntradaOrdem } from '@/lib/sistemas/combate'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { ehV8 } from '@/lib/nuvem/categorias'
@@ -226,6 +227,8 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         const r = rolarExpressao(expr)
         if (!r) throw new ErroApi(400, 'Expressão de dados inválida. Ex.: 1d20+5, 2d6, 4d6kh3, 6d6s5, 4dF.')
         Object.assign(linha, { expressao: r.expressao, resultados: r.resultados, total: r.total, texto: typeof b.texto === 'string' ? b.texto.trim().slice(0, 200) || null : null })
+        // Dados de símbolos (Assimilação): o chat mostra Sucessos, Adaptações e Pressões em vez da soma.
+        if (b.estilo === 'assimilacao' && gruposDaExpressao(r.expressao)) linha.dados = { assimilacao: { manter: inteiro(b.manter, 1, 4) ?? 1, ...(b.todos === true ? { todos: true } : {}) } }
       } else {
         const texto = typeof b.texto === 'string' ? b.texto.trim().slice(0, 1000) : ''
         if (!texto) throw new ErroApi(400, 'Mensagem vazia.')
@@ -509,22 +512,26 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         const rec = fa.r.recursos.find(r => r.id === opcao.recurso)
         if (!(await mudarFicha(fa.f.id, d => gastarCusto(d, opcao.recurso!, opcao.custo!)))) throw new ErroApi(400, `Sem ${rec?.nome ?? 'recurso'} suficiente (precisa de ${opcao.custo}).`)
       }
-      const regra = regraDeAtaque(fa?.s, bonus, teste?.dados)
+      const regra = regraDeAtaque(fa?.s, bonus, teste?.dados, teste?.assim)
       const rolagem = rolarExpressao(regra.expressao)!
+      // Assimilação: mantém o melhor dado; o que vale são os Sucessos dele.
+      const assim = regra.comparar === 'assimilacao' ? resultadoAssim(regra.expressao, rolagem.resultados, 1) : null
       const fal = await fichaDeCombate(al.ficha_id)
       const defesa = fal?.r.defesa?.valor ?? (admin ? inteiro(b.defesa, 0, 100) : null) ?? 10
-      const hit = acertou(regra, rolagem.total, defesa, bonus)
-      const dano = hit ? rolarDano(danoExpr) : null
+      const hit = acertou(regra, assim ? assim.total.a : rolagem.total, defesa, bonus)
+      const dano = hit ? rolarDano(danoExpr, fa?.s) : null
       const status: 'errou' | 'pendente' | 'aplicado' = hit ? (regras.acerto === 'automatico' ? 'aplicado' : 'pendente') : 'errou'
       let vida: Awaited<ReturnType<typeof aplicarDano>> | null = null
-      const critico = hit && (regra.comparar === 'blades' ? criticoBlades(teste?.dados ?? 1, rolagem.resultados) : detectarCritico(regra.expressao, rolagem.resultados) === 'critico')
+      const critico = hit && !assim && (regra.comparar === 'blades' ? criticoBlades(teste?.dados ?? 1, rolagem.resultados) : detectarCritico(regra.expressao, rolagem.resultados) === 'critico')
       if (status === 'aplicado' && dano) vida = await danoComMorte(cid, eu, al, dano.total, critico)
       const arma = opcao?.nome ?? 'Ataque'
-      const texto = `⚔️ ${at.nome} atacou ${al.nome} com ${arma}: ${rolagem.total}${regra.comparar === 'maior_igual' ? ` contra Defesa ${defesa}` : regra.comparar === 'menor_igual' ? ` (precisava ≤ ${bonus})` : regra.comparar === 'blades' ? '' : ' sucesso(s)'} → `
+      const placar = assim ? `${assim.total.a} Sucesso${assim.total.a === 1 ? '' : 's'}${assim.total.b ? `, ${assim.total.b} Adaptaç${assim.total.b === 1 ? 'ão' : 'ões'}` : ''}${assim.total.c ? `, ${assim.total.c} Press${assim.total.c === 1 ? 'ão' : 'ões'}` : ''}` : null
+      const texto = placar ? `⚔️ ${at.nome} atacou ${al.nome} com ${arma} (${teste?.nome ?? 'teste'}): ${placar} → ` + (!hit ? 'errou.' : status === 'aplicado' ? `acertou! ${dano?.total ?? 0} de dano.` : `acertou! ${dano?.total ?? 0} de dano (aguardando o mestre).`)
+        : `⚔️ ${at.nome} atacou ${al.nome} com ${arma}: ${rolagem.total}${regra.comparar === 'maior_igual' ? ` contra Defesa ${defesa}` : regra.comparar === 'menor_igual' ? ` (precisava ≤ ${bonus})` : regra.comparar === 'blades' ? '' : ' sucesso(s)'} → `
         + (!hit ? 'errou.' : status === 'aplicado' ? `acertou! ${dano?.total ?? 0} de dano.` : `acertou! ${dano?.total ?? 0} de dano (aguardando o mestre).`)
       const dados = { atacante: { id: at.id, nome: at.nome }, alvo: { id: al.id, nome: al.nome }, arma, defesa, comparar: regra.comparar, acerto: hit,
         dano: dano ? { expressao: dano.expressao, resultados: dano.resultados.slice(0, 60), total: dano.total } : null, status, aplicado: status === 'aplicado' ? dano?.total ?? 0 : 0,
-        vida: vida ? { depois: vida.depois, max: vida.max } : null, distancia: dist, ...(critico ? { critico: true } : {}) }
+        vida: vida ? { depois: vida.depois, max: vida.max } : null, distancia: dist, ...(critico ? { critico: true } : {}), ...(assim ? { assimilacao: { manter: 1 } } : {}) }
       const [ev] = await rest<unknown[]>(`prg_mesa_eventos?select=${EVENTO}`, { method: 'POST', prefer: 'return=representation', body: JSON.stringify({
         campanha_id: cid, autor_id: eu, tipo: 'ataque', visibilidade: 'publica', personagem: at.nome.slice(0, 90), texto: texto.slice(0, 1000),
         expressao: rolagem.expressao, resultados: rolagem.resultados.slice(0, 100), total: rolagem.total, dados }) })

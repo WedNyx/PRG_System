@@ -18,6 +18,7 @@ import Progressao from './Progressao'
 import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
 import { GUIAS } from '@/lib/sistemas/guias'
 import { expressaoParada, leituraBlades, leituraD100 } from '@/lib/sistemas/combate'
+import TesteAssimilacao from './TesteAssimilacao'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
@@ -213,6 +214,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         </div>)}
       </div>
     </section>}
+    {s.rolagem === 'assimilacao' && <TesteAssimilacao s={s} d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolarNaCampanha={rolarNaCampanha} />}
     {(d20 || parada) && s.atributos.length > 0 && <section className={card}>
       <h2 className="mb-2 flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Dice5 size={18} /> Teste de atributo</h2>
       {parada && <p className="mb-2 text-xs text-(--a-a998bd)">Rola um d{parada} para cada ponto do atributo e fica com o maior. Com 0, rola dois e fica com o menor.</p>}
@@ -237,9 +239,9 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
               ? <input type="number" aria-label={p.nome} min={0} max={200} value={d.pericias[p.id] ?? 0} disabled={somenteLeitura} onChange={e => set('pericias', { ...d.pericias, [p.id]: Number(e.target.value) || 0 })} className={input + ' !w-16 shrink-0 text-center'} />
               : <select aria-label={'Treino em ' + p.nome} value={String(d.pericias[p.id] ?? '')} disabled={somenteLeitura} onChange={e => set('pericias', { ...d.pericias, [p.id]: e.target.value })} className="max-w-[9.5rem] rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-1 text-xs text-white">
                 {s.pericias!.treinos!.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select>}
-            <button type="button" disabled={!podeRolar} onClick={() => p.atributo || !parada ? rolar(p.nome, c.pericias[p.id], dadosDe(p.atributo)) : rolar(p.nome, 0, Number(c.pericias[p.id]) || 0)} aria-label={'Rolar ' + p.nome} title={parada && p.atributo ? `${dadosDe(p.atributo) || 2}d${parada} ${dadosDe(p.atributo) ? '(o maior)' : '(o menor)'} ${sinal(c.pericias[p.id])}` : undefined}
+            {s.rolagem !== 'assimilacao' && <button type="button" disabled={!podeRolar} onClick={() => p.atributo || !parada ? rolar(p.nome, c.pericias[p.id], dadosDe(p.atributo)) : rolar(p.nome, 0, Number(c.pericias[p.id]) || 0)} aria-label={'Rolar ' + p.nome} title={parada && p.atributo ? `${dadosDe(p.atributo) || 2}d${parada} ${dadosDe(p.atributo) ? '(o maior)' : '(o menor)'} ${sinal(c.pericias[p.id])}` : undefined}
               className="w-14 shrink-0 rounded-lg bg-(--s-34294f) py-1 text-center font-bold tabular-nums hover:bg-(--s-4b3a6e) disabled:cursor-default disabled:hover:bg-(--s-34294f)">
-              {s.pericias!.modo === 'valor' ? (c.pericias[p.id] ?? 0) + '%' : parada && !p.atributo ? (Number(c.pericias[p.id]) || 0) + 'd' + parada : sinal(c.pericias[p.id])}</button>
+              {s.pericias!.modo === 'valor' ? (c.pericias[p.id] ?? 0) + '%' : parada && !p.atributo ? (Number(c.pericias[p.id]) || 0) + 'd' + parada : sinal(c.pericias[p.id])}</button>}
           </div>)}
         </div>
       </div>)}

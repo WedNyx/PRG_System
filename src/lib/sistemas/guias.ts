@@ -90,6 +90,29 @@ export const GUIAS: Record<string, GuiaSistema> = {
     automatico: ['PV, PE e Sanidade pela classe e pelo NEX', 'Nível de NEX, limite de PE por turno e DT dos rituais', 'Defesa = 10 + Agilidade + proteções (e com Esquiva)', 'Testes: um d20 por ponto do atributo, fica o maior, + treino (+5/+10/+15)', 'Espaços de carga = Força × 5', 'Avisos de pontos de atributo e de perícias treinadas'],
     dicas: ['A cada NEX 20%, 50%, 80% e 95% ganhe +1 ponto de atributo: a ficha aceita sem avisar.', 'Na mesa, ataques e iniciativa também rolam a parada de d20 do atributo.', 'Poderes, rituais e textos ficam no livro oficial.'],
   },
+  'mork-borg': {
+    passos: [
+      'Escolha a classe (ou jogue sem classe). A descrição mostra o dado de PV, os Presságios, a prata e o que muda nas habilidades.',
+      'Role 3d6 para cada habilidade (Agilidade, Presença, Força, Resistência) e anote o valor da tabela do livro, de −3 a +3, já com o ajuste da classe.',
+      'Role os PV (Resistência + o dado da classe, no mínimo 1), os Presságios e a prata, e preencha os máximos nas barras.',
+      'Role arma, armadura e equipamento nas tabelas do livro. Marque a armadura na ficha e anote armas e pergaminhos nas listas.',
+      'Dê um nome, se quiser. Isso não vai te salvar.',
+    ],
+    automatico: ['Teste: d20 + habilidade, mostrado ao tocar no valor', 'CD da defesa e dos testes de Agilidade pela armadura (e pelo Desertor feroz)', 'Itens que dá para carregar = Força + 8', 'Lembretes do dado de PV, dos Presságios e dos usos de Poderes'],
+    dicas: ['Na mesa, quem rola é o jogador: ataque e defesa. Os inimigos não rolam.', 'Ao progredir, role 6d10 para mais PV e um d6 contra cada habilidade, como no livro.', 'Tabelas, pergaminhos, classes completas e o cenário ficam no livro oficial.'],
+  },
+  assimilacao: {
+    passos: [
+      'Dê um nome e escreva as Origens: um Evento Marcante (passado) e uma Ocupação (atual). Escolha a Geração.',
+      'Escreva dois Propósitos Pessoais. Com o grupo, cada um sugere um Propósito Coletivo e cada Infectado fica com dois.',
+      'Instintos começam em 1: distribua mais 3 pontos (máximo 3 em cada). A ficha avisa se passar.',
+      'Distribua 7 pontos entre Conhecimentos e Práticas (máximo 2 em cada; podem ficar em 0).',
+      'Cabo de guerra: Assimilação 1 (Determinação 9), a menos que o Assimilador diga outro valor.',
+      'Gaste os 7 de Experiência em Características (anote na lista com o custo) e escolha o pacote de equipamentos.',
+    ],
+    automatico: ['Pontos de Saúde por nível = 1 + Potência + Resolução, nos seis níveis', 'Recuperação = Potência + 1', 'Nível de Determinação = 10 − Assimilação, e as barras de pontos de cada um', 'Avisos dos pontos de Instinto, Conhecimentos e Práticas na criação', 'Teste com os dados de símbolos (gasta a Determinação e a Assimilação usadas), Teste de Assimilação que anota as Pressões e rolagem de dano'],
+    dicas: ['Para testar, escolha o Instinto e a aptidão na aba de atributos: a ficha rola os d6 e d10, mostra os símbolos e sugere o dado a manter. Determinação, Origens e Agir por Instinto mantêm mais dados (até 4).', 'Marque as Pressões guardadas a cada Teste de Assimilação: com 10, o Infectado passa para o Assimilador.', 'Características, Assimilações (cartas), equipamentos e o cenário ficam no livro oficial.'],
+  },
   tormenta20: {
     passos: [
       'Escolha raça e classe na lista (a descrição mostra os modificadores da raça e o que a classe dá). Escreva origem e divindade.',

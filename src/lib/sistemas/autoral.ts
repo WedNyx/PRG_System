@@ -17,7 +17,7 @@ export const idAutoral = (uuid: string) => PREFIXO_AUTORAL + uuid.replace(/-/g, 
 export const uuidDoAutoral = (id: string) => { const h = id.slice(PREFIXO_AUTORAL.length); return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}` }
 
 export const LIMITES = { campos: 30, atributos: 20, derivados: 30, pericias: 80, treinos: 8, recursos: 12, listas: 12, limites: 12, observacoes: 12, formula: 600, nome: 60, classes: 6, colunas: 12, opcoes: 30, bonusOpcao: 6 }
-const RESERVADO = /^(mod_|per_|tot_|qtd_|prog_)|^(soma_atributos|atributos_zero|maior_atributo|custo_pericias|maior_valor_pericia|carga_total|nivel_total|X|MOD|ATR|TREINO|VALOR)$/
+const RESERVADO = /^(mod_|per_|tot_|qtd_|prog_)|^(soma_atributos|atributos_zero|maior_atributo|custo_pericias|maior_valor_pericia|soma_valor_pericias|carga_total|nivel_total|X|MOD|ATR|TREINO|VALOR)$/
 
 /** Transforma um nome em identificador de fórmula: "Pontos de Mana" → pontos_de_mana. */
 export function slug(nome: string, maiusculo = false): string {
@@ -221,7 +221,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
     ...campos.flatMap(c => (c.opcoes ?? []).flatMap(o => Object.keys(o.vars ?? {}))),
     ...derivados.map(d => d.id), ...(pericias?.lista ?? []).flatMap(x => ['per_' + x.id, 'tot_' + x.id]),
     ...(pericias?.treinos ?? []).map(t => 'qtd_' + t.id),
-    'soma_atributos', 'atributos_zero', 'maior_atributo', 'custo_pericias', 'maior_valor_pericia', 'carga_total',
+    'soma_atributos', 'atributos_zero', 'maior_atributo', 'custo_pericias', 'maior_valor_pericia', 'soma_valor_pericias', 'carga_total',
     ...(progressoes ? ['nivel_total', ...new Set(progressoes.classes.flatMap(c => Object.keys(c.tabela).map(k => 'prog_' + k)))] : []),
   ])
   const conferir = (rotulo: string, f: string | undefined, extras: string[] = []) => {

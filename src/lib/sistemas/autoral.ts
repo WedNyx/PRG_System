@@ -68,7 +68,10 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
       const descricao = txt(o.descricao, 400)
       const bonus = lista(o.bonus, LIMITES.bonusOpcao).flatMap(b => typeof b.alvo === 'string' && Number(b.valor) ? [{ alvo: b.alvo.slice(0, 60), valor: num(b.valor, -99, 99, 0) }] : [])
       const progressao = typeof o.progressao === 'string' && /^[a-z][a-z0-9_]{0,24}$/.test(o.progressao) ? o.progressao : ''
-      return [{ nome: on, ...(descricao ? { descricao } : {}), ...(bonus.length ? { bonus } : {}), ...(progressao ? { progressao } : {}) }]
+      // Números que a opção define para as fórmulas (ex.: pv_ini). Nomes simples, sem colidir com os reservados.
+      const vars = Object.fromEntries(Object.entries(o.vars && typeof o.vars === 'object' ? o.vars as Record<string, unknown> : {}).slice(0, 8)
+        .filter(([k, v]) => /^[a-z][A-Za-z0-9_]{0,24}$/.test(k) && !RESERVADO.test(k) && Number.isFinite(Number(v))).map(([k, v]) => [k, num(v, -9999, 9999, 0)]))
+      return [{ nome: on, ...(descricao ? { descricao } : {}), ...(bonus.length ? { bonus } : {}), ...(progressao ? { progressao } : {}), ...(Object.keys(vars).length ? { vars } : {}) }]
     }) : []
     if (tipo === 'escolha' && !opcoes.length) erros.push(`Campo “${n}”: adicione pelo menos uma opção para escolher.`)
     return [{ id: pegarId(c.id, n), nome: n, tipo: tipo as 'texto' | 'numero' | 'area' | 'escolha', ...(tipo === 'numero' ? { padrao: num(c.padrao, -99999, 99999, 0) } : {}), ...(tipo === 'escolha' ? { opcoes, ...(typeof c.nivel === 'string' && c.nivel ? { nivel: c.nivel.slice(0, 40) } : {}) } : {}) }]
@@ -100,7 +103,9 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
       const n = txt(x.nome, LIMITES.nome); if (!n) return []
       const atr = typeof x.atributo === 'string' ? x.atributo.split('/').filter(a => idsAtr.has(a)).slice(0, 2).join('/') : ''
       const grupo = txt(x.grupo, 50)
-      return [{ id: pegarId(x.id, n), nome: n, ...(atr ? { atributo: atr } : {}), ...(grupo ? { grupo } : {}) }]
+      // Valor inicial (perícias em %, ex.: BRP): só pode usar os atributos, que é tudo que fichaVazia tem na hora de calcular.
+      const base = modo === 'valor' ? txt(x.base, LIMITES.formula) : ''
+      return [{ id: pegarId(x.id, n), nome: n, ...(atr ? { atributo: atr } : {}), ...(grupo ? { grupo } : {}), ...(base ? { base } : {}) }]
     })
     if (modo === 'treino' && !treinos?.length) erros.push('Perícias por treino precisam de pelo menos um grau (ex.: Destreinado +0).')
     if (listaP.length) pericias = { titulo: txt(p.titulo, 40) || undefined, modo, lista: listaP, ...(treinos ? { treinos } : {}), total: txt(p.total, LIMITES.formula) || (modo === 'valor' ? 'VALOR' : 'MOD + TREINO') }
@@ -110,7 +115,9 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
     const n = txt(r.nome, LIMITES.nome); if (!n) return []
     const formula = txt(r.formula, LIMITES.formula)
     const maxFixo = !formula && Number(r.maxFixo) > 0 ? num(r.maxFixo, 1, 99999, 1) : undefined
-    return [{ id: pegarId(r.id, n), nome: n, ...(formula ? { formula } : {}), ...(maxFixo ? { maxFixo } : {}) }]
+    const sugerido = !formula && typeof r.sugerido === 'string' && /^[a-z][a-z0-9_]{0,40}$/.test(r.sugerido) ? r.sugerido : ''
+    const baixa = r.contador === true ? num(r.baixaNoDescanso, 0, 999, 0) : 0
+    return [{ id: pegarId(r.id, n), nome: n, ...(formula ? { formula } : {}), ...(maxFixo ? { maxFixo } : {}), ...(sugerido ? { sugerido } : {}), ...(r.contador === true ? { contador: true } : {}), ...(baixa ? { baixaNoDescanso: baixa } : {}) }]
   })
   usados = usadosListas
   const listas = lista(e.listas, LIMITES.listas).flatMap(l => {
@@ -123,14 +130,17 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   })
   const observacoes = (Array.isArray(e.observacoes) ? e.observacoes : []).map(o => txt(o, 300)).filter(Boolean).slice(0, LIMITES.observacoes)
   const formulaModificador = txt(e.formulaModificador, LIMITES.formula) || undefined
-  let rolagem: Sistema['rolagem'] = e.rolagem === 'd100' || e.rolagem === 'nenhuma' || e.rolagem === 'personalizada' ? e.rolagem : 'd20'
+  let rolagem: Sistema['rolagem'] = e.rolagem === 'd100' || e.rolagem === 'nenhuma' || e.rolagem === 'personalizada' || e.rolagem === 'parada' ? e.rolagem : 'd20'
   let regraRolagem: Sistema['regraRolagem']
+  let parada: Sistema['parada']
   if (rolagem === 'personalizada') {
     const r = e.regraRolagem && typeof e.regraRolagem === 'object' ? e.regraRolagem as Record<string, unknown> : {}
     const formula = txt(r.formula, 60).trim(), erro = erroDaFormula(formula)
     if (erro) { erros.push('Rolagem personalizada: ' + erro); rolagem = 'd20' }
     else regraRolagem = { nome: txt(r.nome, 40).trim() || 'Teste', formula: formula.replace(/\s+/g, '') }
   }
+  // Parada (ex.: copiada de Ordem Paranormal ou Blades): um d<lados> por ponto, fica com o maior.
+  if (rolagem === 'parada') parada = { lados: Math.round(num((e.parada as Record<string, unknown> | undefined)?.lados, 2, 100, 20)) }
   const cargaF = e.carga && typeof e.carga === 'object' ? e.carga as Record<string, unknown> : null
   const carga = cargaF && txt(cargaF.formula, LIMITES.formula) ? { formula: txt(cargaF.formula, LIMITES.formula), unidade: txt(cargaF.unidade, 16) || 'kg' } : undefined
   const creditos = txt(e.creditos, 1500) || undefined
@@ -178,7 +188,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   const sistema: Sistema = {
     id: meta.id, nome, resumo: txt(e.resumo, 400), tipo: 'autoral', ...(imagemDaPlataforma(e.capa) ? { capa: e.capa } : {}),
     licenca: 'Sistema autoral' + (meta.autor ? ' de ' + meta.autor : ''), ...(creditos ? { creditos } : {}),
-    dados: txt(e.dados, 40) || (rolagem === 'd100' ? 'd100' : rolagem === 'd20' ? 'd20' : regraRolagem ? regraRolagem.formula.replace(/VALOR/gi, 'X') : 'Livre'), rolagem, ...(regraRolagem ? { regraRolagem } : {}),
+    dados: txt(e.dados, 40) || (rolagem === 'd100' ? 'd100' : rolagem === 'd20' ? 'd20' : parada ? `Parada de d${parada.lados}` : regraRolagem ? regraRolagem.formula.replace(/VALOR/gi, 'X') : 'Livre'), rolagem, ...(regraRolagem ? { regraRolagem } : {}), ...(parada ? { parada } : {}),
     campos, atributos, ...(formulaModificador ? { formulaModificador } : {}), derivados, ...(pericias ? { pericias } : {}),
     recursos, ...(limites.length ? { limites } : {}), listas: listas.length ? listas : [{ id: 'anotacoes', nome: 'Anotações' }],
     ...(observacoes.length ? { observacoes } : {}), ...(carga ? { carga } : {}), ...(progressoes ? { progressoes } : {}),
@@ -202,6 +212,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   // ---- Fórmulas: só podem usar variáveis que existem ----
   const vars = new Set<string>([
     ...campos.filter(c => c.tipo === 'numero').map(c => c.id), ...atributos.flatMap(a => [a.id, 'mod_' + a.id]),
+    ...campos.flatMap(c => (c.opcoes ?? []).flatMap(o => Object.keys(o.vars ?? {}))),
     ...derivados.map(d => d.id), ...(pericias?.lista ?? []).flatMap(x => ['per_' + x.id, 'tot_' + x.id]),
     ...(pericias?.treinos ?? []).map(t => 'qtd_' + t.id),
     'soma_atributos', 'atributos_zero', 'maior_atributo', 'custo_pericias', 'maior_valor_pericia', 'carga_total',
@@ -220,6 +231,19 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   pericias?.treinos?.forEach(t => conferir(`Grau “${t.nome}”`, t.formula))
   if (pericias) conferir('Total das perícias', pericias.total, ['MOD', 'ATR', 'TREINO', 'VALOR'])
   recursos.forEach(r => conferir(`Recurso “${r.nome}”`, r.formula))
+  // Valor inicial da perícia (baseDaPericia, calculo.ts): só os atributos no padrão existem nesse momento,
+  // nenhum campo/derivado/outra perícia — por isso não usa a lista "vars" geral de conferir().
+  {
+    const varsAtr = new Set(atributos.map(a => a.id))
+    for (const x of pericias?.lista ?? []) {
+      if (!x.base) continue
+      try {
+        const desconhecidas = variaveisDaFormula(x.base).filter(v => !varsAtr.has(v))
+        if (desconhecidas.length) erros.push(`Valor inicial de “${x.nome}”: “${desconhecidas.join('”, “')}” não existe (só os atributos valem aqui).`)
+        else avaliar(x.base, Object.fromEntries(atributos.map(a => [a.id, a.padrao])))
+      } catch (er) { erros.push(`Valor inicial de “${x.nome}”: fórmula com erro (${er instanceof Error ? er.message : 'inválida'}).`) }
+    }
+  }
   limites.forEach(l => { conferir(`Limite “${l.nome}” (uso)`, l.uso); conferir(`Limite “${l.nome}” (máximo)`, l.max) })
   conferir('Capacidade de carga', carga?.formula)
   if (!atributos.length && !pericias && !recursos.length && !campos.length) erros.push('Adicione pelo menos um atributo, perícia, recurso ou campo.')

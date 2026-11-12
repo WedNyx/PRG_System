@@ -60,8 +60,8 @@ r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sist
 r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sistema:'dnd5e-srd',nome:'Thorin'}); const f2=r.d.ficha.id
 r=await call(J,'POST',`campanhas/${cid}/recompensas`,{fichaIds:[f1],xp:100}); check('jogador não dá recompensa', r.s===403, r)
 r=await call(M,'POST',`campanhas/${cid}/recompensas`,{fichaIds:[f1,f2],xp:300,item:'Revólver',motivo:'Salvaram a vila'}); check('mestre recompensa 2 fichas', r.d.recompensados?.length===2, r)
-r=await call(J,'GET','fichas/'+f1); check('primeira ficha também recebe XP e item', r.d.ficha.dados.listas.anotacoes.includes('+300 XP') && r.d.ficha.dados.itens.some(i=>i.nome.includes('Revólver')), r.d.ficha.dados)
-r=await call(J,'GET','fichas/'+f2); check('D&D: XP anotado e item no inventário estruturado (v0.9.0)', r.d.ficha.dados.listas.anotacoes.includes('+300 XP') && r.d.ficha.dados.itens.some(i=>i.nome.includes('Revólver')), r.d.ficha.dados)
+r=await call(J,'GET','fichas/'+f1); check('primeira ficha também recebe XP e item', Number(r.d.ficha.dados.campos.xp)===300 && r.d.ficha.dados.itens.some(i=>i.nome.includes('Revólver')), r.d.ficha.dados)
+r=await call(J,'GET','fichas/'+f2); check('D&D: XP no campo de XP (v0.32.10) e item no inventário estruturado (v0.9.0)', Number(r.d.ficha.dados.campos.xp)===300 && r.d.ficha.dados.itens.some(i=>i.nome.includes('Revólver')), r.d.ficha.dados)
 r=await call(J,'GET','mesa/'+cid); check('recompensa anunciada no chat', r.d.eventos.some(e=>e.tipo==='sistema' && e.texto.includes('Revólver')), r.d.eventos.map(e=>e.texto))
 r=await call(J,'GET',`fichas/${f1}/historico`); check('recompensa no histórico da ficha', r.d.historico.some(h=>h.tipo==='recompensa' && h.descricao.includes('Salvaram')), r.d.historico)
 console.log(falhas?`\n${falhas} FALHA(S)`:'\nTODOS OS TESTES PASSARAM')

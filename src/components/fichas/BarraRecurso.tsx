@@ -20,8 +20,10 @@ export function corDoRecurso(id: string, nome: string): { de: string; ate: strin
  * e botões dos lados (‹ −1, « −5, › +1, » +5). Toque no número para digitar. Se o máximo não é calculado
  * pelo sistema, dá para mudar o máximo também.
  */
-export default function BarraRecurso({ nome, cor, atual, max, maxEditavel, somenteLeitura, mudar, mudarMax }: {
+export default function BarraRecurso({ nome, cor, atual, max, maxEditavel, somenteLeitura, mudar, mudarMax, contador = false }: {
   nome: string; cor: { de: string; ate: string; emoji: string }; atual: number; max: number | null
+  /** Marcador (Exaustão, Morrendo…): 0 é o normal, então não mostra aviso de “zerado”. */
+  contador?: boolean
   maxEditavel: boolean; somenteLeitura: boolean; mudar: (v: number) => void; mudarMax?: (v: number) => void
 }) {
   const [editando, setEditando] = useState<'atual' | 'max' | null>(null)
@@ -34,7 +36,7 @@ export default function BarraRecurso({ nome, cor, atual, max, maxEditavel, somen
   const limite = (v: number) => Math.max(0, max ? Math.min(max, v) : v)
   const pctDe = (v: number) => max ? Math.max(0, Math.min(100, (v / max) * 100)) : 0
   const pct = pctDe(atual)
-  const baixa = !!max && atual > 0 && pct <= 25, zerada = !!max && atual <= 0
+  const baixa = !contador && !!max && atual > 0 && pct <= 25, zerada = !contador && !!max && atual <= 0
   const botao = 'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-black/30 text-white/90 hover:bg-black/50 active:scale-95 disabled:opacity-30'
   const abrir = (q: 'atual' | 'max') => { if (somenteLeitura || (q === 'max' && !maxEditavel)) return; setTexto(String(q === 'atual' ? atual : max ?? '')); setEditando(q) }
   const salvar = () => {
@@ -45,7 +47,7 @@ export default function BarraRecurso({ nome, cor, atual, max, maxEditavel, somen
   return <div className="rounded-xl bg-(--s-171325) p-3">
     <div className="mb-1.5 flex items-center justify-between text-xs font-bold uppercase tracking-widest" style={{ color: cor.ate }}>
       <span>{cor.emoji} {nome}</span>
-      {zerada ? <span className="text-red-300">💀 zerado</span> : max ? <span className={'tabular-nums ' + (baixa ? 'text-red-300' : 'text-(--a-a998bd)')}>{baixa ? '⚠️ ' : ''}{Math.round(pct)}%</span> : null}
+      {zerada ? <span className="text-red-300">💀 zerado</span> : contador && max ? <span className="tabular-nums text-(--a-a998bd)">{atual} de {max}</span> : max ? <span className={'tabular-nums ' + (baixa ? 'text-red-300' : 'text-(--a-a998bd)')}>{baixa ? '⚠️ ' : ''}{Math.round(pct)}%</span> : null}
     </div>
     <div className="relative flex items-center gap-1.5">
       {!somenteLeitura && <><button type="button" className={botao} aria-label={`${nome} −5`} disabled={atual <= 0} onClick={() => mudar(limite(atual - 5))}><ChevronsLeft size={16} /></button>

@@ -509,7 +509,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         const rec = fa.r.recursos.find(r => r.id === opcao.recurso)
         if (!(await mudarFicha(fa.f.id, d => gastarCusto(d, opcao.recurso!, opcao.custo!)))) throw new ErroApi(400, `Sem ${rec?.nome ?? 'recurso'} suficiente (precisa de ${opcao.custo}).`)
       }
-      const regra = regraDeAtaque(fa?.s, bonus)
+      const regra = regraDeAtaque(fa?.s, bonus, teste?.dados)
       const rolagem = rolarExpressao(regra.expressao)!
       const fal = await fichaDeCombate(al.ficha_id)
       const defesa = fal?.r.defesa?.valor ?? (admin ? inteiro(b.defesa, 0, 100) : null) ?? 10
@@ -541,7 +541,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         if (ordem.some(o => o.tokenId === t.id)) continue
         const fc = await fichaDeCombate(t.ficha_id)
         const bonus = ped.bonus !== undefined && ped.bonus !== null && ped.bonus !== '' ? (inteiro(ped.bonus, -50, 100) ?? 0) : (fc?.r.iniciativa ?? 0)
-        const r = rolarExpressao(regraDeIniciativa(fc?.s, bonus)) ?? rolarExpressao('1d20')!
+        const r = rolarExpressao(regraDeIniciativa(fc?.s, bonus, fc?.r.iniciativaDados)) ?? rolarExpressao('1d20')!
         ordem.push({ tokenId: t.id, nome: t.nome, valor: r.total, bonus, dados: r.resultados.slice(0, 20) })
       }
       const ord = ordenarIniciativa(ordem)

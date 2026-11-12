@@ -2,7 +2,7 @@
  * Avaliador de fórmulas seguro (sem eval). Usado pelos modelos de sistema e,
  * no futuro, pelo construtor de sistemas autorais.
  * Suporta: números, variáveis (ids de atributos/campos), + - * / ( ),
- * e funções piso(), teto(), min(), max(), arred().
+ * e funções piso(), teto(), min(), max(), arred() e se(condição, se_sim, se_não) — condição diferente de 0 = sim.
  * Ex.: "25 + TEN * 5", "piso((FOR - 10) / 2)", "10 + mod_DES"
  */
 type Token = { t: 'num'; v: number } | { t: 'id'; v: string } | { t: 'op'; v: string }
@@ -31,6 +31,7 @@ function tokenizar(src: string): Token[] {
 const FUNCOES: Record<string, (a: number[]) => number> = {
   piso: a => Math.floor(a[0]), teto: a => Math.ceil(a[0]), arred: a => Math.round(a[0]),
   min: a => Math.min(...a), max: a => Math.max(...a),
+  se: a => (a[0] ? a[1] : a[2]) ?? 0,
 }
 
 export type Variaveis = Record<string, number>

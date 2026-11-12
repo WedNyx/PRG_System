@@ -35,3 +35,20 @@ describe('descanso', () => {
     expect(aplicarDescanso(s, cheia, 'longo').mudancas).toEqual([])
   })
 })
+
+describe('marcadores no descanso (v0.32.10)', () => {
+  it('Exaustão começa em 0 e cai 1 no descanso longo; Morrendo zera; PV enche', async () => {
+    const { sistemaPorId } = await import('./catalogo')
+    const { fichaVazia } = await import('./calculo')
+    const dnd = sistemaPorId('dnd5e-srd')!, d = fichaVazia(dnd)
+    expect(d.recursos.exaustao.atual).toBe(0); expect(d.recursos.inspiracao.atual).toBe(0)
+    d.recursos.exaustao = { atual: 3 }; d.recursos.pv = { atual: 1 }
+    const r = aplicarDescanso(dnd, d, 'longo')
+    expect(r.d.recursos.exaustao.atual).toBe(2); expect(r.d.recursos.pv.atual).toBeGreaterThan(1)
+    const pf = sistemaPorId('pf2e')!, p = fichaVazia(pf)
+    expect(p.recursos.morrendo.atual).toBe(0)
+    p.recursos.morrendo = { atual: 2 }; p.recursos.ferido = { atual: 1 }
+    const r2 = aplicarDescanso(pf, p, 'longo')
+    expect(r2.d.recursos.morrendo.atual).toBe(0); expect(r2.d.recursos.ferido.atual).toBe(0)
+  })
+})

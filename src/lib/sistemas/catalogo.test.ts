@@ -155,3 +155,98 @@ describe('revisão das fichas (v0.8.0)', () => {
     expect(c.limites.filter(l => l.excedido).length).toBe(2)
   })
 })
+
+describe('fichas revisadas (v0.32.10)', () => {
+  it('Tormenta20: Guerreiro nível 3 com Con 2 → PV 34, PM 9; Arcanista com Int 4 → PM 18 + Int, CD 15', () => {
+    const s = sistemaPorId('tormenta20')!; const d = fichaVazia(s)
+    d.campos.classe = 'Guerreiro'; d.campos.nivel = 3; d.atributos.CON = 2
+    let c = calcular(s, d)
+    expect(c.derivados.pv_max).toBe(20 + 2 + 2 * (5 + 2)); expect(c.derivados.pm_max).toBe(9)
+    expect(c.recursosMax.pv).toBe(36); expect(c.recursosMax.pm).toBe(9)
+    d.campos.classe = 'arcanista'; d.campos.atributo_magia = 'Inteligência'; d.atributos.INT = 4
+    c = calcular(s, d)
+    expect(c.derivados.pm_max).toBe(18 + 4); expect(c.derivados.cd_magias).toBe(10 + 1 + 4)
+    d.campos.armadura_tipo = 'Pesada'; d.atributos.DES = 3; d.campos.defesa_bonus = 5
+    expect(calcular(s, d).derivados.defesa).toBe(15)
+    d.recursos.pv = { atual: 10, max: 50 }
+    expect(calcular(s, d).recursosMax.pv).toBe(50) // máximo digitado vale
+  })
+  it('Tormenta20: sem classe, PV fica para preencher; carga com Força negativa', () => {
+    const s = sistemaPorId('tormenta20')!; const d = fichaVazia(s)
+    expect(calcular(s, d).recursosMax.pv).toBeNull()
+    d.atributos.FOR = -1; expect(calcular(s, d).carga.max).toBe(9)
+    d.atributos.FOR = 3; expect(calcular(s, d).carga.max).toBe(16)
+  })
+  it('Ordem Paranormal: Combatente NEX 10% → PV 20+Vig+4+Vig, PE, SAN, DT e Defesa', () => {
+    const s = sistemaPorId('ordem-paranormal')!; const d = fichaVazia(s)
+    d.campos.classe = 'Combatente'; d.campos.nex = 10; Object.assign(d.atributos, { VIG: 3, PRE: 2, AGI: 2 })
+    const c = calcular(s, d)
+    expect(c.derivados.nivel).toBe(2)
+    expect(c.derivados.pv_max).toBe(20 + 3 + 4 + 3); expect(c.derivados.pe_max).toBe(2 + 2 + 2 + 2); expect(c.derivados.san_max).toBe(15)
+    expect(c.derivados.dt_rituais).toBe(14); expect(c.derivados.defesa).toBe(12)
+    d.campos.nex = 99; expect(calcular(s, d).derivados.nivel).toBe(20)
+    d.campos.nex = 95; expect(calcular(s, d).derivados.nivel).toBe(19)
+  })
+  it('Ordem Paranormal: atributos 9 pontos na criação, 10 em NEX 20%', () => {
+    const s = sistemaPorId('ordem-paranormal')!; const d = fichaVazia(s)
+    Object.assign(d.atributos, { AGI: 3, FOR: 0, INT: 2, PRE: 2, VIG: 3 })
+    expect(calcular(s, d).limites[0].excedido).toBe(true)
+    d.campos.nex = 20; expect(calcular(s, d).limites[0].excedido).toBe(false)
+  })
+  it('Ordem Paranormal: ficha antiga com campos.defesa migra para "Outros bônus de Defesa" (v0.33.0)', async () => {
+    const { normalizarFicha } = await import('./calculo')
+    const s = sistemaPorId('ordem-paranormal')!
+    const n = normalizarFicha(s, { atributos: { AGI: 2 }, campos: { defesa: 18 } } as never)
+    expect(n.campos.defesa).toBeUndefined(); expect(n.campos.defesa_outros).toBe(6) // 18 = 10 + AGI(2) + 6
+    expect(calcular(s, n).derivados.defesa).toBe(18)
+    // Ficha já na migrada (ou nova) não é tocada de novo.
+    const n2 = normalizarFicha(s, { campos: { defesa: 18, defesa_outros: 0 } } as never)
+    expect(n2.campos.defesa_outros).toBe(0)
+  })
+  it('D&D 5e: classe define o Dado de Vida e a magia; anão +1 PV por nível', () => {
+    const s = sistemaPorId('dnd5e-srd')!; const d = fichaVazia(s)
+    d.campos.classe = 'Mago'; d.campos.nivel = 3; Object.assign(d.atributos, { CON: 14, INT: 16 })
+    let c = calcular(s, d)
+    expect(c.derivados.pv_sugerido).toBe(6 + 2 + 2 * (4 + 2)); expect(c.derivados.cd_magia).toBe(8 + 2 + 3); expect(c.derivados.ataque_magia).toBe(5)
+    d.campos.especie = 'Anão'; c = calcular(s, d)
+    expect(c.derivados.pv_sugerido).toBe(20 + 3); expect(c.recursosMax.pv).toBe(23)
+    d.campos.classe = ''; d.campos.dado_vida = 10; d.campos.especie = ''
+    expect(calcular(s, d).derivados.pv_sugerido).toBe(10 + 2 + 2 * (6 + 2))
+  })
+  it('Pathfinder 2e: ancestralidade e classe somam PV; CD de classe e de magia', () => {
+    const s = sistemaPorId('pf2e')!; const d = fichaVazia(s)
+    d.campos.ancestralidade = 'Anão'; d.campos.classe = 'Clérigo'; d.campos.nivel = 2; d.atributos.CON = 2; d.atributos.SAB = 4
+    d.campos.atributo_chave = 'Sabedoria'; d.campos.atributo_magia = 'Sabedoria'; d.campos.grau_magia = 2
+    const c = calcular(s, d)
+    expect(c.derivados.pv_max).toBe(10 + (8 + 2) * 2)
+    expect(c.derivados.cd_classe).toBe(10 + 4 + 2 + 2); expect(c.derivados.cd_magia).toBe(18); expect(c.derivados.ataque_magia).toBe(8)
+  })
+})
+
+describe('fichas revisadas, parte 2 (v0.33.0)', () => {
+  it('Fate: estresse começa vazio; Vigor Bom = 4 caixas; façanhas extras tiram recarga', () => {
+    const s = sistemaPorId('fate-core')!; const d = fichaVazia(s)
+    expect(d.recursos.estresse_fisico.atual).toBe(0)
+    d.pericias.vigor = 'bom'; d.campos.facanhas_extras = 1
+    const c = calcular(s, d)
+    expect(c.recursosMax.estresse_fisico).toBe(4); expect(c.derivados.recarga_atual).toBe(2); expect(c.recursosMax.pontos_destino).toBe(2)
+    d.pericias.vigor = 'excepcional'; expect(calcular(s, d).derivados.consequencia_extra).toBe(1)
+  })
+  it('Blades: estresse e trauma começam em 0; resistência pelo número de ações; carga escolhida', () => {
+    const s = sistemaPorId('blades')!; const d = fichaVazia(s)
+    expect(d.recursos.estresse.atual).toBe(0); expect(d.recursos.trauma.atual).toBe(0)
+    d.pericias.escaramucar = 'd2'; d.pericias.rondar = 'd1'; d.campos.carga_escolhida = 'Leve (3)'
+    const c = calcular(s, d)
+    expect(c.derivados.proeza).toBe(2); expect(c.carga.max).toBe(3); expect(c.pericias.escaramucar).toBe(2)
+  })
+  it('BRP: ficha nova já vem com o valor-base; APA antigo vira CAR; ferimento grave', async () => {
+    const { normalizarFicha } = await import('./calculo')
+    const s = sistemaPorId('brp')!; const d = fichaVazia(s)
+    expect(d.pericias.escalar).toBe(40); expect(d.pericias.esquivar).toBe(20); expect(d.pericias.idioma_proprio).toBe(65); expect(d.pericias.primeiros_socorros).toBe(30)
+    expect(s.pericias!.lista.find(p => p.id === 'escalar')!.nome).toBe('Escalar (40%)')
+    const n = normalizarFicha(s, { atributos: { APA: 14, CON: 12, TAM: 15 } } as never)
+    expect(n.atributos.CAR).toBe(14); expect(n.atributos.APA).toBeUndefined()
+    const c = calcular(s, n)
+    expect(c.derivados.pv_max).toBe(14); expect(c.derivados.ferimento_grave).toBe(7); expect(c.derivados.charme).toBe(70)
+  })
+})

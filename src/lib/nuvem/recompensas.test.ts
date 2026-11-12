@@ -12,9 +12,9 @@ describe('recompensas', () => {
     const d = aplicarRecompensa('lunethernnyis', { campos: { xp: 0 }, listas: {} }, { xp: 300, item: '', moedas: '' }) as { campos: Record<string, number> }
     expect(d.campos.xp).toBe(300)
   })
-  it('D&D: XP anotado, item vira item de verdade no inventário e moedas na carteira', () => {
-    const d = aplicarRecompensa('dnd5e-srd', { campos: {}, listas: { anotacoes: '' } }, { xp: 50, item: 'Poção', moedas: '20 PO' })
-    expect((d.listas as Record<string, string>).anotacoes).toBe('⭐ +50 XP')
+  it('D&D: XP no campo de XP, item vira item de verdade no inventário e moedas na carteira', () => {
+    const d = aplicarRecompensa('dnd5e-srd', { campos: { xp: 100 }, listas: { anotacoes: '' } }, { xp: 50, item: 'Poção', moedas: '20 PO' })
+    expect(Number((d.campos as Record<string, unknown>).xp)).toBe(150)
     const itens = lerItens(d.itens), uso = lerUso(d.uso)
     expect(itens.map(i => i.nome)).toEqual(['Poção']); expect(uso.itens[itens[0].id].qtd).toBe(1); expect(uso.carteira).toBe('+20 PO')
   })

@@ -24,6 +24,7 @@ export function fichaVazia(s: Sistema, nome = ''): DadosFicha {
   try {
     const c = calcular(s, base), max = c.recursosMax
     for (const r of s.recursos) {
+      if (r.contador) continue // marcadores começam em 0
       // Vida sem fórmula: usa o PV sugerido do sistema (igual ao combate da mesa).
       const m = max[r.id] ?? (/^(pv|vida|hp)$/i.test(r.id) ? (c.derivados.pv_max ?? c.derivados.pv_sugerido ?? null) : null)
       if (m !== null && m !== undefined && Number.isFinite(m) && m > 0) base.recursos[r.id] = { atual: m } }
@@ -31,12 +32,19 @@ export function fichaVazia(s: Sistema, nome = ''): DadosFicha {
   return base
 }
 
+/** Valor inicial de uma perícia em porcentagem (com os atributos no valor padrão). */
+function baseDaPericia(s: Sistema, base?: string) {
+  if (!base) return 0
+  const v = avaliarSeguro(base, Object.fromEntries(s.atributos.map(a => [a.id, a.padrao])))
+  return v === null ? 0 : Math.max(0, Math.round(v))
+}
+
 function fichaBase(s: Sistema, nome: string): DadosFicha {
   return {
     sistema: s.id, nome,
     campos: Object.fromEntries(s.campos.map(c => [c.id, c.padrao ?? (c.tipo === 'numero' ? 0 : '')])),
     atributos: Object.fromEntries(s.atributos.map(a => [a.id, a.padrao])),
-    pericias: Object.fromEntries((s.pericias?.lista ?? []).map(p => [p.id, s.pericias?.modo === 'valor' ? 0 : s.pericias?.treinos?.[0]?.id ?? ''])),
+    pericias: Object.fromEntries((s.pericias?.lista ?? []).map(p => [p.id, s.pericias?.modo === 'valor' ? baseDaPericia(s, p.base) : s.pericias?.treinos?.[0]?.id ?? ''])),
     recursos: Object.fromEntries(s.recursos.map(r => [r.id, { atual: 0 }])),
     listas: Object.fromEntries(s.listas.map(l => [l.id, ''])),
     // Árvore padrão do sistema (sem nada liberado).
@@ -48,6 +56,19 @@ function fichaBase(s: Sistema, nome: string): DadosFicha {
 export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | undefined): DadosFicha {
   const base = fichaVazia(s)
   if (!d || typeof d !== 'object') return base
+  // Siglas antigas de atributos (ex.: BRP: APA → CAR).
+  if (s.apelidosAtributos && d.atributos) {
+    const a = { ...d.atributos } as Record<string, number>
+    for (const [velho, novo] of Object.entries(s.apelidosAtributos)) if (a[velho] !== undefined && a[novo] === undefined) { a[novo] = a[velho]; delete a[velho] }
+    d = { ...d, atributos: a }
+  }
+  // Ordem Paranormal (v0.32.10): Defesa passou de campo manual a calculada. Fichas antigas tinham o total em campos.defesa;
+  // guarda a diferença em "Outros bônus de Defesa" para a Defesa calculada continuar igual à que a pessoa já tinha.
+  if (s.id === 'ordem-paranormal' && d.campos && typeof d.campos.defesa === 'number' && d.campos.defesa_outros === undefined) {
+    const agi = Number((d.atributos as Record<string, number> | undefined)?.AGI ?? s.atributos.find(a => a.id === 'AGI')?.padrao ?? 0)
+    const { defesa: antiga, ...resto } = d.campos
+    d = { ...d, campos: { ...resto, defesa_outros: Math.round(Number(antiga)) - 10 - agi } }
+  }
   return {
     sistema: s.id, nome: typeof d.nome === 'string' ? d.nome.slice(0, 90) : '',
     ...(imagemDaPlataforma(d.retrato) ? { retrato: d.retrato } : {}),
@@ -104,6 +125,11 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
   const bonus = somarBonus(bonusEquipados(itens, uso), bonusDaArvore(lerArvore(d.arvore)), bonusDasEscolhas(s, d))
   const b = (alvo: string) => bonus[alvo] ?? 0
   for (const c of s.campos) if (c.tipo === 'numero') vars[c.id] = num(d.campos[c.id])
+  // Números das opções escolhidas (ex.: classe → PV iniciais). Sem escolha, as variáveis do campo valem 0.
+  for (const c of s.campos) if (c.tipo === 'escolha') {
+    for (const o of c.opcoes ?? []) for (const k of Object.keys(o.vars ?? {})) vars[k] ??= 0
+    Object.assign(vars, opcaoEscolhida(c, d.campos?.[c.id])?.vars ?? {})
+  }
   const mods: Record<string, number> = {}
   let soma = 0, zeros = 0, maior = -Infinity
   for (const a of s.atributos) {
@@ -162,7 +188,9 @@ export function calcular(s: Sistema, d: DadosFicha): Calculo {
   const recursosMax: Record<string, number | null> = {}
   for (const r of s.recursos) {
     const manual = d.recursos[r.id]?.max
-    const m = r.formula ? avaliarSeguro(r.formula, vars) : r.maxFixo ?? (manual === undefined ? null : num(manual))
+    // Sem máximo digitado, usa o valor sugerido (ex.: PV pela classe), se der mais que 0.
+    const sug = r.sugerido ? derivados[r.sugerido] ?? null : null
+    const m = r.formula ? avaliarSeguro(r.formula, vars) : r.maxFixo ?? (manual === undefined ? (sug !== null && sug > 0 ? sug : null) : num(manual))
     recursosMax[r.id] = m === null ? null : m + b('recurso:' + r.id)
   }
   vars.carga_total = pesoTotal(itens, uso)

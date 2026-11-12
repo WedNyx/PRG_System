@@ -305,18 +305,22 @@ function Retrato({ url, nome, somenteLeitura, onChange }: { url?: string; nome: 
   </div>
 }
 
-/** Campo de escolha (classe, espécie…): lista de opções com descrição e os bônus que a opção dá. */
+/** Campo de escolha (classe, espécie…): lista de opções com descrição e os bônus que a opção dá, ou um nome digitado fora da lista. */
 function CampoEscolha({ s, f, valor, mudar, somenteLeitura }: { s: Sistema; f: Sistema['campos'][number]; valor: unknown; mudar: (v: string) => void; somenteLeitura: boolean }) {
   const op = opcaoEscolhida(f, valor)
   const nomes = useMemo(() => Object.fromEntries(alvosDeBonus(s).map(a => [a.id, a.nome])), [s])
   const texto = typeof valor === 'string' ? valor : ''
+  const [forcarOutro, setForcarOutro] = useState(false)
+  const outro = !op && (!!texto || forcarOutro)
   return <div className="block text-sm">
     <label className="block">{f.nome}
-      <select value={op?.nome ?? (texto ? '__outro' : '')} disabled={somenteLeitura} onChange={e => mudar(e.target.value === '__outro' ? texto : e.target.value)} className={input + ' mt-1'}>
+      <select value={op ? op.nome : outro ? '__outro' : ''} disabled={somenteLeitura}
+        onChange={e => { if (e.target.value === '__outro') { setForcarOutro(true); mudar('') } else { setForcarOutro(false); mudar(e.target.value) } }} className={input + ' mt-1'}>
         <option value="">Escolha…</option>
         {f.opcoes?.map(o => <option key={o.nome} value={o.nome}>{o.nome}</option>)}
-        {texto && !op && <option value="__outro">{texto} (não está na lista)</option>}
+        <option value="__outro">✍️ Outro (fora da lista)</option>
       </select></label>
+    {outro && <input value={texto} disabled={somenteLeitura} maxLength={90} onChange={e => mudar(e.target.value)} className={input + ' mt-1.5'} placeholder={`Nome de ${f.nome.toLowerCase()} fora da lista`} autoFocus={forcarOutro} />}
     {op && (op.descricao || op.bonus?.length) && <div className="mt-1.5 rounded-lg bg-(--s-171325) p-2 text-xs text-(--a-d6c8e8)">
       {op.descricao && <p className="whitespace-pre-line">{op.descricao}</p>}
       {!!op.bonus?.length && <p className="mt-1 flex flex-wrap gap-1">{op.bonus.map(b => <span key={b.alvo} className="rounded-full bg-(--s-2f2547) px-2 py-0.5 text-[#c9f5d8]">{b.valor > 0 ? '+' : ''}{b.valor} {nomes[b.alvo] ?? b.alvo}</span>)}</p>}

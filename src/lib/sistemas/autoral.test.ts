@@ -81,6 +81,22 @@ describe('rolagem em parada copiada de um sistema da plataforma (v0.33.0)', () =
   })
 })
 
+describe('valor inicial de perícia copiado de um sistema da plataforma (v0.33.0)', () => {
+  const base = { nome: 'Cópia BRP', atributos: [{ nome: 'Destreza', id: 'DES', min: 1, max: 30, padrao: 10 }] }
+  it('preserva o valor-base das perícias (ex.: BRP) para fichas novas já nascerem com ele', () => {
+    const r = validarSistema({ ...base, pericias: { modo: 'valor', lista: [{ nome: 'Escalar', base: '40' }, { nome: 'Esquivar', base: 'DES * 2' }] } }, { id: 'autoral-' + '0'.repeat(32) })
+    expect(r.ok).toBe(true)
+    if (!r.ok) return
+    const ids = Object.fromEntries(r.sistema.pericias!.lista.map(p => [p.nome, p.id]))
+    const d = fichaVazia(r.sistema)
+    expect(d.pericias[ids.Escalar]).toBe(40); expect(d.pericias[ids.Esquivar]).toBe(20)
+  })
+  it('recusa fórmula de valor-base com variável que não é atributo', () => {
+    const r = validarSistema({ ...base, pericias: { modo: 'valor', lista: [{ nome: 'Escalar', base: 'nivel' }] } }, { id: 'autoral-' + '0'.repeat(32) })
+    expect(!r.ok && r.erros.join()).toMatch(/Valor inicial/)
+  })
+})
+
 describe('campos de escolha (classe, espécie)', () => {
   it('valida opções, tira bônus sem alvo e soma o bônus da opção escolhida', async () => {
     const { validarSistema, sistemaEmBranco } = await import('./autoral')

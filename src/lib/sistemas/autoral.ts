@@ -103,7 +103,9 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
       const n = txt(x.nome, LIMITES.nome); if (!n) return []
       const atr = typeof x.atributo === 'string' ? x.atributo.split('/').filter(a => idsAtr.has(a)).slice(0, 2).join('/') : ''
       const grupo = txt(x.grupo, 50)
-      return [{ id: pegarId(x.id, n), nome: n, ...(atr ? { atributo: atr } : {}), ...(grupo ? { grupo } : {}) }]
+      // Valor inicial (perícias em %, ex.: BRP): só pode usar os atributos, que é tudo que fichaVazia tem na hora de calcular.
+      const base = modo === 'valor' ? txt(x.base, LIMITES.formula) : ''
+      return [{ id: pegarId(x.id, n), nome: n, ...(atr ? { atributo: atr } : {}), ...(grupo ? { grupo } : {}), ...(base ? { base } : {}) }]
     })
     if (modo === 'treino' && !treinos?.length) erros.push('Perícias por treino precisam de pelo menos um grau (ex.: Destreinado +0).')
     if (listaP.length) pericias = { titulo: txt(p.titulo, 40) || undefined, modo, lista: listaP, ...(treinos ? { treinos } : {}), total: txt(p.total, LIMITES.formula) || (modo === 'valor' ? 'VALOR' : 'MOD + TREINO') }
@@ -229,6 +231,19 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   pericias?.treinos?.forEach(t => conferir(`Grau “${t.nome}”`, t.formula))
   if (pericias) conferir('Total das perícias', pericias.total, ['MOD', 'ATR', 'TREINO', 'VALOR'])
   recursos.forEach(r => conferir(`Recurso “${r.nome}”`, r.formula))
+  // Valor inicial da perícia (baseDaPericia, calculo.ts): só os atributos no padrão existem nesse momento,
+  // nenhum campo/derivado/outra perícia — por isso não usa a lista "vars" geral de conferir().
+  {
+    const varsAtr = new Set(atributos.map(a => a.id))
+    for (const x of pericias?.lista ?? []) {
+      if (!x.base) continue
+      try {
+        const desconhecidas = variaveisDaFormula(x.base).filter(v => !varsAtr.has(v))
+        if (desconhecidas.length) erros.push(`Valor inicial de “${x.nome}”: “${desconhecidas.join('”, “')}” não existe (só os atributos valem aqui).`)
+        else avaliar(x.base, Object.fromEntries(atributos.map(a => [a.id, a.padrao])))
+      } catch (er) { erros.push(`Valor inicial de “${x.nome}”: fórmula com erro (${er instanceof Error ? er.message : 'inválida'}).`) }
+    }
+  }
   limites.forEach(l => { conferir(`Limite “${l.nome}” (uso)`, l.uso); conferir(`Limite “${l.nome}” (máximo)`, l.max) })
   conferir('Capacidade de carga', carga?.formula)
   if (!atributos.length && !pericias && !recursos.length && !campos.length) erros.push('Adicione pelo menos um atributo, perícia, recurso ou campo.')

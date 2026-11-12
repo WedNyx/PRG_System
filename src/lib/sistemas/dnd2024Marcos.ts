@@ -12,9 +12,9 @@ import type { MarcoDnd } from './dnd2024Progressao'
  * características ou talentos. Subclasse e talentos só podem ser automatizados
  * depois da implementação e validação individual da opção.
  *
- * Por enquanto cobre as características das classes Guerreiro, Ladino e Mago,
- * incluindo marcadores de progressão da subclasse aberta correspondente.
- * As demais classes ainda não estão catalogadas nesta etapa.
+ * Por enquanto cobre características de Guerreiro, Ladino e Mago, e oferece
+ * a escolha inicial de uma subclasse aberta do SRD para cada uma das 12 classes.
+ * As demais características de classe ainda não estão catalogadas nesta etapa.
  */
 type Linha = readonly [nivel: number, codigo: string, nome: string, descricao?: string]
 
@@ -88,6 +88,17 @@ const MAGO: Linha[] = [
 ]
 
 export const MARCOS_DND_2024: MarcoDnd[] = [
+  // As doze opções abertas de subclasse de 2024 (uma por classe no SRD).
+  // Nesta fase são apenas decisões registráveis, sem aplicar efeitos.
+  subclasse('barbaro', 'Bárbaro', 'berserker', 'Berserker'),
+  subclasse('bardo', 'Bardo', 'colegio-conhecimento', 'College of Lore'),
+  subclasse('bruxo', 'Bruxo', 'patrono-infernal', 'Fiend Patron'),
+  subclasse('clerigo', 'Clérigo', 'dominio-vida', 'Life Domain'),
+  subclasse('druida', 'Druida', 'circulo-terra', 'Circle of the Land'),
+  subclasse('feiticeiro', 'Feiticeiro', 'feiticaria-draconica', 'Draconic Sorcery'),
+  subclasse('monge', 'Monge', 'mao-aberta', 'Warrior of the Open Hand'),
+  subclasse('paladino', 'Paladino', 'juramento-devocao', 'Oath of Devotion'),
+  subclasse('patrulheiro', 'Patrulheiro', 'cacador', 'Hunter'),
   ...GUERREIRO.map(l => marco('guerreiro', l)),
   subclasse('guerreiro', 'Guerreiro', 'campeao', 'Campeão'),
   ...evolucaoSubclasse('guerreiro', [7, 10, 15, 18]),

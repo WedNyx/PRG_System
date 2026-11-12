@@ -6,6 +6,12 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.33.5', data: '2026-11-12', titulo: 'Chat separado na mesa',
+    itens: [
+      '💬 Chat separado na mesa: a aba Chat agora tem “Conversa”, só com as mensagens do grupo, e “Dados e mesa”, com as rolagens, ataques, turnos e avisos. Cada uma mostra quantas novidades chegaram na outra, e os dados para rolar ficam em “Dados e mesa” (o /r da conversa continua funcionando).',
+    ],
+  },
+  {
     versao: '0.33.4', data: '2026-11-12', titulo: 'Cartões ilustrados e Assimilação na mesa',
     itens: [
       '🃏 Cartões dos sistemas no estilo ilustrado, com as capas novas de todos os sistemas (artes do Wed): a ilustração fica à direita e se funde com o fundo, com título grande, selos, descrição e os botões “Guia do mestre” e “Criar ficha” por cima. Cada sistema ganhou a sua cor na borda brilhante e no botão de criar ficha (vermelho no D&D, azul no Pathfinder, verde no BRP, âmbar no Faroeste…).',

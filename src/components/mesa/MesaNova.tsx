@@ -586,7 +586,20 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
   const [dest, setDest] = useState('')
   const [pers, setPers] = useState('')
   const fim = useRef<HTMLDivElement>(null)
-  useEffect(() => { fim.current?.scrollIntoView({ block: 'end' }) }, [e.eventos.length])
+  // Duas abas: a conversa do grupo e o que acontece na mesa (rolagens, ataques, turnos, avisos).
+  const [aba, setAba] = useState<'conversa' | 'mesa'>('conversa')
+  const ehConversa = (ev: Evento) => ev.tipo === 'chat'
+  const lista = e.eventos.filter(ev => aba === 'conversa' ? ehConversa(ev) : !ehConversa(ev))
+  const [visto, setVisto] = useState<Record<'conversa' | 'mesa', number>>({ conversa: 0, mesa: 0 })
+  const ultimo = (t: 'conversa' | 'mesa') => e.eventos.reduce((m, ev) => (t === 'conversa') === ehConversa(ev) ? Math.max(m, ev.id) : m, 0)
+  const iniciado = useRef(false)
+  useEffect(() => {
+    // O que já estava na mesa ao entrar não conta como novo.
+    if (!iniciado.current && e.eventos.length) { setVisto({ conversa: ultimo('conversa'), mesa: ultimo('mesa') }); iniciado.current = true; return }
+    setVisto(v => ({ ...v, [aba]: Math.max(v[aba], ultimo(aba)) }))
+  }, [aba, e.eventos.length])
+  const novos = (t: 'conversa' | 'mesa') => t === aba ? 0 : e.eventos.filter(ev => (t === 'conversa') === ehConversa(ev) && ev.id > visto[t] && ev.autor_id !== e.eu).length
+  useEffect(() => { fim.current?.scrollIntoView({ block: 'end' }) }, [lista.length, aba])
   const meus = e.fichas.filter(f => f.dono_id === e.eu || (admin && f.npc))
   async function rolar(x: string) {
     const r = await acao({ acao: 'evento', tipo: 'rolagem', expressao: x, visibilidade: vis, destinatarioId: dest, personagem: pers }).catch(() => null)
@@ -595,14 +608,21 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
   }
   async function enviar() {
     if (!texto.trim()) return
-    if (/^\/r(oll)?\s+/i.test(texto)) { await rolar(texto.replace(/^\/r(oll)?\s+/i, '')); setTexto(''); return }
+    if (/^\/r(oll)?\s+/i.test(texto)) { await rolar(texto.replace(/^\/r(oll)?\s+/i, '')); setTexto(''); toast('🎲 A rolagem foi para “Dados e mesa”.'); return }
     await acao({ acao: 'evento', tipo: 'chat', texto, visibilidade: vis, destinatarioId: dest, personagem: pers }).then(() => setTexto('')).catch(() => {})
   }
   return <div className="flex min-h-full flex-col gap-3">
     <p className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]" aria-label="Legenda das cores">{(['mestre', 'jogador', 'espectador'] as const).map(p => <span key={p} className={PAPEL_ESTILO[p].cor}>{PAPEL_ESTILO[p].icone} {PAPEL_ESTILO[p].nome}</span>)}</p>
     <div className="flex items-center justify-between"><p className="text-xs text-(--a-b4aeca)">{espectador ? 'Você está assistindo: pode conversar no chat.' : ''}</p>
       <button type="button" onClick={abrirHistorico} className={btn}><History size={14} /> Histórico</button></div>
-    <ul className="space-y-2 text-sm">{e.eventos.map(ev => <li key={ev.id} className={'rounded-lg p-2 ' + (ev.visibilidade === 'publica' ? 'bg-(--s-1e1a30)' : 'border border-(--a-7a5a9a) bg-(--s-261c38)')}>
+    <div role="tablist" aria-label="Conversa ou acontecimentos da mesa" className="sticky top-0 z-10 grid grid-cols-2 gap-1 rounded-xl border border-(--a-373251) bg-(--s-151123) p-1 text-sm shadow-lg">
+      {([['conversa', '💬 Conversa'], ['mesa', '🎲 Dados e mesa']] as const).map(([id, nome]) => { const n = novos(id)
+        return <button key={id} type="button" role="tab" aria-selected={aba === id} onClick={() => setAba(id)}
+          className={'relative rounded-lg px-2 py-1.5 font-semibold transition ' + (aba === id ? 'bg-(--a-7654bb) text-white' : 'text-(--a-cfc0df) hover:bg-(--s-2b2140)')}>{nome}
+          {n > 0 && <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-[#e5484d] px-1 text-[11px] leading-5 text-white">{n > 99 ? '99+' : n}</span>}</button> })}
+    </div>
+    <p className="-mt-1 text-[11px] text-(--a-a99bbb)">{aba === 'conversa' ? 'Mensagens do grupo. Rolagens, ataques e turnos ficam em “Dados e mesa”.' : 'Rolagens de dados, ataques, turnos e avisos da mesa.'}</p>
+    <ul className="space-y-2 text-sm">{lista.map(ev => <li key={ev.id} className={'rounded-lg p-2 ' + (ev.visibilidade === 'publica' ? 'bg-(--s-1e1a30)' : 'border border-(--a-7a5a9a) bg-(--s-261c38)')}>
       <p className="text-[11px] text-(--a-b4aeca)">{hora(ev.criado_em)} · {ev.tipo === 'sistema' ? <strong className="text-(--a-e4d3ff)">Mesa</strong> : (() => { const st = estiloPapel(papelDe[ev.autor_id ?? '']); return <strong className={st.cor} title={st.nome}>{st.icone} {ev.personagem || ev.autor?.apelido || '?'}</strong> })()}{ev.personagem && ev.autor ? ` (${ev.autor.apelido})` : ''}
         {ev.visibilidade === 'mestre' && ' · 🔒 só o mestre'}{ev.visibilidade === 'privada' && ` · 🔒 privado para ${nomes[ev.destinatario_id ?? ''] ?? '?'}`}</p>
       {ev.tipo === 'rolagem' && marcaAssim(ev.dados) && ev.expressao && ev.resultados ? <div>{ev.texto && <p className="text-xs text-(--a-c4b6d4)">🎲 {ev.texto}</p>}<RolagemAssim expressao={ev.expressao} resultados={ev.resultados} {...marcaAssim(ev.dados)!} /></div>
@@ -611,7 +631,7 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
         : ev.tipo === 'ataque' && ev.dados ? <CartaoAtaque d={ev.dados} eventoId={ev.id} admin={admin} acao={acao} rolagem={ev.expressao && ev.resultados ? { expressao: ev.expressao, resultados: ev.resultados } : undefined} />
         : <p className="whitespace-pre-wrap break-words">{ev.texto}</p>}
     </li>)}<div ref={fim} /></ul>
-    {e.eventos.length === 0 && <p className="text-center text-sm text-(--a-b4aeca)">Nada por aqui ainda. Role um dado!</p>}
+    {lista.length === 0 && <p className="text-center text-sm text-(--a-b4aeca)">{aba === 'conversa' ? 'Ninguém falou ainda. Mande um oi!' : 'Nada por aqui ainda. Role um dado!'}</p>}
     <div className="mt-auto space-y-2 border-t border-(--a-373251) pt-3">
       <div className="grid grid-cols-2 gap-2">
         <select aria-label="Quem vê" value={vis} onChange={x => setVis(x.target.value as typeof vis)} className={input}>
@@ -620,15 +640,16 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
           {e.membros.filter(m => m.aventureiro_id !== e.eu).map(m => <option key={m.aventureiro_id} value={m.aventureiro_id}>{m.aventureiro?.apelido}{m.papel === 'mestre' || m.papel === 'comestre' ? ' (mestre)' : m.papel === 'espectador' ? ' (espectador)' : ''}</option>)}</select>
           : <select aria-label="Personagem" value={pers} onChange={x => setPers(x.target.value)} className={input}><option value="">Como eu mesmo</option>{meus.map(f => <option key={f.id} value={f.nome || 'Personagem'}>{f.nome || 'Personagem sem nome'}</option>)}</select>}
       </div>
-      {!espectador && <><div className="flex flex-wrap gap-1">{DADOS.map(d => <button key={d} type="button" onClick={() => rolar(d)} className={btn}>{d.slice(1)}</button>)}</div>
+      {!espectador && aba === 'mesa' && <><div className="flex flex-wrap gap-1">{DADOS.map(d => <button key={d} type="button" onClick={() => rolar(d)} className={btn}>{d.slice(1)}</button>)}</div>
       <form onSubmit={x => { x.preventDefault(); void rolar(expr) }} className="flex gap-2">
         <input aria-label="Expressão de dados" value={expr} onChange={x => setExpr(x.target.value)} maxLength={80} placeholder="2d6+3, 4d6kh3, 2d20kh1" className={input} />
         <button type="submit" className="rounded-lg bg-(--a-7654bb) px-3 text-sm font-semibold"><Dices size={18} /></button>
       </form></>}
-      <form onSubmit={x => { x.preventDefault(); void enviar() }} className="flex gap-2">
+      {aba === 'conversa' && <form onSubmit={x => { x.preventDefault(); void enviar() }} className="flex gap-2">
         <input aria-label="Mensagem" value={texto} onChange={x => setTexto(x.target.value)} maxLength={1000} placeholder={espectador ? 'Mensagem' : 'Mensagem (ou /r 1d20+2)'} className={input} />
         <button type="submit" aria-label="Enviar" className="rounded-lg bg-(--a-7654bb) px-3"><Send size={18} /></button>
-      </form>
+      </form>}
+      {aba === 'mesa' && espectador && <p className="text-xs text-(--a-b4aeca)">Espectadores assistem às rolagens; para falar, use a Conversa.</p>}
     </div>
   </div>
 }

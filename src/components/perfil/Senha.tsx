@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, type FormEvent } from 'react'
-import { Eye, EyeOff, Lock, X } from 'lucide-react'
+import { Copy, Eye, EyeOff, KeyRound, Lock, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { EVENTO_SENHA } from '@/lib/nuvem/cliente'
 
@@ -14,7 +14,7 @@ async function chamar(id: string, corpo: Record<string, unknown>) {
   if (!r.ok) throw new Error(typeof d.erro === 'string' ? d.erro : 'Falha de conexão. Tente novamente.')
   return d
 }
-export async function situacaoSenha(id: string): Promise<{ protegido: boolean; conectado: boolean; aparelhos: { id: string; aparelho: string; criado_em: string; este: boolean }[] }> {
+export async function situacaoSenha(id: string): Promise<{ protegido: boolean; conectado: boolean; temCodigo?: boolean; aparelhos: { id: string; aparelho: string; criado_em: string; este: boolean }[] }> {
   const r = await fetch('/api/prg/perfil/' + id, { cache: 'no-store' })
   if (!r.ok) throw new Error('Não foi possível conferir a senha do perfil.')
   return r.json()
@@ -30,15 +30,38 @@ function CampoSenha({ valor, mudar, rotulo, auto, foco }: { valor: string; mudar
   </label>
 }
 
+/** Mostra o código de recuperação uma única vez, com botão de copiar. */
+export function CodigoRecuperacao({ codigo, pronto }: { codigo: string; pronto: () => void }) {
+  const [copiado, setCopiado] = useState(false)
+  const copiar = async () => { try { await navigator.clipboard.writeText(codigo); setCopiado(true) } catch { setCopiado(false) } }
+  return <div className="space-y-2 rounded-xl border border-amber-600/60 bg-amber-950/40 p-3" role="status">
+    <p className="flex items-center gap-1.5 text-sm font-semibold text-amber-100"><KeyRound size={15} /> Seu código de recuperação</p>
+    <p className="select-all rounded-lg bg-black/40 p-2 text-center font-mono text-lg tracking-wider text-white">{codigo}</p>
+    <p className="text-[11px] text-amber-100/90">Guarde num lugar seguro (anote, tire print ou salve nas notas). Se esquecer a senha, é com ele que você entra de novo — sem e-mail e sem pedir ao administrador. Ele aparece só agora.</p>
+    <div className="flex gap-2">
+      <button type="button" onClick={() => void copiar()} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-amber-600/60 p-2 text-sm"><Copy size={14} /> {copiado ? 'Copiado!' : 'Copiar'}</button>
+      <button type="button" onClick={pronto} className="flex-1 rounded-lg bg-(--a-7654bb) p-2 text-sm font-semibold">Já guardei</button>
+    </div>
+  </div>
+}
+
 /** Janela “digite a senha” deste perfil. Ao acertar, o aparelho fica lembrado por 30 dias. */
 export function JanelaSenha({ perfil, aoEntrar, fechar }: { perfil: PerfilCurto; aoEntrar: () => void; fechar: () => void }) {
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState(false)
+  const [recuperar, setRecuperar] = useState(false)
+  const [codigo, setCodigo] = useState(''), [nova, setNova] = useState('')
+  const [novoCodigo, setNovoCodigo] = useState<string | null>(null)
   async function entrar(e: FormEvent) {
     e.preventDefault(); setOcupado(true); setErro('')
-    try { await chamar(perfil.id, { acao: 'entrar', senha }); aoEntrar() }
-    catch (er) { setErro(er instanceof Error ? er.message : 'Senha incorreta.'); setSenha('') }
+    try {
+      if (recuperar) {
+        const r = await chamar(perfil.id, { acao: 'recuperar', codigo, ...(nova ? { nova } : {}) })
+        if (typeof r.codigo === 'string') { setNovoCodigo(r.codigo); return }
+        toast.success('Senha apagada. O perfil ficou sem senha: crie outra em Editar perfil, se quiser.'); aoEntrar()
+      } else { await chamar(perfil.id, { acao: 'entrar', senha }); aoEntrar() }
+    } catch (er) { setErro(er instanceof Error ? er.message : 'Senha incorreta.'); setSenha('') }
     finally { setOcupado(false) }
   }
   return <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/75 p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
@@ -51,10 +74,17 @@ export function JanelaSenha({ perfil, aoEntrar, fechar }: { perfil: PerfilCurto;
           <p className="text-xs text-(--a-b4aeca)">Este perfil tem senha.</p></div>
         <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 text-(--a-b4aeca) hover:bg-white/10"><X size={18} /></button>
       </div>
-      <div className="mt-4"><CampoSenha valor={senha} mudar={setSenha} rotulo="Senha" auto="current-password" foco /></div>
+      {novoCodigo ? <div className="mt-4 space-y-2"><p className="text-sm text-emerald-200">Senha trocada! Este é o seu código de recuperação novo (o antigo não vale mais):</p><CodigoRecuperacao codigo={novoCodigo} pronto={aoEntrar} /></div> : <>
+      {!recuperar ? <div className="mt-4"><CampoSenha valor={senha} mudar={setSenha} rotulo="Senha" auto="current-password" foco /></div> : <div className="mt-4 space-y-2">
+        <label className="block text-sm text-(--a-b4aeca)">Código de recuperação
+          <input value={codigo} onChange={e => setCodigo(e.target.value)} autoFocus autoComplete="off" autoCapitalize="characters" placeholder="XXXX-XXXX-XXXX-XXXX" maxLength={40} className={campo + ' mt-1 font-mono tracking-wider'} /></label>
+        <CampoSenha valor={nova} mudar={setNova} rotulo="Senha nova (ou deixe vazio para ficar sem senha)" auto="new-password" />
+      </div>}
       {erro && <p role="alert" className="mt-3 text-sm text-red-200">{erro}</p>}
-      <button type="submit" disabled={ocupado || !senha} className="mt-4 w-full rounded-lg bg-(--a-7654bb) p-2.5 font-semibold disabled:opacity-50">{ocupado ? 'Conferindo…' : 'Entrar'}</button>
-      <p className="mt-3 text-center text-[11px] text-(--a-8f88a8)">Este aparelho fica lembrado por 30 dias. Esqueceu? Peça ao administrador para redefinir.</p>
+      <button type="submit" disabled={ocupado || (recuperar ? !codigo : !senha)} className="mt-4 w-full rounded-lg bg-(--a-7654bb) p-2.5 font-semibold disabled:opacity-50">{ocupado ? 'Conferindo…' : recuperar ? (nova ? 'Trocar a senha' : 'Apagar a senha') : 'Entrar'}</button>
+      <button type="button" onClick={() => { setRecuperar(r => !r); setErro('') }} className="mt-3 w-full text-center text-xs text-(--a-c7a8ff) underline underline-offset-2">{recuperar ? 'Voltar para a senha' : 'Esqueci a senha — usar o código de recuperação'}</button>
+      <p className="mt-2 text-center text-[11px] text-(--a-8f88a8)">{recuperar ? 'O código foi mostrado quando a senha foi criada. Sem ele, peça ao administrador para apagar a senha.' : 'Este aparelho fica lembrado por 30 dias.'}</p>
+      </>}
     </form>
   </div>
 }
@@ -81,7 +111,8 @@ export function PedirSenhaGlobal() {
 /** Seção “Senha do perfil” na janela Editar perfil: criar, trocar, remover e aparelhos lembrados. */
 export function ConfigSenha({ id }: { id: string }) {
   const [sit, setSit] = useState<Awaited<ReturnType<typeof situacaoSenha>> | null>(null)
-  const [modo, setModo] = useState<'' | 'definir' | 'remover'>('')
+  const [modo, setModo] = useState<'' | 'definir' | 'remover' | 'codigo'>('')
+  const [codigo, setCodigo] = useState<string | null>(null)
   const [atual, setAtual] = useState(''), [nova, setNova] = useState(''), [repetir, setRepetir] = useState('')
   const [erro, setErro] = useState(''), [ocupado, setOcupado] = useState(false)
   const [versao, setVersao] = useState(0)
@@ -98,8 +129,9 @@ export function ConfigSenha({ id }: { id: string }) {
     if (modo === 'definir' && nova !== repetir) { setErro('As duas senhas novas não são iguais.'); return }
     setOcupado(true)
     try {
-      await chamar(id, modo === 'definir' ? { acao: 'definir', nova, atual } : { acao: 'remover', atual })
-      toast.success(modo === 'remover' ? 'Senha removida.' : sit?.protegido ? 'Senha trocada. Os outros aparelhos foram desconectados.' : 'Senha criada! Este aparelho fica lembrado por 30 dias.')
+      const r = await chamar(id, modo === 'definir' ? { acao: 'definir', nova, atual } : modo === 'codigo' ? { acao: 'novo_codigo', atual } : { acao: 'remover', atual })
+      toast.success(modo === 'remover' ? 'Senha removida.' : modo === 'codigo' ? 'Código novo gerado. O antigo não vale mais.' : sit?.protegido ? 'Senha trocada. Os outros aparelhos foram desconectados.' : 'Senha criada! Este aparelho fica lembrado por 30 dias.')
+      if (typeof r.codigo === 'string') setCodigo(r.codigo)
       limpar(); setVersao(v => v + 1)
     } catch (er) { setErro(er instanceof Error ? er.message : 'Falha ao salvar.') } finally { setOcupado(false) }
   }
@@ -114,14 +146,17 @@ export function ConfigSenha({ id }: { id: string }) {
       {sit && <span className={'rounded-full px-2 py-0.5 text-[11px] ' + (sit.protegido ? 'bg-emerald-900/60 text-emerald-200' : 'bg-(--s-34294f) text-(--a-b4aeca)')}>{sit.protegido ? '🔒 Protegido' : 'Sem senha'}</span>}
     </div>
     {!sit && !erro && <p className="mt-2 text-xs text-(--a-b4aeca)">Carregando…</p>}
-    {sit && !modo && <>
+    {codigo && <div className="mt-2"><CodigoRecuperacao codigo={codigo} pronto={() => setCodigo(null)} /></div>}
+    {sit && !modo && !codigo && <>
       <p className="mt-2 text-xs text-(--a-b4aeca)">{sit.protegido
         ? 'Só entra neste perfil quem souber a senha. Cada aparelho fica lembrado por 30 dias.'
         : 'Opcional: com senha, ninguém mais consegue entrar no seu perfil pelo portal. Não precisa de e-mail.'}</p>
       <div className="mt-2 flex flex-wrap gap-2">
         <button type="button" onClick={() => setModo('definir')} className="rounded-lg bg-(--a-7654bb) px-3 py-1.5 text-sm font-semibold">{sit.protegido ? 'Trocar senha' : 'Criar senha'}</button>
         {sit.protegido && <button type="button" onClick={() => setModo('remover')} className="rounded-lg border border-(--a-62527e) px-3 py-1.5 text-sm">Remover senha</button>}
+        {sit.protegido && sit.conectado && <button type="button" onClick={() => setModo('codigo')} className="inline-flex items-center gap-1 rounded-lg border border-(--a-62527e) px-3 py-1.5 text-sm"><KeyRound size={14} /> {sit.temCodigo ? 'Novo código de recuperação' : 'Criar código de recuperação'}</button>}
       </div>
+      {sit.protegido && sit.conectado && sit.temCodigo === false && <p className="mt-2 rounded-lg border border-amber-700/60 bg-amber-950/40 p-2 text-[11px] text-amber-100">⚠️ Seu perfil ainda não tem código de recuperação. Crie um: é com ele que você entra se esquecer a senha.</p>}
       {sit.protegido && sit.aparelhos.length > 0 && <div className="mt-3">
         <p className="text-xs font-semibold text-(--a-d6c8e8)">Aparelhos lembrados</p>
         <ul className="mt-1 space-y-1">{sit.aparelhos.map(a => <li key={a.id} className="flex justify-between text-xs text-(--a-b4aeca)"><span>{a.aparelho}{a.este && <b className="ml-1 text-emerald-300">(este)</b>}</span><span>{new Date(a.criado_em).toLocaleDateString('pt-BR')}</span></li>)}</ul>
@@ -130,16 +165,17 @@ export function ConfigSenha({ id }: { id: string }) {
     </>}
     {sit && modo && <div className="mt-2 space-y-2" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!ocupado) void enviar() } }}>
       {sit.protegido && <CampoSenha valor={atual} mudar={setAtual} rotulo="Senha atual" auto="current-password" foco />}
+      {modo === 'codigo' && <p className="text-[11px] text-(--a-8f88a8)">Digite a senha atual. O código novo substitui o antigo.</p>}
       {modo === 'definir' && <>
         <CampoSenha valor={nova} mudar={setNova} rotulo="Senha nova (6 a 72 caracteres)" auto="new-password" foco={!sit.protegido} />
         <CampoSenha valor={repetir} mudar={setRepetir} rotulo="Repita a senha nova" auto="new-password" />
-        <p className="text-[11px] text-(--a-8f88a8)">Não há recuperação por e-mail: se esquecer, só o administrador da plataforma consegue apagar a senha.</p>
+        <p className="text-[11px] text-(--a-8f88a8)">Sem e-mail: ao criar a senha, você recebe um código de recuperação para usar se esquecer.</p>
       </>}
       {erro && <p role="alert" className="text-sm text-red-200">{erro}</p>}
       <div className="flex gap-2">
         <button type="button" onClick={limpar} className="flex-1 rounded-lg border border-(--a-62527e) p-2 text-sm">Cancelar</button>
         <button type="button" onClick={() => void enviar()} disabled={ocupado || (sit.protegido && !atual) || (modo === 'definir' && (!nova || !repetir))} className={'flex-1 rounded-lg p-2 text-sm font-semibold disabled:opacity-50 ' + (modo === 'remover' ? 'bg-[#8a2f4b]' : 'bg-(--a-7654bb)')}>
-          {ocupado ? 'Salvando…' : modo === 'remover' ? 'Remover senha' : 'Salvar senha'}</button>
+          {ocupado ? 'Salvando…' : modo === 'remover' ? 'Remover senha' : modo === 'codigo' ? 'Gerar código' : 'Salvar senha'}</button>
       </div>
     </div>}
     {erro && !modo && <p role="alert" className="mt-2 text-sm text-red-200">{erro}</p>}

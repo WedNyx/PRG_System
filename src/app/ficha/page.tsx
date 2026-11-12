@@ -14,7 +14,8 @@ import { toast } from 'sonner'
 import PassarItem from '@/components/fichas/PassarItem'
 import type { Item } from '@/lib/sistemas/inventario'
 import AjudaTela, { type PassoAjuda } from '@/components/AjudaTela'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Download } from 'lucide-react'
+import { baixarArquivo, montarArquivo } from '@/lib/fichaArquivo'
 
 const AREAS: Record<string, string> = Object.fromEntries(CAMPOS.map(c => [c.id, c.titulo]))
 
@@ -37,6 +38,7 @@ const COR: Partial<Record<Estado, string>> = {
 function passosFicha(campanha: boolean, leitura: boolean): PassoAjuda[] {
   return [
     { icone: '🧭', titulo: 'Menu da ficha', texto: 'A ficha é dividida em partes: Principal, Atributos, Poderes, Inventário, Anotações e o Guia do sistema. No celular, deslize a fileira de botões; no computador, use o menu à esquerda.' },
+    { icone: '⬇️', titulo: 'Baixar a ficha', texto: 'O botão “Baixar” no topo salva uma cópia do personagem num arquivo. Para trazer de volta: Central → Fichas → Importar ficha.' },
     { icone: '☁️', titulo: 'Salva sozinha', texto: 'Tudo o que você muda é salvo em poucos segundos. O selo no topo mostra se já salvou (verde) ou se ainda falta (amarelo).' },
     { icone: '🎲', titulo: 'Rolar dados', texto: campanha ? 'Toque no valor de um atributo, perícia, arma ou poder. Como a ficha é de campanha, o resultado também aparece no chat da mesa para todos.' : 'Toque no valor de um atributo, perícia, arma ou poder. Esta ficha é avulsa: a rolagem aparece só para você e não fica salva.' },
     { icone: '❤️', titulo: 'Vida e recursos', texto: 'Na parte Principal, use − e + nas barras (PV, mana etc.). O botão 🌙 Descansar recupera o que as regras mandam.' },
@@ -138,6 +140,8 @@ function Conteudo() {
           <p className="truncate text-xs text-(--a-b4aeca)">{sistema?.nome ?? '…'}{sistema && (campanhaId ? ' · 🏰 Ficha de campanha' : nuvem ? ' · 🧙 Ficha avulsa' : '')}{sistema?.autor && <span className="text-(--a-ed9cd8)"> · ✍️ {sistema.autor}</span>}</p>
         </div>
         <span className={'shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium ' + (COR[estado] ?? 'border-(--a-62527e) text-(--a-b4aeca)')} aria-live="polite">{ROTULO[estado]}</span>
+        {sistema && dados && <button type="button" onClick={() => { baixarArquivo(montarArquivo(sistema.id, dados as unknown as Record<string, unknown>, sistema.nome)); toast.success('Ficha baixada. Para trazer de volta: Central → Fichas → Importar ficha.') }}
+          aria-label="Baixar ficha (arquivo)" title="Baixar ficha (arquivo .json)" className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-(--a-8d70b6) p-1.5 text-sm text-(--a-e4d3ff) hover:bg-(--s-342749) sm:px-3"><Download size={16} aria-hidden="true" /><span className="hidden sm:inline">Baixar</span></button>}
         {sistema && <AjudaTela titulo="Ajuda da ficha" intro="Como usar esta ficha, passo a passo." passos={passosFicha(!!campanhaId, estado === 'leitura')} />}
       </div>
     </header>

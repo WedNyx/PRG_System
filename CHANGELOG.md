@@ -2,6 +2,21 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.33.2 — Sua conta nas suas mãos (2026-11-12)
+- 🗝️ Código de recuperação: ao criar a senha do perfil você recebe um código (como ABCD-EFGH-JKLM-NPQR). Guarde num lugar seguro: se esquecer a senha, toque em “Esqueci a senha”, digite o código e escolha outra, sem precisar do administrador. Cada código vale uma vez; dá para gerar um novo em Editar perfil.
+- 🗑️ Apagar o próprio perfil: em Editar perfil → “Apagar perfil…”. Você escolhe se os personagens das campanhas de outros mestres ficam com eles como NPC e confirma digitando o nome do perfil. Se você for mestre de alguma campanha, ela vai junto (a janela avisa quais).
+- 👑 O mestre pode excluir a própria campanha (no fim da campanha, em Central → Campanhas), digitando o nome dela para confirmar.
+- ⬇️ Baixar e importar fichas: na ficha, toque em “Baixar” para guardar um arquivo .json do personagem. Em Central → Fichas, “Importar ficha” traz o arquivo de volta como ficha nova (serve para backup ou para passar a ficha para outro perfil).
+- Banco: migração 026 (coluna senha_recuperacao_hash em prg_public_adventurers).
+
+## v0.33.1 — Temas novos e visual revisado (2026-11-12)
+- 🌲 Quatro temas novos que mudam a plataforma inteira: Floresta encantada (verde, com riacho e arco de runas), Fundo do mar (turquesa, com ruínas submersas e águas-vivas), Taverna (âmbar, com lareira e velas) e Sombrio (roxo e vermelho, com castelo sob a lua vermelha). Agora são 11 temas em Central → Aparência.
+- 💎 Prisma ganhou imagem nova: o dado de cristal que divide a luz num arco-íris de dados.
+- 🔍 Revisão do visual nas telas que faltavam (Guia, Tutoriais, Novidades, Sistemas, criar sistema, convite, histórico, rolagens, Mundo e janelas) em todos os temas.
+- A janela de Editar perfil agora acompanha as cores do tema (antes ficava sempre roxa).
+- Mundo sem mapa: o aviso ganhou um cartão, para ler bem sobre qualquer fundo.
+- Prisma: os botões e destaques voltaram a ter cor (antes ficavam cinza demais).
+
 ## v0.33.0 — Fichas de acordo com as regras, parte 2 (2026-11-11)
 - 📜 Fichas de acordo com as regras, parte 2: Fate, Blades in the Dark, BRP e Faroeste Arcano.
 - 🎲 Fate: agora rola 4dF + perícia ao tocar no valor. Escada até Fantástico (+6), recarga que desconta as façanhas extras, consequência suave extra com Vigor ou Vontade Excepcional e caixas de estresse que começam vazias.

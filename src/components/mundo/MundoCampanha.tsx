@@ -139,7 +139,7 @@ function AbaMapa({ mundo, admin, campanhaId, destaque, posicionando, abrir, salv
   const enviar = <label className={btn + ' cursor-pointer'}><ImagePlus size={14} /> {enviando ? 'Enviando…' : mundo.mapa ? 'Trocar mapa' : 'Enviar o mapa'}
     <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" disabled={enviando} onChange={ev => { const f = ev.target.files?.[0]; ev.target.value = ''; if (f) void trocarMapa(f) }} /></label>
 
-  if (!mundo.mapa) return <div className="mx-auto max-w-lg p-6 text-center">
+  if (!mundo.mapa) return <div className="mx-auto mt-8 max-w-lg rounded-2xl border border-(--a-55456e) bg-(--s-201a32)/90 p-6 text-center">
     <p className="text-5xl">🗺️</p>
     <h2 className="mt-3 text-xl font-bold">{admin ? 'Comece pelo mapa do mundo' : 'O mestre ainda não mostrou o mapa'}</h2>
     <p className="mt-2 text-sm text-(--a-b4aeca)">{admin ? 'Envie uma imagem do mapa (desenhada à mão, de um gerador de mapas…). Depois é só tocar nele para marcar cidades, masmorras e segredos.' : 'Enquanto isso, veja as páginas e a teia de relações.'}</p>

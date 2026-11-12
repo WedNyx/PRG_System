@@ -10,7 +10,7 @@ import { BookOpen, Plus, Search, Sparkles, Trash2, X } from 'lucide-react'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import type { Calculo } from '@/lib/sistemas/calculo'
 import { MAGIAS_SRD, type MagiaSrd } from '@/lib/sistemas/dnd2024Magias'
-import { contarMagias, expressaoMagia, lerMagiasDnd, limitesMagiasDnd, magiaPorId, motivoBloqueio, recursoDoEspaco, type TipoMagia } from '@/lib/sistemas/dnd2024Conjuracao'
+import { classeDoTipo, conjuradoresDnd, contarMagias, expressaoMagia, lerMagiasDnd, limitesMagiasDnd, magiaPorId, motivoBloqueio, recursoDoEspaco, tipoPreparada, type LimitesMagia, type TipoMagia } from '@/lib/sistemas/dnd2024Conjuracao'
 import NaTela from '@/components/NaTela'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
@@ -30,31 +30,35 @@ type Props = {
 
 export default function MagiasDnd2024({ d, c, onChange, somenteLeitura = false, semLimites = false, rolar }: Props) {
   const sel = useMemo(() => lerMagiasDnd(d.dndMagias), [d.dndMagias])
-  const l = useMemo(() => limitesMagiasDnd(d), [d])
-  const n = contarMagias(sel, l)
+  const principal = useMemo(() => limitesMagiasDnd(d), [d])
+  const conj = useMemo(() => conjuradoresDnd(d), [d])
+  /** Classes conjuradoras (a inicial primeiro); sem nenhuma, a inicial para as mensagens. */
+  const ls = conj.length ? conj : [principal]
+  const l = ls[0]
   const [abrir, setAbrir] = useState(false)
   const prof = Number(c.vars.prof) || Number(c.derivados.prof) || Number(c.vars.dnd_prof) || 2
-  const mod = l.atributo ? Number(c.mods[l.atributo]) || 0 : 0
-  const ataque = prof + mod, cd = 8 + prof + mod
+  const modDe = (x: LimitesMagia) => x.atributo ? Number(c.mods[x.atributo]) || 0 : 0
+  /** Classe de uma magia da ficha (extra usa a inicial, ou a primeira conjuradora). */
+  const limiteDa = (tipo: TipoMagia) => ls.find(x => x.classeId === classeDoTipo(tipo, principal.classeId)) ?? l
   const nivelPersonagem = Number(d.campos.nivel) || 1
   const lista = Object.keys(sel).map(id => magiaPorId(id)!).filter(Boolean).sort((a, b) => a.nivel - b.nivel || a.nome.localeCompare(b.nome))
   const grupos = lista.reduce<Map<number, MagiaSrd[]>>((g, m) => g.set(m.nivel, [...(g.get(m.nivel) ?? []), m]), new Map())
 
   function gravar(novo: Record<string, TipoMagia>) { onChange({ ...d, dndMagias: novo }) }
-  function adicionar(m: MagiaSrd, tipo: TipoMagia) {
-    if (tipo === 'preparada' && !semLimites) { const motivo = motivoBloqueio(m, l, sel); if (motivo) { toast.error(motivo); return } }
-    gravar({ ...sel, [m.id]: semLimites ? 'extra' : tipo })
+  function adicionar(m: MagiaSrd, tipo: 'preparada' | 'extra', lc: LimitesMagia) {
+    if (tipo === 'preparada' && !semLimites) { const motivo = motivoBloqueio(m, lc, sel); if (motivo) { toast.error(motivo); return } }
+    gravar({ ...sel, [m.id]: semLimites || tipo === 'extra' ? 'extra' : tipoPreparada(lc) })
   }
   function remover(id: string) { const { [id]: _fora, ...resto } = sel; void _fora; gravar(resto) }
-  function conjurar(m: MagiaSrd, espaco: number) {
-    const rid = recursoDoEspaco(l, espaco)
+  function conjurar(m: MagiaSrd, espaco: number, lc: LimitesMagia) {
+    const rid = recursoDoEspaco(lc, espaco)
     if (m.nivel > 0 && rid) {
       const atual = Number(d.recursos[rid]?.atual ?? 0) || 0
       if (atual <= 0) { toast.error(`Sem espaços de ${espaco}º nível. Descanse para recuperar.`); return }
       onChange({ ...d, recursos: { ...d.recursos, [rid]: { ...d.recursos[rid], atual: atual - 1 } } })
       toast.success(`${m.nome}: gastou 1 espaço de ${espaco}º nível.`)
     }
-    const e = expressaoMagia(m, { espaco, nivelPersonagem, mod })
+    const e = expressaoMagia(m, { espaco, nivelPersonagem, mod: modDe(lc) })
     if (e) rolar(e, `${m.nome}${m.nivel ? ` (espaço ${espaco}º)` : ''}: ${m.cura && !m.dano ? 'cura' : 'dano'}`)
   }
 
@@ -63,28 +67,29 @@ export default function MagiasDnd2024({ d, c, onChange, somenteLeitura = false, 
       <div className="min-w-0 flex-1">
         <h3 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Sparkles size={18} aria-hidden /> Magias</h3>
         <p className="text-xs text-(--a-b4aeca)">{l.atributo
-          ? `${l.classeNome} nível ${l.nivel} · atributo de conjuração ${l.atributo}${semLimites ? ' · modo manual: sem limites da tabela' : ''}`
+          ? `${ls.map(x => `${x.classeNome} ${x.nivel} (${x.atributo})`).join(' + ')}${ls.length > 1 ? ` · espaços da tabela de multiclasse até ${l.espacoMax}º` : ''}${semLimites ? ' · modo manual: sem limites da tabela' : ''}`
           : `${l.classeNome || 'Esta classe'} não conjura pela tabela. Magias de talentos, itens ou subclasses entram como extras.`}</p>
       </div>
       {!somenteLeitura && <button type="button" onClick={() => setAbrir(true)} className={btn + ' border-(--a-8b6cba) bg-(--s-2b2140) font-semibold text-white'}><Plus size={16} aria-hidden /> Adicionar magias</button>}
     </div>
-    {l.atributo && <div className="flex flex-wrap gap-2">
-      <span className={chip}>CD <strong className="text-white">{cd}</strong></span>
-      <button type="button" disabled={somenteLeitura} onClick={() => rolar(`1d20${sinal(ataque)}`, 'Ataque mágico')} className={chip + ' hover:bg-(--s-34294f)'} aria-label={`Rolar ataque mágico ${sinal(ataque)}`}>Ataque mágico <strong className="text-white">{sinal(ataque)}</strong></button>
+    {l.atributo && ls.map(x => { const n = contarMagias(sel, x), atq = prof + modDe(x); return <div key={x.classeId} className="flex flex-wrap items-center gap-2">
+      {ls.length > 1 && <span className="text-xs font-semibold text-(--a-e4d3ff)">{x.classeNome}</span>}
+      <span className={chip}>CD <strong className="text-white">{8 + atq}</strong></span>
+      <button type="button" disabled={somenteLeitura} onClick={() => rolar(`1d20${sinal(atq)}`, `Ataque mágico${ls.length > 1 ? ` (${x.classeNome})` : ''}`)} className={chip + ' hover:bg-(--s-34294f)'} aria-label={`Rolar ataque mágico ${sinal(atq)}`}>Ataque mágico <strong className="text-white">{sinal(atq)}</strong></button>
       {!semLimites && <>
-        {(l.truques > 0 || n.truques > 0) && <span className={chip + (n.truques > l.truques ? ' border-amber-400 text-amber-200' : '')}>Truques {n.truques}/{l.truques}</span>}
-        {(l.preparadas > 0 || n.preparadas > 0) && <span className={chip + (n.preparadas > l.preparadas ? ' border-amber-400 text-amber-200' : '')}>Preparadas {n.preparadas}/{l.preparadas}</span>}
-        {l.nivelMax > 0 && <span className={chip}>Até {l.nivelMax}º nível{l.arcana.length ? ` · Arcana ${l.arcana.join('º, ')}º` : ''}</span>}
+        {(x.truques > 0 || n.truques > 0) && <span className={chip + (n.truques > x.truques ? ' border-amber-400 text-amber-200' : '')}>Truques {n.truques}/{x.truques}</span>}
+        {(x.preparadas > 0 || n.preparadas > 0) && <span className={chip + (n.preparadas > x.preparadas ? ' border-amber-400 text-amber-200' : '')}>Preparadas {n.preparadas}/{x.preparadas}</span>}
+        {x.nivelMax > 0 && <span className={chip}>Prepara até {x.nivelMax}º{x.arcana.length ? ` · Arcana ${x.arcana.join('º, ')}º` : ''}</span>}
       </>}
-    </div>}
+    </div> })}
     {lista.length === 0 && <p className="rounded-xl border border-dashed border-(--a-55456e) p-4 text-sm text-(--a-c4b6d4)">Nenhuma magia ainda. {somenteLeitura ? '' : 'Toque em “Adicionar magias” para escolher pelo catálogo do SRD.'}</p>}
     {[...grupos].map(([nivel, ms]) => <div key={nivel} className="space-y-2">
       <h4 className="text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{nomeNivel(nivel)}</h4>
-      {ms.map(m => <LinhaMagia key={m.id} m={m} tipo={sel[m.id]} l={l} ataque={ataque} mod={mod} nivelPersonagem={nivelPersonagem} d={d} somenteLeitura={somenteLeitura}
-        rolar={rolar} conjurar={conjurar} remover={() => remover(m.id)} />)}
+      {ms.map(m => { const lc = limiteDa(sel[m.id]); return <LinhaMagia key={m.id} m={m} tipo={sel[m.id]} l={lc} varias={ls.length > 1} ataque={prof + modDe(lc)} mod={modDe(lc)} nivelPersonagem={nivelPersonagem} d={d} somenteLeitura={somenteLeitura}
+        rolar={rolar} conjurar={(mm, e) => conjurar(mm, e, lc)} remover={() => remover(m.id)} /> })}
     </div>)}
     <p className="text-[11px] text-(--a-8f84a6)">Magias do SRD 5.2.1 (Wizards of the Coast, CC BY 4.0). Nomes e resumos traduzidos pela plataforma; o texto original fica em “Detalhes”.</p>
-    {abrir && <JanelaMagias sel={sel} l={l} semLimites={semLimites} adicionar={adicionar} remover={remover} fechar={() => setAbrir(false)} />}
+    {abrir && <JanelaMagias sel={sel} ls={ls} semLimites={semLimites} adicionar={adicionar} remover={remover} fechar={() => setAbrir(false)} />}
   </section>
 }
 
@@ -95,12 +100,12 @@ function Etiquetas({ m }: { m: MagiaSrd }) {
   </>
 }
 
-function LinhaMagia({ m, tipo, l, ataque, mod, nivelPersonagem, d, somenteLeitura, rolar, conjurar, remover }: {
-  m: MagiaSrd; tipo: TipoMagia; l: ReturnType<typeof limitesMagiasDnd>; ataque: number; mod: number; nivelPersonagem: number; d: DadosFicha; somenteLeitura: boolean
+function LinhaMagia({ m, tipo, l, varias, ataque, mod, nivelPersonagem, d, somenteLeitura, rolar, conjurar, remover }: {
+  m: MagiaSrd; tipo: TipoMagia; l: LimitesMagia; varias: boolean; ataque: number; mod: number; nivelPersonagem: number; d: DadosFicha; somenteLeitura: boolean
   rolar: Props['rolar']; conjurar: (m: MagiaSrd, espaco: number) => void; remover: () => void
 }) {
   const minimo = l.classeId === 'bruxo' && m.nivel > 0 && m.nivel <= l.nivelMax ? l.nivelMax : m.nivel
-  const espacos = m.nivel === 0 ? [0] : l.classeId === 'bruxo' ? [minimo] : Array.from({ length: Math.max(1, (l.nivelMax || m.nivel) - m.nivel + 1) }, (_, i) => m.nivel + i)
+  const espacos = m.nivel === 0 ? [0] : l.classeId === 'bruxo' ? [minimo] : Array.from({ length: Math.max(1, (l.espacoMax || m.nivel) - m.nivel + 1) }, (_, i) => m.nivel + i)
   const [espaco, setEspaco] = useState(minimo)
   const [texto, setTexto] = useState<string | null>(null)
   const [aberto, setAberto] = useState(false)
@@ -115,6 +120,7 @@ function LinhaMagia({ m, tipo, l, ataque, mod, nivelPersonagem, d, somenteLeitur
     <div className="flex flex-wrap items-start gap-2">
       <div className="min-w-0 flex-1">
         <p className="flex flex-wrap items-center gap-1.5 font-semibold text-white">{m.nome} <Etiquetas m={m} />
+          {varias && tipo !== 'extra' && <span className="rounded bg-(--s-2b2140) px-1.5 text-[11px] font-normal text-(--a-d3adf0)">{l.classeNome}</span>}
           {tipo === 'extra' && <span className="rounded bg-amber-500/15 px-1.5 text-[11px] font-normal text-amber-200" title="Não conta no limite">extra</span>}</p>
         <p className="text-[11px] text-(--a-a998bd)">{m.en} · {m.escola} · {m.execucao} · {m.alcance} · {m.duracao}</p>
       </div>
@@ -136,10 +142,12 @@ function LinhaMagia({ m, tipo, l, ataque, mod, nivelPersonagem, d, somenteLeitur
   </article>
 }
 
-function JanelaMagias({ sel, l, semLimites, adicionar, remover, fechar }: {
-  sel: Record<string, TipoMagia>; l: ReturnType<typeof limitesMagiasDnd>; semLimites: boolean
-  adicionar: (m: MagiaSrd, t: TipoMagia) => void; remover: (id: string) => void; fechar: () => void
+function JanelaMagias({ sel, ls, semLimites, adicionar, remover, fechar }: {
+  sel: Record<string, TipoMagia>; ls: LimitesMagia[]; semLimites: boolean
+  adicionar: (m: MagiaSrd, t: 'preparada' | 'extra', l: LimitesMagia) => void; remover: (id: string) => void; fechar: () => void
 }) {
+  const [classe, setClasse] = useState(ls[0].classeId)
+  const l = ls.find(x => x.classeId === classe) ?? ls[0]
   const [busca, setBusca] = useState('')
   const [nivel, setNivel] = useState<number | 'todos'>('todos')
   const [daClasse, setDaClasse] = useState(!!l.atributo)
@@ -158,7 +166,11 @@ function JanelaMagias({ sel, l, semLimites, adicionar, remover, fechar }: {
           <h2 id="magias-titulo" className="flex-1 text-lg font-bold">Adicionar magias</h2>
           <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 hover:bg-(--s-2b2140)"><X size={20} /></button>
         </div>
-        {!semLimites && l.atributo && <p className="text-xs text-(--a-c4b6d4)">Truques {n.truques}/{l.truques} · Preparadas {n.preparadas}/{l.preparadas} · até {l.nivelMax}º nível. <strong>Extra</strong> é para magia que veio de subclasse, talento, item ou do mestre (não conta no limite).</p>}
+        {!semLimites && l.atributo && <p className="text-xs text-(--a-c4b6d4)">{ls.length > 1 ? l.classeNome + ': ' : ''}Truques {n.truques}/{l.truques} · Preparadas {n.preparadas}/{l.preparadas} · até {l.nivelMax}º nível. <strong>Extra</strong> é para magia que veio de subclasse, talento, item ou do mestre (não conta no limite).</p>}
+        {ls.length > 1 && !semLimites && <div role="radiogroup" aria-label="Preparar pela classe" className="flex flex-wrap gap-1.5">
+          {ls.map(x => <button key={x.classeId} type="button" role="radio" aria-checked={x.classeId === l.classeId} onClick={() => { setClasse(x.classeId); setLimite(40) }}
+            className={'rounded-full border px-3 py-1 text-sm ' + (x.classeId === l.classeId ? 'border-(--a-8b6cba) bg-(--s-2b2140) text-white' : 'border-(--a-5e4b78) text-(--a-c4b6d4)')}>{x.classeNome} {x.nivel}</button>)}
+        </div>}
         <div className="flex flex-wrap gap-2">
           <label className="relative min-w-0 flex-1 basis-48"><span className="sr-only">Buscar magia</span>
             <Search size={16} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-(--a-a998bd)" aria-hidden />
@@ -183,8 +195,8 @@ function JanelaMagias({ sel, l, semLimites, adicionar, remover, fechar }: {
               </div>
               {ja ? <button type="button" onClick={() => remover(m.id)} className={btn + ' border-emerald-500/50 text-emerald-200'}>✓ Na ficha</button>
                 : <div className="flex gap-1.5">
-                  {!semLimites && <button type="button" disabled={!!motivo} onClick={() => adicionar(m, 'preparada')} className={btn + ' border-(--a-8b6cba)'}>{m.nivel === 0 ? 'Aprender' : 'Preparar'}</button>}
-                  <button type="button" onClick={() => adicionar(m, 'extra')} className={btn} title="Não conta no limite da classe">{semLimites ? 'Adicionar' : 'Extra'}</button>
+                  {!semLimites && <button type="button" disabled={!!motivo} onClick={() => adicionar(m, 'preparada', l)} className={btn + ' border-(--a-8b6cba)'}>{m.nivel === 0 ? 'Aprender' : 'Preparar'}</button>}
+                  <button type="button" onClick={() => adicionar(m, 'extra', l)} className={btn} title="Não conta no limite da classe">{semLimites ? 'Adicionar' : 'Extra'}</button>
                 </div>}
             </div>
             {m.resumo && <p className="mt-1 text-xs text-(--a-cfc0df)">{m.resumo}</p>}

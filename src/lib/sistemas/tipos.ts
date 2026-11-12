@@ -93,7 +93,9 @@ export type DadosFicha = {
   /** Escolhas de marcos D&D. A progressão visual não concede bônus por si só. */
   dndEscolhas?: Record<string, string>
   /** Magias de D&D 2024: id da magia do SRD → 'preparada' (conta no limite) ou 'extra' (veio de outra fonte). */
-  dndMagias?: Record<string, 'preparada' | 'extra'>
+  dndMagias?: Record<string, string>
+  /** Multiclasse de D&D 2024: id da outra classe → níveis nela (a classe inicial fica com o resto do nível total). */
+  dndMulticlasse?: Record<string, number>
   /** Árvore de habilidades (ver arvore.ts). */
   arvore?: unknown
 }

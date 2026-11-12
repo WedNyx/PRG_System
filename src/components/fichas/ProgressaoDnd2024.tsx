@@ -25,9 +25,17 @@ export default function ProgressaoDnd2024({ marcos, ficha, modo, somenteLeitura 
   // Linha da tabela da classe no nível atual (Fúrias, Truques, Espaços de magia…).
   const tabela = Object.entries(ficha.nivelPorClasse).flatMap(([id, nivel]) => {
     const c = CLASSES_SRD.find(x => x.id === id)
-    return c ? [{ nome: c.nome, nivel, valores: Object.entries(c.colunas).map(([col, v]) => [col, v[Math.max(1, Math.min(20, nivel)) - 1]] as const).filter(([, v]) => v && v !== '—') }] : []
+    return c ? [{ nome: c.nome, nivel, valores: Object.entries(c.colunas).map(([col, v]) => [col, v[Math.max(1, Math.min(20, nivel)) - 1]] as const).filter(([col, v]) => v && v !== '—' && !(Object.keys(ficha.nivelPorClasse).length > 1 && /^Espaços de \d/.test(col))) }] : []
   })
-  const grupos = mostrar.reduce<Map<number, typeof mostrar>>((g, m) => g.set(m.nivel, [...(g.get(m.nivel) ?? []), m]), new Map())
+  // Multiclasse: um bloco por classe (no nível daquela classe); espécie e antecedente pelo nível total.
+  const ordemClasses = Object.keys(ficha.nivelPorClasse)
+  const varias = ordemClasses.length > 1
+  const daClasse = (m: MarcoDnd) => m.origem === 'classe' || m.origem === 'subclasse'
+  const chave = (m: MarcoDnd) => varias ? (daClasse(m) ? `${m.origemId}:${m.nivel}` : `pers:${m.nivel}`) : String(m.nivel)
+  const titulo = (m: MarcoDnd) => varias ? (daClasse(m) ? `${CLASSES_SRD.find(c => c.id === m.origemId)?.nome ?? m.origemId} ${m.nivel}` : `Personagem nível ${m.nivel}`) : `Nível ${m.nivel}`
+  const ordem = (m: MarcoDnd) => varias ? (daClasse(m) ? ordemClasses.indexOf(m.origemId) : ordemClasses.length) : 0
+  const ordenados = [...mostrar].sort((a, b) => ordem(a) - ordem(b) || a.nivel - b.nivel)
+  const grupos = ordenados.reduce<Map<string, typeof mostrar>>((g, m) => g.set(chave(m), [...(g.get(chave(m)) ?? []), m]), new Map())
   if (!regras.mostrarProgressaoOficial) {
     return <p className="rounded-xl border border-(--a-55456e) p-4 text-sm text-(--a-c4b6d4)">
       Modo manual: o mestre administra a árvore personalizada. A progressão oficial não é aplicada automaticamente.
@@ -46,8 +54,8 @@ export default function ProgressaoDnd2024({ marcos, ficha, modo, somenteLeitura 
       <dl className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 text-sm sm:grid-cols-3">{t.valores.map(([k, v]) => <div key={k} className="flex justify-between gap-2"><dt className="text-(--a-c4b6d4)">{k}</dt><dd className="font-semibold tabular-nums">{v}</dd></div>)}</dl>
     </div>)}
     {!visiveis.length && <p className="text-sm text-(--a-b4aeca)">Escolha classe, espécie e antecedente na aba Principal para ver a progressão.</p>}
-    {[...grupos].map(([nivel, lista]) => <div key={nivel}>
-      <h4 className="mb-1.5 mt-3 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Nível {nivel}</h4>
+    {[...grupos].map(([k, lista]) => <div key={k}>
+      <h4 className="mb-1.5 mt-3 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{titulo(lista[0])}</h4>
     <ol className="space-y-2">
       {lista.map(m => <li key={m.id} className={'rounded-xl border' + (m.estado === 'futuro' ? ' opacity-60' : '') + ' border-(--a-55456e) bg-(--s-171325) p-3'}>
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -67,6 +75,6 @@ export default function ProgressaoDnd2024({ marcos, ficha, modo, somenteLeitura 
       </li>)}
     </ol></div>)}
     {futuras.length > 0 && <button type="button" onClick={() => setVerFuturas(v => !v)} className="w-full rounded-xl border border-dashed border-(--a-6d5690) p-2 text-sm text-(--a-d6c8f0) hover:bg-(--s-2b2140)">{verFuturas ? 'Esconder os próximos níveis' : `Ver os próximos níveis (${futuras.length})`}</button>}
-    <p className="text-[11px] text-(--a-a998bd)">Fonte: SRD 5.2.1 (CC BY 4.0). Resumos próprios; o texto completo fica no SRD. Automático: salvaguardas da classe, perícias do antecedente e das escolhas, recursos da tabela (fúrias, foco, espaços de magia…), Defesa sem Armadura, Iniciativa com Alerta e deslocamento. À mão: aumentos de atributo, magias escolhidas e equipamento.</p>
+    <p className="text-[11px] text-(--a-a998bd)">Fonte: SRD 5.2.1 (CC BY 4.0). Resumos próprios; o texto completo fica no SRD. Automático: salvaguardas da classe, perícias do antecedente e das escolhas, recursos da tabela (fúrias, foco, espaços de magia…), Defesa sem Armadura, Iniciativa com Alerta e deslocamento. Magias: aba Poderes. À mão: aumentos de atributo e equipamento.</p>
   </section>
 }

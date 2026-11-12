@@ -9,6 +9,7 @@ import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { lerConfiguracaoProgressao } from '@/lib/sistemas/modoProgressao'
 import { lerEscolhasDnd, validarAlteracoesEscolhasDnd } from '@/lib/sistemas/dnd2024Ficha'
 import { lerMagiasDnd, validarAlteracoesMagiasDnd } from '@/lib/sistemas/dnd2024Conjuracao'
+import { idDe, lerMulticlasseDnd, validarAlteracoesMulticlasseDnd } from '@/lib/sistemas/dnd2024Classes'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
@@ -79,14 +80,22 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const antigo = f.dados as Partial<DadosFicha>
     const candidato = v.valor.dados as Partial<DadosFicha>
     const erros = validarAlteracoesEscolhasDnd(
-      { campos: antigo.campos ?? {}, dndEscolhas: antigo.dndEscolhas },
-      { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas },
+      { campos: antigo.campos ?? {}, dndEscolhas: antigo.dndEscolhas, dndMulticlasse: antigo.dndMulticlasse },
+      { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas, dndMulticlasse: candidato.dndMulticlasse },
     )
     erros.push(...validarAlteracoesMagiasDnd(
-      { campos: antigo.campos ?? {}, dndEscolhas: antigo.dndEscolhas, dndMagias: antigo.dndMagias },
-      { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas, dndMagias: candidato.dndMagias },
+      { campos: antigo.campos ?? {}, dndEscolhas: antigo.dndEscolhas, dndMagias: antigo.dndMagias, dndMulticlasse: antigo.dndMulticlasse },
+      { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas, dndMagias: candidato.dndMagias, dndMulticlasse: candidato.dndMulticlasse },
+    ))
+    erros.push(...validarAlteracoesMulticlasseDnd(
+      { campos: antigo.campos ?? {}, atributos: antigo.atributos ?? {}, dndMulticlasse: antigo.dndMulticlasse },
+      { campos: candidato.campos ?? {}, atributos: candidato.atributos ?? {}, dndMulticlasse: candidato.dndMulticlasse },
+      { ignorarRequisitos: admin },
     ))
     if (erros.length) throw new ErroApi(400, erros.join(' '))
+    if (candidato.dndMulticlasse !== undefined) {
+      v.valor.dados = { ...v.valor.dados, dndMulticlasse: lerMulticlasseDnd(candidato.dndMulticlasse, idDe(candidato.campos?.classe)) }
+    }
     if (candidato.dndEscolhas !== undefined) {
       v.valor.dados = { ...v.valor.dados, dndEscolhas: lerEscolhasDnd(candidato.dndEscolhas) }
     }
@@ -125,12 +134,17 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const anterior = f.dados as Partial<DadosFicha>
     const autorizado = final as Partial<DadosFicha>
     const erros = validarAlteracoesEscolhasDnd(
-      { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas },
-      { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas },
+      { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas, dndMulticlasse: anterior.dndMulticlasse },
+      { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas, dndMulticlasse: autorizado.dndMulticlasse },
     )
     erros.push(...validarAlteracoesMagiasDnd(
-      { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas, dndMagias: anterior.dndMagias },
-      { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas, dndMagias: autorizado.dndMagias },
+      { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas, dndMagias: anterior.dndMagias, dndMulticlasse: anterior.dndMulticlasse },
+      { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas, dndMagias: autorizado.dndMagias, dndMulticlasse: autorizado.dndMulticlasse },
+    ))
+    erros.push(...validarAlteracoesMulticlasseDnd(
+      { campos: anterior.campos ?? {}, atributos: anterior.atributos ?? {}, dndMulticlasse: anterior.dndMulticlasse },
+      { campos: autorizado.campos ?? {}, atributos: autorizado.atributos ?? {}, dndMulticlasse: autorizado.dndMulticlasse },
+      { ignorarRequisitos: admin },
     ))
     if (erros.length) throw new ErroApi(400, 'A escolha não foi liberada no nível autorizado: ' + erros.join(' '))
   }

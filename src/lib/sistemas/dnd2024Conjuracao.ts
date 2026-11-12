@@ -1,19 +1,19 @@
 /**
  * D&D 2024 — magias da ficha (v0.33.6). Fonte das regras: SRD 5.2.1 (CC BY 4.0).
  *
- * A ficha guarda só { idDaMagia: 'preparada' | 'extra' }:
- *  - 'preparada' conta no limite da tabela da classe (Truques / Magias preparadas) e precisa estar
- *    na lista da classe e num nível com espaço de magia;
+ * A ficha guarda só { idDaMagia: 'preparada' | 'preparada-<classe>' | 'extra' }:
+ *  - 'preparada' (classe inicial) ou 'preparada-<classe>' (outra classe da multiclasse) conta no limite da
+ *    tabela DAQUELA classe, como se fosse classe única (regra de multiclasse), e usa o atributo dela;
  *  - 'extra' é magia que veio de outro lugar (subclasse, talento, item, liberação do mestre):
  *    sempre preparada, não conta no limite.
  * Nada aqui mexe em atributos ou bônus: CD e ataque mágico usam o modificador já calculado.
  */
 import type { DadosFicha } from './tipos'
-import { CLASSES_SRD } from './dnd2024Srd'
+import { classesDaFicha, espacosDeMagia } from './dnd2024Classes'
 import { MAGIAS_SRD, type MagiaSrd } from './dnd2024Magias'
-import { progressoDaFichaDnd, lerEscolhasDnd } from './dnd2024Ficha'
+import { lerEscolhasDnd } from './dnd2024Ficha'
 
-export type TipoMagia = 'preparada' | 'extra'
+export type TipoMagia = 'preparada' | 'extra' | `preparada-${string}`
 export const MAX_MAGIAS = 120
 const POR_ID = new Map(MAGIAS_SRD.map(m => [m.id, m]))
 export const magiaPorId = (id: string): MagiaSrd | undefined => POR_ID.get(id)
@@ -29,7 +29,7 @@ export function lerMagiasDnd(valor: unknown): Record<string, TipoMagia> {
   const r: Record<string, TipoMagia> = {}
   if (!valor || typeof valor !== 'object' || Array.isArray(valor)) return r
   for (const [id, tipo] of Object.entries(valor).slice(0, MAX_MAGIAS)) {
-    if (POR_ID.has(id) && (tipo === 'preparada' || tipo === 'extra')) r[id] = tipo
+    if (POR_ID.has(id) && typeof tipo === 'string' && (tipo === 'preparada' || tipo === 'extra' || (tipo.startsWith('preparada-') && !!ATRIBUTO_CONJURACAO[tipo.slice(10)]))) r[id] = tipo as TipoMagia
   }
   return r
 }
@@ -40,6 +40,10 @@ export type LimitesMagia = {
   classeId: string
   classeNome: string
   nivel: number
+  /** Classe inicial (as magias dela ficam como 'preparada'; as outras, 'preparada-<classe>'). */
+  principal: boolean
+  /** Maior espaço de magia que a ficha tem (tabela de multiclasse ou Pacto) — para conjurar mais forte. */
+  espacoMax: number
   /** Atributo de conjuração (INT/SAB/CAR); vazio se a classe não conjura. */
   atributo: '' | 'INT' | 'SAB' | 'CAR'
   truques: number
@@ -53,13 +57,23 @@ export type LimitesMagia = {
   listasTruque: string[]
 }
 
-export function limitesMagiasDnd(d: Pick<DadosFicha, 'campos' | 'dndEscolhas'>): LimitesMagia {
-  const p = progressoDaFichaDnd(d)
+/** Valor guardado para uma magia preparada pela classe l. */
+export const tipoPreparada = (l: Pick<LimitesMagia, 'principal' | 'classeId'>): TipoMagia => l.principal ? 'preparada' : `preparada-${l.classeId}`
+/** Classe que preparou a magia (null = extra). */
+export function classeDoTipo(tipo: TipoMagia, principalId: string): string | null {
+  return tipo === 'extra' ? null : tipo === 'preparada' ? principalId : tipo.slice(10)
+}
+
+/** Limites de UMA classe (a inicial, se não disser qual). */
+export function limitesMagiasDnd(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>, classeId?: string): LimitesMagia {
   const escolhas = lerEscolhasDnd(d.dndEscolhas)
-  const [classeId, nivelClasse] = Object.entries(p.nivelPorClasse)[0] ?? ['', 0]
-  const cls = CLASSES_SRD.find(c => c.id === classeId)
-  const nivel = Math.max(1, Math.min(20, nivelClasse || 1))
-  const vazio: LimitesMagia = { classeId, classeNome: cls?.nome ?? '', nivel, atributo: '', truques: 0, preparadas: 0, nivelMax: 0, arcana: [], listas: [], listasTruque: [] }
+  const { lista } = classesDaFicha(d)
+  const c = classeId ? lista.find(x => x.cls.id === classeId) : lista.find(x => x.principal)
+  const cls = c?.cls
+  const nivel = Math.max(1, Math.min(20, c?.nivel ?? 1))
+  const esp = espacosDeMagia(lista)
+  const espacoMax = Math.max(esp.pactoNivel, ...esp.espacos.map((q, n) => q > 0 ? n : 0))
+  const vazio: LimitesMagia = { classeId: cls?.id ?? classeId ?? '', classeNome: cls?.nome ?? '', nivel, principal: c?.principal ?? !classeId, espacoMax, atributo: '', truques: 0, preparadas: 0, nivelMax: 0, arcana: [], listas: [], listasTruque: [] }
   if (!cls || !ATRIBUTO_CONJURACAO[cls.id]) return vazio
   const col = (nome: string) => cls.colunas[nome]?.[nivel - 1]
   let truques = numero(col('Truques'))
@@ -83,6 +97,11 @@ export function limitesMagiasDnd(d: Pick<DadosFicha, 'campos' | 'dndEscolhas'>):
   return { ...vazio, atributo: ATRIBUTO_CONJURACAO[cls.id], truques, preparadas: numero(col('Magias preparadas')), nivelMax, arcana, listas, listasTruque }
 }
 
+/** Todas as classes conjuradoras da ficha (a inicial primeiro). */
+export function conjuradoresDnd(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>): LimitesMagia[] {
+  return classesDaFicha(d).lista.map(c => limitesMagiasDnd(d, c.cls.id)).filter(l => l.atributo)
+}
+
 /** É uma magia de Arcana Mística (Bruxo, nível acima dos espaços de pacto)? */
 const ehArcana = (m: MagiaSrd, l: LimitesMagia) => l.classeId === 'bruxo' && m.nivel > l.nivelMax && l.arcana.includes(m.nivel)
 
@@ -91,7 +110,7 @@ export function contarMagias(sel: Record<string, TipoMagia>, l: LimitesMagia) {
   const arcana: Record<number, number> = {}
   for (const [id, tipo] of Object.entries(sel)) {
     const m = POR_ID.get(id)
-    if (!m || tipo !== 'preparada') continue
+    if (!m || tipo === 'extra' || tipo !== tipoPreparada(l)) continue
     if (m.nivel === 0) truques++
     else if (ehArcana(m, l)) arcana[m.nivel] = (arcana[m.nivel] ?? 0) + 1
     else preparadas++
@@ -116,12 +135,12 @@ export function motivoBloqueio(m: MagiaSrd, l: LimitesMagia, sel: Record<string,
  * mas uma magia nova 'preparada' precisa caber na lista, no nível e no limite.
  */
 export function validarAlteracoesMagiasDnd(
-  antes: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMagias'>,
-  depois: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMagias'>,
+  antes: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMagias' | 'dndMulticlasse'>,
+  depois: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMagias' | 'dndMulticlasse'>,
 ): string[] {
   if (depois.dndMagias !== undefined && depois.dndMagias !== null && (typeof depois.dndMagias !== 'object' || Array.isArray(depois.dndMagias))) return ['Magias de D&D devem formar um objeto.']
   const velhas = lerMagiasDnd(antes.dndMagias), novas = lerMagiasDnd(depois.dndMagias)
-  const l = limitesMagiasDnd(depois)
+  const porClasse = new Map(conjuradoresDnd(depois).map(l => [tipoPreparada(l), l]))
   const erros: string[] = []
   if (depois.dndMagias && typeof depois.dndMagias === 'object') {
     const ids = Object.keys(depois.dndMagias)
@@ -133,9 +152,11 @@ export function validarAlteracoesMagiasDnd(
   for (const [id, t] of Object.entries(novas)) if (velhas[id] === t) base[id] = t
   for (const [id, t] of Object.entries(novas)) {
     if (velhas[id] === t) continue
-    if (t === 'preparada') {
-      const motivo = motivoBloqueio(POR_ID.get(id)!, l, base)
-      if (motivo) { erros.push(`${POR_ID.get(id)!.nome}: ${motivo}`); continue }
+    if (t !== 'extra') {
+      const m = POR_ID.get(id)!
+      const l = porClasse.get(t) ?? (t === 'preparada' ? limitesMagiasDnd(depois) : undefined)
+      const motivo = l ? motivoBloqueio(m, l, base) : 'a classe que prepararia esta magia não está na ficha.'
+      if (motivo) { erros.push(`${m.nome}: ${motivo}`); continue }
     }
     base[id] = t
   }
@@ -168,6 +189,7 @@ export function expressaoMagia(m: MagiaSrd, o: { espaco?: number; nivelPersonage
 /** Id do recurso de espaço de magia usado ao conjurar no nível n (Bruxo usa o pacto). */
 export function recursoDoEspaco(l: LimitesMagia, n: number): string | null {
   if (n <= 0) return null
-  if (l.classeId === 'bruxo') return n <= l.nivelMax ? 'pacto' : null
+  if (l.classeId === 'bruxo' && n <= l.nivelMax) return 'pacto'
+  if (l.classeId === 'bruxo') return null
   return 'espacos_' + n
 }

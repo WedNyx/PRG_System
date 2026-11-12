@@ -9,7 +9,7 @@
  *    o valor do atributo é digitado pela pessoa, e somar aqui duplicaria.
  */
 import type { DadosFicha } from './tipos'
-import { CLASSES_SRD } from './dnd2024Srd'
+import { classesDaFicha, espacosDeMagia } from './dnd2024Classes'
 import { progressoDaFichaDnd, lerEscolhasDnd } from './dnd2024Ficha'
 
 export type Treino = 'proficiente' | 'especialista'
@@ -38,59 +38,65 @@ const NOME_ANTECEDENTE: Record<string, string> = { acolito: 'Acólito', criminos
 /** Número da coluna da tabela (“2”, “+3”, “1d6”, “+10 ft.”, “—”). */
 const numero = (v: string | undefined) => { const m = (v ?? '').match(/(\d+)/); return m ? Number(m[1]) : 0 }
 
-export function efeitosDnd2024(d: Pick<DadosFicha, 'campos' | 'dndEscolhas'>, vars: Record<string, number>): EfeitosDnd {
+export function efeitosDnd2024(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>, vars: Record<string, number>): EfeitosDnd {
   const v: Record<string, number> = Object.fromEntries(VARS_DND.map(k => [k, 0]))
   const treino: EfeitosDnd['treino'] = {}, bonus: EfeitosDnd['bonus'] = {}
   const p = progressoDaFichaDnd(d)
   const escolhas = lerEscolhasDnd(d.dndEscolhas)
-  const [classeId, nivelClasse] = Object.entries(p.nivelPorClasse)[0] ?? ['', 0]
-  const cls = CLASSES_SRD.find(c => c.id === classeId)
-  const nivel = Math.max(1, Math.min(20, nivelClasse || 1))
-  const prof = Math.floor((nivel - 1) / 4) + 2
-  v.dnd_nivel = nivel; v.dnd_prof = prof
+  const { total, lista } = classesDaFicha(d)
+  const prof = Math.floor((total - 1) / 4) + 2
+  v.dnd_nivel = total; v.dnd_prof = prof
   const mod = (a: string) => Number(vars['mod_' + a]) || 0
   const dar = (id: string, t: Treino, fonte: string) => { if (!treino[id] || (t === 'especialista' && treino[id].treino !== 'especialista')) treino[id] = { treino: t, fonte } }
   const somar = (id: string, valor: number, fonte: string) => { bonus['pericia:' + id] = { valor: (bonus['pericia:' + id]?.valor ?? 0) + valor, fonte } }
   const escolheu = (sufixo: string, opcao: string) => Object.entries(escolhas).some(([k, o]) => k.endsWith(sufixo) && o === opcao)
+  /** Nível numa classe (0 se não tem). */
+  const em = (id: string) => lista.find(c => c.cls.id === id)?.nivel ?? 0
   let meia = 0
+  const semArmadura = (Number(vars.ca_base) || 0) <= 10
+  const pesada = (Number(vars.des_max) || 0) === 0 && (Number(vars.ca_base) || 0) > 10
+  const extrasCa: number[] = []
 
-  if (cls) {
+  for (const c of lista) {
+    const { cls, nivel } = c
     const col = (nome: string) => cls.colunas[nome]?.[nivel - 1]
-    // Salvaguardas da classe
-    for (const a of cls.salvaguardas) dar(SALVA[a], 'proficiente', cls.nome)
-    if (cls.id === 'monge' && nivel >= 14) for (const a of SAVES) dar(SALVA[a], 'proficiente', 'Sobrevivente Disciplinado')
-    if (cls.id === 'ladino' && nivel >= 15) { dar(SALVA.SAB, 'proficiente', 'Mente Escorregadia'); dar(SALVA.CAR, 'proficiente', 'Mente Escorregadia') }
-    // Recursos pela tabela da classe
-    v.dnd_furias = numero(col('Fúrias')); v.dnd_dano_furia = numero(col('Dano da Fúria'))
-    v.dnd_canalizar = numero(col('Canalizar Divindade')); v.dnd_forma_selvagem = numero(col('Forma Selvagem'))
-    v.dnd_retomar = numero(col('Retomar o Fôlego')); v.dnd_foco = numero(col('Pontos de Foco')); v.dnd_feiticaria = numero(col('Pontos de Feitiçaria'))
-    v.dnd_inimigo = numero(col('Inimigo Favorito')); v.dnd_truques = numero(col('Truques')); v.dnd_preparadas = numero(col('Magias preparadas'))
-    v.dnd_furtivo = numero(col('Ataque Furtivo'))
-    for (let n = 1; n <= 9; n++) v['dnd_espacos_' + n] = numero(col(`Espaços de ${n}º nível`))
-    if (cls.id === 'bruxo') { v.dnd_pacto = numero(col('Espaços de magia')); v.dnd_pacto_nivel = numero(col('Nível dos espaços')) }
-    if (cls.id === 'bardo') v.dnd_inspiracao = Math.max(1, mod('CAR'))
-    if (cls.id === 'guerreiro') { v.dnd_surto = nivel >= 17 ? 2 : nivel >= 2 ? 1 : 0; v.dnd_indomavel = nivel >= 17 ? 3 : nivel >= 13 ? 2 : nivel >= 9 ? 1 : 0 }
-    if (cls.id === 'paladino') v.dnd_cura_maos = 5 * nivel
-    // Pau para Toda Obra (Bardo 2+): metade da proficiência nas perícias sem proficiência
-    if (cls.id === 'bardo' && nivel >= 2) meia = Math.floor(prof / 2)
-    // Ordem Divina / Ordem Primal: Sabedoria (mín. +1) em duas perícias
-    if (escolheu('-ordem-divina', 'taumaturgo')) for (const id of ['arcanismo', 'religiao']) somar(id, Math.max(1, mod('SAB')), 'Ordem Divina (Taumaturgo)')
-    if (escolheu('-ordem-primal', 'magico')) for (const id of ['arcanismo', 'natureza']) somar(id, Math.max(1, mod('SAB')), 'Ordem Primal (Mágico)')
-    // Defesa sem Armadura (sem armadura: CA base 10) e Resiliência Dracônica
-    const semArmadura = (Number(vars.ca_base) || 0) <= 10
-    const extras: number[] = []
-    if (semArmadura && cls.id === 'barbaro') extras.push(mod('CON'))
-    if (semArmadura && cls.id === 'monge' && !(Number(vars.armadura) > 0)) extras.push(mod('SAB'))
-    const draconico = cls.id === 'feiticeiro' && nivel >= 3 && escolhas['feiticeiro-subclasse'] === 'feiticaria-draconica'
-    if (semArmadura && draconico) extras.push(mod('CAR'))
-    v.dnd_ca_extra = extras.length ? Math.max(0, ...extras) : 0
-    if (draconico) v.dnd_pv_extra = nivel
-    // Deslocamento
-    const pesada = (Number(vars.des_max) || 0) === 0 && (Number(vars.ca_base) || 0) > 10
-    if (cls.id === 'barbaro' && nivel >= 5 && !pesada) v.dnd_desl_extra += 3
-    if (cls.id === 'patrulheiro' && nivel >= 6 && !pesada) v.dnd_desl_extra += 3
+    // Salvaguardas: só da classe inicial (quem entra numa classe por multiclasse não ganha as dela).
+    if (c.principal) for (const a of cls.salvaguardas) dar(SALVA[a], 'proficiente', cls.nome)
+    // Recursos pela tabela de cada classe, no nível daquela classe.
+    v.dnd_furias += numero(col('Fúrias')); v.dnd_dano_furia = Math.max(v.dnd_dano_furia, numero(col('Dano da Fúria')))
+    v.dnd_canalizar += numero(col('Canalizar Divindade')); v.dnd_forma_selvagem += numero(col('Forma Selvagem'))
+    v.dnd_retomar += numero(col('Retomar o Fôlego')); v.dnd_foco += numero(col('Pontos de Foco')); v.dnd_feiticaria += numero(col('Pontos de Feitiçaria'))
+    v.dnd_inimigo += numero(col('Inimigo Favorito')); v.dnd_truques += numero(col('Truques')); v.dnd_preparadas += numero(col('Magias preparadas'))
+    v.dnd_furtivo += numero(col('Ataque Furtivo'))
     if (cls.id === 'monge' && semArmadura && !(Number(vars.armadura) > 0)) v.dnd_desl_extra += numero(col('Movimento sem armadura')) / 10 * 3
   }
+  if (em('monge') >= 14) for (const a of SAVES) dar(SALVA[a], 'proficiente', 'Sobrevivente Disciplinado')
+  if (em('ladino') >= 15) { dar(SALVA.SAB, 'proficiente', 'Mente Escorregadia'); dar(SALVA.CAR, 'proficiente', 'Mente Escorregadia') }
+  // Espaços de magia: tabela da classe, ou a de multiclasse com duas ou mais classes conjuradoras.
+  const esp = espacosDeMagia(lista)
+  for (let n = 1; n <= 9; n++) v['dnd_espacos_' + n] = esp.espacos[n]
+  v.dnd_pacto = esp.pacto; v.dnd_pacto_nivel = esp.pactoNivel
+  if (em('bardo')) v.dnd_inspiracao = Math.max(1, mod('CAR'))
+  const g = em('guerreiro'); v.dnd_surto = g >= 17 ? 2 : g >= 2 ? 1 : 0; v.dnd_indomavel = g >= 17 ? 3 : g >= 13 ? 2 : g >= 9 ? 1 : 0
+  v.dnd_cura_maos = 5 * em('paladino')
+  // Pau para Toda Obra (Bardo 2+): metade da proficiência nas perícias sem proficiência
+  if (em('bardo') >= 2) meia = Math.floor(prof / 2)
+  // Ordem Divina / Ordem Primal: Sabedoria (mín. +1) em duas perícias
+  if (em('clerigo') && escolheu('-ordem-divina', 'taumaturgo')) for (const id of ['arcanismo', 'religiao']) somar(id, Math.max(1, mod('SAB')), 'Ordem Divina (Taumaturgo)')
+  if (em('druida') && escolheu('-ordem-primal', 'magico')) for (const id of ['arcanismo', 'natureza']) somar(id, Math.max(1, mod('SAB')), 'Ordem Primal (Mágico)')
+  // Defesa sem Armadura (sem armadura: CA base 10) e Resiliência Dracônica — só uma vale; fica a melhor.
+  if (semArmadura && em('barbaro')) extrasCa.push(mod('CON'))
+  if (semArmadura && em('monge') && !(Number(vars.armadura) > 0)) extrasCa.push(mod('SAB'))
+  const draconico = em('feiticeiro') >= 3 && escolhas['feiticeiro-subclasse'] === 'feiticaria-draconica'
+  if (semArmadura && draconico) extrasCa.push(mod('CAR'))
+  v.dnd_ca_extra = extrasCa.length ? Math.max(0, ...extrasCa) : 0
+  if (draconico) v.dnd_pv_extra += em('feiticeiro')
+  // PV na multiclasse: a fórmula usa o dado da classe inicial; cada nível de outra classe usa a média do dado dela.
+  const principal = lista.find(c => c.principal)
+  if (principal) for (const c of lista) if (!c.principal) v.dnd_pv_extra += c.nivel * ((Math.floor(c.cls.dv / 2) + 1) - (Math.floor(principal.cls.dv / 2) + 1))
+  // Deslocamento
+  if (em('barbaro') >= 5 && !pesada) v.dnd_desl_extra += 3
+  if (em('patrulheiro') >= 6 && !pesada) v.dnd_desl_extra += 3
   if (p.especieId === 'elfo' && escolhas['esp-elfo-linhagem'] === 'elfo-floresta') v.dnd_desl_extra += 1.5
   // Perícias do antecedente e da espécie
   for (const id of PERICIAS_ANTECEDENTE[p.antecedenteId ?? ''] ?? []) dar(id, 'proficiente', NOME_ANTECEDENTE[p.antecedenteId!])

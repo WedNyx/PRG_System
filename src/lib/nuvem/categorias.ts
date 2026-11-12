@@ -44,6 +44,7 @@ function categoriaGenerica(caminho: string): Campo {
   if (caminho === 'arvore') return 'habilidades'
   if (caminho === 'dndEscolhas') return 'habilidades'
   if (caminho === 'dndMagias') return 'habilidades'
+  if (caminho === 'dndMulticlasse') return 'nivel'
   if (caminho === 'uso') return 'pv'
   if (caminho.startsWith('campos.')) {
     const k = caminho.slice(7)

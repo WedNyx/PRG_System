@@ -1,11 +1,7 @@
 import type { DadosFicha } from './tipos'
 import { progressaoVisivel, type ProgressoDnd } from './dnd2024Progressao'
 import { MARCOS_DND_2024 } from './dnd2024Marcos'
-
-/** Mantém a seleção compatível com o formato da ficha genérica já existente. */
-const idDe = (valor: unknown): string => typeof valor === 'string'
-  ? valor.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) : ''
+import { classesDaFicha, idDe } from './dnd2024Classes'
 
 export function lerEscolhasDnd(valor: unknown): Record<string, string> {
   const resultado: Record<string, string> = {}
@@ -18,12 +14,12 @@ export function lerEscolhasDnd(valor: unknown): Record<string, string> {
   return resultado
 }
 
-export function progressoDaFichaDnd(d: Pick<DadosFicha, 'campos' | 'dndEscolhas'>): ProgressoDnd {
-  const classeId = idDe(d.campos.classe)
-  const nivelLido = Number(d.campos.nivel)
-  const nivel = Number.isInteger(nivelLido) ? Math.max(1, Math.min(20, nivelLido)) : 1
+export function progressoDaFichaDnd(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>): ProgressoDnd {
+  const { lista, total } = classesDaFicha(d)
+  const classeLivre = idDe(d.campos.classe)
   return {
-    nivelPorClasse: classeId ? { [classeId]: nivel } : {},
+    // Classe fora do catálogo (digitada à mão) continua contando o nível total, como antes.
+    nivelPorClasse: lista.length ? Object.fromEntries(lista.map(c => [c.cls.id, c.nivel])) : classeLivre ? { [classeLivre]: total } : {},
     especieId: idDe(d.campos.especie),
     antecedenteId: idDe(d.campos.antecedente),
     escolhas: lerEscolhasDnd(d.dndEscolhas),
@@ -37,8 +33,8 @@ export function progressoDaFichaDnd(d: Pick<DadosFicha, 'campos' | 'dndEscolhas'
  * para que corrigir PV ou inventário não destrua dados legados.
  */
 export function validarAlteracoesEscolhasDnd(
-  antes: Pick<DadosFicha, 'campos' | 'dndEscolhas'>,
-  depois: Pick<DadosFicha, 'campos' | 'dndEscolhas'>,
+  antes: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>,
+  depois: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>,
 ): string[] {
   const anteriores = lerEscolhasDnd(antes.dndEscolhas)
   const novas = lerEscolhasDnd(depois.dndEscolhas)

@@ -89,6 +89,8 @@ export type DadosFicha = {
   nivelAtributos?: Record<string, number>
   poderes?: unknown[]
   uso?: unknown
+  /** Escolhas de marcos D&D. A progressão visual não concede bônus por si só. */
+  dndEscolhas?: Record<string, string>
   /** Árvore de habilidades (ver arvore.ts). */
   arvore?: unknown
 }

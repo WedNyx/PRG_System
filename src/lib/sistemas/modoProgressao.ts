@@ -5,12 +5,12 @@ export type ConfiguracaoProgressao = {
   /** Permite ao mestre autorizar uma exceção para uma ficha específica. */
   excecoesPorFicha?: Record<string, ModoProgressao>
 }
-export const configuracaoProgressaoPadrao = (): ConfiguracaoProgressao => ({ modo: 'automatico' })
+export const configuracaoProgressaoPadrao = (): ConfiguracaoProgressao => ({ modo: 'hibrido' })
 
 export function lerConfiguracaoProgressao(valor: unknown): ConfiguracaoProgressao {
   if (!valor || typeof valor !== 'object') return configuracaoProgressaoPadrao()
   const objeto = valor as Record<string, unknown>
-  const modo = modoValido(objeto.modo) ? objeto.modo : 'automatico'
+  const modo = modoValido(objeto.modo) ? objeto.modo : 'hibrido'
   const excecoesPorFicha: Record<string, ModoProgressao> = {}
   if (objeto.excecoesPorFicha && typeof objeto.excecoesPorFicha === 'object') {
     for (const [id, escolha] of Object.entries(objeto.excecoesPorFicha)) {

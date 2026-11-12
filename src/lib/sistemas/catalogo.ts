@@ -127,7 +127,7 @@ export const SISTEMAS: Sistema[] = [
     formulaModificador: 'piso((X - 10) / 2)',
     derivados: [
       { id: 'prof', nome: 'Bônus de proficiência', formula: 'piso((max(1, nivel) - 1) / 4) + 2' },
-      { id: 'ca', nome: 'Classe de Armadura', formula: 'ca_base + min(mod_DES, des_max) + armadura', dica: 'Base da armadura + Destreza (até o limite) + escudo' },
+      { id: 'ca', nome: 'Classe de Armadura', formula: 'ca_base + se(des_max, min(mod_DES, des_max), 0) + armadura', dica: 'Base da armadura + Destreza (até o limite) + escudo' },
       { id: 'pv_sugerido', nome: 'PV máximos (média fixa)', formula: 'se(dv, dv, dado_vida) + mod_CON + (max(1, nivel) - 1) * (piso(se(dv, dv, dado_vida) / 2) + 1 + mod_CON) + robusto * max(1, nivel)', dica: 'Nível 1: dado cheio + CON; depois a média do dado + CON por nível' },
       { id: 'iniciativa', nome: 'Iniciativa', formula: 'mod_DES' },
       { id: 'percepcao_passiva', nome: 'Percepção passiva', formula: '10 + tot_percepcao' },

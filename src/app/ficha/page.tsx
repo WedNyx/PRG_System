@@ -8,7 +8,7 @@ import { sistemaPorId } from '@/lib/sistemas/catalogo'
 import { obterSistema } from '@/lib/sistemas/cliente'
 import { normalizarFicha } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
-import { lerConfiguracaoProgressao, type ConfiguracaoProgressao, type ModoProgressao } from '@/lib/sistemas/modoProgressao'
+import { lerConfiguracaoProgressao, modoDaFicha, type ConfiguracaoProgressao, type ModoProgressao } from '@/lib/sistemas/modoProgressao'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import { CAMPOS } from '@/lib/campanhas/permissoes'
 import { toast } from 'sonner'
@@ -65,6 +65,9 @@ function Conteudo() {
   const [campanhaId, setCampanhaId] = useState<string | null>(null)
   const [modoProgressao, setModoProgressao] = useState<ModoProgressao>('hibrido')
   const [podeEditarArvore, setPodeEditarArvore] = useState(true)
+  /** Mestre numa campanha de D&D: modo da campanha e a exceção desta ficha (v0.33.6). */
+  const [config, setConfig] = useState<ConfiguracaoProgressao | null>(null)
+  const [souMestre, setSouMestre] = useState(false)
   const [passando, setPassando] = useState<{ item: Item; tem: number } | null>(null)
 
   useEffect(() => {
@@ -81,7 +84,10 @@ function Conteudo() {
           if (!ativo) return
           versao.current = r.ficha.versao
           setCampanhaId(r.ficha.campanha_id ?? null)
-          setModoProgressao(lerConfiguracaoProgressao(r.configProgressao).modo)
+          // A exceção desta ficha (se o mestre deu uma) vale no lugar do modo da campanha.
+          const cfg = lerConfiguracaoProgressao(r.configProgressao)
+          setConfig(cfg); setSouMestre(!!r.souMestre)
+          setModoProgressao(modoDaFicha(cfg, nuvem))
           setPodeEditarArvore(!r.ficha.campanha_id || !!r.souMestre)
           setSistema(s); setDados(normalizarFicha(s, r.ficha.dados)); setEstado(r.podeEditar ? 'salvo' : 'leitura')
         } else if (local) {
@@ -157,6 +163,17 @@ function Conteudo() {
       {aviso && <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-(--a-62527e) bg-(--s-1f2a40) p-3 text-sm">
         <span className="flex-1">{aviso.texto}</span>{aviso.desfazer && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-(--a-b99bff) px-3 py-1">Desfazer (voltar ao salvo)</button>}</p>}
       {sistema && dados ? <FichaGenerica sistema={sistema} dados={dados} onChange={mudar} somenteLeitura={estado === 'leitura'} modoProgressao={modoProgressao} podeEditarArvore={podeEditarArvore}
+        excecaoModo={campanhaId && nuvem && souMestre && config && sistema.id === 'dnd5e-srd' ? {
+          campanha: config.modo, atual: config.excecoesPorFicha?.[nuvem] ?? null,
+          mudar: async modo => {
+            try {
+              const r = await api<{ campanha: { config_progressao?: unknown } }>('campanhas/' + campanhaId, { method: 'PATCH', body: { excecaoFicha: { fichaId: nuvem, modo } } })
+              const cfg = lerConfiguracaoProgressao(r.campanha.config_progressao)
+              setConfig(cfg); setModoProgressao(modoDaFicha(cfg, nuvem))
+              toast.success(modo ? 'Esta ficha agora tem um modo próprio.' : 'Esta ficha voltou a seguir a campanha.')
+            } catch (e) { toast.error(e instanceof ErroNuvem ? e.message : 'Falha ao salvar o modo.') }
+          },
+        } : undefined}
         rolarNaCampanha={campanhaId ? async (expressao, rotulo, extra) => {
           try { const r = await api<{ evento: { resultados: number[]; total: number } }>('mesa/' + campanhaId, { method: 'POST', body: { acao: 'evento', tipo: 'rolagem', expressao, personagem: dados.nome, texto: rotulo, ...extra } }); return r.evento }
           catch (e) { setErro(e instanceof ErroNuvem ? e.message : 'Falha ao rolar.'); return null }

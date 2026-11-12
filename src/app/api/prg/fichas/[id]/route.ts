@@ -5,6 +5,7 @@ import { diferencas, aplicar, separarPorRegra, resumoMudanca, type Mudanca } fro
 import type { Campo } from '@/lib/campanhas/permissoes'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { normalizarFicha } from '@/lib/sistemas/calculo'
+import { lerArvore } from '@/lib/sistemas/arvore'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { lerConfiguracaoProgressao } from '@/lib/sistemas/modoProgressao'
 import { lerEscolhasDnd, validarAlteracoesEscolhasDnd } from '@/lib/sistemas/dnd2024Ficha'
@@ -102,6 +103,13 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     if (candidato.dndMagias !== undefined) {
       v.valor.dados = { ...v.valor.dados, dndMagias: lerMagiasDnd(candidato.dndMagias) }
     }
+  }
+
+  // Hexágonos concedidos (exceção do mestre, sem custo): na campanha, só o mestre concede ou retira.
+  if (f.campanha_id && !admin) {
+    const antes = lerArvore((f.dados as Partial<DadosFicha>)?.arvore).concedidos ?? []
+    const depois = lerArvore((v.valor.dados as Partial<DadosFicha>)?.arvore).concedidos ?? []
+    if (antes.length !== depois.length || antes.some(x => !depois.includes(x))) throw new ErroApi(403, 'Só o mestre concede ou retira hexágonos sem custo.')
   }
 
   let final: Record<string, unknown> = v.valor.dados

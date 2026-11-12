@@ -1,6 +1,6 @@
 import { ator, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
-import { podeAdministrar, situacaoConvite, validarCampanha, type ConviteRow } from '@/lib/nuvem/validacao'
-import { lerConfiguracaoProgressao } from '@/lib/sistemas/modoProgressao'
+import { isUuid, podeAdministrar, situacaoConvite, validarCampanha, type ConviteRow } from '@/lib/nuvem/validacao'
+import { lerConfiguracaoProgressao, type ModoProgressao } from '@/lib/sistemas/modoProgressao'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
@@ -32,7 +32,25 @@ export const PATCH = rota<Ctx>(async (req, { params }) => {
   const { id } = await params
   const eu = await ator(req)
   if (!podeAdministrar(await papelNaCampanha(id, eu))) throw new ErroApi(403, 'Apenas o mestre pode alterar a campanha.')
-  const v = validarCampanha(await lerJson(req), true)
+  const corpo = await lerJson(req)
+  // Exceção de UMA ficha (v0.33.6): { excecaoFicha: { fichaId, modo: 'hibrido'|'automatico'|'manual'|null } }. null volta a seguir a campanha.
+  const ex = (corpo as { excecaoFicha?: { fichaId?: unknown; modo?: unknown } } | null)?.excecaoFicha
+  if (ex !== undefined) {
+    if (!ex || typeof ex !== 'object' || !isUuid(ex.fichaId) || !(ex.modo === null || ex.modo === 'hibrido' || ex.modo === 'automatico' || ex.modo === 'manual'))
+      throw new ErroApi(400, 'Exceção inválida.')
+    const [ficha] = await rest<{ id: string }[]>(`prg_fichas?select=id&id=eq.${q(ex.fichaId as string)}&campanha_id=eq.${q(id)}&limit=1`)
+    if (!ficha) throw new ErroApi(404, 'Ficha não encontrada nesta campanha.')
+    const [atual] = await rest<{ config_progressao?: unknown }[]>(`prg_campanhas?select=config_progressao&id=eq.${q(id)}&limit=1`)
+      .catch(() => { throw new ErroApi(409, 'O modo de progressão precisa da migração 027 no banco. Avise o administrador.') })
+    const cfg = lerConfiguracaoProgressao(atual?.config_progressao)
+    const excecoesPorFicha = { ...cfg.excecoesPorFicha }
+    if (ex.modo) excecoesPorFicha[ficha.id] = ex.modo as ModoProgressao; else delete excecoesPorFicha[ficha.id]
+    const [campanha] = await rest<Record<string, unknown>[]>(`prg_campanhas?id=eq.${q(id)}`, {
+      method: 'PATCH', prefer: 'return=representation', body: JSON.stringify({ config_progressao: { modo: cfg.modo, excecoesPorFicha }, atualizada_em: new Date().toISOString() }),
+    })
+    return ok({ campanha })
+  }
+  const v = validarCampanha(corpo, true)
   if (!v.ok) throw new ErroApi(400, v.erro)
   if (!Object.keys(v.valor).length) throw new ErroApi(400, 'Nada para alterar.')
   if (v.valor.config_progressao) {

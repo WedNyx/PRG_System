@@ -25,14 +25,17 @@ import { expressaoParada, leituraBlades, leituraD100 } from '@/lib/sistemas/comb
 import TesteAssimilacao from './TesteAssimilacao'
 import MagiasDnd2024 from './MagiasDnd2024'
 import MulticlasseDnd2024 from './MulticlasseDnd2024'
+import ExcecaoModo from './ExcecaoModo'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
 const sinal = (n: number | null | undefined) => n === null || n === undefined ? '—' : n >= 0 ? '+' + n : String(n)
 
 /** Ficha que se monta sozinha a partir do modelo do sistema. */
-export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, rolarNaCampanha, passarItem }: {
+export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, excecaoModo, rolarNaCampanha, passarItem }: {
   sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean; modoProgressao?: ModoProgressao; podeEditarArvore?: boolean
+  /** Mestre de campanha de D&D: troca o modo só desta ficha (exceção). */
+  excecaoModo?: { campanha: ModoProgressao; atual: ModoProgressao | null; mudar: (m: ModoProgressao | null) => void | Promise<void> }
   /** Se a ficha é de campanha: rola no servidor e publica no chat da mesa. */
   rolarNaCampanha?: (expressao: string, rotulo: string, extra?: { estilo: 'assimilacao'; manter?: number; todos?: boolean }) => Promise<{ resultados: number[]; total: number } | null>
   /** Ficha de campanha: passar um item para outro personagem. */
@@ -256,6 +259,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     </section>}
         </>}
         {secao === 'arvore' && <div className="space-y-4">
+          {excecaoModo && <ExcecaoModo {...excecaoModo} />}
           {s.id === 'dnd5e-srd' && <MulticlasseDnd2024 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
           {s.id === 'dnd5e-srd' && modoProgressao !== 'manual' && <>
             <ProgressaoDnd2024
@@ -274,7 +278,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
           {(s.id !== 'dnd5e-srd' || modoProgressao !== 'automatico') &&
             <ArvoreHabilidades s={s} d={d} onChange={onChange}
               somenteLeitura={somenteLeitura || (s.id === 'dnd5e-srd' && !podeEditarArvore)}
-              rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0} />}
+              rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0}
+              mestre={podeEditarArvore} nivel={s.campos.some(x => x.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null} />}
         </div>}
         {secao === 'habilidades' && <>
     {s.id === 'dnd5e-srd' && <MagiasDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} semLimites={modoProgressao === 'manual'} rolar={(x, r) => void rolarExpr(x, r)} />}

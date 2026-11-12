@@ -26,7 +26,7 @@ import TesteAssimilacao from './TesteAssimilacao'
 import MagiasDnd2024 from './MagiasDnd2024'
 import MulticlasseDnd2024 from './MulticlasseDnd2024'
 import ExcecaoModo from './ExcecaoModo'
-import ConferenciaDnd from './ConferenciaDnd'
+import ConferenciaFicha from './ConferenciaFicha'
 import { fontePermitida } from '@/lib/sistemas/dnd2024Fontes'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
@@ -125,7 +125,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
   const listasDe = (sec: string) => s.listas.filter(l => secaoDeLista(l.id) === sec)
   const SECOES = ([
     { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade e recursos', ajuda: 'Nome, imagem e os dados básicos do personagem. Mais abaixo ficam os valores calculados e as barras de vida e recursos (use − e +).', ok: true },
-    { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? 'Atributos e perícias' : s.pericias.titulo ?? 'Perícias') : 'Atributos', sub: 'Testes e rolagens', ajuda: s.atributos.length ? 'Digite os valores dos atributos; os bônus se calculam sozinhos. Toque no bônus de um teste ou perícia para rolar.' : s.pericias?.modo === 'valor' ? 'Digite a porcentagem de cada perícia e toque nela para rolar.' : 'Escolha o grau de cada uma e toque no valor para rolar.', ok: s.atributos.length > 0 || !!s.pericias },
+    { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? 'Atributos e perícias' : s.pericias.titulo ?? 'Perícias') : 'Atributos', sub: 'Testes e rolagens', ajuda: s.atributos.length ? (s.formulaModificador ? 'Digite os valores dos atributos; os bônus se calculam sozinhos. Toque no bônus de um teste ou perícia para rolar.' : s.rolagem === 'assimilacao' ? 'Digite os pontos de cada Instinto. Use o Teste logo abaixo para rolar os dados de símbolos.' : s.rolagem === 'parada' || s.id === 'ordem-paranormal' ? 'Digite os pontos de cada atributo. Toque num teste ou perícia para rolar a parada de dados.' : 'Digite o valor de cada atributo (ele já é o bônus). Toque num teste ou perícia para rolar.') : s.pericias?.modo === 'valor' ? 'Digite a porcentagem de cada perícia e toque nela para rolar.' : 'Escolha o grau de cada uma e toque no valor para rolar.', ok: s.atributos.length > 0 || !!s.pericias },
     { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ajuda: 'Adicione poderes com custo, usos e dano. Toque no dado do poder para rolar; os usos gastos voltam no descanso.', ok: true },
     { id: 'arvore', icone: '🌠', nome: 'Árvore de habilidades', sub: 'Hexágonos, pontos e caminhos', ajuda: 'Gaste pontos para liberar habilidades. Uma habilidade só abre quando a anterior do caminho já foi liberada.', ok: true },
     { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou desenho, separados em abas por tipo. Itens equipados contam nos bônus; os mágicos ficam numa ala própria.', ok: true },
@@ -170,7 +170,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       <div className="min-w-0 flex-1 space-y-4">
         {atual && <p className="flex gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-2 text-xs text-(--a-cfc0df)"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></p>}
         {secao === 'principal' && <>
-    {s.id === 'dnd5e-srd' && <ConferenciaDnd d={d} c={c} efeitos={efeitosDnd} ir={ir} />}
+    {s.id !== 'livre' && s.tipo !== 'autoral' && <ConferenciaFicha s={s} d={d} c={c} efeitos={efeitosDnd} ir={ir} />}
     <section className={card}>
       <div className="flex items-start gap-4">
         <Retrato url={d.retrato} nome={d.nome} somenteLeitura={somenteLeitura} onChange={u => onChange({ ...d, retrato: u ?? undefined })} />

@@ -161,6 +161,6 @@ export const GUIAS: Record<string, GuiaSistema> = {
       'Use os recursos (Vida, Energia, Mente) e as listas para o resto.',
     ],
     automatico: ['Nada é calculado: é uma ficha em branco organizada.'],
-    dicas: ['Ideal para sistemas que ainda não estão na plataforma, como Assimilação.'],
+    dicas: ['Ideal para sistemas que ainda não estão na plataforma (ou para um sistema caseiro que ainda não foi montado no construtor).', 'Quer cálculos automáticos? Monte o sistema em “Sistemas autorais” e as fichas novas já vêm com fórmulas, árvore e rolagem.'],
   },
 }

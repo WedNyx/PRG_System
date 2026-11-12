@@ -6,6 +6,12 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.33.4', data: '2026-11-12', titulo: 'Cartões ilustrados dos sistemas',
+    itens: [
+      '🃏 Cartões dos sistemas no estilo ilustrado, com as capas novas de todos os sistemas (artes do Wed): a ilustração fica à direita e se funde com o fundo, com título grande, selos, descrição e os botões “Guia do mestre” e “Criar ficha” por cima. Cada sistema ganhou a sua cor na borda brilhante e no botão de criar ficha (vermelho no D&D, azul no Pathfinder, verde no BRP, âmbar no Faroeste…).',
+    ],
+  },
+  {
     versao: '0.33.3', data: '2026-11-12', titulo: 'Dois sistemas novos',
     itens: [
       '🩸 Novo sistema: RPG PUNK — MÖRK BORG (estrutura). Agilidade, Presença, Força e Resistência de −3 a +6, testes de d20 contra CD 12 ao tocar no valor, as seis classes opcionais (com dado de PV, Presságios e prata na descrição), armadura que muda a CD da defesa e dos testes de Agilidade, carga de Força + 8 itens e listas para armas e pergaminhos.',

@@ -21,7 +21,7 @@ Não reutilizar a compra de nós para a progressão oficial do D&D. A visualiza�
 - O padrão está no módulo de regras; ainda não há seletor na UI nem persistência conectada à campanha. Não alterar fichas existentes silenciosamente ao integrar.
 
 ## Contrato desta primeira PR
-Esta PR agora inclui a fundação, um seletor de modo de progressão no formulário de campanhas na nuvem, persistência em `config_progressao`, leitura do modo pela ficha genérica de D&D, visão dos marcos e escolhas na aba Árvore e testes. Não altera fichas antigas em massa. O catálogo é **parcial** (somente alguns marcos do Guerreiro extraídos do SRD 5.2.1 e exemplos de teste). Outras classes ainda não foram implementadas; nada aqui concede bônus automáticos.
+Esta PR agora inclui a fundação, um seletor de modo de progressão no formulário de campanhas na nuvem, persistência em `config_progressao`, leitura do modo pela ficha genérica de D&D, visão dos marcos e escolhas na aba Árvore e testes. Não altera fichas antigas em massa. O catálogo é **parcial** (marcos das tabelas de Guerreiro, Ladino e Mago do nível 1 ao 20, sem seus efeitos automáticos.2.1 e exemplos de teste). Outras classes ainda não foram implementadas; nada aqui concede bônus automáticos.
 
 ## Integração pronta nesta branch (depende de migração)
 - **Banco:** aplicar `supabase/migrations/20261112120000_dnd_progression_mode.sql` antes de subir o código. Adiciona `config_progressao jsonb` em `prg_campanhas` com padrão Híbrido.
@@ -42,3 +42,10 @@ Esta PR agora inclui a fundação, um seletor de modo de progressão no formulá
 
 ## Limitações
 O Livro do Jogador de 2024 é comercial; o SRD 5.2.1 não cobre todas as opções do livro. Consultar o material original e respeitar licenças. A árvore existente de outros sistemas não deve mudar.
+
+## Incremento desta etapa — pesquisa e segurança
+- Tabelas oficiais de características (não slots de magia) de Guerreiro, Ladino e Mago até o nível 20; apenas a subclasse aberta do SRD de cada classe foi registrada como opção selecionável.
+- Validação de novas escolhas de subclasse no servidor: classe correta, nível mínimo e opção existente no catálogo. Escolhas históricas não editadas continuam preservadas.
+- Correção da CA de armadura pesada: sem modificador de Destreza mesmo quando negativo, com testes de regressão.
+- Guia de D&D expandido diretamente em `src/lib/sistemas/guias.ts` com roteiro conjunto mestre-jogador, limites atuais e dicas.
+- Tarefas ainda pendentes: executar todos os testes, concluir catálogo das nove espécies SRD e do restante das classes, sincronização de efeitos, subclasses e magias, e migração do banco antes de publicação.

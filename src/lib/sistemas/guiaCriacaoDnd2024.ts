@@ -10,6 +10,8 @@ import { idDe } from './dnd2024Classes'
 import { progressoDaFichaDnd } from './dnd2024Ficha'
 import { progressaoVisivel } from './dnd2024Progressao'
 import { MARCOS_DND_2024 } from './dnd2024Marcos'
+import { MARCOS_ORIGENS_SRD } from './dnd2024Origens'
+import { lerEscolhasDnd } from './dnd2024Ficha'
 import { conjuradoresDnd } from './dnd2024Conjuracao'
 
 export type EstadoEtapa = 'registrado' | 'pendente' | 'revisar' | 'nao-aplica'
@@ -24,9 +26,23 @@ export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
   const classe = CLASSES_SRD.find(c => c.id === idDe(campo('classe')))
   const preenchidos = ['FOR','DES','CON','INT','SAB','CAR'].map(id => Number(d.atributos?.[id]))
   const atributosAnotados = preenchidos.every(n => Number.isFinite(n) && n >= 3) && preenchidos.some(n => n !== 10)
-  const marcos = progressaoVisivel(MARCOS_DND_2024, progressoDaFichaDnd(d))
+  const progresso = progressoDaFichaDnd(d)
+  const marcos = progressaoVisivel(MARCOS_DND_2024, progresso)
   const pendentes = marcos.filter(m => m.estado === 'escolher' || m.estado === 'pendente')
-  const precisaMagias = conjuradoresDnd(d).some(l => l.truques > 0 || l.preparadas > 0)
+  const escolhas = lerEscolhasDnd(d.dndEscolhas)
+  const especieId = progresso.especieId ?? ''
+  const antecedenteId = progresso.antecedenteId ?? ''
+  // Opções do nível 1 são obrigatórias assim que a espécie é escolhida,
+  // mesmo antes de a classe ter sido definida. Não presumir aprovação só pelo nome.
+  const escolhasDaEspecie = MARCOS_ORIGENS_SRD.filter(m =>
+    m.origem === 'especie' && m.origemId === especieId && m.modo === 'escolha' && m.nivel === 1)
+  const faltasEspecie = escolhasDaEspecie.filter(m =>
+    !m.opcoes?.some(o => o.id === escolhas[m.id]))
+  const especieAberta = MARCOS_ORIGENS_SRD.some(m => m.origem === 'especie' && m.origemId === especieId)
+  const antecedenteAberto = MARCOS_ORIGENS_SRD.some(m => m.origem === 'antecedente' && m.origemId === antecedenteId)
+  const especieMagica = ['elfo', 'gnomo', 'tiferino'].includes(especieId)
+  const precisaMagiasDaClasse = conjuradoresDnd(d).some(l => l.truques > 0 || l.preparadas > 0)
+  const precisaMagias = precisaMagiasDaClasse || especieMagica
   const magiaAnotada = !!d.dndMagias && Object.keys(d.dndMagias).length > 0
   const equipAnotado = Array.isArray(d.itens) && d.itens.length > 0
   return [
@@ -35,10 +51,23 @@ export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
     { id: 'classe', titulo: '2. Classe inicial', estado: classe ? 'registrado' : 'pendente', aba: 'principal',
       descricao: classe ? `Classe registrada: ${classe.nome}. Confira Dado de Vida, equipamentos, salvaguardas e perícias da classe no SRD.`
         : 'Escolha uma das classes disponíveis. A classe determina proficiências, recursos e progressão.' },
-    { id: 'especie', titulo: '3. Espécie e linhagem', estado: campo('especie') ? 'registrado' : 'pendente', aba: 'principal',
-      descricao: 'Escolha a espécie. Depois confirme as linhagens, ancestralidades ou legados exigidos na aba Árvore e as fontes autorizadas.' },
-    { id: 'antecedente', titulo: '4. Antecedente', estado: campo('antecedente') ? 'registrado' : 'pendente', aba: 'principal',
-      descricao: 'O antecedente define aumentos de atributos entre opções permitidas, proficiências, ferramenta e talento de origem. Confira cada benefício.' },
+    { id: 'especie', titulo: '3. Espécie e linhagem',
+      estado: !especieId ? 'pendente' : !especieAberta ? 'revisar' : faltasEspecie.length ? 'pendente' : 'registrado',
+      aba: !especieId ? 'principal' : 'arvore',
+      descricao: !especieId
+        ? 'Escolha a espécie na aba Principal para revelar suas características.'
+        : !especieAberta
+          ? 'Espécie de outra fonte: confira diretamente o livro autorizado, pois o SRD não fornece todos os traços.'
+          : faltasEspecie.length
+            ? `Espécie ${campo('especie')}: faltam ${faltasEspecie.length} escolha(s) na Árvore — ${faltasEspecie.map(m => m.nome).join(', ')}. O atributo de magia da linhagem deve ser escolhido junto com ela.`
+            : 'As opções de espécie do SRD estão registradas. Confira seus efeitos, traços, magias e o tamanho/deslocamento no livro.' },
+    { id: 'antecedente', titulo: '4. Antecedente',
+      estado: !antecedenteId ? 'pendente' : 'revisar', aba: 'principal',
+      descricao: !antecedenteId
+        ? 'Escolha o antecedente; ele define três atributos elegíveis, um talento de origem, duas perícias, ferramenta e equipamento.'
+        : antecedenteAberto
+          ? 'Antecedente registrado. O mestre ainda deve conferir a distribuição +2/+1 ou +1/+1/+1 entre seus três atributos, o talento de origem, a ferramenta e o equipamento.'
+          : 'Antecedente de livro adicional: confira atributos, talento de origem, proficiências e equipamento na fonte permitida. Não é possível validar tudo pelo SRD.' },
     { id: 'atributos', titulo: '5. Atributos e aumentos', estado: atributosAnotados ? 'registrado' : 'pendente', aba: 'atributos',
       descricao: 'Use o conjunto padrão, compra de 27 pontos ou rolagem aprovada pelo mestre. Some os aumentos do antecedente UMA vez; esta etapa não prova que a distribuição está correta.' },
     { id: 'proficiencias', titulo: '6. Proficiências e salvaguardas', estado: 'revisar', aba: 'atributos',
@@ -49,8 +78,12 @@ export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
         : 'As escolhas catalogadas estão registradas até o nível atual. Confira efeitos e requisitos que ainda exigem intervenção manual.' },
     { id: 'equipamentos', titulo: '8. Equipamentos e defesa', estado: equipAnotado ? 'registrado' : 'pendente', aba: 'equipamentos',
       descricao: 'Registre equipamento inicial, armas, armaduras, escudo, ferramentas e moedas. Depois confira CA, deslocamento e limitações de uso.' },
-    { id: 'magias', titulo: '9. Magias e recursos de conjuração', estado: !precisaMagias ? 'nao-aplica' : magiaAnotada ? 'registrado' : 'pendente', aba: 'habilidades',
-      descricao: 'Quando aplicável, selecione truques e magias conforme a classe, nível e fontes autorizadas. Confira espaços, preparação e atributo de conjuração.' },
+    { id: 'magias', titulo: '9. Magias e recursos de conjuração',
+      estado: !precisaMagias ? 'nao-aplica' : precisaMagiasDaClasse ? (magiaAnotada ? 'registrado' : 'pendente') : 'revisar',
+      aba: 'habilidades',
+      descricao: especieMagica
+        ? 'Além das magias da classe, confira as magias concedidas pela espécie e o atributo de conjuração escolhido para a linhagem ou legado. A escolha na árvore ainda não adiciona automaticamente essas magias.'
+        : 'Selecione truques e magias conforme a classe, nível e fontes autorizadas. Confira espaços, preparação e atributo de conjuração.' },
     { id: 'revisao', titulo: '10. Revisão final do mestre', estado: 'revisar', aba: 'principal',
       descricao: 'Revise PV, CA, perícias, salvaguardas, usos, progressão, fontes e exceções. O guia não aprova a ficha automaticamente.' },
   ]

@@ -11,7 +11,7 @@
 import type { DadosFicha } from './tipos'
 import { classesDaFicha, espacosDeMagia } from './dnd2024Classes'
 import { progressoDaFichaDnd, lerEscolhasDnd } from './dnd2024Ficha'
-import { ANTECEDENTES_GUIADOS, PERICIAS_DND_ORIGENS, lerRegistroAntecedenteDnd } from './dnd2024Antecedentes'
+import { ANTECEDENTES_GUIADOS, PERICIAS_DND_ORIGENS, lerRegistroAntecedenteDnd, magiasDeAntecedenteDnd } from './dnd2024Antecedentes'
 
 export type Treino = 'proficiente' | 'especialista'
 export type EfeitosDnd = {
@@ -28,7 +28,7 @@ export type EfeitosDnd = {
 /** Variáveis que as fórmulas do D&D podem usar (o construtor de sistemas também as conhece). */
 export const VARS_DND = ['dnd_nivel', 'dnd_prof', 'dnd_ca_extra', 'dnd_pv_extra', 'dnd_ini_extra', 'dnd_desl_extra', 'dnd_furias', 'dnd_dano_furia',
   'dnd_inspiracao', 'dnd_canalizar', 'dnd_forma_selvagem', 'dnd_retomar', 'dnd_surto', 'dnd_indomavel', 'dnd_foco', 'dnd_feiticaria', 'dnd_cura_maos',
-  'dnd_inimigo', 'dnd_truques', 'dnd_preparadas', 'dnd_pacto', 'dnd_pacto_nivel', 'dnd_furtivo', 'dnd_sorte',
+  'dnd_inimigo', 'dnd_truques', 'dnd_preparadas', 'dnd_pacto', 'dnd_pacto_nivel', 'dnd_furtivo', 'dnd_sorte', 'dnd_origem_magia_gratis',
   ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => 'dnd_espacos_' + n)] as const
 
 const SAVES = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR']
@@ -113,6 +113,7 @@ export function efeitosDnd2024(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'd
   const temTalento = (id: string) => talento === id || humano === id
   if (temTalento('tough')) v.dnd_pv_extra += 2 * total
   if (temTalento('lucky')) v.dnd_sorte = prof
+  if (magiasDeAntecedenteDnd(d)) v.dnd_origem_magia_gratis = 1
   const sentidos = escolhas['esp-elfo-sentidos']
   if (p.especieId === 'elfo' && sentidos) dar(sentidos, 'proficiente', 'Sentidos Aguçados')
   const periciaHumano = escolhas['esp-humano-habilidoso']

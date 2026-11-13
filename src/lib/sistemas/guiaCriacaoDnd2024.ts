@@ -15,6 +15,7 @@ import { lerEscolhasDnd } from './dnd2024Ficha'
 import { conjuradoresDnd } from './dnd2024Conjuracao'
 import { ANTECEDENTES_GUIADOS, lerRegistroAntecedenteDnd, magiasDeAntecedenteDnd, validarDetalhesAntecedenteDnd, validarDistribuicaoAntecedenteDnd } from './dnd2024Antecedentes'
 import { magiasDoHumanoDnd } from './dnd2024MagiaHumano'
+import { magiasDaEspecieDnd } from './dnd2024MagiasEspecie'
 
 export type EstadoEtapa = 'registrado' | 'pendente' | 'revisar' | 'nao-aplica'
 export type EtapaGuia = {
@@ -47,6 +48,7 @@ export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
     && validarDistribuicaoAntecedenteDnd(antecedenteId, registroAntecedente.aumentos).length === 0
     && validarDetalhesAntecedenteDnd(registroAntecedente).length === 0
   const especieMagica = ['elfo', 'gnomo', 'tiferino'].includes(especieId)
+  const magiasEspecie = magiasDaEspecieDnd(d)
   const precisaMagiasDaClasse = conjuradoresDnd(d).some(l => l.truques > 0 || l.preparadas > 0)
   const origemMagica = magiasDeAntecedenteDnd(d)
   const temTalentoMagico = !!(guiadoAntecedente?.talentoId?.startsWith('iniciado-magia') ||
@@ -96,8 +98,8 @@ export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
     { id: 'equipamentos', titulo: '8. Equipamentos e defesa', estado: equipAnotado ? 'registrado' : 'pendente', aba: 'equipamentos',
       descricao: 'Registre equipamento inicial, armas, armaduras, escudo, ferramentas e moedas. Depois confira CA, deslocamento e limitações de uso.' },
     { id: 'magias', titulo: '9. Magias e recursos de conjuração',
-      estado: !precisaMagias ? 'nao-aplica' : (temTalentoMagico && !origemMagica) || (talentoHumanoMagico && !magiaHumana)
-        ? 'pendente' : precisaMagiasDaClasse ? (magiaAnotada ? 'registrado' : 'pendente') : especieMagica ? 'revisar' : 'registrado',
+      estado: !precisaMagias ? 'nao-aplica' : (temTalentoMagico && !origemMagica) || (talentoHumanoMagico && !magiaHumana) || (especieMagica && !magiasEspecie)
+        ? 'pendente' : precisaMagiasDaClasse ? (magiaAnotada ? 'registrado' : 'pendente') : 'registrado',
       aba: 'habilidades',
       descricao: talentoHumanoMagico
         ? magiaHumana
@@ -108,7 +110,9 @@ export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
           : origemMagica
             ? 'As três magias do antecedente aparecem no Grimório, com atributo e CD próprios, sem ocupar espaços de preparação da classe. A magia de 1º nível tem um uso gratuito recuperado no descanso longo. Revise outras magias da classe ou espécie separadamente.'
             : especieMagica
-              ? 'Confira as magias concedidas pela espécie e o atributo de conjuração escolhido na árvore; ainda não são adicionadas automaticamente ao Grimório.'
+              ? magiasEspecie
+                ? `As magias de ${magiasEspecie.linhagem} aparecem no Grimório usando ${magiasEspecie.atributo} para CD e ataque. Os usos gratuitos são próprios da espécie e retornam no descanso longo. Revise os efeitos situacionais com o mestre.`
+                : 'Selecione a linhagem ou legado e o atributo de conjuração na Árvore. O Grimório não presume magias antes das escolhas.'
               : 'Selecione truques e magias conforme a classe, nível e fontes autorizadas. Confira espaços, preparação e atributo de conjuração.' },
     { id: 'revisao', titulo: '10. Revisão final do mestre', estado: 'revisar', aba: 'principal',
       descricao: 'Revise PV, CA, perícias, salvaguardas, usos, progressão, fontes e exceções. O guia não aprova a ficha automaticamente.' },

@@ -21,6 +21,32 @@ describe('guia de criação D&D 2024', () => {
     expect(e.find(x => x.id === 'proficiencias')?.estado).toBe('revisar')
     expect(e.find(x => x.id === 'habilidades')?.estado).toBe('pendente')
   })
+  it('não considera o Elfo completo sem linhagem, perícia e atributo de conjuração', () => {
+    const d = nova()
+    d.campos = { ...d.campos, classe: 'Guerreiro', especie: 'Elfo', antecedente: 'Soldado', nivel: 1 }
+    expect(etapasCriacaoDnd2024(d).find(x => x.id === 'especie')?.estado).toBe('pendente')
+    d.dndEscolhas = {
+      'esp-elfo-linhagem': 'alto-elfo',
+      'esp-elfo-sentidos': 'percepcao',
+      'esp-elfo-atributo-magia': 'inteligencia',
+    }
+    expect(etapasCriacaoDnd2024(d).find(x => x.id === 'especie')?.estado).toBe('registrado')
+    expect(etapasCriacaoDnd2024(d).find(x => x.id === 'magias')?.estado).toBe('revisar')
+  })
+  it('marca antecedentes preenchidos como revisão, não como concluídos automaticamente', () => {
+    const d = nova()
+    d.campos = { ...d.campos, classe: 'Guerreiro', antecedente: 'Soldado', nivel: 1 }
+    expect(etapasCriacaoDnd2024(d).find(x => x.id === 'antecedente')?.estado).toBe('revisar')
+  })
+  it('cobra a escolha de perícia e talento do Humano', () => {
+    const d = nova()
+    d.campos = { ...d.campos, classe: 'Guerreiro', especie: 'Humano', nivel: 1 }
+    const etapa = etapasCriacaoDnd2024(d).find(x => x.id === 'especie')
+    expect(etapa?.estado).toBe('pendente')
+    expect(etapa?.descricao).toContain('Habilidoso')
+    d.dndEscolhas = { 'esp-humano-tamanho': 'medio', 'esp-humano-habilidoso': 'percepcao', 'esp-humano-versatil': 'alerta' }
+    expect(etapasCriacaoDnd2024(d).find(x => x.id === 'especie')?.estado).toBe('registrado')
+  })
   it('não exige magias de classe sem conjuração no primeiro nível', () => {
     const d = nova()
     d.campos = { ...d.campos, classe: 'Guerreiro', nivel: 1 }

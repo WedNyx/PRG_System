@@ -102,7 +102,9 @@ export function efeitosDnd2024(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'd
   for (const id of PERICIAS_ANTECEDENTE[p.antecedenteId ?? ''] ?? []) dar(id, 'proficiente', NOME_ANTECEDENTE[p.antecedenteId!])
   const sentidos = escolhas['esp-elfo-sentidos']
   if (p.especieId === 'elfo' && sentidos) dar(sentidos, 'proficiente', 'Sentidos Aguçados')
+  const periciaHumano = escolhas['esp-humano-habilidoso']
+  if (p.especieId === 'humano' && periciaHumano) dar(periciaHumano, 'proficiente', 'Habilidoso (Humano)')
   // Talento Alerta: proficiência na Iniciativa (antecedente Criminoso, Humano Versátil ou talento escolhido)
-  if (p.antecedenteId === 'criminoso' || Object.values(escolhas).includes('alerta')) v.dnd_ini_extra = prof
+  if (p.antecedenteId === 'criminoso' || (p.especieId === 'humano' && escolhas['esp-humano-versatil'] === 'alerta')) v.dnd_ini_extra = prof
   return { vars: v, treino, bonus, meiaProficiencia: meia }
 }

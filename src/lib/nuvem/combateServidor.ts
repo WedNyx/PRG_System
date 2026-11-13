@@ -7,7 +7,7 @@ import { ehV8 } from './categorias'
 import { aoCair, aoLevantar, danoCaido, lerMorte, lerRegraMorte, type RegraMorte } from '../sistemas/morte'
 import type { Sistema } from '../sistemas/tipos'
 
-export type TokenCombate = { id: string; cena_id: string; ficha_id: string | null; dono_id: string | null; nome: string; x: number; y: number; hp_atual: number | null; hp_max: number | null }
+export type TokenCombate = { id: string; cena_id: string; ficha_id: string | null; /** Cópia de uma ficha (vida própria no token). */ ficha_modelo?: string | null; dono_id: string | null; nome: string; x: number; y: number; hp_atual: number | null; hp_max: number | null }
 export type RegrasCombate = { acerto: 'automatico' | 'mestre'; morte: RegraMorte }
 export const lerRegrasCombate = (v: unknown): RegrasCombate => ({
   acerto: (v as { acerto?: unknown })?.acerto === 'automatico' ? 'automatico' : 'mestre',
@@ -16,10 +16,13 @@ export const lerRegrasCombate = (v: unknown): RegrasCombate => ({
 
 export async function tokenCombate(cid: string, id: unknown): Promise<TokenCombate> {
   if (typeof id !== 'string' || !/^[0-9a-f-]{36}$/i.test(id)) throw new ErroApi(400, 'Token inválido.')
-  const [t] = await rest<TokenCombate[]>(`prg_tokens?select=id,cena_id,ficha_id,dono_id,nome,x,y,hp_atual,hp_max&id=eq.${q(id)}&campanha_id=eq.${q(cid)}`)
+  const [t] = await rest<TokenCombate[]>(`prg_tokens?select=*&id=eq.${q(id)}&campanha_id=eq.${q(cid)}`)
   if (!t) throw new ErroApi(404, 'Token não encontrado.')
   return t
 }
+
+/** Ficha que dá as regras do token (ataques, testes, defesa, iniciativa): a ligada ou, nas cópias, a ficha-modelo. */
+export const fichaDasRegras = (t: { ficha_id: string | null; ficha_modelo?: string | null }) => t.ficha_id ?? t.ficha_modelo ?? null
 
 /** Ficha + sistema + resumo de combate (null para Ficha V8 ou ficha que não existe mais). */
 export async function fichaDeCombate(fichaId: string | null): Promise<{ f: FichaRow; s: Sistema; r: ResumoCombate } | null> {
@@ -65,18 +68,21 @@ export async function aplicarDano(t: TokenCombate, dano: number): Promise<{ ante
 }
 
 /** Vida ao vivo dos tokens ligados a fichas (a ficha é quem manda). */
-export async function vidaDasFichas(fichaIds: string[]): Promise<Record<string, { atual: number; max: number | null }>> {
+export async function vidaDasFichas(fichaIds: string[]): Promise<Record<string, { atual: number; max: number | null; retrato?: string | null; semVida?: boolean }>> {
   const ids = [...new Set(fichaIds)].slice(0, 100)
   if (!ids.length) return {}
   const fichas = await rest<{ id: string; sistema: string; dados: unknown }[]>(`prg_fichas?select=id,sistema,dados&id=in.(${ids.map(q).join(',')})`)
-  const out: Record<string, { atual: number; max: number | null }> = {}
+  const out: Record<string, { atual: number; max: number | null; retrato?: string | null; semVida?: boolean }> = {}
   const cache = new Map<string, Sistema | undefined>()
   for (const f of fichas) {
     if (ehV8(f.sistema)) continue
     if (!cache.has(f.sistema)) cache.set(f.sistema, await carregarSistema(f.sistema))
     const s = cache.get(f.sistema)
     const v = s ? resumoCombate(s, f.dados).vida : null
-    if (v) out[f.id] = { atual: v.atual, max: v.max }
+    const r = (f.dados as { retrato?: unknown } | null)?.retrato
+    const retrato = typeof r === 'string' && r.startsWith('https://') ? r : null
+    if (v) out[f.id] = { atual: v.atual, max: v.max, retrato }
+    else if (retrato) out[f.id] = { atual: 0, max: null, retrato, semVida: true }
   }
   return out
 }

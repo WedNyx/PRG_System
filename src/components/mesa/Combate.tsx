@@ -19,7 +19,7 @@ export type DadosAtaque = {
   /** Assimilação: ataque com dados de símbolos (o chat mostra cada dado). */
   assimilacao?: { manter: number }
 }
-type TokenBase = { id: string; nome: string; x: number; y: number; ficha_id: string | null; dono_id: string | null }
+type TokenBase = { id: string; nome: string; x: number; y: number; ficha_id: string | null; ficha_modelo?: string | null; dono_id: string | null }
 type Acao = (b: Record<string, unknown>) => Promise<Record<string, unknown>>
 
 /** Fichas da campanha para a mesa (mestre: todas; jogador: as dele), com vida, defesa e ataques. */
@@ -36,9 +36,17 @@ const barra = (atual: number, max: number | null) => max ? Math.max(0, Math.min(
 const corVida = (p: number) => p > 50 ? '#10b981' : p > 25 ? '#f59e0b' : '#ef4444'
 
 /** Aba “Fichas” da mesa: todas as fichas (jogadores e NPCs) para o mestre; as suas para o jogador. */
-export function PainelFichas({ fichas, carregar, tokens, admin, cenaId, acao, atacarCom }: {
+export function PainelFichas({ fichas, carregar, tokens, admin, cenaId, acao, atacarCom, abrirFicha }: {
   fichas: FichaMesa[] | null; carregar: () => void; tokens: TokenBase[]; admin: boolean; cenaId: string | null; acao: Acao; atacarCom: (tokenId: string) => void
+  /** Abre a ficha inteira dentro da mesa (v0.33.8). */
+  abrirFicha?: (fichaId: string) => void
 }) {
+  const [copias, setCopias] = useState<Record<string, number>>({})
+  async function colocarCopias(f: FichaMesa) {
+    const n = Math.max(1, Math.min(10, copias[f.id] ?? 1))
+    for (let i = 0; i < n; i++) await acao({ acao: 'token_criar', cenaId, fichaId: f.id, copia: true }).catch(() => {})
+    toast.success(n === 1 ? `Uma cópia de ${f.nome} entrou na mesa (vida própria).` : `${n} cópias de ${f.nome} entraram na mesa (cada uma com a própria vida).`)
+  }
   const [aberta, setAberta] = useState<string | null>(null)
   const [filtro, setFiltro] = useState<'todas' | 'jogadores' | 'npcs'>('todas')
   if (!fichas) return <p className="flex items-center gap-2 text-sm text-(--a-b4aeca)"><Loader2 className="animate-spin" size={16} /> Carregando fichas…</p>
@@ -52,7 +60,7 @@ export function PainelFichas({ fichas, carregar, tokens, admin, cenaId, acao, at
       className={'rounded-full px-3 py-1 text-xs ' + (filtro === f ? 'bg-(--a-5b4380) text-white' : 'bg-(--s-1e1a30) text-(--a-c4b6d4)')}>{f === 'todas' ? 'Todas' : f === 'jogadores' ? '🛡️ Jogadores' : '👹 NPCs'}</button>)}</div>}
     {lista.length === 0 && <p className="rounded-lg border border-dashed border-(--a-4a3d63) p-4 text-center text-(--a-b4aeca)">{admin ? 'Nenhuma ficha aprovada ainda. Crie NPCs no Diário ou aprove as fichas dos jogadores.' : 'Você ainda não tem ficha aprovada nesta campanha.'}</p>}
     <ul className="space-y-2">{lista.map(f => {
-      const c = f.combate, naMesa = tokens.find(t => t.ficha_id === f.id), p = c?.vida ? barra(c.vida.atual, c.vida.max) : null
+      const c = f.combate, naMesa = tokens.find(t => t.ficha_id === f.id), nCopias = tokens.filter(t => t.ficha_modelo === f.id).length, p = c?.vida ? barra(c.vida.atual, c.vida.max) : null
       return <li key={f.id} className="overflow-hidden rounded-xl border border-(--a-3d3152) bg-(--s-1e1a30)">
         <button type="button" onClick={() => setAberta(a => a === f.id ? null : f.id)} className="flex w-full items-center gap-3 p-2 text-left hover:bg-(--s-241e38)" aria-expanded={aberta === f.id}>
           <span aria-hidden className="flex h-12 w-10 shrink-0 items-center justify-center rounded-lg border border-(--a-62527e) bg-gradient-to-br from-(--s-3b2470) to-(--s-1b1530) bg-cover bg-center font-bold text-(--a-c3a4f5)"
@@ -61,7 +69,7 @@ export function PainelFichas({ fichas, carregar, tokens, admin, cenaId, acao, at
             <span className="block truncate font-semibold">{f.nome || 'Sem nome'} {f.npc ? <span className="text-[11px] text-[#f2a9c3]">👹 NPC{f.oculta ? ' · oculto' : ''}</span> : <span className="text-[11px] text-sky-300">🛡️ {f.dono}</span>}</span>
             {c?.vida && <span className="mt-1 flex items-center gap-2"><span className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/60"><span className="block h-full rounded-full" style={{ width: p + '%', background: corVida(p!) }} /></span>
               <span className="text-[11px] tabular-nums text-(--a-d6c8e8)">❤️ {c.vida.atual}{c.vida.max !== null ? '/' + c.vida.max : ''}</span></span>}
-            <span className="block text-[11px] text-(--a-a99bbb)">{c?.defesa ? `🛡️ ${c.defesa.nome} ${c.defesa.valor} · ` : ''}{c ? `${c.ataques.length} ataque(s)` : 'Ficha sem dados de combate'}{naMesa ? ' · 📍 na mesa' : ''}</span>
+            <span className="block text-[11px] text-(--a-a99bbb)">{c?.defesa ? `🛡️ ${c.defesa.nome} ${c.defesa.valor} · ` : ''}{c ? `${c.ataques.length} ataque(s)` : 'Ficha sem dados de combate'}{naMesa ? ' · 📍 na mesa' : ''}{nCopias ? ` · 👥 ${nCopias} cópia(s)` : ''}</span>
           </span>
         </button>
         {aberta === f.id && <div className="space-y-2 border-t border-(--a-3d3152) p-3">
@@ -69,10 +77,16 @@ export function PainelFichas({ fichas, carregar, tokens, admin, cenaId, acao, at
           {c && c.ataques.length > 0 && <ul className="space-y-1">{c.ataques.map(a => <li key={a.tipo + a.id} className="rounded-lg bg-(--s-151123) px-2 py-1 text-xs">
             {a.tipo === 'item' ? <ArteItem item={{ nome: a.nome, categoria: a.categoria ?? 'arma', arte: a.arte, raridade: lerRaridade(a.raridade), imagem: a.imagem, magico: a.magico }} tamanho={22} className="mr-1 !rounded-md !border align-middle" /> : '✨'} <strong>{a.nome}</strong> · {a.dano} · {a.alcance} m{a.recurso ? ` · ${a.custo} ${c.recursos.find(r => r.id === a.recurso)?.nome ?? a.recurso}` : ''}</li>)}</ul>}
           <div className="flex flex-wrap gap-2">
-            <a href={'/ficha?nuvem=' + f.id} target="_blank" rel="noopener" className={btn}><ExternalLink size={14} /> Abrir ficha</a>
+            {abrirFicha ? <button type="button" className={btn} onClick={() => abrirFicha(f.id)}>📜 Abrir ficha</button>
+              : <a href={'/ficha?nuvem=' + f.id} target="_blank" rel="noopener" className={btn}><ExternalLink size={14} /> Abrir ficha</a>}
             {!naMesa && cenaId && <button type="button" className={btn} onClick={() => void acao({ acao: 'token_criar', cenaId, fichaId: f.id }).then(() => toast.success(`${f.nome || 'Personagem'} entrou na mesa.`)).catch(() => {})}>📍 Colocar na mesa</button>}
             {naMesa && <button type="button" className={btn} onClick={() => atacarCom(naMesa.id)}><Swords size={14} /> Atacar com {f.nome.split(' ')[0] || 'ele'}</button>}
           </div>
+          {admin && f.npc && cenaId && <div className="flex flex-wrap items-center gap-2 rounded-lg bg-(--s-151123) p-2 text-xs">
+            <span className="flex-1 text-(--a-c4b6d4)">👥 Cópias com vida própria (vários do mesmo NPC): mesma imagem, ataques e testes da ficha.</span>
+            <select aria-label="Quantas cópias" value={copias[f.id] ?? 1} onChange={x => setCopias(m => ({ ...m, [f.id]: Number(x.target.value) }))} className={input + ' !w-auto !py-1'}>{[1, 2, 3, 4, 5, 6, 8, 10].map(n => <option key={n} value={n}>{n}</option>)}</select>
+            <button type="button" className={btn} onClick={() => void colocarCopias(f)}>➕ Colocar</button>
+          </div>}
         </div>}
       </li>
     })}</ul>
@@ -218,7 +232,7 @@ export function PrepararCombate({ tokens, fichas, acao, fechar }: { tokens: Toke
   const [sel, setSel] = useState<Record<string, boolean>>(() => Object.fromEntries(tokens.map(t => [t.id, t.visivel])))
   const [bonus, setBonus] = useState<Record<string, string>>({})
   const [enviando, setEnviando] = useState(false)
-  const iniDaFicha = (t: TokenPrep) => t.ficha_id ? fichas?.find(f => f.id === t.ficha_id)?.combate?.iniciativa ?? null : null
+  const iniDaFicha = (t: TokenPrep) => { const fid = t.ficha_id ?? t.ficha_modelo; return fid ? fichas?.find(f => f.id === fid)?.combate?.iniciativa ?? null : null }
   const marcar = (fn: (t: TokenPrep) => boolean) => setSel(Object.fromEntries(tokens.map(t => [t.id, fn(t)])))
   const escolhidos = tokens.filter(t => sel[t.id])
   async function comecar() {
@@ -231,7 +245,7 @@ export function PrepararCombate({ tokens, fichas, acao, fechar }: { tokens: Toke
     } catch { /* aviso já aparece */ } finally { setEnviando(false) }
   }
   return <NaTela><div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4" role="dialog" aria-modal="true" aria-label="Preparar combate" onClick={fechar}>
-    <div className="flex max-h-[90vh] w-full max-w-md flex-col rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-4 text-sm" onClick={x => x.stopPropagation()}>
+    <div className="flex max-h-[90vh] w-full max-w-md flex-col rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-4 text-sm text-(--a-f4f0ff)" onClick={x => x.stopPropagation()}>
       <div className="flex items-center gap-2"><Swords size={18} className="text-[#f2a9c3]" /><h2 className="flex-1 font-bold">Preparar combate</h2>
         <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-(--s-34294f)"><X size={18} /></button></div>
       <p className="mt-1 text-xs text-(--a-b4aeca)">Marque quem entra na luta. A iniciativa é rolada para todos de uma vez, com o bônus da ficha (ou o que você escrever).</p>

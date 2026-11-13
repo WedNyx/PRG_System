@@ -53,7 +53,7 @@ export function normalizarItem(v: unknown): Item | null {
   })
   const dano = txt(o.dano, 40).trim()
   const arte = lerArte(o.arte), raridade = lerRaridade(o.raridade)
-  return { id: id(o.id), nome, categoria, peso: num(o.peso, 0, 100000), ...(dano && EXPR.test(dano) ? { dano } : {}), ...(Number(o.alcance) > 0 ? { alcance: num(o.alcance, 0, 1000) } : {}), bonus, ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}),
+  return { id: id(o.id), nome, categoria, peso: Math.round(num(o.peso, 0, 100000) * 1000) / 1000, ...(dano && EXPR.test(dano) ? { dano } : {}), ...(Number(o.alcance) > 0 ? { alcance: num(o.alcance, 0, 1000) } : {}), bonus, ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}),
     ...(arte ? { arte } : {}), ...(raridade ? { raridade } : {}), ...(imagemDaPlataforma(o.imagem) ? { imagem: o.imagem } : {}), ...(o.magico === true ? { magico: true } : {}) }
 }
 export function normalizarPoder(v: unknown): Poder | null {
@@ -105,7 +105,25 @@ export function bonusEquipados(itens: Item[], uso: Uso): Record<string, number> 
   }
   return out
 }
-export const pesoTotal = (itens: Item[], uso: Uso) => Math.round(itens.reduce((t, it) => t + it.peso * (uso.itens[it.id]?.qtd ?? 1), 0) * 100) / 100
+export const pesoTotal = (itens: Item[], uso: Uso) => Math.round(itens.reduce((t, it) => t + it.peso * (uso.itens[it.id]?.qtd ?? 1), 0) * 1000) / 1000
+
+const emKg = (unidade: string) => /^(kg|quilo)/i.test(unidade.trim())
+/**
+ * Peso digitado (v0.33.8): aceita vírgula (“0,25”), gramas (“250 g”, “250g”) e quilos (“1,5 kg”) quando o sistema
+ * conta em kg; até milésimos. null = não entendeu.
+ */
+export function lerPeso(texto: string, unidade = 'kg'): number | null {
+  const m = /^\s*(\d+(?:[.,]\d+)?)\s*(g|gr|gramas?|kg|quilos?)?\s*$/i.exec(texto)
+  if (!m) return texto.trim() === '' ? 0 : null
+  let n = Number(m[1].replace(',', '.'))
+  if (m[2] && /^g/i.test(m[2]) && emKg(unidade)) n /= 1000
+  return Number.isFinite(n) ? Math.round(Math.min(100000, n) * 1000) / 1000 : null
+}
+/** Peso para mostrar: em kg, menos de 1 kg aparece em gramas (“250 g”). */
+export function mostrarPeso(peso: number, unidade = 'kg'): string {
+  if (emKg(unidade) && peso > 0 && peso < 1) return `${Math.round(peso * 1000)} g`
+  return `${peso.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} ${unidade}`
+}
 
 /** Quantos usos/recurso um poder ainda tem. */
 export function podeUsar(p: Poder, uso: Uso, recursoAtual?: number): { ok: boolean; motivo?: string } {

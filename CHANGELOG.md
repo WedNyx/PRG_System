@@ -2,13 +2,18 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
-## v0.33.8 — Mesa: mapa maior, névoa por partes e luz dos tokens (2026-11-13)
+## v0.33.8 — Mesa: mapa, névoa, luz, fichas e combate (2026-11-13)
 
 - Mapa até 200 × 200 (`MAX_GRADE`); zoom mínimo 0,05.
 - Névoa guardada em faixas por linha (`compactarNevoa`/`expandirNevoa`, compatível com o formato antigo); `nevoa` aceita `retangulo`.
 - Partes do mapa com névoa (`prg_cenas.fog_areas`), ferramenta “Partes com névoa” e lista no painel; névoa desenhada em canvas com borda suave (`mapaDeNevoa`).
 - Escuridão da cena (`prg_cenas.escuridao`), luz própria dos tokens (`prg_tokens.luz`: brilho, penumbra, cor) e `luz_revela_nevoa`.
-- Banco: migração `028_mesa_nevoa_luz.sql`. e2e novo: `v33-mesa-nevoa-luz`.
+- Ficha dentro da mesa (`FichaNaMesa`, iframe de `/ficha?nuvem=…&mesa=1` com postMessage para rolagens, salvamento e recarregar quando a vida muda).
+- Cópias de NPC (`prg_tokens.ficha_modelo`, `token_criar` com `copia`): vida própria no token, regras da ficha-modelo (`fichaDasRegras`); retrato da ficha nos tokens sem imagem.
+- Iniciativa: `iniciativa_entrar`, `iniciativa_mover`, `iniciativa_valor`, `iniciativa_sair`, `iniciativa_adiar` (`ordemCombate.ts`, gravação otimista em `mexerNaOrdem`); `dano_varios`; painel `Iniciativa.tsx`.
+- Autoral: `tituloAtributos` (e `pericias.titulo` no construtor).
+- Inventário: `lerPeso`/`mostrarPeso` (gramas, milésimos), formulários sem validação nativa que travava o Salvar; ficha junta mudanças simultâneas (`mesclarFicha`) no 409.
+- Banco: migrações `028_mesa_nevoa_luz.sql` e `029_tokens_copias.sql` (já aplicadas em produção em 13/11). e2e novos: `v33-mesa-nevoa-luz`, `v33-mesa-fichas`, `v33-mesa-combate`.
 
 ## v0.33.7 — Criação livre, fontes e revisão dos sistemas (2026-11-13)
 - 🧪 Criação livre e pedidos que não somem: ficha de jogador criada pelo mestre agora começa em “criação livre” — atributos, perícias, habilidades, itens e nível salvam na hora, sem pedir aprovação a cada mudança, até o jogador tocar em “Terminei a criação”. O mestre liga e desliga a criação livre na própria ficha (vale para todos os sistemas; fichas que ainda aguardam a aprovação de entrada também ficam livres). Depois da criação, as áreas “com aprovação” continuam virando pedido, mas agora o que o jogador mudou continua aparecendo na ficha dele ao recarregar (antes voltava ao valor antigo e parecia que não tinha salvo, e uma mudança nova podia apagar o pedido anterior).

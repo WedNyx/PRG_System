@@ -27,7 +27,13 @@ const DISPOSITIVOS = [
   r = await call(M, 'POST', `campanhas/${cid}/fichas`, { tipo: 'jogador', jogadorId: J, sistema: 'dnd5e-srd', nome: 'Lyra' }); const fL = r.d.ficha.id
   r = await call(M, 'GET', 'fichas/' + fL)
   await call(M, 'PUT', 'fichas/' + fL, { versao: r.d.ficha.versao, dados: { ...r.d.ficha.dados, atributos: { FOR: 8, DES: 14, CON: 13, INT: 17, SAB: 12, CAR: 10 }, campos: { ...r.d.ficha.dados.campos, classe: 'Mago', nivel: 5, especie: 'Elfo', antecedente: 'Sábio' }, dndMagias: { 'fire-bolt': 'preparada', fireball: 'preparada' } } })
-  await call(M, 'POST', 'mesa/' + cid, { acao: 'cena_criar', nome: 'Ponte', grid_cols: 12, grid_rows: 16 })
+  r = await call(M, 'POST', 'mesa/' + cid, { acao: 'cena_criar', nome: 'Ponte', grid_cols: 12, grid_rows: 16 }); const cena = r.d.cena.id
+  // v0.33.8: combate em andamento (aba Iniciativa) e escuridão com luz.
+  await call(M, 'POST', 'mesa/' + cid, { acao: 'sessao', aberta: true })
+  await call(M, 'POST', 'mesa/' + cid, { acao: 'cena_editar', cenaId: cena, escuridao: 60 })
+  r = await call(J, 'POST', 'mesa/' + cid, { acao: 'token_criar', cenaId: cena, fichaId: fL }); const tL = r.d.token?.id
+  r = await call(M, 'POST', 'mesa/' + cid, { acao: 'token_criar', cenaId: cena, nome: 'Ogro', hp_max: 30, luz: { brilho: 6, penumbra: 6 } }); const tO = r.d.token?.id
+  await call(M, 'POST', 'mesa/' + cid, { acao: 'combate_preparar', tokens: [{ tokenId: tL }, { tokenId: tO }] })
   r = await call(J, 'POST', 'fichas', { sistema: 'tormenta20', dados: { nome: 'Avulsa T20' } }); const fT = r.d.ficha.id
 
   // [nome, quem, url, aba para clicar (opcional)]
@@ -40,6 +46,8 @@ const DISPOSITIVOS = [
     ['ficha-dnd-arvore', J, '/ficha?nuvem=' + fL, /Árvore de habilidades/],
     ['ficha-t20', J, '/ficha?nuvem=' + fT, /Atributos e perícias/],
     ['mesa', M, '/mesa?campanha=' + cid],
+    ['mesa-combate', M, '/mesa?campanha=' + cid, /^Jogo$/],
+    ['mesa-jogador', J, '/mesa?campanha=' + cid, /ficha aqui na mesa/],
     ['mestre-dnd', M, '/mestre/dnd?campanha=' + cid],
     ['guia', M, '/guia'],
     ['novidades', M, '/novidades'],

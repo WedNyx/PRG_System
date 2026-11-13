@@ -23,7 +23,7 @@ import { lerArvore } from '@/lib/sistemas/arvore'
 type Linha = Record<string, unknown> & { id: string; nome: string; auto?: boolean }
 type Def = {
   nome: string; resumo: string; capa?: string; dados: string; rolagem: 'd20' | 'd100' | 'nenhuma' | 'personalizada' | 'parada'; regraRolagem: { nome: string; formula: string }; parada: { lados: number; leitura?: 'blades' }; resistencias: string[]; creditos?: string
-  campos: Linha[]; atributos: Linha[]; formulaModificador: string; derivados: Linha[]
+  campos: Linha[]; atributos: Linha[]; tituloAtributos: string; formulaModificador: string; derivados: Linha[]
   pericias: { modo: 'treino' | 'valor' | 'nenhuma'; titulo?: string; total: string; treinos: Linha[]; lista: Linha[] }
   recursos: Linha[]; listas: Linha[]; limites: { nome: string; uso: string; max: string }[]; observacoes: string; carga: { formula: string; unidade: string }
   arvore: { pontos: number; nos: unknown[] }; progressao: DefProgressao | null
@@ -49,7 +49,7 @@ function paraDef(s: Partial<Sistema> & Record<string, unknown>, auto = false): D
     parada: (s.parada as Def['parada']) ?? { lados: 20 },
     resistencias: Array.isArray(s.resistencias) ? (s.resistencias as string[]) : [],
     creditos: typeof s.creditos === 'string' ? s.creditos : undefined,
-    campos: l(s.campos), atributos: l(s.atributos), formulaModificador: String(s.formulaModificador ?? ''), derivados: l(s.derivados),
+    campos: l(s.campos), atributos: l(s.atributos), tituloAtributos: typeof s.tituloAtributos === 'string' ? s.tituloAtributos : '', formulaModificador: String(s.formulaModificador ?? ''), derivados: l(s.derivados),
     pericias: p ? { modo: p.modo, titulo: p.titulo, total: p.total, treinos: l(p.treinos), lista: l(p.lista) } : { modo: 'nenhuma', total: 'MOD + TREINO', treinos: [], lista: [] },
     recursos: l(s.recursos), listas: l(s.listas), limites: (s.limites as Def['limites']) ?? [], observacoes: ((s.observacoes as string[]) ?? []).join('\n'),
     carga: { formula: (s.carga as Sistema['carga'])?.formula ?? '', unidade: (s.carga as Sistema['carga'])?.unidade ?? 'kg' },
@@ -61,7 +61,7 @@ function paraEnvio(d: Def) {
   const tira = (ls: Linha[]) => ls.map(({ auto: _a, ...r }) => r)
   return {
     nome: d.nome, resumo: d.resumo, ...(d.capa ? { capa: d.capa } : {}), dados: d.dados, rolagem: d.rolagem, ...(d.rolagem === 'personalizada' ? { regraRolagem: d.regraRolagem } : {}), ...(d.rolagem === 'parada' ? { parada: d.parada } : {}), ...(d.resistencias.length ? { resistencias: d.resistencias } : {}), creditos: d.creditos,
-    campos: tira(d.campos), atributos: tira(d.atributos), formulaModificador: d.formulaModificador, derivados: tira(d.derivados),
+    campos: tira(d.campos), atributos: tira(d.atributos), ...(d.tituloAtributos.trim() ? { tituloAtributos: d.tituloAtributos.trim() } : {}), formulaModificador: d.formulaModificador, derivados: tira(d.derivados),
     pericias: d.pericias.modo === 'nenhuma' ? undefined : { modo: d.pericias.modo, titulo: d.pericias.titulo, total: d.pericias.total, treinos: tira(d.pericias.treinos), lista: tira(d.pericias.lista) },
     recursos: tira(d.recursos), listas: tira(d.listas), limites: d.limites, observacoes: d.observacoes.split('\n').map(x => x.trim()).filter(Boolean),
     carga: d.carga.formula ? d.carga : undefined,
@@ -206,7 +206,9 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
           <button type="button" className={botao} onClick={() => mudar(d => ({ ...d, campos: [...d.campos, novo(d.campos, { tipo: 'texto' })] }))}><Plus size={14} /> Campo</button>
         </SecaoBase>
 
-        <SecaoBase id="atributos" titulo="✨ Atributos" sub="Sigla, nome, mínimo e máximo" aberta={aberta === 'atributos'} alternar={() => setAberta(a => a === 'atributos' ? '' : 'atributos')}>
+        <SecaoBase id="atributos" titulo={'✨ ' + (def.tituloAtributos.trim() || 'Atributos')} sub="Sigla, nome, mínimo e máximo — e o nome desta parte no seu sistema" aberta={aberta === 'atributos'} alternar={() => setAberta(a => a === 'atributos' ? '' : 'atributos')}>
+          <label className="block text-xs">Como o seu sistema chama esta parte? (opcional)
+            <input value={def.tituloAtributos} maxLength={40} onChange={e => mudar(d => ({ ...d, tituloAtributos: e.target.value }))} className={input + ' mt-1'} placeholder="Atributos (ex.: Aspectos, Virtudes, Essências)" /></label>
           {def.atributos.map((a, i) => <div key={i} className="space-y-1 rounded-xl bg-(--s-171325) p-2">
             <div className="flex gap-2">
               <input aria-label="Sigla" value={a.id} maxLength={6} onChange={e => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''); mudar(d => ({ ...d, atributos: d.atributos.map((x, k) => k === i ? { ...x, id: v || x.id, auto: false } : x) })) }} className={pequeno + ' w-20 font-mono uppercase'} placeholder="FOR" />
@@ -235,7 +237,9 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
           <p className="text-[11px] text-(--a-a998bd)">Funções: piso(), teto(), arred(), min(a, b), max(a, b), se(x, a, b) (x diferente de 0 → a; senão b). Ex.: piso(nivel / 2) + FOR</p>
         </SecaoBase>
 
-        <SecaoBase id="pericias" titulo="🎯 Perícias" sub="Lista, atributo de cada uma e graus de treino" aberta={aberta === 'pericias'} alternar={() => setAberta(a => a === 'pericias' ? '' : 'pericias')}>
+        <SecaoBase id="pericias" titulo={'🎯 ' + (def.pericias.titulo?.trim() || 'Perícias')} sub="Lista, atributo de cada uma e graus de treino — e o nome desta parte no seu sistema" aberta={aberta === 'pericias'} alternar={() => setAberta(a => a === 'pericias' ? '' : 'pericias')}>
+          <label className="block text-xs">Como o seu sistema chama esta parte? (opcional)
+            <input value={def.pericias.titulo ?? ''} maxLength={40} onChange={e => mudar(d => ({ ...d, pericias: { ...d.pericias, titulo: e.target.value } }))} className={input + ' mt-1'} placeholder="Perícias (ex.: Talentos, Ofícios, Conhecimentos)" /></label>
           <label className="block">Tipo<select value={def.pericias.modo} onChange={e => mudar(d => ({ ...d, pericias: { ...d.pericias, modo: e.target.value as Def['pericias']['modo'], total: e.target.value === 'valor' ? 'VALOR' : d.pericias.total || 'MOD + TREINO' } }))} className={input + ' mt-1'}>
             <option value="treino">Por graus (destreinado, treinado…)</option><option value="valor">Por número (pontos ou porcentagem)</option><option value="nenhuma">Sem perícias</option></select></label>
           {def.pericias.modo === 'treino' && <div className="space-y-2 rounded-xl bg-(--s-171325) p-2">

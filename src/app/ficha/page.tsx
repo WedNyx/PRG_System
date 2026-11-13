@@ -1,5 +1,6 @@
 'use client'
 
+import { mesclarFicha } from '@/lib/nuvem/mesclar'
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -22,6 +23,11 @@ import { aplicar } from '@/lib/nuvem/categorias'
 
 const AREAS: Record<string, string> = Object.fromEntries(CAMPOS.map(c => [c.id, c.titulo]))
 
+/** Ficha aberta dentro da mesa (v0.33.8): avisa a mesa quando rola ou salva. */
+function avisarMesaPai(m: Record<string, unknown>) {
+  if (window.parent === window || new URLSearchParams(window.location.search).get('mesa') !== '1') return
+  window.parent.postMessage({ prg: 'ficha', ...m }, window.location.origin)
+}
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const LOCAL = 'prg-ficha-gen-'
 type Estado = 'carregando' | 'salvo' | 'salvando' | 'pendente' | 'offline' | 'conflito' | 'erro' | 'leitura' | 'local'
@@ -55,6 +61,8 @@ function Conteudo() {
   const q = useSearchParams()
   const nuvem = UUID.test(q.get('nuvem') ?? '') ? q.get('nuvem')! : null
   const local = /^[a-zA-Z0-9-]{1,80}$/.test(q.get('local') ?? '') ? q.get('local')! : null
+  // Aberta dentro da mesa virtual (v0.33.8): sem o “voltar”, e avisa a mesa quando rola ou salva.
+  const naMesa = q.get('mesa') === '1'
   const [sistema, setSistema] = useState<Sistema | null>(null)
   const [dados, setDados] = useState<DadosFicha | null>(null)
   const [estado, setEstado] = useState<Estado>('carregando')
@@ -62,6 +70,9 @@ function Conteudo() {
   const versao = useRef(0)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const ultimo = useRef<DadosFicha | null>(null)
+  /** Como a ficha estava no banco da última vez (para juntar mudanças feitas ao mesmo tempo, v0.33.8). */
+  const base = useRef<DadosFicha | null>(null)
+  const mesclas = useRef(0)
   const salvando = useRef(false)
   const [aviso, setAviso] = useState<{ texto: string; desfazer: boolean } | null>(null)
   const [campanhaId, setCampanhaId] = useState<string | null>(null)
@@ -97,7 +108,8 @@ function Conteudo() {
           setAguardandoEntrada(r.ficha.status === 'pendente'); setEhNpc(!!r.ficha.npc)
           // O pedido que ainda espera o mestre aparece na ficha (senão, ao recarregar, parecia que não tinha salvo).
           const comPedido = r.pedido?.length ? aplicar(r.ficha.dados as unknown as Record<string, unknown>, r.pedido) as unknown as DadosFicha : r.ficha.dados
-          setSistema(s); setDados(normalizarFicha(s, comPedido)); setEstado(r.podeEditar ? 'salvo' : 'leitura')
+          base.current = normalizarFicha(s, comPedido)
+          setSistema(s); setDados(base.current); setEstado(r.podeEditar ? 'salvo' : 'leitura')
         } else if (local) {
           const salvo = JSON.parse(localStorage.getItem(LOCAL + local) || 'null')
           const s = sistemaPorId(salvo?.sistema ?? q.get('sistema') ?? '')
@@ -116,7 +128,8 @@ function Conteudo() {
     salvando.current = true; setEstado('salvando')
     try {
       const r = await api<{ versao: number; pendentes?: string[]; ignoradas?: string[] }>('fichas/' + nuvem, { method: 'PUT', body: { versao: versao.current, dados: d } })
-      versao.current = r.versao
+      versao.current = r.versao; base.current = d; mesclas.current = 0
+      avisarMesaPai({ tipo: 'salvo', ficha: nuvem })
       const nomes = (l: string[]) => l.map(a => AREAS[a] ?? a).join(', ')
       if (r.ignoradas?.length) setAviso({ texto: `Somente o mestre pode alterar: ${nomes(r.ignoradas)}. Essas mudanças NÃO foram salvas.`, desfazer: true })
       else if (r.pendentes?.length) setAviso({ texto: `Enviado para aprovação do mestre: ${nomes(r.pendentes)}. O resto foi salvo.`, desfazer: false })
@@ -125,6 +138,17 @@ function Conteudo() {
       setErro('')
     } catch (e) {
       if (e instanceof ErroNuvem && e.status === 423) { setEstado('leitura'); setErro(e.message + ' Suas últimas mudanças não foram salvas.') }
+      else if (e instanceof ErroNuvem && e.status === 409 && base.current && mesclas.current < 3) {
+        // Alguém salvou junto (a mesa tirou vida, o mestre mexeu): junta o que eu mudei com o que está no banco e tenta de novo.
+        mesclas.current++
+        try {
+          const r = await api<{ ficha: { versao: number; dados: DadosFicha } }>('fichas/' + nuvem)
+          const meu = ultimo.current ?? d
+          const junto = mesclarFicha(base.current as unknown as Record<string, unknown>, meu as unknown as Record<string, unknown>, r.ficha.dados as unknown as Record<string, unknown>) as unknown as DadosFicha
+          versao.current = r.ficha.versao; base.current = r.ficha.dados
+          ultimo.current = junto; setDados(junto); setEstado('pendente')
+        } catch { setEstado('offline') }
+      }
       else if (e instanceof ErroNuvem && e.status === 409) { setEstado('conflito'); setErro('Esta ficha foi alterada em outro aparelho. Recarregue para ver a versão mais nova (suas últimas mudanças serão perdidas).') }
       else if (e instanceof ErroNuvem && e.status < 500 && e.status !== 429) { setEstado('erro'); setErro(e.message) }
       else { setEstado('offline'); setErro('') }
@@ -142,6 +166,17 @@ function Conteudo() {
     return () => { window.removeEventListener('online', tentar); window.removeEventListener('beforeunload', sair); clearInterval(t) }
   }, [enviar])
 
+  // Na mesa: a vida mudou lá (dano, cura): recarrega a ficha se não houver nada esperando para salvar.
+  useEffect(() => {
+    if (!naMesa) return
+    const ouvir = (ev: MessageEvent) => {
+      if (ev.origin !== window.location.origin || (ev.data as { prg?: string })?.prg !== 'mesa') return
+      if (!ultimo.current && !salvando.current) window.location.reload()
+    }
+    window.addEventListener('message', ouvir)
+    return () => window.removeEventListener('message', ouvir)
+  }, [naMesa])
+
   function mudar(d: DadosFicha) {
     setDados(d)
     if (estado === 'leitura' || estado === 'conflito') return
@@ -154,7 +189,7 @@ function Conteudo() {
   return <main className="min-h-screen fundo-tema text-(--a-f2ebff)">
     <header className="sticky top-0 z-20 border-b border-(--a-373251) bg-(--s-19172c)/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-6">
-        <Link href="/central?secao=fichas" aria-label="Voltar para a Central" className="inline-flex shrink-0 items-center gap-1 rounded-lg p-1.5 text-sm text-(--a-b99bff) hover:bg-(--s-2b2140)"><ArrowLeft size={18} /><span className="hidden sm:inline">Central</span></Link>
+        {!naMesa && <Link href="/central?secao=fichas" aria-label="Voltar para a Central" className="inline-flex shrink-0 items-center gap-1 rounded-lg p-1.5 text-sm text-(--a-b99bff) hover:bg-(--s-2b2140)"><ArrowLeft size={18} /><span className="hidden sm:inline">Central</span></Link>}
         <div className="min-w-0 flex-1">
           <h1 className="truncate font-bold leading-tight">{dados?.nome || (sistema ? 'Personagem sem nome' : 'Ficha')}</h1>
           <p className="truncate text-xs text-(--a-b4aeca)">{sistema?.nome ?? '…'}{sistema && (campanhaId ? ' · 🏰 Ficha de campanha' : nuvem ? ' · 🧙 Ficha avulsa' : '')}{sistema?.autor && <span className="text-(--a-ed9cd8)"> · ✍️ {sistema.autor}</span>}</p>
@@ -191,7 +226,7 @@ function Conteudo() {
           },
         } : undefined}
         rolarNaCampanha={campanhaId ? async (expressao, rotulo, extra) => {
-          try { const r = await api<{ evento: { resultados: number[]; total: number } }>('mesa/' + campanhaId, { method: 'POST', body: { acao: 'evento', tipo: 'rolagem', expressao, personagem: dados.nome, texto: rotulo, ...extra } }); return r.evento }
+          try { const r = await api<{ evento: { resultados: number[]; total: number } }>('mesa/' + campanhaId, { method: 'POST', body: { acao: 'evento', tipo: 'rolagem', expressao, personagem: dados.nome, texto: rotulo, ...extra } }); avisarMesaPai({ tipo: 'rolagem', evento: r.evento }); return r.evento }
           catch (e) { setErro(e instanceof ErroNuvem ? e.message : 'Falha ao rolar.'); return null }
         } : undefined}
         passarItem={campanhaId && nuvem ? async (item, tem) => {

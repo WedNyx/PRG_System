@@ -86,10 +86,10 @@ export const SISTEMAS: Sistema[] = [
   },
   {
     id: 'dnd5e-srd',
-    nome: 'D&D 5ª edição (SRD 5.2)',
+    nome: 'D&D 2024 (SRD 5.2.1)',
     resumo: 'O RPG de fantasia mais jogado do mundo (regras de 2024). Escolha classe, espécie e antecedente: proficiência, perícias, salvaguardas, CA, PV, CD e ataque de magia calculados.',
     tipo: 'aberto', licenca: 'CC-BY-4.0',
-    creditos: 'Este trabalho inclui material do System Reference Document 5.2.1 ("SRD 5.2.1") da Wizards of the Coast LLC, disponível em https://www.dndbeyond.com/srd. O SRD 5.2 está licenciado sob a Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/legalcode).',
+    creditos: 'Este trabalho inclui material do System Reference Document 5.2.1 ("SRD 5.2.1") da Wizards of the Coast LLC, disponível em https://www.dndbeyond.com/srd. O SRD 5.2.1 está licenciado sob a Creative Commons Attribution 4.0 International License (https://creativecommons.org/licenses/by/4.0/legalcode).',
     dados: 'd20 (dano: d4–d12)',
     campos: [
       { id: 'classe', nome: 'Classe', tipo: 'escolha', opcoes: ([

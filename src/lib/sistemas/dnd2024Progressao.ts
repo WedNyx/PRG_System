@@ -8,6 +8,8 @@ export type MarcoDnd = {
   nivel: number
   origem: 'classe' | 'subclasse' | 'especie' | 'antecedente'
   origemId: string
+  /** Só para a classe com que o personagem começou, não para multiclasse. */
+  inicialApenas?: boolean
   modo: 'automatico' | 'escolha'
   descricao?: string
   /** `fonte` = id da fonte comercial (dnd2024Fontes); sem ela, SRD. */
@@ -38,7 +40,8 @@ export function progressaoVisivel(marcos: MarcoDnd[], ficha: ProgressoDnd): Marc
   return marcos.filter(m => {
     if (m.requer && ficha.escolhas[m.requer.marco] !== m.requer.opcao) return false
     if (m.ocultarSe && escolhido(m.ocultarSe)) return false
-    if (m.origem === 'classe' || m.origem === 'subclasse') return m.origemId in ficha.nivelPorClasse
+    if (m.origem === 'classe' || m.origem === 'subclasse')
+      return m.origemId in ficha.nivelPorClasse && (!m.inicialApenas || Object.keys(ficha.nivelPorClasse)[0] === m.origemId)
     if (m.origem === 'especie') return m.origemId === ficha.especieId
     return m.origemId === ficha.antecedenteId
   }).map(m => {

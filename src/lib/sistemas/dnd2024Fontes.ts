@@ -1,9 +1,11 @@
 /**
  * D&D 2024 — fontes e suplementos (v0.33.6).
  *
- * Regra da plataforma: livros COMERCIAIS entram só como metadados — nome do livro e nomes das opções
- * (subclasses, espécie, antecedentes), para a ficha registrar a escolha e o mestre liberar a fonte.
- * Nenhum texto de regra desses livros fica aqui: cada característica aponta para o livro.
+ * Regra da plataforma: livros COMERCIAIS usam metadados verificáveis de criação (nomes,
+ * três atributos elegíveis, perícias, ferramentas, talento, equipamentos) sem reproduzir
+ * descrições literárias ou o texto integral das características protegidas do livro.
+ * Subclasses comerciais ainda possuem só nomes e referências ao livro.
+ * O mestre controla quais fontes ficam liberadas em cada campanha.
  * Os nomes em português são tradução da plataforma.
  */
 import type { MarcoDnd } from './dnd2024Progressao'
@@ -30,7 +32,7 @@ export const FONTES_DND: FonteDnd[] = [
   { id: FONTE_LEGADO_2014, nome: 'Livro do Jogador (2014) — legado', original: "Player's Handbook (2014)", ano: 2014, tipo: 'comercial', opcoesNaFicha: true,
     traz: 'Opções legadas compatíveis mediante aprovação do mestre. Inclui o antecedente Forasteiro (Outlander); regras completas no livro de 2014.' },
   { id: FONTE_PHB, nome: 'Livro do Jogador (2024)', original: "Player's Handbook (2024)", ano: 2024, tipo: 'comercial', opcoesNaFicha: true,
-    traz: 'As outras 36 subclasses, o Aasimar, mais 12 antecedentes, talentos e magias. A ficha registra os nomes; as regras ficam no livro.' },
+    traz: '36 subclasses e Aasimar como opções de referência, mais 12 antecedentes com metadados de criação (atributos, perícias, ferramentas, talentos e equipamentos). Efeitos completos das regras comerciais exigem o livro.' },
   { id: 'dmg2024', nome: 'Guia do Mestre (2024)', original: "Dungeon Master's Guide (2024)", ano: 2024, tipo: 'comercial', opcoesNaFicha: false,
     traz: 'Ferramentas do mestre, tesouros e itens mágicos, criação de mundo. Só marca que a mesa usa o livro.' },
   { id: 'mm2025', nome: 'Manual dos Monstros (2025)', original: 'Monster Manual (2025)', ano: 2025, tipo: 'comercial', opcoesNaFicha: false,

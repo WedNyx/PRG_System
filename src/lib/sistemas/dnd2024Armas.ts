@@ -96,5 +96,20 @@ export function expressaoDanoArmaDnd(a: ArmaDnd2024, mod: number, critico = fals
   const extra = atributo + Math.max(0, Math.min(3, Math.floor(bonusMagico)))
   return dados + (extra > 0 ? '+' + extra : extra < 0 ? String(extra) : '')
 }
+/** Expressão de dano de arma de suplemento ou de item personalizado.
+ * Não supõe efeitos mágicos; só dobra o número de dados quando crítico.
+ * `mod` deve ser 0 para expressões que o jogador já montou com bônus.
+ */
+export function expressaoDanoLivreDnd(base: string, critico = false, mod = 0): string | null {
+  const limpa = base.toLowerCase().replace(/\s+/g, '')
+  if (!limpa || limpa.length > 40 || !/^[0-9d+\-]+$/.test(limpa)) return null
+  const termos = limpa.match(/[+-]?[^+-]+/g)
+  if (!termos?.length || termos.some(x => !/^[+-]?(?:(?:\d*)d(?:\d+)|\d+)$/.test(x))) return null
+  const expressao = limpa.replace(/(\d*)d(\d+)/g, (_dado, quantidade: string, faces: string) =>
+    `${Number(quantidade || 1) * (critico ? 2 : 1)}d${faces}`)
+  const acrescimo = Number.isFinite(mod) ? Math.max(-30, Math.min(30, Math.trunc(mod))) : 0
+  return expressao + (acrescimo > 0 ? '+' + acrescimo : acrescimo < 0 ? String(acrescimo) : '')
+}
+
 export const descricaoArmaDnd = (a: ArmaDnd2024) =>
   `D&D 2024 SRD · ${a.tipo} · ${a.propriedades.join(', ') || 'Sem propriedades'} · Maestria: ${a.maestria}${a.alcancePes ? ` · Alcance ${a.alcancePes.join('/') } pés` : ''}${a.versatil ? ` · Versátil ${a.versatil}` : ''} · ${a.preco}`

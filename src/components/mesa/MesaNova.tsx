@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowDown, ArrowLeft, ArrowUp, BookOpen, CircleHelp, Crown, Globe, Library, MoreHorizontal, PanelRightClose, PanelRightOpen, ScrollText, ChevronLeft, ChevronRight, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
+import { SquareDashed, Sun, ArrowDown, ArrowLeft, ArrowUp, BookOpen, CircleHelp, Crown, Globe, Library, MoreHorizontal, PanelRightClose, PanelRightOpen, ScrollText, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
@@ -24,13 +24,16 @@ import Sino from '@/components/Sino'
 import TocadorMesa from './TocadorMesa'
 import type { EstadoMusica } from '@/lib/nuvem/musica'
 import RecorteImagem from './RecorteImagem'
+import { LUZES_PRONTAS, MAX_GRADE, type AreaNevoa, type LuzToken } from '@/lib/nuvem/mesa'
 import { btn, input, msg } from './estilos'
 import RolagemAssim, { marcaAssim } from '@/components/dados/RolagemAssim'
-import { CartaoAtaque, ConfigCombate, DescansoGrupo, JanelaAtaque, PainelFichas, PainelMorte, PrepararCombate, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type FichaMesa, type Morte } from './Combate'
+import { CartaoAtaque, ConfigCombate, DescansoGrupo, JanelaAtaque, PainelFichas, PainelMorte, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type Morte } from './Combate'
 import NaTela from '@/components/NaTela'
+import FichaNaMesa from './FichaNaMesa'
+import { PainelIniciativa } from './Iniciativa'
 
-type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean }
-type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; condicoes_rodadas?: Record<string, number> | null; condicoes_dano?: Record<string, string> | null; morte?: Morte | null; dono_id: string | null; ficha_id: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number }
+type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean; fog_areas?: AreaNevoa[] | null; escuridao?: number | null; luz_revela_nevoa?: boolean | null }
+type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; condicoes_rodadas?: Record<string, number> | null; condicoes_dano?: Record<string, string> | null; morte?: Morte | null; dono_id: string | null; ficha_id: string | null; ficha_modelo?: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number; luz?: LuzToken | null }
 export type Evento = { id: number; tipo: 'chat' | 'rolagem' | 'sistema' | 'ataque'; dados?: DadosAtaque | null; visibilidade: 'publica' | 'mestre' | 'privada'; autor_id: string | null; destinatario_id: string | null; personagem: string | null; texto: string | null; expressao: string | null; resultados: number[] | null; total: number | null; criado_em: string; autor: { apelido: string } | null }
 type Iniciativa = { id: string; nome: string; valor: number; tokenId?: string | null }
 export type Estado = {
@@ -85,6 +88,8 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [camadaSel, setCamadaSel] = useState<string | null>(null)
   const [som, setSom] = useState(true)
   const [historico, setHistorico] = useState(false)
+  /** Ficha aberta dentro da mesa (v0.33.8). */
+  const [fichaAberta, setFichaAberta] = useState<string | null>(null)
   const [desvio, setDesvio] = useState(0)
   const [fechada, setFechada] = useState(false)
   // Mudanças que aparecem na hora (antes do servidor confirmar): posições de tokens e traços de desenho.
@@ -196,6 +201,28 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     if (t && t.dono_id === e?.eu && e?.campanha.meuPapel !== 'espectador') toast(`⚔️ É a sua vez, ${t.nome}!`, { description: 'Mova o token e use “Sua vez: atacar”.' })
   }, [e])
 
+  // Ficha aberta na mesa: a rolagem dela aparece no meio da tela e avisa os outros; ao salvar, a mesa atualiza.
+  const salvouEm = useRef(0)
+  useEffect(() => {
+    const ouvir = (ev: MessageEvent) => {
+      const m = ev.data as { prg?: string; tipo?: string; evento?: Evento }
+      if (ev.origin !== window.location.origin || m?.prg !== 'ficha') return
+      if (m.tipo === 'rolagem' && m.evento) { destacar(m.evento); avisarMudanca() }
+      if (m.tipo === 'salvo') { salvouEm.current = Date.now(); avisarMudanca(); void carregarFichas() }
+    }
+    window.addEventListener('message', ouvir)
+    return () => window.removeEventListener('message', ouvir)
+  }, [destacar, avisarMudanca, carregarFichas])
+  // A vida da ficha aberta mudou na mesa (dano, cura, descanso): a ficha recarrega (se não foi ela mesma que salvou agora).
+  const iframeFicha = useRef<HTMLIFrameElement>(null)
+  const vidaAberta = e && fichaAberta ? e.tokens.filter(t => t.ficha_id === fichaAberta).map(t => `${t.hp_atual}/${t.hp_max}`).join() : ''
+  const vidaAntes = useRef('')
+  useEffect(() => {
+    if (vidaAntes.current && vidaAberta && vidaAntes.current !== vidaAberta && Date.now() - salvouEm.current > 6000)
+      iframeFicha.current?.contentWindow?.postMessage({ prg: 'mesa', tipo: 'recarregar' }, window.location.origin)
+    vidaAntes.current = vidaAberta
+  }, [vidaAberta])
+
   const nomes = useMemo(() => Object.fromEntries((e?.membros ?? []).map(m => [m.aventureiro_id, m.aventureiro?.apelido ?? '?'])), [e?.membros])
   if (!e && fechada) return <main className="fundo-tema flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center text-(--a-e8dff7)">
     <p className="text-5xl" aria-hidden="true">🌙</p>
@@ -211,9 +238,9 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const sessaoAberta = !!e.sessao?.aberta
   const cena = e.cenaAtiva
   const travada = !!cena?.tokens_travados
-  const tokensMapa: TokenMapa[] = e.tokens.map(t => ({ ...t, ...(posicoes[t.id] ? { x: posicoes[t.id].x, y: posicoes[t.id].y } : {}), tamanho: t.tamanho ?? 1, rodadas: t.condicoes_rodadas ?? {}, morte: t.morte ?? null, meu: t.dono_id === e.eu, podeMover: !espectador && podeMoverToken({ movimento: t.movimento ?? 'dono', dono_id: t.dono_id }, e.eu, admin, travada) }))
+  const tokensMapa: TokenMapa[] = e.tokens.map(t => ({ ...t, ...(posicoes[t.id] ? { x: posicoes[t.id].x, y: posicoes[t.id].y } : {}), tamanho: t.tamanho ?? 1, rodadas: t.condicoes_rodadas ?? {}, morte: t.morte ?? null, meu: t.dono_id === e.eu, jogador: !t.npc && !!t.dono_id, luz: t.luz ?? null, podeMover: !espectador && podeMoverToken({ movimento: t.movimento ?? 'dono', dono_id: t.dono_id }, e.eu, admin, travada) }))
   const token = e.tokens.find(t => t.id === tokenAberto)
-  const fichaDoToken = (tokenId: string) => { const fid = e.tokens.find(t => t.id === tokenId)?.ficha_id; return fid ? fichasMesa?.find(f => f.id === fid) ?? null : null }
+  const fichaDoToken = (tokenId: string) => { const tk = e.tokens.find(t => t.id === tokenId); const fid = tk ? tk.ficha_id ?? tk.ficha_modelo : null; return fid ? fichasMesa?.find(f => f.id === fid) ?? null : null }
   /** Abre a janela de ataque já com a melhor arma/poder e o teste sugerido da ficha. */
   function iniciarAtaque(tokenId: string) {
     const c = fichaDoToken(tokenId)?.combate
@@ -238,6 +265,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const ferramentas: { id: ModoMesa; icone: typeof Hand; nome: string; so?: boolean; fog?: boolean }[] = [
     { id: 'mover', icone: Hand, nome: 'Mover / arrastar' }, { id: 'regua', icone: Ruler, nome: 'Régua: arraste para medir a distância' }, { id: 'ping', icone: MapPin, nome: 'Marcar: toque para chamar a atenção de todos' }, { id: 'desenhar', icone: Pencil, nome: 'Desenhar no mapa (todos veem)' },
     { id: 'revelar', icone: Eye, nome: 'Revelar com pincel', so: true, fog: true }, { id: 'esconder', icone: CloudFog, nome: 'Esconder com pincel', so: true, fog: true },
+    { id: 'nevoa-area', icone: SquareDashed, nome: 'Partes com névoa: arraste para criar uma; toque numa para revelar ou esconder', so: true, fog: true },
     { id: 'area-revelar', icone: Square, nome: 'Revelar área (arraste um retângulo)', so: true, fog: true }, { id: 'area-esconder', icone: EyeOff, nome: 'Esconder área', so: true, fog: true },
     { id: 'editar-mapa', icone: Layers, nome: 'Montar mapa (mover/redimensionar imagens)', so: true },
   ]
@@ -281,6 +309,9 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
         {sessaoAberta ? <>⏹ Encerrar<span className="hidden sm:inline"> sessão</span></> : <>▶ Abrir<span className="hidden sm:inline"> sessão</span></>}</button>}
       <span className="flex shrink-0 items-center gap-1 rounded-full bg-(--s-14121f) px-2 py-1 text-[11px] text-(--a-cfc0df)" title={(tempoReal ? 'Tempo real ligado' : 'Atualizando a cada 4 s') + ' · online: ' + (online.map(id => nomes[id]).filter(Boolean).join(', ') || 'você')}>
         <span className={'h-2 w-2 rounded-full ' + (tempoReal ? 'bg-emerald-400' : 'bg-amber-400')} />{online.length || 1}<span className="hidden sm:inline"> online</span></span>
+      {!espectador && e.fichas.length > 0 && <button type="button" onClick={() => setFichaAberta(f => f ? null : (e.fichas.find(x => x.dono_id === e.eu && !x.npc) ?? e.fichas[0]).id)} aria-pressed={!!fichaAberta}
+        aria-label={admin ? 'Abrir uma ficha aqui na mesa' : 'Abrir a minha ficha aqui na mesa'} title={admin ? 'Fichas aqui na mesa' : 'Minha ficha aqui na mesa'}
+        className={'inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ' + (fichaAberta ? 'border-(--a-b99bff) bg-(--s-3a2c58)' : 'border-(--a-5e4b78) hover:bg-(--s-34294f)')}><ScrollText size={14} /><span className="hidden sm:inline">{admin ? 'Fichas' : 'Ficha'}</span></button>}
       <Sino />
       <div className="hidden items-center gap-1 md:flex">
         <button type="button" onClick={() => setSom(!som)} aria-label={som ? 'Desligar o som dos dados' : 'Ligar o som dos dados'} title={som ? 'Som dos dados ligado' : 'Som dos dados desligado'} className="rounded-lg p-1.5 hover:bg-(--s-34294f)">{som ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
@@ -317,11 +348,14 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
         </div></div>}
         {modo === 'editar-mapa' && <p className="absolute left-2 top-2 z-20 rounded-lg bg-(--s-19172c)/95 px-3 py-1.5 text-xs">Arraste as imagens para montar o mapa. Toque numa imagem e puxe a bolinha para mudar o tamanho.</p>}
         {cena ? <MapaMesa cols={cena.grid_cols} rows={cena.grid_rows} fundo={cena.mapa_url} camadas={cena.camadas ?? []} fogAtivo={cena.fog_ativo} fogRevelado={cena.fog_revelado}
+          fogAreas={cena.fog_areas ?? []} escuridao={cena.escuridao ?? 0} luzRevela={cena.luz_revela_nevoa !== false}
+          onCriarAreaNevoa={r => { const n = (cena.fog_areas ?? []).length + 1; void acao({ acao: 'cena_editar', cenaId: cena.id, fog_areas: [...(cena.fog_areas ?? []), { id: crypto.randomUUID(), nome: 'Área ' + n, ...r, revelada: false }] }).then(() => toast.success(`Área ${n} com névoa. Toque nela (nesta ferramenta) para revelar.`)).catch(() => {}) }}
+          onTocarAreaNevoa={id => void acao({ acao: 'cena_editar', cenaId: cena.id, fog_areas: (cena.fog_areas ?? []).map(a => a.id === id ? { ...a, revelada: !a.revelada } : a) }).catch(() => {})}
           tokens={tokensMapa} desenhos={desenhosMapa} cursores={cursores} pings={pings} admin={admin} modo={modo} cor={cor} pincel={pincel}
           camadaSel={camadaSel} onSelecionarCamada={setCamadaSel}
           onAlterarCamada={c => { setE(s => s && s.cenaAtiva ? { ...s, cenaAtiva: { ...s.cenaAtiva, camadas: s.cenaAtiva.camadas.map(x => x.id === c.id ? c : x) } } : s); void salvarCamadas(cena.camadas.map(x => x.id === c.id ? c : x)) }}
           onMoverToken={moverToken}
-          onNevoa={(celulas, revelar) => void acao({ acao: 'nevoa', cenaId: cena.id, celulas, revelar }).catch(() => {})}
+          onNevoa={(celulas, revelar, retangulo) => void acao({ acao: 'nevoa', cenaId: cena.id, celulas, revelar, retangulo }).catch(() => {})}
           onPing={(x, y) => { const p = { id: crypto.randomUUID(), x, y, autor: nomes[e.eu] ?? '' }; setPings(s => [...s, p]); setTimeout(() => setPings(s => s.filter(q => q.id !== p.id)), 2500); void canal.current?.send({ type: 'broadcast', event: 'ping', payload: p }) }}
           onTokenClick={espectador ? () => {} : id => { if (ataque?.mirando) { if (id !== ataque.atacante) setAtaque({ ...ataque, alvo: id, mirando: false }) } else setTokenAberto(id) }}
           vez={vez?.tokenId ?? null}
@@ -353,7 +387,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
         <p className="flex shrink-0 items-start gap-1.5 border-b border-(--a-2b2540) bg-(--s-15122a) px-3 py-1.5 text-[11px] leading-snug text-(--a-a99bbb)"><CircleHelp size={13} className="mt-px shrink-0" /> {parteAtual.ajuda}</p>
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
           {parteAtual.id === 'chat' && <Chat e={e} nomes={nomes} papelDe={papelDe} admin={admin} espectador={espectador} acao={acao} destacar={destacar} abrirHistorico={() => setHistorico(true)} />}
-          {parteAtual.id === 'fichas' && <PainelFichas fichas={fichasMesa} carregar={() => void carregarFichas()} tokens={e.tokens} admin={admin} cenaId={cena?.id ?? null} acao={acao} atacarCom={iniciarAtaque} />}
+          {parteAtual.id === 'fichas' && <PainelFichas fichas={fichasMesa} carregar={() => void carregarFichas()} tokens={e.tokens} admin={admin} cenaId={cena?.id ?? null} acao={acao} atacarCom={iniciarAtaque} abrirFicha={setFichaAberta} />}
           {parteAtual.id === 'tokens' && <PainelTokens e={e} admin={admin} acao={acao} campanhaId={campanhaId} abrir={setTokenAberto} />}
           {parteAtual.id === 'iniciativa' && <PainelIniciativa e={e} admin={admin} acao={acao} fichas={fichasMesa} atacar={iniciarAtaque} />}
           {parteAtual.id === 'musica' && <PainelMusica campanhaId={campanhaId} eu={e.eu} admin={admin} espectador={espectador} tocando={e.musica} aoMudar={avisarMudanca} />}
@@ -370,7 +404,9 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     {(() => { const papel = admin ? 'mestre' : espectador ? 'espectador' : 'jogador'
       return <DicasMesa papel={papel} aberto={dicas === 'aberto' || (dicas === 'auto' && deveMostrarDicas(papel))} fechar={() => setDicas('fechado')} /> })()}
     {token && <TokenModal t={token} admin={admin} eu={e.eu} acao={acao} campanhaId={campanhaId} regraMorte={e.combate?.morte ?? 'testes'} fechar={() => setTokenAberto(null)}
-      atacar={!espectador && (admin || token.dono_id === e.eu) ? () => { setTokenAberto(null); iniciarAtaque(token.id) } : undefined} />}
+      atacar={!espectador && (admin || token.dono_id === e.eu) ? () => { setTokenAberto(null); iniciarAtaque(token.id) } : undefined}
+      abrirFicha={!espectador && (token.ficha_id || token.ficha_modelo) && (admin || token.dono_id === e.eu) && e.fichas.some(f => f.id === (token.ficha_id ?? token.ficha_modelo)) ? () => { setTokenAberto(null); setFichaAberta(token.ficha_id ?? token.ficha_modelo ?? null) } : undefined} />}
+    {fichaAberta && <FichaNaMesa ref={iframeFicha} fichas={e.fichas} aberta={fichaAberta} trocar={setFichaAberta} fechar={() => setFichaAberta(null)} />}
     {historico && <Historico campanhaId={campanhaId} membros={e.membros} fechar={() => setHistorico(false)} />}
   </div>
 }
@@ -387,7 +423,7 @@ function PainelMestre({ e, acao, campanhaId, setModo }: { e: Estado; acao: Acao;
 
   async function fundoNovaCena(arq: File) {
     setEnviando('nova')
-    try { const { url, ar } = await enviarImagem(campanhaId, e.eu, arq); setNova(n => ({ ...n, mapa_url: url, enviado: true, grid_rows: Math.max(5, Math.min(100, Math.round(n.grid_cols * ar))) })); toast.success('Mapa enviado! Depois de criar a cena, use ✂️ Recortar para escolher a parte da imagem.') }
+    try { const { url, ar } = await enviarImagem(campanhaId, e.eu, arq); setNova(n => ({ ...n, mapa_url: url, enviado: true, grid_rows: Math.max(5, Math.min(MAX_GRADE, Math.round(n.grid_cols * ar))) })); toast.success('Mapa enviado! Depois de criar a cena, use ✂️ Recortar para escolher a parte da imagem.') }
     catch (er) { toast.error(msg(er)) } finally { setEnviando('') }
   }
   async function adicionarCamadas(arqs: FileList) {
@@ -412,19 +448,19 @@ function PainelMestre({ e, acao, campanhaId, setModo }: { e: Estado; acao: Acao;
       : { acao: 'cena_criar', nome: nova.nome, grid_cols: nova.grid_cols, grid_rows: nova.grid_rows, mapa_url: nova.mapa_url }
     void acao(corpo).then(() => setNova({ nome: '', mapa_url: '', grid_cols: 20, grid_rows: 15, enviado: false })).catch(() => {})
   }
-  const PRESETS: [string, number, number][] = [['Pequeno', 15, 10], ['Médio', 25, 18], ['Grande', 40, 28], ['Enorme', 60, 40]]
+  const PRESETS: [string, number, number][] = [['Pequeno', 15, 10], ['Médio', 25, 18], ['Grande', 40, 28], ['Enorme', 60, 40], ['Região', 100, 70], ['Mundo', 200, 140]]
 
   return <div className="space-y-5 text-sm">
     {cena && <section className="space-y-2">
       <h3 className="font-semibold">📐 Tamanho do mapa</h3>
       <div className="flex flex-wrap gap-1">{PRESETS.map(([n, c, r]) => <button key={n} type="button" onClick={() => setTam({ c, r })} className={btn + (tam.c === c && tam.r === r ? ' bg-(--a-5b4380)' : '')}>{n} {c}×{r}</button>)}</div>
       <div className="flex flex-wrap items-center gap-2">
-        <input aria-label="Colunas do mapa" type="number" min={5} max={100} value={tam.c} onChange={x => setTam({ ...tam, c: Number(x.target.value) })} className={input + ' !w-20'} />×
-        <input aria-label="Linhas do mapa" type="number" min={5} max={100} value={tam.r} onChange={x => setTam({ ...tam, r: Number(x.target.value) })} className={input + ' !w-20'} />
+        <input aria-label="Colunas do mapa" type="number" min={5} max={MAX_GRADE} value={tam.c} onChange={x => setTam({ ...tam, c: Number(x.target.value) })} className={input + ' !w-20'} />×
+        <input aria-label="Linhas do mapa" type="number" min={5} max={MAX_GRADE} value={tam.r} onChange={x => setTam({ ...tam, r: Number(x.target.value) })} className={input + ' !w-20'} />
         <span className="text-xs text-(--a-b4aeca)">≈ {Math.round(tam.c * 1.5)} × {Math.round(tam.r * 1.5)} m</span>
         <button type="button" className={btn} disabled={tam.c === cena.grid_cols && tam.r === cena.grid_rows} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, grid_cols: tam.c, grid_rows: tam.r }).catch(() => {})}>Aplicar</button>
       </div>
-      <p className="text-xs text-(--a-b4aeca)">Cada quadrado vale 1,5 m. Diminuir o mapa não apaga tokens; eles ficam na borda.</p>
+      <p className="text-xs text-(--a-b4aeca)">Cada quadrado vale 1,5 m, até {MAX_GRADE} × {MAX_GRADE} ({MAX_GRADE * 1.5} m de lado). Diminuir o mapa não apaga tokens; eles ficam na borda.</p>
     </section>}
 
     {cena && <section className="space-y-2">
@@ -453,7 +489,9 @@ function PainelMestre({ e, acao, campanhaId, setModo }: { e: Estado; acao: Acao;
           <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, nevoa_tudo: true })}><Eye size={14} /> Revelar tudo</button>
           <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, fog_limpar: true })}><EyeOff size={14} /> Esconder tudo</button></>}
       </div>
-      {cena.fog_ativo && <p className="text-xs text-(--a-b4aeca)">No canto do mapa: <Eye size={12} className="inline" /> pincel (1×1, 3×3, 5×5) ou <Square size={12} className="inline" /> arraste um retângulo para revelar uma área inteira.</p>}
+      {cena.fog_ativo && <p className="text-xs text-(--a-b4aeca)">No canto do mapa: <SquareDashed size={12} className="inline" /> marca as partes que têm névoa (salas, cavernas…) e revela cada uma com um toque; <Eye size={12} className="inline" /> pincel (1×1, 3×3, 5×5) e <Square size={12} className="inline" /> retângulo revelam ou escondem pedaços.</p>}
+      {cena.fog_ativo && <AreasNevoa cena={cena} acao={acao} setModo={setModo} />}
+      <Iluminacao key={cena.id + ':' + (cena.escuridao ?? 0)} cena={cena} acao={acao} />
       <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, tokens_travados: !cena.tokens_travados })}>{cena.tokens_travados ? <><LockOpen size={14} /> Destravar tokens dos jogadores</> : <><Lock size={14} /> Travar tokens dos jogadores</>}</button>
     </section>}
 
@@ -469,8 +507,8 @@ function PainelMestre({ e, acao, campanhaId, setModo }: { e: Estado; acao: Acao;
         <label className={btn + ' cursor-pointer'}><ImageIcon size={14} /> {enviando === 'nova' ? 'Enviando…' : nova.enviado ? 'Mapa escolhido ✓ (trocar)' : 'Mapa do aparelho (opcional)'}
           <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={x => { const f = x.target.files?.[0]; if (f) void fundoNovaCena(f); x.target.value = '' }} /></label>
         {!nova.enviado && <input aria-label="Link da imagem do mapa" value={nova.mapa_url} onChange={x => setNova({ ...nova, mapa_url: x.target.value })} placeholder="ou cole um link https://…" className={input} />}
-        <div className="flex items-center gap-2"><span>Tamanho</span><input aria-label="Colunas" type="number" min={5} max={100} value={nova.grid_cols} onChange={x => setNova({ ...nova, grid_cols: Number(x.target.value) })} className={input + ' !w-20'} />×
-          <input aria-label="Linhas" type="number" min={5} max={100} value={nova.grid_rows} onChange={x => setNova({ ...nova, grid_rows: Number(x.target.value) })} className={input + ' !w-20'} /></div>
+        <div className="flex items-center gap-2"><span>Tamanho</span><input aria-label="Colunas" type="number" min={5} max={MAX_GRADE} value={nova.grid_cols} onChange={x => setNova({ ...nova, grid_cols: Number(x.target.value) })} className={input + ' !w-20'} />×
+          <input aria-label="Linhas" type="number" min={5} max={MAX_GRADE} value={nova.grid_rows} onChange={x => setNova({ ...nova, grid_rows: Number(x.target.value) })} className={input + ' !w-20'} /></div>
         <button type="submit" className={btn}><Plus size={14} /> Criar cena</button>
       </form>
     </section>
@@ -533,7 +571,7 @@ function PainelTokens({ e, admin, acao, campanhaId, abrir }: { e: Estado; admin:
   </div>
 }
 
-function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar, regraMorte }: { t: Token; admin: boolean; eu: string; acao: Acao; campanhaId: string; fechar: () => void; atacar?: () => void; regraMorte: 'desligado' | 'testes' | 'desesperadas' }) {
+function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar, abrirFicha, regraMorte }: { t: Token; admin: boolean; eu: string; acao: Acao; campanhaId: string; fechar: () => void; atacar?: () => void; abrirFicha?: () => void; regraMorte: 'desligado' | 'testes' | 'desesperadas' }) {
   const pode = admin || t.dono_id === eu
   const [dano, setDano] = useState('')
   const hp = t.hp_atual ?? 0
@@ -542,7 +580,9 @@ function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar, regraMorte
       <div className="flex items-center gap-2"><span className="h-8 w-8 rounded-full" style={{ background: t.imagem_url ? `center/cover url(${t.imagem_url})` : t.cor }} /><h2 className="flex-1 font-bold">{t.nome}</h2>
         <button type="button" onClick={fechar} aria-label="Fechar" className="rounded p-1 hover:bg-(--s-34294f)"><X size={18} /></button></div>
       {atacar && <button type="button" onClick={atacar} className="mt-3 w-full rounded-xl bg-gradient-to-r from-[#b91c1c] to-(--a-7c3aed) p-2.5 font-bold shadow-[0_0_14px_#b91c1c55]">⚔️ Atacar</button>}
+      {abrirFicha && <button type="button" onClick={abrirFicha} className={btn + ' mt-2 w-full justify-center'}><ScrollText size={14} /> Abrir a ficha (poderes, itens, testes)</button>}
       {t.ficha_id && <p className="mt-2 text-[11px] text-(--a-a99bbb)">📜 Ligado a uma ficha: a vida é a da ficha.</p>}
+      {t.ficha_modelo && <p className="mt-2 text-[11px] text-(--a-a99bbb)">👥 Cópia de uma ficha de NPC: ataques, testes e imagem vêm dela; a vida é deste token.</p>}
       {t.ficha_id && !t.hp_max && !hp && <p className="mt-2 rounded-lg bg-[#3a2a14]/80 p-2 text-[11px] text-[#f6dca8]">⚠️ A ficha está com a vida zerada e sem máximo. Preencha a vida na ficha para o dano contar.</p>}
       {t.hp_max ? <div className="mt-3"><p className="text-sm">PV <strong>{hp} / {t.hp_max}</strong></p>
         <div className="mt-1 h-2 overflow-hidden rounded-full bg-(--s-2b2140)"><div className="h-full bg-(--a-b06ad8)" style={{ width: Math.max(0, Math.min(100, hp / t.hp_max * 100)) + '%' }} /></div>
@@ -567,6 +607,7 @@ function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar, regraMorte
               salvar={v => acao({ acao: 'token_editar', tokenId: t.id, danos: { ...(t.condicoes_dano ?? {}), [c]: v } }).catch(() => {})} /></div> })}
         <p className="text-[11px] text-(--a-a998bd)">💥 Dano por turno: rolado no começo do turno de {t.nome} e tirado da vida dele. Deixe vazio para não causar dano.</p>
       </div>}
+      {pode && <LuzDoToken key={JSON.stringify(t.luz ?? null)} t={t} acao={acao} />}
       {pode && <label className={btn + ' mt-3 cursor-pointer'}><ImageIcon size={14} /> Trocar imagem do token<input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={async x => {
         const f = x.target.files?.[0]; x.target.value = ''; if (!f) return
         try { const { url } = await enviarImagem(campanhaId, eu, f); await acao({ acao: 'token_editar', tokenId: t.id, imagem_url: url }) } catch (er) { toast.error(msg(er)) }
@@ -659,45 +700,6 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
   </div>
 }
 
-function PainelIniciativa({ e, admin, acao, fichas, atacar }: { e: Estado; admin: boolean; acao: Acao; fichas: FichaMesa[] | null; atacar: (tokenId: string) => void }) {
-  const lista = e.mesa?.iniciativa ?? [], turno = e.mesa?.turno ?? 0, rodada = e.mesa?.rodada ?? 1
-  const [nome, setNome] = useState(''), [valor, setValor] = useState('')
-  const [preparando, setPreparando] = useState(false)
-  const salvar = (iniciativa: Iniciativa[], t = turno, r = rodada) => acao({ acao: 'iniciativa', iniciativa, turno: t, rodada: r }).catch(() => {})
-  const passar = (direcao: 1 | -1) => { if (lista.length) void acao({ acao: 'turno', direcao }).catch(() => {}) }
-  const tokenDe = (x: Iniciativa) => x.tokenId ? e.tokens.find(t => t.id === x.tokenId) : undefined
-  return <div className="space-y-3">
-    {admin && <div className="flex flex-wrap gap-2">
-      <button type="button" onClick={() => setPreparando(true)} className="flex-1 rounded-xl bg-gradient-to-r from-[#b91c1c] to-(--a-7c3aed) px-3 py-2.5 font-bold shadow-[0_0_14px_#b91c1c44]">⚔️ {lista.length ? 'Preparar de novo' : 'Preparar combate'}</button>
-      {lista.length > 0 && <button type="button" onClick={() => { if (confirm('Encerrar o combate e limpar a ordem de turnos?')) void acao({ acao: 'combate_encerrar' }).catch(() => {}) }} className={btn}>🏳️ Encerrar</button>}
-    </div>}
-    {lista.length > 0 && <p className="text-sm">Rodada <strong>{rodada}</strong> · vez de <strong className="text-amber-200">{lista[turno]?.nome}</strong></p>}
-    <ol className="space-y-1">{lista.map((x, i) => { const t = tokenDe(x), minha = !!t && t.dono_id === e.eu
-      return <li key={x.id} className={'flex items-center gap-2 rounded-lg p-2 text-sm ' + (i === turno ? 'bg-gradient-to-r from-(--a-5b4380) to-[#7c2d4a] font-semibold ring-1 ring-amber-300/60' : 'bg-(--s-1e1a30)')}>
-        <span className="w-8 text-center tabular-nums">{x.valor}</span>
-        {t && <span aria-hidden className="h-6 w-6 shrink-0 rounded-full border border-black/40 bg-cover bg-center" style={{ backgroundColor: t.cor, backgroundImage: t.imagem_url ? `url("${t.imagem_url}")` : undefined }} />}
-        <span className="min-w-0 flex-1 truncate">{x.nome}{t?.hp_max ? <span className="ml-1 text-[11px] font-normal text-(--a-c4b6d4)">❤️ {t.hp_atual ?? 0}/{t.hp_max}</span> : null}
-          {t?.condicoes?.length ? <span className="ml-1 text-[11px] font-normal" title={t.condicoes.map(nomeCondicao).join(', ')}>{t.condicoes.map(c => emojiCondicao[c] + (t.condicoes_rodadas?.[c] ? t.condicoes_rodadas[c] : '')).join(' ')}</span> : null}</span>
-        {i === turno && <>⚔️{(admin || minha) && t && <button type="button" onClick={() => atacar(t.id)} className="rounded-md bg-[#b91c1c] px-2 py-0.5 text-[11px] font-semibold text-white">Atacar</button>}</>}
-        {admin && <button type="button" aria-label={'Remover ' + x.nome} onClick={() => salvar(lista.filter(y => y.id !== x.id), Math.min(turno, Math.max(0, lista.length - 2)))} className="rounded p-1 hover:bg-[#4b253a]"><X size={14} /></button>}
-      </li> })}</ol>
-    {!admin && lista.length > 0 && (() => { const t = tokenDe(lista[turno]); return t && t.dono_id === e.eu
-      ? <button type="button" onClick={() => void acao({ acao: 'turno', direcao: 1, turnoAtual: turno }).catch(() => {})} className="w-full rounded-lg bg-(--a-5b4380) px-3 py-2 text-sm font-semibold hover:bg-(--a-6b5190)">✅ Terminar meu turno</button> : null })()}
-    {lista.length === 0 && <p className="text-sm text-(--a-b4aeca)">{admin ? 'Ninguém na iniciativa. Toque em “Preparar combate” para rolar a iniciativa de todos os tokens.' : 'Ainda não há combate.'}</p>}
-    {admin && <>
-      {lista.length > 0 && <div className="flex gap-2"><button type="button" onClick={() => passar(-1)} className={btn}><ChevronLeft size={14} /> Anterior</button>
-        <button type="button" onClick={() => passar(1)} className={'flex-1 justify-center rounded-lg bg-(--a-5b4380) px-3 py-2 text-sm font-semibold hover:bg-(--a-6b5190) inline-flex items-center gap-1'}>Próximo turno <ChevronRight size={14} /></button></div>}
-      <details className="text-sm"><summary className="cursor-pointer text-xs text-(--a-c7a8ff)">Adicionar alguém à mão</summary>
-        <form onSubmit={x => { x.preventDefault(); if (!nome.trim()) return; void salvar([...lista, { id: crypto.randomUUID(), nome, valor: Number(valor) || 0 }]); setNome(''); setValor('') }} className="mt-2 flex gap-2">
-          <input aria-label="Nome" value={nome} onChange={x => setNome(x.target.value)} placeholder="Nome" className={input} />
-          <input aria-label="Valor" value={valor} onChange={x => setValor(x.target.value)} inputMode="numeric" placeholder="Valor" className={input + ' !w-20'} />
-          <button type="submit" aria-label="Adicionar" className={btn}><Plus size={14} /></button></form>
-      </details>
-    </>}
-    {preparando && <PrepararCombate tokens={e.tokens} fichas={fichas} acao={acao} fechar={() => setPreparando(false)} />}
-  </div>
-}
-
 function Historico({ campanhaId, membros, fechar }: { campanhaId: string; membros: Estado['membros']; fechar: () => void }) {
   return <NaTela><div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4" role="dialog" aria-modal="true" aria-label="Histórico de rolagens">
     <div className="flex max-h-[90vh] w-full max-w-xl flex-col rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-4">
@@ -715,4 +717,55 @@ function DanoPorTurno({ valor, nome, pode, salvar }: { valor: string; nome: stri
   const enviar = () => { if (v.trim().toLowerCase() !== valor) salvar(v.trim().toLowerCase()) }
   return <label className="flex items-center gap-1 text-[11px]">💥<input aria-label={'Dano por turno de ' + nome} disabled={!pode} value={v} maxLength={20} placeholder="sem dano"
     onChange={x => setV(x.target.value)} onBlur={enviar} onKeyDown={x => { if (x.key === 'Enter') { x.preventDefault(); (x.target as HTMLInputElement).blur() } }} className={input + ' !w-20 !py-1 font-mono'} /></label>
+}
+
+/** Partes do mapa com névoa (v0.33.8): cada área revela/esconde com um toque. */
+function AreasNevoa({ cena, acao, setModo }: { cena: Cena; acao: Acao; setModo: (m: ModoMesa) => void }) {
+  const areas = cena.fog_areas ?? []
+  const salvar = (novas: AreaNevoa[]) => acao({ acao: 'cena_editar', cenaId: cena.id, fog_areas: novas }).catch(() => {})
+  return <div className="space-y-1.5 rounded-lg border border-(--a-373251) p-2">
+    <div className="flex flex-wrap items-center gap-2">
+      <p className="flex-1 text-xs font-semibold">Partes com névoa {areas.length ? `(${areas.length})` : ''}</p>
+      <button type="button" className={btn} onClick={() => setModo('nevoa-area')}><SquareDashed size={14} /> Marcar no mapa</button>
+    </div>
+    {!areas.length && <p className="text-[11px] text-(--a-b4aeca)">Sem partes marcadas: a névoa cobre o mapa todo. Marque salas ou regiões para a névoa ficar só nelas.</p>}
+    <ul className="space-y-1">{areas.map(a => <li key={a.id} className="flex flex-wrap items-center gap-1.5 rounded bg-(--s-1e1a30) p-1.5">
+      <input aria-label="Nome da área" defaultValue={a.nome} maxLength={40} onBlur={x => { if (x.target.value !== a.nome) void salvar(areas.map(y => y.id === a.id ? { ...y, nome: x.target.value } : y)) }} className={input + ' !w-auto min-w-0 flex-1 !py-1'} />
+      <span className="text-[11px] text-(--a-b4aeca)">{a.w}×{a.h}</span>
+      <button type="button" className={btn} aria-pressed={a.revelada} onClick={() => void salvar(areas.map(y => y.id === a.id ? { ...y, revelada: !y.revelada } : y))}>{a.revelada ? <><Eye size={14} /> Revelada</> : <><CloudFog size={14} /> Com névoa</>}</button>
+      <button type="button" className={btn} aria-label={'Apagar ' + (a.nome || 'área')} onClick={() => void salvar(areas.filter(y => y.id !== a.id))}><Trash2 size={14} /></button>
+    </li>)}</ul>
+  </div>
+}
+
+/** Escuridão da cena e a luz dos personagens (v0.33.8). */
+function Iluminacao({ cena, acao }: { cena: Cena; acao: Acao }) {
+  const [esc, setEsc] = useState(cena.escuridao ?? 0)
+  return <div className="space-y-1.5 rounded-lg border border-(--a-373251) p-2">
+    <label className="flex flex-wrap items-center gap-2 text-xs font-semibold"><Sun size={14} /> Escuridão da cena
+      <input type="range" min={0} max={100} step={5} value={esc} onChange={x => setEsc(Number(x.target.value))} onPointerUp={() => void acao({ acao: 'cena_editar', cenaId: cena.id, escuridao: esc }).catch(() => {})}
+        onKeyUp={() => void acao({ acao: 'cena_editar', cenaId: cena.id, escuridao: esc }).catch(() => {})} className="min-w-32 flex-1 accent-(--a-b99bff)" aria-valuetext={esc + '%'} />
+      <span className="w-20 text-right font-normal text-(--a-c4b6d4)">{esc === 0 ? 'Dia claro' : esc < 40 ? 'Penumbra' : esc < 80 ? 'Noite' : 'Breu'} {esc}%</span></label>
+    <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={cena.luz_revela_nevoa !== false} onChange={x => void acao({ acao: 'cena_editar', cenaId: cena.id, luz_revela_nevoa: x.target.checked }).catch(() => {})} />
+      A luz dos personagens dos jogadores tira a névoa por onde eles passam</label>
+    <p className="text-[11px] text-(--a-b4aeca)">A luz de cada token (tocha, lanterna, magia) é definida no próprio token: toque nele no mapa. Você vê a escuridão mais clara para conseguir trabalhar.</p>
+  </div>
+}
+
+/** Luz própria do token: luz plena e penumbra em metros, e a cor. */
+function LuzDoToken({ t, acao }: { t: Token; acao: Acao }) {
+  const luz = t.luz ?? null
+  const [b, setB] = useState(luz?.brilho ?? 0), [pe, setPe] = useState(luz?.penumbra ?? 0), [cor, setCor] = useState(luz?.cor ?? '#ffd27a')
+  const salvar = (v: { brilho: number; penumbra: number; cor: string } | null) => acao({ acao: 'token_editar', tokenId: t.id, luz: v }).catch(() => {})
+  return <div className="mt-3 space-y-2 rounded-lg bg-(--s-1e1a30) p-2 text-xs">
+    <p className="flex items-center gap-1 text-sm font-semibold"><Sun size={14} /> Luz do token {luz ? <span className="font-normal text-(--a-c4b6d4)">· {luz.brilho} m + {luz.penumbra} m</span> : <span className="font-normal text-(--a-b4aeca)">· sem luz</span>}</p>
+    <div className="flex flex-wrap gap-1">{LUZES_PRONTAS.map(l => <button key={l.nome} type="button" className={btn + ' !px-2 !py-1 text-xs'} onClick={() => void salvar(l)}>{l.nome}</button>)}
+      {luz && <button type="button" className={btn + ' !px-2 !py-1 text-xs'} onClick={() => void salvar(null)}>Apagar</button>}</div>
+    <div className="flex flex-wrap items-center gap-2">
+      <label className="flex items-center gap-1">Luz plena <input type="number" min={0} max={60} step={1.5} value={b} onChange={x => setB(Number(x.target.value))} className={input + ' !w-16 !py-1'} /> m</label>
+      <label className="flex items-center gap-1">Penumbra <input type="number" min={0} max={60} step={1.5} value={pe} onChange={x => setPe(Number(x.target.value))} className={input + ' !w-16 !py-1'} /> m</label>
+      <label className="flex items-center gap-1">Cor <input type="color" value={cor} onChange={x => setCor(x.target.value)} className="h-8 w-10 rounded" /></label>
+      <button type="button" className={btn + ' !py-1'} onClick={() => void salvar(b || pe ? { brilho: b, penumbra: pe, cor } : null)}>Aplicar</button>
+    </div>
+  </div>
 }

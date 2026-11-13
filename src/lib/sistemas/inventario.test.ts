@@ -89,3 +89,17 @@ describe('foto e itens mágicos (v0.32.5)', () => {
     expect(fora.imagem).toBeUndefined(); expect(fora.magico).toBeUndefined()
   })
 })
+
+import { lerPeso, mostrarPeso } from './inventario'
+describe('peso em gramas (v0.33.8)', () => {
+  it('lê vírgula, gramas e quilos', () => {
+    expect(lerPeso('0,25')).toBe(0.25); expect(lerPeso('250 g')).toBe(0.25); expect(lerPeso('5g')).toBe(0.005)
+    expect(lerPeso('1,5 kg')).toBe(1.5); expect(lerPeso('')).toBe(0); expect(lerPeso('abc')).toBeNull()
+    expect(lerPeso('250 g', 'espaços')).toBe(250)
+  })
+  it('mostra gramas abaixo de 1 kg e guarda milésimos', () => {
+    expect(mostrarPeso(0.25)).toBe('250 g'); expect(mostrarPeso(1.5)).toBe('1,5 kg')
+    expect(normalizarItemT({ nome: 'Anel', peso: 0.0054 })!.peso).toBe(0.005)
+    expect(pesoTotal([normalizarItemT({ id: 'a', nome: 'Moeda', peso: 0.009 })!], { itens: { a: { qtd: 50, equipado: false } }, poderes: {}, carteira: '' })).toBe(0.45)
+  })
+})

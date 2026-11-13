@@ -8,7 +8,7 @@ import { arteDoItem, CORES_FORJA, corDaRaridade, FORMAS, nomeAleatorio, RARIDADE
 import { Backpack, Dice5, Gift, Minus, Moon, Pencil, Plus, Shield, Sparkles, Trash2, X } from 'lucide-react'
 import type { Calculo } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
-import { alvosDeBonus, CATEGORIAS_ITEM, lerItens, lerPoderes, lerUso, normalizarItem, normalizarPoder, podeUsar, TIPOS_PODER, type Bonus, type Item, type Poder, type Uso } from '@/lib/sistemas/inventario'
+import { alvosDeBonus, CATEGORIAS_ITEM, lerItens, lerPeso, lerPoderes, mostrarPeso, lerUso, normalizarItem, normalizarPoder, podeUsar, TIPOS_PODER, type Bonus, type Item, type Poder, type Uso } from '@/lib/sistemas/inventario'
 import NaTela from '@/components/NaTela'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
@@ -65,7 +65,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
               <ArteItem item={it} tamanho={46} />
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">{it.nome}{eq && <span className="ml-2 rounded bg-(--a-5b4380) px-1.5 py-0.5 text-[10px]">equipado</span>}</span>
-                <span className="block text-[11px]">{it.raridade && <strong style={{ color: corDaRaridade(it.raridade) }}>{RARIDADES.find(x => x.id === it.raridade)?.nome} · </strong>}<span className="text-(--a-c4b6d4)">{it.peso ? `${it.peso} ${c.carga.unidade} cada` : ''}</span></span>
+                <span className="block text-[11px]">{it.raridade && <strong style={{ color: corDaRaridade(it.raridade) }}>{RARIDADES.find(x => x.id === it.raridade)?.nome} · </strong>}<span className="text-(--a-c4b6d4)">{it.peso ? `${mostrarPeso(it.peso, c.carga.unidade)} cada` : ''}</span></span>
               </span>
             </div>
             {(it.bonus.length > 0 || it.descricao) && <p className="mt-1 text-xs text-(--a-c9bcd9)">{it.bonus.map(b => `${nomeAlvo[b.alvo] ?? b.alvo} ${b.valor >= 0 ? '+' : ''}${b.valor}`).join(' · ')}{it.bonus.length && it.descricao ? ' — ' : ''}{it.descricao}</p>}
@@ -93,7 +93,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
     <div className="mt-3 grid gap-3 sm:grid-cols-2">
       <div className="rounded-xl bg-(--s-171325) p-3 text-sm">
         <p className="text-xs text-(--a-c4b6d4)">Carga{s.carga?.dica ? ' · ' + s.carga.dica : ''}</p>
-        <p className="text-lg font-bold">{c.carga.total} {c.carga.max !== null ? `/ ${c.carga.max}` : ''} <span className="text-xs font-normal text-(--a-c4b6d4)">{c.carga.unidade}</span></p>
+        <p className="text-lg font-bold">{c.carga.total.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} {c.carga.max !== null ? `/ ${c.carga.max.toLocaleString('pt-BR', { maximumFractionDigits: 3 })}` : ''} <span className="text-xs font-normal text-(--a-c4b6d4)">{c.carga.unidade}</span></p>
         {c.carga.max ? <div className="mt-1 h-2 overflow-hidden rounded-full bg-(--s-2b2140)"><div className={'h-full transition-all ' + (c.carga.total > c.carga.max ? 'bg-red-400' : 'bg-(--a-b06ad8)')} style={{ width: pct + '%' }} /></div> : null}
         {c.carga.max !== null && c.carga.total > c.carga.max && <p className="mt-1 text-xs text-red-200">Acima da capacidade!</p>}
       </div>
@@ -218,7 +218,7 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
   const alvos = s ? alvosDeBonus(s) : []
   const setB = (i: number, b: Partial<Bonus>) => setIt({ ...it, bonus: it.bonus.map((x, k) => k === i ? { ...x, ...b } : x) })
   return <Janela titulo={inicial.nome ? 'Editar item' : 'Novo item'} fechar={fechar}>
-    <form className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return } salvar({ ...v, id: inicial.id }) }}>
+    <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return } salvar({ ...v, id: inicial.id }) }}>
       <FotoDoItem it={it} setIt={setIt} />
       {!it.imagem && <Forja it={it} setIt={setIt} />}
       <label className="flex items-center gap-2 rounded-xl border border-(--a-8b6cba)/60 bg-(--s-241a3a) p-2.5 text-sm"><input type="checkbox" checked={!!it.magico} onChange={e => setIt({ ...it, magico: e.target.checked || undefined })} className="h-4 w-4 accent-(--a-b99bff)" />
@@ -226,12 +226,12 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
       <label className="block">Nome<input required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Espada longa" /></label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block">Tipo<select value={it.categoria} onChange={e => setIt({ ...it, categoria: e.target.value as Item['categoria'] })} className={input + ' mt-1'}>{CATEGORIAS_ITEM.map(c => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></label>
-        <label className="block">Peso{s?.carga ? ` (${s.carga.unidade})` : ''}<input type="number" min={0} step="0.1" value={it.peso} onChange={e => setIt({ ...it, peso: Number(e.target.value) || 0 })} className={input + ' mt-1'} /></label>
+        <CampoPeso valor={it.peso} unidade={s?.carga?.unidade ?? 'kg'} mudar={peso => setIt({ ...it, peso })} />
       </div>
       <div className="grid grid-cols-[2fr_1fr] gap-2">
         <label className="block">{it.categoria === 'consumivel' ? 'Rolagem ao usar (ex.: cura 2d4+2)' : 'Dano ou rolagem (ex.: 1d8+3)'}
           <input value={it.dano ?? ''} maxLength={40} onChange={e => setIt({ ...it, dano: e.target.value })} className={input + ' mt-1'} placeholder="Opcional" /></label>
-        <label className="block">Alcance (m)<input type="number" min={0} max={1000} step="1.5" value={it.alcance ?? ''} onChange={e => setIt({ ...it, alcance: Number(e.target.value) || undefined })} className={input + ' mt-1'} placeholder="1,5" /></label>
+        <label className="block">Alcance (m)<input type="number" min={0} max={1000} step="any" value={it.alcance ?? ''} onChange={e => setIt({ ...it, alcance: Number(e.target.value) || undefined })} className={input + ' mt-1'} placeholder="1,5" /></label>
       </div>
       {alvos.length > 0 && <fieldset className="rounded-xl border border-(--a-55456e) p-3">
         <legend className="px-1 text-xs text-(--a-d3adf0)">Bônus quando equipado</legend>
@@ -254,7 +254,7 @@ export function EditorPoder({ s, inicial, salvar, fechar }: { s?: Sistema; inici
   const [p, setP] = useState<Poder>(inicial)
   const recursos = s?.recursos ?? []
   return <Janela titulo={inicial.nome ? 'Editar poder' : 'Novo poder'} fechar={fechar}>
-    <form className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarPoder(p); if (!v) { toast.error('Dê um nome ao poder.'); return } salvar({ ...v, id: inicial.id }) }}>
+    <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarPoder(p); if (!v) { toast.error('Dê um nome ao poder.'); return } salvar({ ...v, id: inicial.id }) }}>
       <label className="block">Nome<input autoFocus required value={p.nome} maxLength={120} onChange={e => setP({ ...p, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Bola de fogo" /></label>
       <label className="block">Tipo<select value={p.tipo} onChange={e => setP({ ...p, tipo: e.target.value as Poder['tipo'] })} className={input + ' mt-1'}>{TIPOS_PODER.map(t => <option key={t.id} value={t.id}>{t.icone} {t.nome}</option>)}</select></label>
       {recursos.length > 0 && <div className="grid grid-cols-2 gap-2">
@@ -268,7 +268,7 @@ export function EditorPoder({ s, inicial, salvar, fechar }: { s?: Sistema; inici
       </div>
       {!!p.usosMax && <label className="block">Os usos voltam no<select value={p.recarga ?? 'longo'} onChange={e => setP({ ...p, recarga: e.target.value === 'curto' ? 'curto' : undefined })} className={input + ' mt-1'}>
         <option value="longo">🌙 Descanso longo</option><option value="curto">☕ Descanso curto (ou longo)</option></select></label>}
-      <label className="block">Alcance na mesa (metros)<input type="number" min={0} max={1000} step="1.5" value={p.alcance ?? ''} onChange={e => setP({ ...p, alcance: Number(e.target.value) || undefined })} className={input + ' mt-1'} placeholder="Corpo a corpo (1,5 m)" /></label>
+      <label className="block">Alcance na mesa (metros)<input type="number" min={0} max={1000} step="any" value={p.alcance ?? ''} onChange={e => setP({ ...p, alcance: Number(e.target.value) || undefined })} className={input + ' mt-1'} placeholder="Corpo a corpo (1,5 m)" /></label>
       <label className="block">Descrição<textarea rows={4} value={p.descricao ?? ''} maxLength={2000} onChange={e => setP({ ...p, descricao: e.target.value })} className={input + ' mt-1'} placeholder="Alcance, duração, efeito…" /></label>
       <div className="flex gap-2"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-(--a-62527e) p-2.5">Cancelar</button>
         <button type="submit" className="flex-1 rounded-lg bg-(--a-7654bb) p-2.5 font-semibold">Salvar</button></div>
@@ -317,4 +317,17 @@ function Forja({ it, setIt }: { it: Item; setIt: (i: Item) => void }) {
       <button type="button" className={botao} onClick={() => setIt({ ...it, nome: nomeAleatorio(a.forma) })}>✨ Sugerir um nome</button>
     </div>}
   </div>
+}
+
+/**
+ * Peso do item (v0.33.8): campo de texto para aceitar vírgula e gramas (“0,25”, “250 g”). O antigo campo numérico
+ * com passo 0,1 recusava valores como 0,25 e travava o “Salvar” sem avisar.
+ */
+function CampoPeso({ valor, unidade, mudar }: { valor: number; unidade: string; mudar: (n: number) => void }) {
+  const [txt, setTxt] = useState(valor ? String(valor).replace('.', ',') : '')
+  const n = lerPeso(txt, unidade)
+  return <label className="block">Peso ({unidade})
+    <input value={txt} inputMode="decimal" placeholder={/^kg/i.test(unidade) ? 'Ex.: 1,5 ou 250 g' : '0'} aria-invalid={n === null}
+      onChange={e => { setTxt(e.target.value); const v = lerPeso(e.target.value, unidade); if (v !== null) mudar(v) }} className={input + ' mt-1' + (n === null ? ' !border-amber-400' : '')} />
+    <span className="mt-0.5 block text-[11px] text-(--a-a998bd)">{n === null ? 'Use números, como 0,25 ou 250 g.' : n > 0 ? mostrarPeso(n, unidade) : 'Sem peso'}</span></label>
 }

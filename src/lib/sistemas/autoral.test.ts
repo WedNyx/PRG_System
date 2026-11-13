@@ -166,3 +166,12 @@ describe('classe escolhida define a tabela de níveis', () => {
     expect(progressaoAtiva(r.sistema, m).map(x => x.nome + '@' + x.campoNivel)).toEqual(['Guerreiro@nivel', 'Mago@nivel2'])
   })
 })
+
+describe('nomes próprios das partes (v0.33.8)', () => {
+  it('guarda como o sistema chama atributos e perícias', () => {
+    const base = sistemaEmBranco()
+    const r = validarSistema({ ...base, nome: 'Contos', tituloAtributos: '  Aspectos ', pericias: { modo: 'treino', titulo: 'Ofícios', total: 'MOD + TREINO', treinos: [{ nome: 'Treinado', formula: '2' }], lista: [{ nome: 'Ferraria' }] } }, { id: 'autoral-00000000000000000000000000000001' })
+    expect(r.ok).toBe(true)
+    if (r.ok) { expect(r.sistema.tituloAtributos).toBe('Aspectos'); expect(r.sistema.pericias?.titulo).toBe('Ofícios') }
+  })
+})

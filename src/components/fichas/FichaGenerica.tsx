@@ -123,9 +123,11 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
   const secaoDeLista = (id: string) => /inventario|equipamento|armas|protecao|ataques|dinheiro/.test(id) ? 'equipamentos'
     : /habilidade|tecnica|talento|magia|poder|facanha|transforma|rituais|tracos/.test(id) ? 'habilidades' : 'anotacoes'
   const listasDe = (sec: string) => s.listas.filter(l => secaoDeLista(l.id) === sec)
+  // Nomes das partes (sistemas autorais podem chamar de outro jeito, v0.33.8).
+  const tituloAtr = s.tituloAtributos?.trim() || 'Atributos', tituloPer = s.pericias?.titulo?.trim() || 'Perícias'
   const SECOES = ([
     { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade e recursos', ajuda: 'Nome, imagem e os dados básicos do personagem. Mais abaixo ficam os valores calculados e as barras de vida e recursos (use − e +).', ok: true },
-    { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? 'Atributos e perícias' : s.pericias.titulo ?? 'Perícias') : 'Atributos', sub: 'Testes e rolagens', ajuda: s.atributos.length ? (s.formulaModificador ? 'Digite os valores dos atributos; os bônus se calculam sozinhos. Toque no bônus de um teste ou perícia para rolar.' : s.rolagem === 'assimilacao' ? 'Digite os pontos de cada Instinto. Use o Teste logo abaixo para rolar os dados de símbolos.' : s.rolagem === 'parada' || s.id === 'ordem-paranormal' ? 'Digite os pontos de cada atributo. Toque num teste ou perícia para rolar a parada de dados.' : 'Digite o valor de cada atributo (ele já é o bônus). Toque num teste ou perícia para rolar.') : s.pericias?.modo === 'valor' ? 'Digite a porcentagem de cada perícia e toque nela para rolar.' : 'Escolha o grau de cada uma e toque no valor para rolar.', ok: s.atributos.length > 0 || !!s.pericias },
+    { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? `${tituloAtr} e ${tituloPer[0].toLowerCase()}${tituloPer.slice(1)}` : tituloPer) : tituloAtr, sub: 'Testes e rolagens', ajuda: s.atributos.length ? (s.formulaModificador ? 'Digite os valores dos atributos; os bônus se calculam sozinhos. Toque no bônus de um teste ou perícia para rolar.' : s.rolagem === 'assimilacao' ? 'Digite os pontos de cada Instinto. Use o Teste logo abaixo para rolar os dados de símbolos.' : s.rolagem === 'parada' || s.id === 'ordem-paranormal' ? 'Digite os pontos de cada atributo. Toque num teste ou perícia para rolar a parada de dados.' : 'Digite o valor de cada atributo (ele já é o bônus). Toque num teste ou perícia para rolar.') : s.pericias?.modo === 'valor' ? 'Digite a porcentagem de cada perícia e toque nela para rolar.' : 'Escolha o grau de cada uma e toque no valor para rolar.', ok: s.atributos.length > 0 || !!s.pericias },
     { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ajuda: 'Adicione poderes com custo, usos e dano. Toque no dado do poder para rolar; os usos gastos voltam no descanso.', ok: true },
     { id: 'arvore', icone: '🌠', nome: 'Árvore de habilidades', sub: 'Hexágonos, pontos e caminhos', ajuda: 'Gaste pontos para liberar habilidades. Uma habilidade só abre quando a anterior do caminho já foi liberada.', ok: true },
     { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou desenho, separados em abas por tipo. Itens equipados contam nos bônus; os mágicos ficam numa ala própria.', ok: true },
@@ -217,7 +219,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       <ul className="mt-2 list-disc pl-5">{c.limites.filter(l => l.excedido).map(l => <li key={l.nome}>{l.nome}: {l.uso} de {l.max}</li>)}</ul>
     </section>}
     {s.atributos.length > 0 && <section className={card}>
-      <h2 className="mb-3 font-bold text-(--a-ed9cd8)">Atributos</h2>
+      <h2 className="mb-3 font-bold text-(--a-ed9cd8)">{tituloAtr}</h2>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-8">
         {s.atributos.map(a => <div key={a.id} className="rounded-xl border border-(--a-5e4b78) bg-(--s-171325) p-2 text-center sm:p-3">
           <p className="text-xs uppercase tracking-wider text-(--a-c4b6d4)" title={a.nome}>{a.id}</p>

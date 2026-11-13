@@ -4,7 +4,7 @@ import { ARMAS_DND_2024, alcanceEmMetrosArmaDnd, armaDndPorId, atributoParaArmaD
 import { lerItens, normalizarItem, transferirItem } from './inventario'
 import { sistemaPorId } from './catalogo'
 import { calcular, fichaVazia } from './calculo'
-import { rolarExpressao } from '@/lib/dice'
+import { rolarExpressao } from '../dice'
 
 const arma = (id: string) => {
   const a = armaDndPorId(id)

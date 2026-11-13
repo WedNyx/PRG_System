@@ -24,6 +24,7 @@ import { GUIAS } from '@/lib/sistemas/guias'
 import { expressaoParada, leituraBlades, leituraD100 } from '@/lib/sistemas/combate'
 import TesteAssimilacao from './TesteAssimilacao'
 import MagiasDnd2024 from './MagiasDnd2024'
+import TalentosOrigemDnd2024 from './TalentosOrigemDnd2024'
 import MulticlasseDnd2024 from './MulticlasseDnd2024'
 import ExcecaoModo from './ExcecaoModo'
 import ConferenciaFicha from './ConferenciaFicha'
@@ -276,6 +277,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
           {s.id === 'dnd5e-srd' && <MulticlasseDnd2024 d={d} onChange={nova => onChange(nova.arvore === undefined ? nova : {
             ...nova, poderes: sincronizarPoderes(lerPoderes(nova.poderes), lerArvore(nova.arvore), nova),
           })} somenteLeitura={somenteLeitura} />}
+          {s.id === 'dnd5e-srd' && <TalentosOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} compacto />}
           {s.id === 'dnd5e-srd' && modoProgressao !== 'manual' && <>
             <ProgressaoDnd2024
               marcos={MARCOS_DND_2024}
@@ -301,6 +303,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
               mestre={podeEditarArvore} nivel={s.campos.some(x => x.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null} />}
         </div>}
         {secao === 'habilidades' && <>
+    {s.id === 'dnd5e-srd' && <TalentosOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} />}
     {s.id === 'dnd5e-srd' && <MagiasDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} semLimites={modoProgressao === 'manual'} rolar={(x, r) => void rolarExpr(x, r)} />}
     <PoderesFicha {...propsInv} />
     {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}

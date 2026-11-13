@@ -13,6 +13,7 @@ import { lerMagiasDnd, validarAlteracoesMagiasDnd } from '@/lib/sistemas/dnd2024
 import { idDe, lerMulticlasseDnd, validarAlteracoesMulticlasseDnd } from '@/lib/sistemas/dnd2024Classes'
 import { fontesLiberadas, validarFontesCamposDnd } from '@/lib/sistemas/dnd2024Fontes'
 import { lerRegistroAntecedenteDnd, validarAlteracoesAntecedenteDnd } from '@/lib/sistemas/dnd2024Antecedentes'
+import { lerTalentoMagiaHumano, validarAlteracoesTalentoMagiaHumano } from '@/lib/sistemas/dnd2024MagiaHumano'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
@@ -115,6 +116,10 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
       { campos: candidato.campos ?? {}, atributos: candidato.atributos ?? {}, dndAntecedente: candidato.dndAntecedente },
       liberadas,
     ))
+    erros.push(...validarAlteracoesTalentoMagiaHumano(
+      { campos: antigo.campos ?? {}, dndEscolhas: antigo.dndEscolhas, dndAntecedente: antigo.dndAntecedente, dndTalentoHumano: antigo.dndTalentoHumano },
+      { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas, dndAntecedente: candidato.dndAntecedente, dndTalentoHumano: candidato.dndTalentoHumano },
+    ))
     erros.push(...validarAlteracoesMulticlasseDnd(
       { campos: antigo.campos ?? {}, atributos: antigo.atributos ?? {}, dndMulticlasse: antigo.dndMulticlasse },
       { campos: candidato.campos ?? {}, atributos: candidato.atributos ?? {}, dndMulticlasse: candidato.dndMulticlasse },
@@ -123,6 +128,9 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     if (erros.length) throw new ErroApi(400, erros.join(' '))
     if (candidato.dndAntecedente !== undefined && lerRegistroAntecedenteDnd(candidato.dndAntecedente)) {
       v.valor.dados = { ...v.valor.dados, dndAntecedente: lerRegistroAntecedenteDnd(candidato.dndAntecedente) }
+    }
+    if (candidato.dndTalentoHumano !== undefined && lerTalentoMagiaHumano(candidato.dndTalentoHumano)) {
+      v.valor.dados = { ...v.valor.dados, dndTalentoHumano: lerTalentoMagiaHumano(candidato.dndTalentoHumano) }
     }
     if (candidato.dndMulticlasse !== undefined) {
       v.valor.dados = { ...v.valor.dados, dndMulticlasse: lerMulticlasseDnd(candidato.dndMulticlasse, idDe(candidato.campos?.classe)) }

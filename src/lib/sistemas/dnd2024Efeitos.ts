@@ -11,6 +11,7 @@
 import type { DadosFicha } from './tipos'
 import { classesDaFicha, espacosDeMagia } from './dnd2024Classes'
 import { progressoDaFichaDnd, lerEscolhasDnd } from './dnd2024Ficha'
+import { lerRegistroAntecedenteDnd } from './dnd2024Antecedentes'
 
 export type Treino = 'proficiente' | 'especialista'
 export type EfeitosDnd = {
@@ -38,7 +39,7 @@ const NOME_ANTECEDENTE: Record<string, string> = { acolito: 'Acólito', criminos
 /** Número da coluna da tabela (“2”, “+3”, “1d6”, “+10 ft.”, “—”). */
 const numero = (v: string | undefined) => { const m = (v ?? '').match(/(\d+)/); return m ? Number(m[1]) : 0 }
 
-export function efeitosDnd2024(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>, vars: Record<string, number>): EfeitosDnd {
+export function efeitosDnd2024(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndAntecedente'>, vars: Record<string, number>): EfeitosDnd {
   const v: Record<string, number> = Object.fromEntries(VARS_DND.map(k => [k, 0]))
   const treino: EfeitosDnd['treino'] = {}, bonus: EfeitosDnd['bonus'] = {}
   const p = progressoDaFichaDnd(d)
@@ -100,11 +101,12 @@ export function efeitosDnd2024(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'd
   if (p.especieId === 'elfo' && escolhas['esp-elfo-linhagem'] === 'elfo-floresta') v.dnd_desl_extra += 1.5
   // Perícias do antecedente e da espécie
   for (const id of PERICIAS_ANTECEDENTE[p.antecedenteId ?? ''] ?? []) dar(id, 'proficiente', NOME_ANTECEDENTE[p.antecedenteId!])
+  if (p.antecedenteId === 'forasteiro') for (const id of ['atletismo', 'sobrevivencia']) dar(id, 'proficiente', 'Forasteiro (2014)')
   const sentidos = escolhas['esp-elfo-sentidos']
   if (p.especieId === 'elfo' && sentidos) dar(sentidos, 'proficiente', 'Sentidos Aguçados')
   const periciaHumano = escolhas['esp-humano-habilidoso']
   if (p.especieId === 'humano' && periciaHumano) dar(periciaHumano, 'proficiente', 'Habilidoso (Humano)')
   // Talento Alerta: proficiência na Iniciativa (antecedente Criminoso, Humano Versátil ou talento escolhido)
-  if (p.antecedenteId === 'criminoso' || (p.especieId === 'humano' && escolhas['esp-humano-versatil'] === 'alerta')) v.dnd_ini_extra = prof
+  if (p.antecedenteId === 'criminoso' || (p.especieId === 'humano' && escolhas['esp-humano-versatil'] === 'alerta') || (p.antecedenteId === 'forasteiro' && lerRegistroAntecedenteDnd(d.dndAntecedente)?.talento === 'alerta')) v.dnd_ini_extra = prof
   return { vars: v, treino, bonus, meiaProficiencia: meia }
 }

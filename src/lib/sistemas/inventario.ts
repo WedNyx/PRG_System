@@ -59,7 +59,7 @@ export function normalizarItem(v: unknown): Item | null {
   const dano = txt(o.dano, 40).trim()
   const arte = lerArte(o.arte), raridade = lerRaridade(o.raridade)
   const armaDnd = categoria === 'arma' ? armaDndPorId(o.armaDnd) : null
-  const bonusArma = armaDnd && Number.isInteger(o.bonusArma) && (o.bonusArma as number) >= 1 && (o.bonusArma as number) <= 3 ? o.bonusArma as number : 0
+  const bonusArma = armaDnd && typeof o.bonusArma === 'number' && Number.isInteger(o.bonusArma) && o.bonusArma >= 1 && o.bonusArma <= 3 ? o.bonusArma : 0
   return { id: id(o.id), nome, categoria, peso: Math.round(num(o.peso, 0, 100000) * 1000) / 1000, ...(dano && EXPR.test(dano) ? { dano } : {}), ...(Number(o.alcance) > 0 ? { alcance: num(o.alcance, 0, 1000) } : {}), bonus, ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}),
     ...(arte ? { arte } : {}), ...(raridade ? { raridade } : {}), ...(imagemDaPlataforma(o.imagem) ? { imagem: o.imagem } : {}), ...(o.magico === true || bonusArma > 0 ? { magico: true } : {}),
     ...(armaDnd ? { armaDnd: armaDnd.id } : {}), ...(bonusArma > 0 ? { bonusArma } : {}) }

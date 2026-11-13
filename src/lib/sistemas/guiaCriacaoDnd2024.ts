@@ -14,13 +14,14 @@ import { MARCOS_ORIGENS_SRD } from './dnd2024Origens'
 import { lerEscolhasDnd } from './dnd2024Ficha'
 import { conjuradoresDnd } from './dnd2024Conjuracao'
 import { ANTECEDENTES_GUIADOS, lerRegistroAntecedenteDnd, magiasDeAntecedenteDnd, validarDetalhesAntecedenteDnd, validarDistribuicaoAntecedenteDnd } from './dnd2024Antecedentes'
+import { magiasDoHumanoDnd } from './dnd2024MagiaHumano'
 
 export type EstadoEtapa = 'registrado' | 'pendente' | 'revisar' | 'nao-aplica'
 export type EtapaGuia = {
   id: string; titulo: string; estado: EstadoEtapa
   descricao: string; aba: 'principal' | 'atributos' | 'arvore' | 'habilidades' | 'equipamentos'
 }
-type DadosGuia = Pick<DadosFicha, 'nome' | 'campos' | 'atributos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndMagias' | 'dndAntecedente' | 'itens'>
+type DadosGuia = Pick<DadosFicha, 'nome' | 'campos' | 'atributos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndMagias' | 'dndAntecedente' | 'dndTalentoHumano' | 'itens'>
 
 export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
   const campo = (id: string) => String(d.campos?.[id] ?? '').trim()
@@ -51,6 +52,7 @@ export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
   const temTalentoMagico = !!(guiadoAntecedente?.talentoId?.startsWith('iniciado-magia') ||
     (antecedenteId === 'forasteiro' && registroAntecedente?.talento?.startsWith('iniciado-magia')))
   const talentoHumanoMagico = especieId === 'humano' && escolhas['esp-humano-versatil'] === 'iniciado-magia'
+  const magiaHumana = magiasDoHumanoDnd(d)
   const precisaMagias = precisaMagiasDaClasse || especieMagica || temTalentoMagico || talentoHumanoMagico
   const magiaAnotada = !!d.dndMagias && Object.keys(d.dndMagias).length > 0
   const equipAnotado = Array.isArray(d.itens) && d.itens.length > 0
@@ -94,11 +96,13 @@ export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
     { id: 'equipamentos', titulo: '8. Equipamentos e defesa', estado: equipAnotado ? 'registrado' : 'pendente', aba: 'equipamentos',
       descricao: 'Registre equipamento inicial, armas, armaduras, escudo, ferramentas e moedas. Depois confira CA, deslocamento e limitações de uso.' },
     { id: 'magias', titulo: '9. Magias e recursos de conjuração',
-      estado: !precisaMagias ? 'nao-aplica' : (temTalentoMagico && !origemMagica) || talentoHumanoMagico
+      estado: !precisaMagias ? 'nao-aplica' : (temTalentoMagico && !origemMagica) || (talentoHumanoMagico && !magiaHumana)
         ? 'pendente' : precisaMagiasDaClasse ? (magiaAnotada ? 'registrado' : 'pendente') : especieMagica ? 'revisar' : 'registrado',
       aba: 'habilidades',
       descricao: talentoHumanoMagico
-        ? 'Iniciado em Magia pelo Humano Versátil: a plataforma ainda não permite registrar as escolhas desse talento da espécie; peça revisão ao mestre. Não atribua magias automaticamente.'
+        ? magiaHumana
+          ? 'Iniciado em Magia do Humano Versátil confirmado: dois truques e uma magia de nível 1 com CD e atributo próprios; confira também as magias da classe, espécie e antecedente. A conjuração gratuita é independente.'
+          : 'Iniciado em Magia do Humano Versátil: selecione lista, atributo, dois truques e magia de 1º nível na Árvore ou na aba Habilidades. A lista deve diferir da usada pelo antecedente.'
         : temTalentoMagico && !origemMagica
           ? 'O antecedente concede Iniciado em Magia, mas faltam magias ou atributo de conjuração. Complete a criação guiada na aba Atributos.'
           : origemMagica

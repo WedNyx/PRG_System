@@ -325,17 +325,17 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
   const referencia = dnd ? referenciaArmaDndPorId(it.armaRefDnd) : null
   const alvos = s ? alvosDeBonus(s) : []
   const setB = (i: number, b: Partial<Bonus>) => setIt({ ...it, bonus: it.bonus.map((x, k) => k === i ? { ...x, ...b } : x) })
-  return <Janela titulo={dnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla={dnd}>
+  return <Janela titulo={dnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla>
     <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return } salvar({ ...v, id: inicial.id }) }}>
-      {dnd ? <div className="flex items-center gap-3 rounded-xl border border-(--a-62527e) bg-gradient-to-r from-(--s-2b2143) to-(--s-171325) p-3">
-        <ArteItem item={it} tamanho={72} estiloDnd />
+      <div className="flex items-center gap-3 rounded-xl border border-(--a-62527e) bg-gradient-to-r from-(--s-2b2143) to-(--s-171325) p-3">
+        <ArteItem item={it} tamanho={72} />
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-(--a-d3adf0)">Prévia do item</p>
           <p className="mt-1 truncate font-semibold">{it.nome || 'Sua próxima descoberta'}</p>
-          <p className="mt-1 text-[11px] text-(--a-c4b6d4)">Preencha os detalhes primeiro. A arte e as cores ficam em “Personalizar aparência”.</p>
+          <p className="mt-1 text-[11px] text-(--a-c4b6d4)">Foto própria ou arte da Game-Icons; personalize as cores e a raridade na seção de aparência.</p>
         </div>
-      </div> : <><FotoDoItem it={it} setIt={setIt} />{!it.imagem && <Forja it={it} setIt={setIt} />}</>}
-      {dnd && <FotoDoItem it={it} setIt={setIt} estiloDnd />}
+      </div>
+      <FotoDoItem it={it} setIt={setIt} />
       <label className="block">Nome<input required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Espada longa" /></label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block">Tipo<select value={it.categoria} onChange={e => setIt({ ...it, categoria: e.target.value as Item['categoria'] })} className={input + ' mt-1'}>{CATEGORIAS_ITEM.map(c => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></label>
@@ -362,11 +362,11 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
             className={input + ' max-w-24'}>{[0,1,2,3].map(v => <option key={v} value={v}>+{v}</option>)}</select>
         </label>
       </div>}
-      {dnd && <details className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
-        <summary className="cursor-pointer font-semibold text-(--a-d3adf0)">🎨 Personalizar aparência · ícones e Forja</summary>
+      <details className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+        <summary className="cursor-pointer font-semibold text-(--a-d3adf0)">🎨 Escolher ícone Game-Icons ou personalizar na Forja</summary>
         <div className="mt-3 space-y-3">
           <p className="text-xs text-(--a-c4b6d4)">Escolha uma ilustração da biblioteca. A foto enviada sempre tem prioridade; você pode removê-la depois.</p>
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6" role="group" aria-label="Biblioteca de ilustrações de itens">
+          <div className="grid grid-cols-3 gap-2 min-[400px]:grid-cols-4 sm:grid-cols-6" role="group" aria-label="Biblioteca de ilustrações de itens">
             {ICONES_RPG.map(icone => <button key={icone.id} type="button" title={icone.nome}
               aria-label={'Usar ilustração ' + icone.nome} aria-pressed={it.iconeBiblioteca === icone.id}
               onClick={() => setIt({ ...it, iconeBiblioteca: icone.id, arte: undefined })}
@@ -383,7 +383,7 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
             Ilustrações: <a href="https://game-icons.net" target="_blank" rel="noopener noreferrer" className="underline">Game-Icons.net</a>
             {' · '}autores Lorc e Delapouite{' · '}licença CC BY 3.0. Vetores adaptados (fundo removido e cores aplicadas).
           </p>
-          {!it.imagem && <Forja it={it} setIt={setIt} />}
+          <Forja it={it} setIt={setIt} />
           <label className="block text-xs">Raridade
             <select value={it.raridade ?? ''} onChange={e => setIt({ ...it, raridade: e.target.value as Item['raridade'] || undefined })} className={input + ' mt-1'}>
               <option value="">Sem raridade</option>
@@ -391,7 +391,7 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
             </select>
           </label>
         </div>
-      </details>}
+      </details>
       <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-2">
         <label className="block">{it.categoria === 'consumivel' ? 'Rolagem ao usar (ex.: cura 2d4+2)' : 'Dano ou rolagem (ex.: 1d8+3)'}
           <input value={it.dano ?? ''} maxLength={40} disabled={s?.id === 'dnd5e-srd' && !!it.armaDnd}
@@ -409,7 +409,7 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
         <p className="mt-2 text-[11px] text-(--a-a998bd)">Ex.: escudo → Classe de Armadura +2; anel → uma resistência +1.</p>
       </fieldset>}
       <label className="block">Descrição<textarea rows={3} value={it.descricao ?? ''} maxLength={2000} onChange={e => setIt({ ...it, descricao: e.target.value })} className={input + ' mt-1'} /></label>
-      <div className={'flex gap-2 ' + (dnd ? 'sticky bottom-0 -mx-3 rounded-xl border-t border-(--a-62527e) bg-(--s-1b1529) p-3 shadow-2xl sm:mx-0' : '')}><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-(--a-62527e) p-2.5">Cancelar</button>
+      <div className="sticky bottom-0 -mx-3 flex gap-2 rounded-xl border-t border-(--a-62527e) bg-(--s-1b1529) p-3 shadow-2xl sm:mx-0"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-(--a-62527e) p-2.5">Cancelar</button>
         <button type="submit" className="flex-1 rounded-lg bg-(--a-7654bb) p-2.5 font-semibold">Salvar item</button></div>
     </form>
   </Janela>

@@ -10,6 +10,7 @@ const arvore = { pontos: 1, nos: [
 let r=await call(M,'POST','campanhas',{nome:'Árvores',sistema:'dnd5e-srd',modeloPadrao:'C'}); const cid=r.d.campanha.id
 r=await call(M,'POST',`campanhas/${cid}/convites`,{}); await call(J,'POST','convites/'+r.d.convite.codigo,{}); r=await call(M,'GET','campanhas/'+cid); await call(M,'POST',`campanhas/${cid}/solicitacoes/${r.d.solicitacoes[0].id}`,{decisao:'aceitar'})
 r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sistema:'dnd5e-srd',nome:'Bruma'}); const fid=r.d.ficha.id
+{ const g=await call(M,'GET','fichas/'+fid); await call(M,'PUT','fichas/'+fid,{versao:g.d.ficha.versao,dados:{...g.d.ficha.dados,criacaoLivre:false}}) } // v0.33.7: mestre encerra a criação livre; daqui em diante valem as regras da campanha
 // mestre monta a árvore (ele edita tudo)
 r=await call(M,'GET','fichas/'+fid); let v=r.d.ficha.versao, d=r.d.ficha.dados
 r=await call(M,'PUT','fichas/'+fid,{versao:v,dados:{...d,arvore}}); check('mestre monta a árvore da ficha', r.s===200 && !r.d.pendentes.length, r.d)

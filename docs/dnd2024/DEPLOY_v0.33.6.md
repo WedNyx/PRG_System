@@ -1,4 +1,6 @@
-# Deploy da v0.33.6 (PR #42 — D&D 2024 completo)
+# Deploy da v0.33.6 / v0.33.7 (D&D 2024 completo)
+
+> 13/11/2026: a v0.33.6 já foi mesclada (PRs #42 e #43) e a migração 027 foi aplicada em produção. A v0.33.7 traz fontes, revisão, qualidade e a criação livre, sem migração nova. Smoke: `node scripts/producao/smoke.mjs https://prg-system.vercel.app 0.33.7`.
 
 ## O que entra
 

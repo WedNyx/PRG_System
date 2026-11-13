@@ -24,6 +24,7 @@ r=await call(M,'POST','campanhas',{nome:'Mesa multiclasse',sistema:'dnd5e-srd',m
 r=await call(M,'POST',`campanhas/${cid}/convites`,{}); await call(J,'POST','convites/'+r.d.convite.codigo,{})
 r=await call(M,'GET','campanhas/'+cid); for (const s of r.d.solicitacoes) await call(M,'POST',`campanhas/${cid}/solicitacoes/${s.id}`,{decisao:'aceitar'})
 r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sistema:'dnd5e-srd',nome:'Brann'}); const fc=r.d.ficha?.id
+{ const g=await call(M,'GET','fichas/'+fc); await call(M,'PUT','fichas/'+fc,{versao:g.d.ficha.versao,dados:{...g.d.ficha.dados,criacaoLivre:false}}) } // v0.33.7: mestre encerra a criação livre; daqui em diante valem as regras da campanha
 r=await salvar(M,fc,d=>({...d,campos:{...d.campos,classe:'Bárbaro',nivel:3},atributos:{...d.atributos,FOR:16,CAR:8}})); check('mestre faz Bárbaro 3', r.s===200, r)
 r=await salvar(M,fc,d=>({...d,campos:{...d.campos,nivel:4},dndMulticlasse:{bruxo:1}})); check('mestre libera Bruxo sem Carisma 13', r.s===200, r)
 r=await salvar(J,fc,d=>({...d,campos:{...d.campos,nivel:5},dndMulticlasse:{bruxo:2}}))

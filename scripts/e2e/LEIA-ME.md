@@ -54,6 +54,7 @@ Simulam três aventureiros (mestre, jogador e intruso) contra um banco real.
    PRG_BASE=http://localhost:3000 node scripts/e2e/v33-arvore-excecoes.mjs
    PRG_BASE=http://localhost:3000 node scripts/e2e/v33-mestre-dnd.mjs
    PRG_BASE=http://localhost:3000 node scripts/e2e/v33-fontes-dnd.mjs
+   PRG_BASE=http://localhost:3000 node scripts/e2e/v33-criacao-livre.mjs
    ```
 Nunca rode contra o banco de produção: os testes criam campanhas e fichas.
 

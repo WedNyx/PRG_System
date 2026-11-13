@@ -98,6 +98,8 @@ export type DadosFicha = {
   dndMagias?: Record<string, string>
   /** Multiclasse de D&D 2024: id da outra classe → níveis nela (a classe inicial fica com o resto do nível total). */
   dndMulticlasse?: Record<string, number>
+  /** Campanha: criação livre ligada pelo mestre — o dono salva atributos, perícias etc. sem pedir aprovação (v0.33.7). */
+  criacaoLivre?: boolean
   /** Árvore de habilidades (ver arvore.ts). */
   arvore?: unknown
 }

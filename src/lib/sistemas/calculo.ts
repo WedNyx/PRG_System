@@ -86,6 +86,7 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     // Inventário só entra quando existe (fichas antigas continuam iguais) e sempre limpo/validado.
     ...(d.itens !== undefined ? { itens: lerItens(d.itens) } : {}), ...(d.uso !== undefined ? { uso: lerUso(d.uso) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndEscolhas !== undefined ? { dndEscolhas: lerEscolhasDnd(d.dndEscolhas) } : {}),
+    ...(d.criacaoLivre !== undefined ? { criacaoLivre: d.criacaoLivre === true } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndMagias !== undefined ? { dndMagias: lerMagiasDnd(d.dndMagias) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndMulticlasse !== undefined ? { dndMulticlasse: lerMulticlasseDnd(d.dndMulticlasse, idDe(d.campos?.classe)) } : {}),
     // Habilidades da árvore entram/saem dos poderes conforme os hexágonos liberados.

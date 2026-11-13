@@ -37,22 +37,34 @@ async function regrasEfetivas(f: FichaRow, eu: string) {
   return { padrao, excecoes: ex, efetivas: { ...padrao, ...ex } }
 }
 
+/**
+ * Criação livre (v0.33.7): enquanto a ficha está sendo montada (o mestre ligou a criação livre, ou a ficha
+ * ainda aguarda a aprovação de entrada), as áreas “com aprovação” salvam direto para o dono. Áreas “só mestre” continuam travadas.
+ */
+const emCriacao = (f: FichaRow) => f.status === 'pendente' || (f.dados as Partial<DadosFicha> | null)?.criacaoLivre === true
+function semAprovacao<T extends Record<string, string>>(r: T): T {
+  return Object.fromEntries(Object.entries(r).map(([k, v]) => [k, v === 'aprovacao' ? 'livre' : v])) as T
+}
+
 /** Dono vê sempre; mestre/co-mestre vê todas as fichas da campanha (NPCs só eles). */
 export const GET = rota<Ctx>(async (req, { params }) => {
   const { f, eu, dono, admin } = await carregar(req, (await params).id)
   if (f.npc ? !admin : (!dono && !admin)) throw new ErroApi(404, 'Ficha não encontrada.')
-  let regras = null, pendentes: string[] = []
+  let regras = null, pendentes: string[] = [], pedido: Pick<Mudanca, 'caminho' | 'depois'>[] = []
   if (f.campanha_id && !admin) {
-    regras = (await regrasEfetivas(f, eu)).efetivas
-    const [p] = await rest<{ categorias: string[] }[]>(`prg_alteracoes?select=categorias&ficha_id=eq.${q(f.id)}&autor_id=eq.${q(eu)}&estado=eq.pendente`)
+    const ef = (await regrasEfetivas(f, eu)).efetivas
+    regras = emCriacao(f) ? semAprovacao(ef) : ef
+    const [p] = await rest<{ categorias: string[]; mudancas: Mudanca[] }[]>(`prg_alteracoes?select=categorias,mudancas&ficha_id=eq.${q(f.id)}&autor_id=eq.${q(eu)}&estado=eq.pendente`)
     pendentes = p?.categorias ?? []
+    // O que o jogador pediu e ainda espera o mestre: a ficha mostra esses valores (sem isso, ao recarregar parecia que não tinha salvo).
+    pedido = (p?.mudancas ?? []).map(m => ({ caminho: m.caminho, depois: m.depois }))
   }
   const podeEditar = f.campanha_id ? (admin || (dono && f.status !== 'recusada' && !f.bloqueada)) : dono
   const [configCampanha] = f.campanha_id && f.sistema === 'dnd5e-srd'
     ? await rest<{ config_progressao?: unknown }[]>(`prg_campanhas?select=config_progressao&id=eq.${q(f.campanha_id)}&limit=1`).catch(() => [])
     : []
   const configProgressao = lerConfiguracaoProgressao(configCampanha?.config_progressao)
-  return ok({ ficha: f, podeEditar, souMestre: admin, regras, pendentes, configProgressao })
+  return ok({ ficha: f, podeEditar, souMestre: admin, regras, pendentes, pedido, criacaoLivre: !!f.campanha_id && emCriacao(f), configProgressao })
 })
 
 function resumoHistorico(mudancas: Mudanca[]) {
@@ -121,6 +133,14 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     if (antes.length !== depois.length || antes.some(x => !depois.includes(x))) throw new ErroApi(403, 'Só o mestre concede ou retira hexágonos sem custo.')
   }
 
+  // Criação livre: só o mestre liga; o dono pode desligar (“Terminei a criação”).
+  if (f.campanha_id && !admin) {
+    const antes = (f.dados as Partial<DadosFicha> | null)?.criacaoLivre === true
+    const cand = v.valor.dados as Partial<DadosFicha>
+    if (cand.criacaoLivre === true && !antes) v.valor.dados = { ...v.valor.dados, criacaoLivre: false }
+  }
+  const criando = !!f.campanha_id && !admin && emCriacao(f)
+
   let final: Record<string, unknown> = v.valor.dados
   let pendentes: Mudanca[] = [], ignoradas: Mudanca[] = [], salvas: Mudanca[] = []
 
@@ -139,7 +159,7 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
       if (f.status === 'recusada') throw new ErroApi(403, 'Esta ficha foi recusada pelo mestre.')
       if (f.bloqueada) throw new ErroApi(423, 'O mestre travou esta ficha neste momento.')
       const r = await regrasEfetivas(f, eu)
-      const sep = separarPorRegra(mudancas, r.padrao, r.excecoes)
+      const sep = criando ? separarPorRegra(mudancas, semAprovacao(r.padrao), semAprovacao(r.excecoes as Record<string, string>)) : separarPorRegra(mudancas, r.padrao, r.excecoes)
       salvas = sep.livres; pendentes = sep.aprovacao; ignoradas = sep.bloqueadas
       final = aplicar(f.dados ?? {}, salvas)
     }
@@ -182,6 +202,8 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
   }
 
   if (f.campanha_id) {
+    // Na criação livre tudo já salvou: um pedido antigo deste jogador não faz mais sentido.
+    if (criando && !pendentes.length) await rest(`prg_alteracoes?ficha_id=eq.${q(f.id)}&autor_id=eq.${q(eu)}&estado=eq.pendente`, { method: 'DELETE' })
     if (pendentes.length) {
       // Substitui o pedido pendente anterior deste jogador nesta ficha.
       await rest(`prg_alteracoes?ficha_id=eq.${q(f.id)}&autor_id=eq.${q(eu)}&estado=eq.pendente`, { method: 'DELETE' })

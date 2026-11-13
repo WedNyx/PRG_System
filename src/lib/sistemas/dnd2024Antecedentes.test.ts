@@ -16,7 +16,7 @@ const nova = (antecedente: string) => {
   d.campos = { ...d.campos, classe: 'Guerreiro', nivel: 1, antecedente }
   return d
 }
-const kit = { equipamento: 'pacote' as const }
+const kit = { equipamento: 'pacote' as const, ferramentaEscolhida: 'Xadrez' }
 
 describe('D&D 2024: distribuição guiada e Forasteiro 2014', () => {
   it('SRD: só os três atributos do antecedente podem receber +2/+1 ou +1/+1/+1', () => {

@@ -81,6 +81,7 @@ export function magiasDaEspecieDnd(d: FichaEspecie): OrigemMagicaEspecie | null 
   const atributo = atributos[escolhas['esp-' + especie + '-atributo-magia']]
   const chave = especie === 'tiferino' ? 'esp-tiferino-legado' : 'esp-' + especie + '-linhagem'
   const linhagemId = escolhas[chave]
+  if (!linhagemId) return null
   const tabela = especie === 'elfo' ? elfo : especie === 'gnomo' ? gnomo : tiferino
   const l = tabela[linhagemId]
   if (!atributo || !l) return null

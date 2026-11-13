@@ -10,6 +10,7 @@ import type { Sistema } from './tipos'
 import { lerArte, lerRaridade, type ArteItem, type Raridade } from '../itensArte'
 import { armaDndPorId } from './dnd2024Armas'
 import { referenciaArmaDndPorId } from './dnd2024ArmasExpandidas'
+import { iconeRpgPorId } from '../iconesRpg'
 
 export type CategoriaItem = 'arma' | 'armadura' | 'consumivel' | 'equipamento' | 'tesouro' | 'outro'
 export type TipoPoder = 'magia' | 'habilidade' | 'talento' | 'tecnica' | 'outro'
@@ -22,6 +23,8 @@ export type Item = { id: string; nome: string; categoria: CategoriaItem; peso: n
   imagem?: string
   /** Item mágico: aparece na ala ✨ do inventário. */
   magico?: boolean
+  /** Ícone SVG de biblioteca escolhido pelo usuário; foto tem prioridade visual. */
+  iconeBiblioteca?: string
   /** Arma canônica da tabela SRD 5.2.1; itens criados manualmente não precisam deste campo. */
   armaDnd?: string
   /** Referência bibliográfica para suplementos, armas modernas e armas mágicas. */
@@ -61,11 +64,12 @@ export function normalizarItem(v: unknown): Item | null {
   })
   const dano = txt(o.dano, 40).trim()
   const arte = lerArte(o.arte), raridade = lerRaridade(o.raridade)
+  const iconeBiblioteca = iconeRpgPorId(o.iconeBiblioteca)
   const armaDnd = categoria === 'arma' ? armaDndPorId(o.armaDnd) : null
   const armaRefDnd = categoria === 'arma' ? referenciaArmaDndPorId(o.armaRefDnd) : null
   const bonusArma = armaDnd && typeof o.bonusArma === 'number' && Number.isInteger(o.bonusArma) && o.bonusArma >= 1 && o.bonusArma <= 3 ? o.bonusArma : 0
   return { id: id(o.id), nome, categoria, peso: Math.round(num(o.peso, 0, 100000) * 1000) / 1000, ...(dano && EXPR.test(dano) ? { dano } : {}), ...(Number(o.alcance) > 0 ? { alcance: num(o.alcance, 0, 1000) } : {}), bonus, ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}),
-    ...(arte ? { arte } : {}), ...(raridade ? { raridade } : {}), ...(imagemDaPlataforma(o.imagem) ? { imagem: o.imagem } : {}), ...(o.magico === true || bonusArma > 0 ? { magico: true } : {}),
+    ...(arte ? { arte } : {}), ...(iconeBiblioteca ? { iconeBiblioteca: iconeBiblioteca.id } : {}), ...(raridade ? { raridade } : {}), ...(imagemDaPlataforma(o.imagem) ? { imagem: o.imagem } : {}), ...(o.magico === true || bonusArma > 0 ? { magico: true } : {}),
     ...(armaDnd ? { armaDnd: armaDnd.id } : {}), ...(armaRefDnd ? { armaRefDnd: armaRefDnd.id } : {}), ...(bonusArma > 0 ? { bonusArma } : {}) }
 }
 export function normalizarPoder(v: unknown): Poder | null {
@@ -146,7 +150,7 @@ export function podeUsar(p: Poder, uso: Uso, recursoAtual?: number): { ok: boole
 
 /** Mesmo item “de verdade” (para empilhar na hora de receber). */
 const mesmoItem = (a: Item, b: Item) => a.nome.trim().toLowerCase() === b.nome.trim().toLowerCase() && a.categoria === b.categoria
-  && (a.dano ?? '') === (b.dano ?? '') && (a.raridade ?? '') === (b.raridade ?? '') && (a.armaDnd ?? '') === (b.armaDnd ?? '') && (a.armaRefDnd ?? '') === (b.armaRefDnd ?? '') && (a.bonusArma ?? 0) === (b.bonusArma ?? 0) && JSON.stringify(a.bonus) === JSON.stringify(b.bonus)
+  && (a.dano ?? '') === (b.dano ?? '') && (a.raridade ?? '') === (b.raridade ?? '') && (a.armaDnd ?? '') === (b.armaDnd ?? '') && (a.armaRefDnd ?? '') === (b.armaRefDnd ?? '') && (a.iconeBiblioteca ?? '') === (b.iconeBiblioteca ?? '') && (a.bonusArma ?? 0) === (b.bonusArma ?? 0) && JSON.stringify(a.bonus) === JSON.stringify(b.bonus)
 
 export type ComItens = { itens?: unknown[]; uso?: unknown }
 /**

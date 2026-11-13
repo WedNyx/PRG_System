@@ -35,7 +35,7 @@ export const altoElfoSelecionado = (d: DadosTruqueAltoElfo): boolean =>
 export function truqueAltoElfo(d: DadosTruqueAltoElfo): string {
   if (!altoElfoSelecionado(d)) return 'prestidigitation'
   const registrado = d.listas?.[CHAVE_TRUQUE_ALTO_ELFO]
-  return TRUQUES_MAGO_ALTO_ELFO.some(x => x.id === registrado) ? registrado : 'prestidigitation'
+  return typeof registrado === 'string' && TRUQUES_MAGO_ALTO_ELFO.some(x => x.id === registrado) ? registrado : 'prestidigitation'
 }
 
 /** Registro simples; o tempo de duração é *tempo de campanha*, não relógio real. */

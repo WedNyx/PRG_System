@@ -14,6 +14,13 @@ import { FONTE_LEGADO_2014, FONTE_PHB, TALENTOS_ORIGEM_PHB, fontePermitida } fro
 import { ANTECEDENTES_PHB_GUIA } from './dnd2024AntecedentesPhb'
 
 export const ATRIBUTOS_DND = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'] as const
+/** Identificadores das dezoito perícias, compartilhados com os seletores de talentos. */
+export const PERICIAS_DND_ORIGENS = [
+  'acrobacia', 'adestrar_animais', 'arcanismo', 'atletismo', 'atuacao', 'enganacao',
+  'furtividade', 'historia', 'intimidacao', 'intuicao', 'investigacao', 'medicina',
+  'natureza', 'percepcao', 'persuasao', 'prestidigitacao', 'religiao', 'sobrevivencia',
+] as const
+
 export type AtributoDnd = typeof ATRIBUTOS_DND[number]
 export type AumentosDnd = Partial<Record<AtributoDnd, number>>
 export type RegistroAntecedenteDnd = {
@@ -47,26 +54,30 @@ export type ModeloAntecedenteDnd = {
 export const ANTECEDENTES_GUIADOS: Record<string, ModeloAntecedenteDnd> = {
   acolito: {
     id: 'acolito', nome: 'Acólito', elegiveis: ['INT', 'SAB', 'CAR'],
-    talento: 'Iniciado em Magia (Clérigo)', pericias: ['intuicao', 'religiao'],
+    talento: 'Iniciado em Magia (Clérigo)', talentoId: 'iniciado-magia-clerigo', pericias: ['intuicao', 'religiao'],
     ferramenta: 'Suprimentos de caligrafia', fonte: 'srd521',
+    pacote: ['Suprimentos de caligrafia', 'Livro de orações', 'Símbolo sagrado', '10 folhas de pergaminho', 'Robe'], moedasPacote: 8,
     nota: 'Confira o talento, as perícias, a ferramenta e o equipamento do antecedente no SRD.',
   },
   criminoso: {
     id: 'criminoso', nome: 'Criminoso', elegiveis: ['DES', 'CON', 'INT'],
-    talento: 'Alerta', pericias: ['prestidigitacao', 'furtividade'],
+    talento: 'Alerta', talentoId: 'alerta', pericias: ['prestidigitacao', 'furtividade'],
     ferramenta: 'Ferramentas de ladrão', fonte: 'srd521',
+    pacote: ['2 adagas', 'Ferramentas de ladrão', 'Pé de cabra', '2 bolsas', 'Roupas de viajante'], moedasPacote: 16,
     nota: 'O bônus de Iniciativa por Alerta vem da progressão, sem somar duas vezes.',
   },
   sabio: {
     id: 'sabio', nome: 'Sábio', elegiveis: ['CON', 'INT', 'SAB'],
-    talento: 'Iniciado em Magia (Mago)', pericias: ['arcanismo', 'historia'],
+    talento: 'Iniciado em Magia (Mago)', talentoId: 'iniciado-magia-mago', pericias: ['arcanismo', 'historia'],
     ferramenta: 'Suprimentos de caligrafia', fonte: 'srd521',
+    pacote: ['Bordão', 'Suprimentos de caligrafia', 'Livro de história', '8 folhas de pergaminho', 'Robe'], moedasPacote: 8,
     nota: 'As escolhas de magias do talento ainda exigem conferência com o mestre.',
   },
   soldado: {
     id: 'soldado', nome: 'Soldado', elegiveis: ['FOR', 'DES', 'CON'],
-    talento: 'Atacante Selvagem', pericias: ['atletismo', 'intimidacao'],
-    ferramenta: 'Kit de jogos à escolha', fonte: 'srd521',
+    talento: 'Atacante Selvagem', talentoId: 'atacante-selvagem', pericias: ['atletismo', 'intimidacao'],
+    ferramenta: 'Kit de jogos à escolha', ferramentaEscolha: 'jogo', fonte: 'srd521',
+    pacote: ['Lança', 'Arco curto', '20 flechas', 'Kit de jogos escolhido', 'Kit de curandeiro', 'Aljava', 'Roupas de viajante'], moedasPacote: 14,
     nota: 'O kit de jogos precisa ser escolhido e registrado; efeitos do talento ainda exigem consulta.',
   },
   forasteiro: {
@@ -106,7 +117,7 @@ export function lerRegistroAntecedenteDnd(valor: unknown): RegistroAntecedenteDn
     ...(stringCurta(v.idioma) ? { idioma: stringCurta(v.idioma) } : {}),
     ...(stringCurta(v.ferramentaEscolhida) ? { ferramentaEscolhida: stringCurta(v.ferramentaEscolhida) } : {}),
     ...(Array.isArray(v.talentoPericias) && v.talentoPericias.length <= 3
-      ? { talentoPericias: v.talentoPericias.filter((x): x is string => typeof x === 'string' && /^[a-z_]{2,40}$/.test(x)) }
+      ? { talentoPericias: v.talentoPericias.filter((x): x is string => typeof x === 'string' && /^[a-z_]{2,70}$/.test(x)) }
       : {}),
   }
 }
@@ -176,11 +187,15 @@ export function validarAlteracoesAntecedenteDnd(
   }
   if (def?.talentoId === 'habilidoso') {
     const opcoes = atual.talentoPericias ?? []
-    if (opcoes.length !== 3 || new Set(opcoes).size !== 3) erros.push('Habilidoso: escolha três perícias diferentes ou registre as ferramentas permitidas com o mestre.')
+    if (opcoes.length !== 3 || new Set(opcoes).size !== 3 ||
+      opcoes.some(id => !PERICIAS_DND_ORIGENS.includes(id as typeof PERICIAS_DND_ORIGENS[number]) && !/^ferramenta_[a-z_]{2,58}$/.test(id)))
+      erros.push('Habilidoso: escolha três perícias ou ferramentas diferentes.')
   } else if (atual.talentoPericias?.length) {
     erros.push('Este antecedente não concede o talento Habilidoso.')
   }
   if (atual.id !== 'forasteiro' && !atual.equipamento) erros.push('Selecione pacote inicial ou 50 PO para este antecedente.')
+  if (atual.ferramentaEscolhida && !def?.ferramentaEscolha && atual.id !== 'forasteiro')
+    erros.push('Este antecedente não pede a escolha de tipo de ferramenta.')
   const anterior = lerRegistroAntecedenteDnd(antes.dndAntecedente)
   for (const a of ATRIBUTOS_DND) {
     const esperado = Number(antes.atributos[a] ?? 10) - (anterior?.aumentos[a] ?? 0) + (atual.aumentos[a] ?? 0)

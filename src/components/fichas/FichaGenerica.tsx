@@ -294,6 +294,16 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
                 if (opcaoId) escolhas[marcoId] = opcaoId
                 else delete escolhas[marcoId]
                 const nova = { ...d, dndEscolhas: escolhas }
+                // Uma linhagem recém-confirmada pode conceder recursos que antes tinham máximo 0.
+                // Mesmo critério já usado ao escolher classe/nível na ficha: não reabastece usos ativos.
+                const depois = calcular(s, nova, { efeitosDnd })
+                for (const r of s.recursos) {
+                  if (r.contador) continue
+                  const anterior = c.recursosMax[r.id], max = depois.recursosMax[r.id]
+                  if (!(anterior && anterior > 0) && max && max > 0 && !(Number(nova.recursos[r.id]?.atual) > 0)) {
+                    nova.recursos = { ...nova.recursos, [r.id]: { ...nova.recursos[r.id], atual: max } }
+                  }
+                }
                 onChange(nova.arvore === undefined ? nova : {
                   ...nova, poderes: sincronizarPoderes(lerPoderes(nova.poderes), lerArvore(nova.arvore), nova),
                 })

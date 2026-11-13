@@ -13,6 +13,7 @@ import { classesDaFicha, espacosDeMagia } from './dnd2024Classes'
 import { progressoDaFichaDnd, lerEscolhasDnd } from './dnd2024Ficha'
 import { ANTECEDENTES_GUIADOS, PERICIAS_DND_ORIGENS, lerRegistroAntecedenteDnd, magiasDeAntecedenteDnd } from './dnd2024Antecedentes'
 import { magiasDoHumanoDnd } from './dnd2024MagiaHumano'
+import { maximosMagiaEspecieDnd, RECURSOS_ESPECIE } from './dnd2024MagiasEspecie'
 
 export type Treino = 'proficiente' | 'especialista'
 export type EfeitosDnd = {
@@ -29,7 +30,7 @@ export type EfeitosDnd = {
 /** Variáveis que as fórmulas do D&D podem usar (o construtor de sistemas também as conhece). */
 export const VARS_DND = ['dnd_nivel', 'dnd_prof', 'dnd_ca_extra', 'dnd_pv_extra', 'dnd_ini_extra', 'dnd_desl_extra', 'dnd_furias', 'dnd_dano_furia',
   'dnd_inspiracao', 'dnd_canalizar', 'dnd_forma_selvagem', 'dnd_retomar', 'dnd_surto', 'dnd_indomavel', 'dnd_foco', 'dnd_feiticaria', 'dnd_cura_maos',
-  'dnd_inimigo', 'dnd_truques', 'dnd_preparadas', 'dnd_pacto', 'dnd_pacto_nivel', 'dnd_furtivo', 'dnd_sorte', 'dnd_origem_magia_gratis', 'dnd_humano_magia_gratis',
+  'dnd_inimigo', 'dnd_truques', 'dnd_preparadas', 'dnd_pacto', 'dnd_pacto_nivel', 'dnd_furtivo', 'dnd_sorte', 'dnd_origem_magia_gratis', 'dnd_humano_magia_gratis', 'dnd_especie_magia_3', 'dnd_especie_magia_5', 'dnd_gnomo_animais',
   ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => 'dnd_espacos_' + n)] as const
 
 const SAVES = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR']
@@ -61,7 +62,14 @@ export function efeitosDnd2024(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'd
     const { cls, nivel } = c
     const col = (nome: string) => cls.colunas[nome]?.[nivel - 1]
     // Salvaguardas: só da classe inicial (quem entra numa classe por multiclasse não ganha as dela).
-    if (c.principal) for (const a of cls.salvaguardas) dar(SALVA[a], 'proficiente', cls.nome)
+    if (c.principal) {
+      for (const a of cls.salvaguardas) dar(SALVA[a], 'proficiente', cls.nome)
+      // Perícias da classe inicial são escolhidas e persistidas nos marcos oficiais.
+      for (let i = 1; i <= cls.pericias.qtd; i++) {
+        const pericia = escolhas[`${cls.id}-pericia-${i}`]
+        if (pericia && cls.pericias.opcoes.includes(pericia)) dar(pericia, 'proficiente', cls.nome + ' (classe inicial)')
+      }
+    }
     // Recursos pela tabela de cada classe, no nível daquela classe.
     v.dnd_furias += numero(col('Fúrias')); v.dnd_dano_furia = Math.max(v.dnd_dano_furia, numero(col('Dano da Fúria')))
     v.dnd_canalizar += numero(col('Canalizar Divindade')); v.dnd_forma_selvagem += numero(col('Forma Selvagem'))
@@ -116,6 +124,10 @@ export function efeitosDnd2024(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'd
   if (temTalento('lucky')) v.dnd_sorte = prof
   if (magiasDeAntecedenteDnd(d)) v.dnd_origem_magia_gratis = 1
   if (magiasDoHumanoDnd(d)) v.dnd_humano_magia_gratis = 1
+  const maxEspecie = maximosMagiaEspecieDnd(d, prof)
+  v.dnd_especie_magia_3 = maxEspecie[RECURSOS_ESPECIE.nivel3]
+  v.dnd_especie_magia_5 = maxEspecie[RECURSOS_ESPECIE.nivel5]
+  v.dnd_gnomo_animais = maxEspecie[RECURSOS_ESPECIE.animais]
   const sentidos = escolhas['esp-elfo-sentidos']
   if (p.especieId === 'elfo' && sentidos) dar(sentidos, 'proficiente', 'Sentidos Aguçados')
   const periciaHumano = escolhas['esp-humano-habilidoso']

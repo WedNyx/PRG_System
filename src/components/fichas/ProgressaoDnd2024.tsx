@@ -5,6 +5,7 @@ import { CLASSES_SRD } from '@/lib/sistemas/dnd2024Srd'
 import { progressaoVisivel, type MarcoDnd, type ProgressoDnd } from '@/lib/sistemas/dnd2024Progressao'
 import { permissoesDoModo, type ModoProgressao } from '@/lib/sistemas/modoProgressao'
 import { fontePermitida, nomeDaFonte } from '@/lib/sistemas/dnd2024Fontes'
+import { ANTECEDENTES_GUIADOS } from '@/lib/sistemas/dnd2024Antecedentes'
 
 type Props = {
   marcos: MarcoDnd[]
@@ -22,9 +23,12 @@ export default function ProgressaoDnd2024({ marcos, ficha, modo, somenteLeitura 
   const regras = permissoesDoModo(modo)
   const visiveis = useMemo(() => progressaoVisivel(marcos, ficha), [marcos, ficha])
   const [verFuturas, setVerFuturas] = useState(false)
-  const pendentes = visiveis.filter(m => m.estado === 'escolher' || m.estado === 'pendente').length
-  const futuras = visiveis.filter(m => m.estado === 'futuro')
-  const mostrar = verFuturas ? visiveis : visiveis.filter(m => m.estado !== 'futuro')
+  const [origemAtiva, setOrigemAtiva] = useState<'todas' | 'classe' | 'especie' | 'antecedente'>('todas')
+  const daOrigem = (m: MarcoDnd, origem: typeof origemAtiva) => origem === 'todas' || (origem === 'classe' ? m.origem === 'classe' || m.origem === 'subclasse' : m.origem === origem)
+  const daAba = visiveis.filter(m => daOrigem(m, origemAtiva))
+  const pendentes = daAba.filter(m => m.estado === 'escolher' || m.estado === 'pendente').length
+  const futuras = daAba.filter(m => m.estado === 'futuro')
+  const mostrar = verFuturas ? daAba : daAba.filter(m => m.estado !== 'futuro')
   // Linha da tabela da classe no nível atual (Fúrias, Truques, Espaços de magia…).
   const tabela = Object.entries(ficha.nivelPorClasse).flatMap(([id, nivel]) => {
     const c = CLASSES_SRD.find(x => x.id === id)
@@ -52,12 +56,24 @@ export default function ProgressaoDnd2024({ marcos, ficha, modo, somenteLeitura 
       </p>
     </div>
     {fontes && <p className="text-xs text-(--a-c4b6d4)">📚 Fontes liberadas pelo mestre: {[...fontes].map(nomeDaFonte).join(', ')}.</p>}
+    <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar escolhas por origem">
+      {([
+        ['todas', 'Todas'], ['classe', '⚔️ Classe e subclasse'],
+        ['antecedente', '📜 Antecedente'], ['especie', '🧬 Espécie'],
+      ] as const).map(([id, nome]) => {
+        const falta = visiveis.filter(m => daOrigem(m, id) && (m.estado === 'escolher' || m.estado === 'pendente')).length
+        return <button type="button" key={id} aria-pressed={origemAtiva === id} onClick={() => setOrigemAtiva(id)}
+          className={'rounded-full border px-3 py-2 text-xs ' + (origemAtiva === id ? 'border-(--a-b99bff) bg-(--s-34294f) font-semibold' : 'border-(--a-55456e) hover:bg-(--s-2b2140)')}>
+          {nome}{falta > 0 ? ' · ' + falta + ' pendente(s)' : ''}
+        </button>
+      })}
+    </div>
     {pendentes > 0 && <p role="status" className="rounded-lg border border-amber-500/50 bg-amber-950/40 p-2 text-sm text-amber-100">✋ {pendentes} {pendentes === 1 ? 'escolha pendente' : 'escolhas pendentes'} até o seu nível.</p>}
     {tabela.map(t => t.valores.length > 0 && <div key={t.nome} className="rounded-xl border border-(--a-55456e) bg-(--s-151123) p-3">
       <p className="text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Tabela de {t.nome} · nível {t.nivel}</p>
       <dl className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1 text-sm sm:grid-cols-3">{t.valores.map(([k, v]) => <div key={k} className="flex justify-between gap-2"><dt className="text-(--a-c4b6d4)">{k}</dt><dd className="font-semibold tabular-nums">{v}</dd></div>)}</dl>
     </div>)}
-    {!visiveis.length && <p className="text-sm text-(--a-b4aeca)">Escolha classe, espécie e antecedente na aba Principal para ver a progressão.</p>}
+    {!daAba.length && <p className="text-sm text-(--a-b4aeca)">Escolha classe, espécie e antecedente na aba Principal para ver esta parte da progressão.</p>}
     {[...grupos].map(([k, lista]) => <div key={k}>
       <h4 className="mb-1.5 mt-3 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{titulo(lista[0])}</h4>
     <ol className="space-y-2">
@@ -74,7 +90,13 @@ export default function ProgressaoDnd2024({ marcos, ficha, modo, somenteLeitura 
             value={m.escolha ?? ''} disabled={somenteLeitura || !onEscolha}
             onChange={e => onEscolha?.(m.id, e.target.value)}>
             <option value="">Selecione...</option>
-            {m.opcoes?.filter(op => fontePermitida(op.fonte, fontes) || op.id === m.escolha).map(op => <option key={op.id} value={op.id}>{op.nome}{op.fonte ? ' 📕' : ''}</option>)}
+            {m.opcoes?.filter(op => fontePermitida(op.fonte, fontes) || op.id === m.escolha).map(op => {
+              const duplicada = !!m.inicialApenas && op.id !== m.escolha && (
+                visiveis.some(outro => outro.inicialApenas && outro.id !== m.id && outro.escolha === op.id)
+                || (ANTECEDENTES_GUIADOS[ficha.antecedenteId ?? '']?.pericias.includes(op.id) ?? false)
+              )
+              return <option key={op.id} value={op.id} disabled={duplicada}>{op.nome}{op.fonte ? ' 📕' : ''}{duplicada ? ' · já concedida' : ''}</option>
+            })}
           </select>
         </label>}
       </li>)}

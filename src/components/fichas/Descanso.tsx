@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Moon, Sunrise, X } from 'lucide-react'
 import { aplicarDescanso, recursoDeVida, type TipoDescanso } from '@/lib/sistemas/descanso'
 import { lerPoderes } from '@/lib/sistemas/inventario'
+import { altoElfoSelecionado, CHAVE_TRUQUE_ALTO_ELFO, TRUQUES_MAGO_ALTO_ELFO, truqueAltoElfo } from '@/lib/sistemas/dnd2024TracosEspecie'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import NaTela from '@/components/NaTela'
 
@@ -17,6 +18,8 @@ export default function JanelaDescanso({ s, d, onChange, rolarTotal, fechar }: {
 }) {
   const [cura, setCura] = useState('')
   const [ocupado, setOcupado] = useState(false)
+  const [truqueEscolhido, setTruqueEscolhido] = useState(() => truqueAltoElfo(d))
+  const altoElfo = s.id === 'dnd5e-srd' && altoElfoSelecionado(d)
   const vida = recursoDeVida(s)
   const curtos = lerPoderes(d.poderes).filter(p => p.usosMax && p.recarga === 'curto').length
 
@@ -30,7 +33,12 @@ export default function JanelaDescanso({ s, d, onChange, rolarTotal, fechar }: {
         else { const r = await rolarTotal(t, `Cura no descanso curto (${t})`); if (r === null) return; valor = r }
       }
       const r = aplicarDescanso(s, d, tipo, { cura: valor })
-      onChange(r.d)
+      // A troca é uma escolha do personagem, somente após um descanso longo.
+      const novaFicha = tipo === 'longo' && altoElfo && TRUQUES_MAGO_ALTO_ELFO.some(x => x.id === truqueEscolhido)
+        ? { ...r.d, listas: { ...r.d.listas, [CHAVE_TRUQUE_ALTO_ELFO]: truqueEscolhido } } : r.d
+      if (tipo === 'longo' && altoElfo && truqueEscolhido !== truqueAltoElfo(d))
+        r.mudancas.push('Alto Elfo: truque da linhagem alterado')
+      onChange(novaFicha)
       toast.success(tipo === 'longo' ? '🌙 Descanso longo' : '☕ Descanso curto', { description: r.mudancas.length ? r.mudancas.join(' · ') : 'Nada para recuperar: já estava tudo cheio.' })
       fechar()
     } finally { setOcupado(false) }
@@ -55,6 +63,13 @@ export default function JanelaDescanso({ s, d, onChange, rolarTotal, fechar }: {
       <section className="mt-3 rounded-2xl border border-[#d4a23a]/70 bg-gradient-to-br from-(--s-2b2045) to-(--s-1d1730) p-4">
         <h3 className="flex items-center gap-2 font-semibold"><Sunrise size={18} className="text-amber-200" /> Descanso longo</h3>
         <p className="mt-1 text-xs text-(--a-cfc0df)">Uma noite de sono: {s.recursos.filter(r => !/temp/i.test(r.id)).map(r => r.nome).slice(0, 4).join(', ') || 'os recursos'} voltam ao máximo, valores temporários zeram e todos os usos de poderes voltam.</p>
+        {altoElfo && <label className="mt-3 block text-sm text-(--a-d6c8e8)">✨ Alto Elfo · truque da linhagem após descansar
+          <select value={truqueEscolhido} disabled={ocupado} onChange={e => setTruqueEscolhido(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-sm text-white">
+            {TRUQUES_MAGO_ALTO_ELFO.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
+          </select>
+          <span className="mt-1 block text-xs text-(--a-c4b6d4)">Pode manter o truque atual ou trocar por outro truque de Mago do SRD. A troca só é aplicada quando o descanso longo for concluído.</span>
+        </label>}
         <button type="button" disabled={ocupado} onClick={() => void descansar('longo')} className="mt-3 w-full rounded-xl bg-gradient-to-r from-(--a-7652ac) to-[#b45309] p-2.5 font-semibold disabled:opacity-50">Fazer descanso longo</button>
       </section>
       <p className="mt-3 text-[11px] text-(--a-8f88a8)">Em campanha, o mestre também pode dar o descanso para o grupo todo (Mestre → Controles, na mesa).</p>

@@ -30,6 +30,8 @@ import ExcecaoModo from './ExcecaoModo'
 import ConferenciaFicha from './ConferenciaFicha'
 import GuiaAntecedenteDnd from './GuiaAntecedenteDnd'
 import GuiaMagiaHumanoDnd2024 from './GuiaMagiaHumanoDnd2024'
+import ResumoEscolhasDnd2024 from './ResumoEscolhasDnd2024'
+import TracosEspecieDnd2024 from './TracosEspecieDnd2024'
 import { idDe } from '@/lib/sistemas/dnd2024Classes'
 import { fontePermitida } from '@/lib/sistemas/dnd2024Fontes'
 import { lerArvore, sincronizarPoderes } from '@/lib/sistemas/arvore'
@@ -197,6 +199,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         </label>)}
       </div>
     </section>
+    {s.id === 'dnd5e-srd' && <ResumoEscolhasDnd2024 d={d} irPara={ir} modoManual={modoProgressao === 'manual'} />}
     <Progressao s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} pontosAtributo={Number(c.vars.prog_atributos) || 0} irPara={ir} />
     {c.limites.some(l => l.excedido) && <section role="alert" className="rounded-2xl border border-[#c98b3a] bg-[#3a2a14] p-4 text-sm text-[#f6dca8]">
       <p className="flex items-center gap-2 font-semibold"><AlertTriangle size={18} /> Acima do limite das regras</p>
@@ -294,6 +297,16 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
                 if (opcaoId) escolhas[marcoId] = opcaoId
                 else delete escolhas[marcoId]
                 const nova = { ...d, dndEscolhas: escolhas }
+                // Uma linhagem recém-confirmada pode conceder recursos que antes tinham máximo 0.
+                // Mesmo critério já usado ao escolher classe/nível na ficha: não reabastece usos ativos.
+                const depois = calcular(s, nova, { efeitosDnd })
+                for (const r of s.recursos) {
+                  if (r.contador) continue
+                  const anterior = c.recursosMax[r.id], max = depois.recursosMax[r.id]
+                  if (!(anterior && anterior > 0) && max && max > 0 && !(Number(nova.recursos[r.id]?.atual) > 0)) {
+                    nova.recursos = { ...nova.recursos, [r.id]: { ...nova.recursos[r.id], atual: max } }
+                  }
+                }
                 onChange(nova.arvore === undefined ? nova : {
                   ...nova, poderes: sincronizarPoderes(lerPoderes(nova.poderes), lerArvore(nova.arvore), nova),
                 })
@@ -307,6 +320,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
               mestre={podeEditarArvore} nivel={s.campos.some(x => x.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null} />}
         </div>}
         {secao === 'habilidades' && <>
+    {s.id === 'dnd5e-srd' && <TracosEspecieDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={(x, r) => void rolarExpr(x, r)} irPara={ir} />}
     {s.id === 'dnd5e-srd' && <TalentosOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} />}
     {s.id === 'dnd5e-srd' && <GuiaMagiaHumanoDnd2024 key={idDe(d.campos.especie)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
     {s.id === 'dnd5e-srd' && <MagiasDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} semLimites={modoProgressao === 'manual'} rolar={(x, r) => void rolarExpr(x, r)} />}

@@ -1,6 +1,7 @@
 import type { MarcoDnd } from './dnd2024Progressao'
 import { MARCOS_CLASSES_SRD } from './dnd2024Srd'
 import { MARCOS_ORIGENS_SRD } from './dnd2024Origens'
+import { MARCOS_PERICIAS_CLASSE_DND } from './dnd2024PericiasClasse'
 import { marcosComFontes } from './dnd2024Fontes'
 
 /**
@@ -11,6 +12,6 @@ import { marcosComFontes } from './dnd2024Fontes'
  * IMPORTANTE: o catálogo é VISUAL e registra escolhas; não aplica efeitos sozinho. Os efeitos automáticos entram depois,
  * um a um e testados, sem bônus em dobro.
  */
-export const MARCOS_DND_2024: MarcoDnd[] = marcosComFontes([...MARCOS_CLASSES_SRD, ...MARCOS_ORIGENS_SRD])
+export const MARCOS_DND_2024: MarcoDnd[] = marcosComFontes([...MARCOS_CLASSES_SRD, ...MARCOS_PERICIAS_CLASSE_DND, ...MARCOS_ORIGENS_SRD])
 /** Só o SRD (para testes e para comparar). */
-export const MARCOS_SRD_2024: MarcoDnd[] = [...MARCOS_CLASSES_SRD, ...MARCOS_ORIGENS_SRD]
+export const MARCOS_SRD_2024: MarcoDnd[] = [...MARCOS_CLASSES_SRD, ...MARCOS_PERICIAS_CLASSE_DND, ...MARCOS_ORIGENS_SRD]

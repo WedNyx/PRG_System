@@ -6,6 +6,7 @@
 import { calcular, normalizarFicha } from './calculo'
 import { lerPoderes, lerUso } from './inventario'
 import type { DadosFicha, Sistema } from './tipos'
+import { idsRecuperadosEspecieDnd } from './dnd2024TracosEspecie'
 
 export type TipoDescanso = 'curto' | 'longo'
 export type ResultadoDescanso = { d: DadosFicha; mudancas: string[] }
@@ -61,6 +62,12 @@ export function aplicarDescanso(s: Sistema, bruto: Partial<DadosFicha>, tipo: Ti
   const voltam = poderes.filter(p => p.usosMax && (uso.poderes[p.id] ?? 0) > 0 && (tipo === 'longo' || p.recarga === 'curto'))
   const usoPoderes = { ...uso.poderes }
   for (const p of voltam) delete usoPoderes[p.id]
+  if (s.id === 'dnd5e-srd') {
+    const raciais = idsRecuperadosEspecieDnd(d, tipo)
+    let recuperados = 0
+    for (const id of raciais) if (usoPoderes[id]) { delete usoPoderes[id]; recuperados++ }
+    if (recuperados) mudancas.push(`Usos de ${recuperados} poder(es) da espécie recuperados`)
+  }
   if (voltam.length) mudancas.push(voltam.length === 1 ? `Usos de ${voltam[0].nome} recuperados` : `Usos de ${voltam.length} poderes recuperados`)
 
   return { d: { ...d, recursos, uso: { ...uso, poderes: usoPoderes } }, mudancas }

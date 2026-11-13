@@ -31,7 +31,7 @@ describe('guia de criação D&D 2024', () => {
       'esp-elfo-atributo-magia': 'inteligencia',
     }
     expect(etapasCriacaoDnd2024(d).find(x => x.id === 'especie')?.estado).toBe('registrado')
-    expect(etapasCriacaoDnd2024(d).find(x => x.id === 'magias')?.estado).toBe('revisar')
+    expect(etapasCriacaoDnd2024(d).find(x => x.id === 'magias')?.estado).toBe('registrado')
   })
   it('marca antecedente sem distribuição como pendente', () => {
     const d = nova()

@@ -5,6 +5,7 @@ import { CLASSES_SRD } from '@/lib/sistemas/dnd2024Srd'
 import { progressaoVisivel, type MarcoDnd, type ProgressoDnd } from '@/lib/sistemas/dnd2024Progressao'
 import { permissoesDoModo, type ModoProgressao } from '@/lib/sistemas/modoProgressao'
 import { fontePermitida, nomeDaFonte } from '@/lib/sistemas/dnd2024Fontes'
+import { ANTECEDENTES_GUIADOS } from '@/lib/sistemas/dnd2024Antecedentes'
 
 type Props = {
   marcos: MarcoDnd[]
@@ -89,7 +90,13 @@ export default function ProgressaoDnd2024({ marcos, ficha, modo, somenteLeitura 
             value={m.escolha ?? ''} disabled={somenteLeitura || !onEscolha}
             onChange={e => onEscolha?.(m.id, e.target.value)}>
             <option value="">Selecione...</option>
-            {m.opcoes?.filter(op => fontePermitida(op.fonte, fontes) || op.id === m.escolha).map(op => <option key={op.id} value={op.id}>{op.nome}{op.fonte ? ' 📕' : ''}</option>)}
+            {m.opcoes?.filter(op => fontePermitida(op.fonte, fontes) || op.id === m.escolha).map(op => {
+              const duplicada = !!m.inicialApenas && op.id !== m.escolha && (
+                visiveis.some(outro => outro.inicialApenas && outro.id !== m.id && outro.escolha === op.id)
+                || (ANTECEDENTES_GUIADOS[ficha.antecedenteId ?? '']?.pericias.includes(op.id) ?? false)
+              )
+              return <option key={op.id} value={op.id} disabled={duplicada}>{op.nome}{op.fonte ? ' 📕' : ''}{duplicada ? ' · já concedida' : ''}</option>
+            })}
           </select>
         </label>}
       </li>)}

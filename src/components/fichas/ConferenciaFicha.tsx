@@ -1,15 +1,16 @@
 'use client'
 
-/** Conferência da ficha de D&D 2024 (v0.33.6): o que falta e o que passou do limite. Não muda nada. */
+/** Conferência da ficha (v0.33.6): o que falta e o que passou do limite. Não muda nada. D&D usa a própria. */
 import { useMemo, useState } from 'react'
 import { ClipboardCheck } from 'lucide-react'
-import type { DadosFicha } from '@/lib/sistemas/tipos'
+import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import type { Calculo } from '@/lib/sistemas/calculo'
 import { conferirFichaDnd } from '@/lib/sistemas/dnd2024Mestre'
+import { conferirFichaGenerica } from '@/lib/sistemas/conferencia'
 import { ListaConferencia } from '@/components/mestre/FerramentasDnd'
 
-export default function ConferenciaDnd({ d, c, efeitos, ir }: { d: DadosFicha; c: Calculo; efeitos: boolean; ir: (aba: string) => void }) {
-  const itens = useMemo(() => conferirFichaDnd(d, c, { efeitos }), [d, c, efeitos])
+export default function ConferenciaFicha({ s, d, c, efeitos, ir }: { s: Sistema; d: DadosFicha; c: Calculo; efeitos: boolean; ir: (aba: string) => void }) {
+  const itens = useMemo(() => s.id === 'dnd5e-srd' ? conferirFichaDnd(d, c, { efeitos }) : conferirFichaGenerica(s, d, c), [s, d, c, efeitos])
   const erros = itens.filter(x => x.tipo === 'erro').length, avisos = itens.filter(x => x.tipo === 'aviso').length
   const [aberta, setAberta] = useState(false)
   return <section aria-label="Conferência da ficha" className="rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-3 sm:p-4">

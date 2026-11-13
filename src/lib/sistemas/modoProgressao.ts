@@ -4,7 +4,13 @@ export type ConfiguracaoProgressao = {
   modo: ModoProgressao
   /** Permite ao mestre autorizar uma exceção para uma ficha específica. */
   excecoesPorFicha?: Record<string, ModoProgressao>
+  /** Fontes liberadas pelo mestre (ids de FONTES_DND; o SRD está sempre liberado). Sem o campo: só o SRD. v0.33.6 */
+  fontes?: string[]
+  /** Outros livros/suplementos que o mestre anotou (só o nome, sem conteúdo). */
+  fontesExtras?: string[]
 }
+/** Ids de fonte aceitos (o catálogo fica em dnd2024Fontes.ts; aqui só o formato, para não pesar no servidor). */
+const ID_FONTE = /^[a-z0-9-]{2,30}$/
 export const configuracaoProgressaoPadrao = (): ConfiguracaoProgressao => ({ modo: 'hibrido' })
 
 export function lerConfiguracaoProgressao(valor: unknown): ConfiguracaoProgressao {
@@ -17,7 +23,10 @@ export function lerConfiguracaoProgressao(valor: unknown): ConfiguracaoProgressa
       if (/^[a-zA-Z0-9_-]{1,100}$/.test(id) && modoValido(escolha)) excecoesPorFicha[id] = escolha
     }
   }
-  return { modo, excecoesPorFicha }
+  const fontes = Array.isArray(objeto.fontes) ? [...new Set(objeto.fontes.filter((f): f is string => typeof f === 'string' && ID_FONTE.test(f)))].slice(0, 20) : undefined
+  const fontesExtras = Array.isArray(objeto.fontesExtras)
+    ? [...new Set(objeto.fontesExtras.filter((f): f is string => typeof f === 'string').map(f => f.trim().slice(0, 60)).filter(Boolean))].slice(0, 10) : undefined
+  return { modo, excecoesPorFicha, ...(fontes ? { fontes } : {}), ...(fontesExtras ? { fontesExtras } : {}) }
 }
 function modoValido(valor: unknown): valor is ModoProgressao {
   return valor === 'automatico' || valor === 'manual' || valor === 'hibrido'

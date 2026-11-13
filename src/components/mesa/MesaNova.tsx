@@ -301,7 +301,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
 
     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       <section className="relative min-h-[45vh] flex-1 overflow-hidden">
-        {admin && !sessaoAberta && !ataque && avisoSessao && <p role="status" className="pointer-events-none absolute inset-x-2 top-2 z-30 mx-auto flex max-w-md items-center gap-2 rounded-xl border border-amber-500/50 bg-[#2b2310]/85 p-2 text-xs text-amber-100"><span className="flex-1 text-center">🌙 Sessão fechada: só você vê a mesa. Toque em “▶ Abrir sessão” quando o grupo for jogar.</span><button type="button" aria-label="Esconder aviso" onClick={() => setAvisoSessao(false)} className="pointer-events-auto rounded p-1 hover:bg-white/10"><X size={14} /></button></p>}
+        {admin && !sessaoAberta && !ataque && avisoSessao && <p role="status" className="pointer-events-none absolute inset-x-2 top-2 z-30 mx-auto flex max-w-md items-center gap-2 rounded-xl border border-amber-500/50 bg-[#2b2310]/85 p-2 text-xs text-amber-100"><span className="flex-1 text-center">🌙 Sessão fechada: só você vê a mesa. Toque em “▶ Abrir sessão” quando o grupo for jogar.</span><button type="button" aria-label="Esconder aviso" onClick={() => setAvisoSessao(false)} className="pointer-events-auto rounded p-1.5 hover:bg-white/10"><X size={14} /></button></p>}
         {!espectador && <div className="absolute bottom-2 left-2 z-20 flex max-w-[calc(100%-1rem)] flex-col items-start gap-1">
         {cena && <p className="pointer-events-none rounded-md bg-(--s-19172c)/90 px-2 py-0.5 text-[11px] text-(--a-cfc0df)">{ferramentas.find(f => f.id === modo)?.nome}{modo === 'mover' ? ' · toque no token para ver vida e atacar' : ''}</p>}
         <div className="flex max-w-full flex-wrap items-center gap-1 rounded-xl border border-(--a-373251) bg-(--s-19172c)/95 p-1 shadow-lg">
@@ -589,7 +589,7 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
   const [vis, setVis] = useState<'publica' | 'mestre' | 'privada'>('publica')
   const [dest, setDest] = useState('')
   const [pers, setPers] = useState('')
-  const fim = useRef<HTMLDivElement>(null)
+  const fim = useRef<HTMLLIElement>(null)
   // Duas abas: a conversa do grupo e o que acontece na mesa (rolagens, ataques, turnos, avisos).
   const [aba, setAba] = useState<'conversa' | 'mesa'>('conversa')
   const ehConversa = (ev: Evento) => ev.tipo === 'chat'
@@ -635,7 +635,7 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
         {ev.expressao?.includes('d20') && ev.resultados?.[0] === 20 && ' ✨ 20 natural!'}{ev.expressao?.includes('d20') && ev.resultados?.[0] === 1 && ' 💀 1 natural'}{ev.texto && <span className="block text-xs text-(--a-c4b6d4)">{ev.texto}</span>}</p>
         : ev.tipo === 'ataque' && ev.dados ? <CartaoAtaque d={ev.dados} eventoId={ev.id} admin={admin} acao={acao} rolagem={ev.expressao && ev.resultados ? { expressao: ev.expressao, resultados: ev.resultados } : undefined} />
         : <p className="whitespace-pre-wrap break-words">{ev.texto}</p>}
-    </li>)}<div ref={fim} /></ul>
+    </li>)}<li ref={fim} aria-hidden className="h-0 list-none" /></ul>
     {lista.length === 0 && <p className="text-center text-sm text-(--a-b4aeca)">{aba === 'conversa' ? 'Ninguém falou ainda. Mande um oi!' : 'Nada por aqui ainda. Role um dado!'}</p>}
     <div className="mt-auto space-y-2 border-t border-(--a-373251) pt-3">
       <div className="grid grid-cols-2 gap-2">

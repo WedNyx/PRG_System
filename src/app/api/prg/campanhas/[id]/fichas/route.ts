@@ -35,7 +35,8 @@ export const POST = rota<Ctx>(async (req, { params }) => {
     dono = b.jogadorId as string; npc = false
   }
   const s = await carregarSistema(sistema as string)
-  const dados = s ? { ...fichaVazia(s), nome } : { version: 2, fields: { name: nome } }
+  // Ficha de jogador criada pelo mestre começa em criação livre: o jogador monta sem pedir aprovação a cada mudança (v0.33.7).
+  const dados = s ? { ...fichaVazia(s), nome, ...(npc ? {} : { criacaoLivre: true }) } : { version: 2, fields: { name: nome } }
   const [f] = await rest<{ id: string }[]>('prg_fichas', {
     method: 'POST', prefer: 'return=representation',
     body: JSON.stringify({ dono_id: dono, campanha_id: id, sistema, nome, dados, npc, status: 'ativa', oculta: npc }),

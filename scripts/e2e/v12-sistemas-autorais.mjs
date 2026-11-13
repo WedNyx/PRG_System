@@ -25,6 +25,7 @@ r=await call(J,'POST','fichas',{sistema:sid}); check('jogador cria ficha no sist
 r=await call(M,'POST','campanhas',{nome:'Névoa',sistema:sid,modeloPadrao:'C'}); const cid=r.d.campanha.id
 r=await call(M,'POST',`campanhas/${cid}/convites`,{}); await call(J,'POST','convites/'+r.d.convite.codigo,{}); r=await call(M,'GET','campanhas/'+cid); await call(M,'POST',`campanhas/${cid}/solicitacoes/${r.d.solicitacoes[0].id}`,{decisao:'aceitar'})
 r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sistema:sid,nome:'Bruma'}); check('mestre cria ficha da campanha no sistema autoral (já com os campos)', r.s===201, r); const fc=r.d.ficha.id
+{ const g=await call(M,'GET','fichas/'+fc); await call(M,'PUT','fichas/'+fc,{versao:g.d.ficha.versao,dados:{...g.d.ficha.dados,criacaoLivre:false}}) } // v0.33.7: mestre encerra a criação livre; daqui em diante valem as regras da campanha
 r=await call(J,'GET','fichas/'+fc); check('ficha da campanha nasce com atributos do sistema', r.d.ficha.dados.atributos?.COR===2, r.d.ficha?.dados)
 const d=r.d.ficha.dados
 r=await call(J,'PUT','fichas/'+fc,{versao:r.d.ficha.versao,dados:{...d,atributos:{...d.atributos,COR:5}}}); check('alterar atributo segue as permissões da campanha (vai para aprovação)', r.s===200 && r.d.pendentes.includes('atributos'), r.d)

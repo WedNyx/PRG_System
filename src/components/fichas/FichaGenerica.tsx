@@ -26,17 +26,20 @@ import TesteAssimilacao from './TesteAssimilacao'
 import MagiasDnd2024 from './MagiasDnd2024'
 import MulticlasseDnd2024 from './MulticlasseDnd2024'
 import ExcecaoModo from './ExcecaoModo'
-import ConferenciaDnd from './ConferenciaDnd'
+import ConferenciaFicha from './ConferenciaFicha'
+import { fontePermitida } from '@/lib/sistemas/dnd2024Fontes'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
 const sinal = (n: number | null | undefined) => n === null || n === undefined ? '—' : n >= 0 ? '+' + n : String(n)
 
 /** Ficha que se monta sozinha a partir do modelo do sistema. */
-export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, excecaoModo, rolarNaCampanha, passarItem }: {
+export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, excecaoModo, fontesDnd = null, rolarNaCampanha, passarItem }: {
   sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean; modoProgressao?: ModoProgressao; podeEditarArvore?: boolean
   /** Mestre de campanha de D&D: troca o modo só desta ficha (exceção). */
   excecaoModo?: { campanha: ModoProgressao; atual: ModoProgressao | null; mudar: (m: ModoProgressao | null) => void | Promise<void> }
+  /** D&D em campanha: fontes que o mestre liberou (null = todas: ficha avulsa ou mestre). */
+  fontesDnd?: Set<string> | null
   /** Se a ficha é de campanha: rola no servidor e publica no chat da mesa. */
   rolarNaCampanha?: (expressao: string, rotulo: string, extra?: { estilo: 'assimilacao'; manter?: number; todos?: boolean }) => Promise<{ resultados: number[]; total: number } | null>
   /** Ficha de campanha: passar um item para outro personagem. */
@@ -122,7 +125,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
   const listasDe = (sec: string) => s.listas.filter(l => secaoDeLista(l.id) === sec)
   const SECOES = ([
     { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade e recursos', ajuda: 'Nome, imagem e os dados básicos do personagem. Mais abaixo ficam os valores calculados e as barras de vida e recursos (use − e +).', ok: true },
-    { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? 'Atributos e perícias' : s.pericias.titulo ?? 'Perícias') : 'Atributos', sub: 'Testes e rolagens', ajuda: s.atributos.length ? 'Digite os valores dos atributos; os bônus se calculam sozinhos. Toque no bônus de um teste ou perícia para rolar.' : s.pericias?.modo === 'valor' ? 'Digite a porcentagem de cada perícia e toque nela para rolar.' : 'Escolha o grau de cada uma e toque no valor para rolar.', ok: s.atributos.length > 0 || !!s.pericias },
+    { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? 'Atributos e perícias' : s.pericias.titulo ?? 'Perícias') : 'Atributos', sub: 'Testes e rolagens', ajuda: s.atributos.length ? (s.formulaModificador ? 'Digite os valores dos atributos; os bônus se calculam sozinhos. Toque no bônus de um teste ou perícia para rolar.' : s.rolagem === 'assimilacao' ? 'Digite os pontos de cada Instinto. Use o Teste logo abaixo para rolar os dados de símbolos.' : s.rolagem === 'parada' || s.id === 'ordem-paranormal' ? 'Digite os pontos de cada atributo. Toque num teste ou perícia para rolar a parada de dados.' : 'Digite o valor de cada atributo (ele já é o bônus). Toque num teste ou perícia para rolar.') : s.pericias?.modo === 'valor' ? 'Digite a porcentagem de cada perícia e toque nela para rolar.' : 'Escolha o grau de cada uma e toque no valor para rolar.', ok: s.atributos.length > 0 || !!s.pericias },
     { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ajuda: 'Adicione poderes com custo, usos e dano. Toque no dado do poder para rolar; os usos gastos voltam no descanso.', ok: true },
     { id: 'arvore', icone: '🌠', nome: 'Árvore de habilidades', sub: 'Hexágonos, pontos e caminhos', ajuda: 'Gaste pontos para liberar habilidades. Uma habilidade só abre quando a anterior do caminho já foi liberada.', ok: true },
     { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou desenho, separados em abas por tipo. Itens equipados contam nos bônus; os mágicos ficam numa ala própria.', ok: true },
@@ -144,7 +147,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     <RolagemCentral ref={central} />
     {descansando && <JanelaDescanso s={s} d={d} onChange={onChange} rolarTotal={rolarTotal} fechar={() => setDescansando(false)} />}
     <div className="sticky top-[57px] z-10 -mx-3 mb-4 border-b border-(--a-373251) bg-(--s-100d1c)/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-4" aria-label="Resumo do personagem">
-      <div className="flex items-center gap-3 overflow-x-auto">
+      <div className="flex items-center gap-3 overflow-x-auto" tabIndex={0} role="region" aria-label="Vida e recursos (role para o lado)">
       {recursoPrincipal && [recursoPrincipal, ...s.recursos.filter(r => r !== recursoPrincipal && (c.recursosMax[r.id] || d.recursos[r.id]?.max))].slice(0, 3).map(r => {
         const calc = !!r.formula || r.maxFixo !== undefined
         const max = c.recursosMax[r.id] ?? (calc ? null : (d.recursos[r.id]?.max ?? null)) ?? (/^(pv|vida|hp)$/.test(r.id) ? (c.derivados.pv_max ?? c.derivados.pv_sugerido ?? null) : null)
@@ -167,7 +170,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       <div className="min-w-0 flex-1 space-y-4">
         {atual && <p className="flex gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-2 text-xs text-(--a-cfc0df)"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></p>}
         {secao === 'principal' && <>
-    {s.id === 'dnd5e-srd' && <ConferenciaDnd d={d} c={c} efeitos={efeitosDnd} ir={ir} />}
+    {s.id !== 'livre' && s.tipo !== 'autoral' && <ConferenciaFicha s={s} d={d} c={c} efeitos={efeitosDnd} ir={ir} />}
     <section className={card}>
       <div className="flex items-start gap-4">
         <Retrato url={d.retrato} nome={d.nome} somenteLeitura={somenteLeitura} onChange={u => onChange({ ...d, retrato: u ?? undefined })} />
@@ -175,7 +178,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
           <input value={d.nome} maxLength={90} disabled={somenteLeitura} onChange={e => set('nome', e.target.value)} className={input + ' mt-1 text-lg font-bold'} placeholder="Ex.: Lyra Nyx" /></label>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3 lg:grid-cols-3">
-        {s.campos.map(f => f.tipo === 'escolha' ? <div key={f.id} className="col-span-2 sm:col-span-1"><CampoEscolha s={s} f={f} valor={d.campos[f.id]} somenteLeitura={somenteLeitura} mudar={v => set('campos', { ...d.campos, [f.id]: v })} /></div> : <label key={f.id} className={'flex flex-col justify-end text-sm text-(--a-d6c8e8) ' + (f.tipo === 'area' ? 'col-span-2 lg:col-span-3' : f.tipo === 'numero' ? '' : 'col-span-2 sm:col-span-1')}>{f.nome}
+        {s.campos.map(f => f.tipo === 'escolha' ? <div key={f.id} className="col-span-2 sm:col-span-1"><CampoEscolha s={s} f={f} valor={d.campos[f.id]} somenteLeitura={somenteLeitura} fontes={s.id === 'dnd5e-srd' ? fontesDnd : null} mudar={v => set('campos', { ...d.campos, [f.id]: v })} /></div> : <label key={f.id} className={'flex flex-col justify-end text-sm text-(--a-d6c8e8) ' + (f.tipo === 'area' ? 'col-span-2 lg:col-span-3' : f.tipo === 'numero' ? '' : 'col-span-2 sm:col-span-1')}>{f.nome}
           {f.tipo === 'area'
             ? <textarea rows={3} value={String(d.campos[f.id] ?? '')} disabled={somenteLeitura} onChange={e => set('campos', { ...d.campos, [f.id]: e.target.value.slice(0, 4000) })} className={input + ' mt-1'} />
             : <input type={f.tipo === 'numero' ? 'number' : 'text'} value={d.campos[f.id] ?? ''} disabled={somenteLeitura} maxLength={120}
@@ -268,6 +271,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
               marcos={MARCOS_DND_2024}
               ficha={progressoDaFichaDnd(d)}
               modo={modoProgressao}
+              fontes={fontesDnd}
               somenteLeitura={somenteLeitura}
               onEscolha={(marcoId, opcaoId) => {
                 const escolhas = { ...d.dndEscolhas }
@@ -344,7 +348,7 @@ function Retrato({ url, nome, somenteLeitura, onChange }: { url?: string; nome: 
 }
 
 /** Campo de escolha (classe, espécie…): lista de opções com descrição e os bônus que a opção dá, ou um nome digitado fora da lista. */
-function CampoEscolha({ s, f, valor, mudar, somenteLeitura }: { s: Sistema; f: Sistema['campos'][number]; valor: unknown; mudar: (v: string) => void; somenteLeitura: boolean }) {
+function CampoEscolha({ s, f, valor, mudar, somenteLeitura, fontes = null }: { s: Sistema; f: Sistema['campos'][number]; valor: unknown; mudar: (v: string) => void; somenteLeitura: boolean; fontes?: Set<string> | null }) {
   const op = opcaoEscolhida(f, valor)
   const nomes = useMemo(() => Object.fromEntries(alvosDeBonus(s).map(a => [a.id, a.nome])), [s])
   const texto = typeof valor === 'string' ? valor : ''
@@ -355,7 +359,7 @@ function CampoEscolha({ s, f, valor, mudar, somenteLeitura }: { s: Sistema; f: S
       <select value={op ? op.nome : outro ? '__outro' : ''} disabled={somenteLeitura}
         onChange={e => { if (e.target.value === '__outro') { setForcarOutro(true); mudar('') } else { setForcarOutro(false); mudar(e.target.value) } }} className={input + ' mt-1'}>
         <option value="">Escolha…</option>
-        {f.opcoes?.map(o => <option key={o.nome} value={o.nome}>{o.nome}</option>)}
+        {f.opcoes?.filter(o => fontePermitida(o.fonte, fontes) || o.nome === op?.nome).map(o => <option key={o.nome} value={o.nome}>{o.nome}{o.fonte ? ' 📕' : ''}</option>)}
         <option value="__outro">✍️ Outro (fora da lista)</option>
       </select></label>
     {outro && <input value={texto} disabled={somenteLeitura} maxLength={90} onChange={e => mudar(e.target.value)} className={input + ' mt-1.5'} placeholder={`Nome de ${f.nome.toLowerCase()} fora da lista`} autoFocus={forcarOutro} />}

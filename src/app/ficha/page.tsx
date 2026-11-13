@@ -9,6 +9,7 @@ import { obterSistema } from '@/lib/sistemas/cliente'
 import { normalizarFicha } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { lerConfiguracaoProgressao, modoDaFicha, type ConfiguracaoProgressao, type ModoProgressao } from '@/lib/sistemas/modoProgressao'
+import { fontesLiberadas } from '@/lib/sistemas/dnd2024Fontes'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import { CAMPOS } from '@/lib/campanhas/permissoes'
 import { toast } from 'sonner'
@@ -17,6 +18,7 @@ import type { Item } from '@/lib/sistemas/inventario'
 import AjudaTela, { type PassoAjuda } from '@/components/AjudaTela'
 import { ArrowLeft, Download } from 'lucide-react'
 import { baixarArquivo, montarArquivo } from '@/lib/fichaArquivo'
+import { aplicar } from '@/lib/nuvem/categorias'
 
 const AREAS: Record<string, string> = Object.fromEntries(CAMPOS.map(c => [c.id, c.titulo]))
 
@@ -68,6 +70,9 @@ function Conteudo() {
   /** Mestre numa campanha de D&D: modo da campanha e a exceção desta ficha (v0.33.6). */
   const [config, setConfig] = useState<ConfiguracaoProgressao | null>(null)
   const [souMestre, setSouMestre] = useState(false)
+  /** Ficha de jogador na campanha: ainda aguardando a aprovação de entrada (a criação é livre nesse período). */
+  const [aguardandoEntrada, setAguardandoEntrada] = useState(false)
+  const [ehNpc, setEhNpc] = useState(false)
   const [passando, setPassando] = useState<{ item: Item; tem: number } | null>(null)
 
   useEffect(() => {
@@ -75,8 +80,8 @@ function Conteudo() {
     ;(async () => {
       try {
         if (nuvem) {
-          const r = await api<{ ficha: { sistema: string; dados: DadosFicha; versao: number; status?: string; bloqueada?: boolean; observacao_mestre?: string; campanha_id?: string | null }; podeEditar: boolean; souMestre?: boolean; configProgressao?: ConfiguracaoProgressao; pendentes?: string[] }>('fichas/' + nuvem)
-          if (r.pendentes?.length) setAviso({ texto: 'Aguardando o mestre aprovar: ' + r.pendentes.map(a => AREAS[a] ?? a).join(', ') + '.', desfazer: false })
+          const r = await api<{ ficha: { sistema: string; dados: DadosFicha; versao: number; status?: string; npc?: boolean; bloqueada?: boolean; observacao_mestre?: string; campanha_id?: string | null }; podeEditar: boolean; souMestre?: boolean; configProgressao?: ConfiguracaoProgressao; pendentes?: string[]; pedido?: { caminho: string; depois: unknown }[] }>('fichas/' + nuvem)
+          if (r.pendentes?.length) setAviso({ texto: 'Aguardando o mestre aprovar: ' + r.pendentes.map(a => AREAS[a] ?? a).join(', ') + '. Os valores que você mudou já aparecem na ficha; o mestre aprova em Campanhas › Pedidos.', desfazer: false })
           if (r.ficha.observacao_mestre) setErro('Mestre: ' + r.ficha.observacao_mestre)
           else if (!r.podeEditar && r.ficha.bloqueada) setErro('O mestre travou esta ficha neste momento.')
           const s = await obterSistema(r.ficha.sistema)
@@ -89,7 +94,10 @@ function Conteudo() {
           setConfig(cfg); setSouMestre(!!r.souMestre)
           setModoProgressao(modoDaFicha(cfg, nuvem))
           setPodeEditarArvore(!r.ficha.campanha_id || !!r.souMestre)
-          setSistema(s); setDados(normalizarFicha(s, r.ficha.dados)); setEstado(r.podeEditar ? 'salvo' : 'leitura')
+          setAguardandoEntrada(r.ficha.status === 'pendente'); setEhNpc(!!r.ficha.npc)
+          // O pedido que ainda espera o mestre aparece na ficha (senão, ao recarregar, parecia que não tinha salvo).
+          const comPedido = r.pedido?.length ? aplicar(r.ficha.dados as unknown as Record<string, unknown>, r.pedido) as unknown as DadosFicha : r.ficha.dados
+          setSistema(s); setDados(normalizarFicha(s, comPedido)); setEstado(r.podeEditar ? 'salvo' : 'leitura')
         } else if (local) {
           const salvo = JSON.parse(localStorage.getItem(LOCAL + local) || 'null')
           const s = sistemaPorId(salvo?.sistema ?? q.get('sistema') ?? '')
@@ -160,9 +168,17 @@ function Conteudo() {
     <div className="mx-auto max-w-6xl px-3 py-4 sm:px-6 sm:py-5">
       {erro && <p role="alert" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-(--a-62527e) bg-(--s-2b2140) p-3 text-sm">
         <span className="flex-1">{erro}</span>{estado === 'conflito' && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-(--a-b99bff) px-3 py-1">Recarregar</button>}</p>}
+      {sistema && dados && campanhaId && nuvem && !ehNpc && estado !== 'leitura' && (souMestre
+        ? <p className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-emerald-500/40 bg-emerald-950/30 p-3 text-sm">
+            <span className="flex-1">🧪 <strong>Criação livre {dados.criacaoLivre ? 'ligada' : 'desligada'}.</strong> {dados.criacaoLivre ? 'O jogador salva atributos, perícias, habilidades, itens e nível sem pedir aprovação, até tocar em “Terminei a criação”.' : 'As mudanças do jogador seguem as regras da campanha (algumas pedem aprovação).'}</span>
+            <button type="button" onClick={() => mudar({ ...dados, criacaoLivre: !dados.criacaoLivre })} className="rounded-lg border border-emerald-400/60 px-3 py-1">{dados.criacaoLivre ? 'Encerrar criação' : 'Ligar criação livre'}</button></p>
+        : (dados.criacaoLivre || aguardandoEntrada) && <p className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-emerald-500/40 bg-emerald-950/30 p-3 text-sm">
+            <span className="flex-1">🧪 <strong>Criação livre:</strong> tudo o que você mudar salva na hora. {aguardandoEntrada ? 'O mestre confere a ficha toda quando aprovar a entrada.' : 'Quando terminar, toque em “Terminei a criação”: depois disso, atributos e perícias passam a pedir aprovação do mestre.'}</span>
+            {!aguardandoEntrada && <button type="button" onClick={() => { if (confirm('Terminar a criação? Depois disso, mudanças em atributos, perícias e outras áreas podem precisar da aprovação do mestre.')) mudar({ ...dados, criacaoLivre: false }) }} className="rounded-lg border border-emerald-400/60 px-3 py-1">Terminei a criação</button>}</p>)}
       {aviso && <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-(--a-62527e) bg-(--s-1f2a40) p-3 text-sm">
         <span className="flex-1">{aviso.texto}</span>{aviso.desfazer && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-(--a-b99bff) px-3 py-1">Desfazer (voltar ao salvo)</button>}</p>}
       {sistema && dados ? <FichaGenerica sistema={sistema} dados={dados} onChange={mudar} somenteLeitura={estado === 'leitura'} modoProgressao={modoProgressao} podeEditarArvore={podeEditarArvore}
+        fontesDnd={campanhaId && config && !souMestre ? fontesLiberadas(config.fontes) : null}
         excecaoModo={campanhaId && nuvem && souMestre && config && sistema.id === 'dnd5e-srd' ? {
           campanha: config.modo, atual: config.excecoesPorFicha?.[nuvem] ?? null,
           mudar: async modo => {

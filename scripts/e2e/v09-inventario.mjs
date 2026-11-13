@@ -18,6 +18,7 @@ r=await call(M,'GET',`campanhas/${cid}/biblioteca`); check('biblioteca lista 2 e
 
 // ficha do jogador na campanha
 r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sistema:'dnd5e-srd',nome:'Sol'}); const fid=r.d.ficha?.id; check('mestre cria a ficha do jogador na campanha', !!fid, r)
+{ const g=await call(M,'GET','fichas/'+fid); await call(M,'PUT','fichas/'+fid,{versao:g.d.ficha.versao,dados:{...g.d.ficha.dados,criacaoLivre:false}}) } // v0.33.7: mestre encerra a criação livre; daqui em diante valem as regras da campanha
 r=await call(M,'POST',`campanhas/${cid}/recompensas`,{fichaIds:[fid],bibliotecaIds:[escudo,missil,escudo],moedas:'20 PO',item:'Corda'})
 const aprovada = r.s===200
 if (aprovada) {

@@ -1,5 +1,6 @@
 // Teste geral pela tela (Playwright): mestre (celular), jogador (celular) e espectador (computador).
 // Uso: NODE_PATH=$(npm root -g) node scripts/tela/papeis.cjs <pasta-das-fotos>  (servidor local em :3000, banco de teste). Ver scripts/e2e/LEIA-ME.md.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { chromium, devices } = require('playwright');
 const B='http://localhost:3000', M='11111111-1111-4111-8111-111111111111', J='22222222-2222-4222-8222-222222222222', X='33333333-3333-4333-8333-333333333333'
 const O=process.argv[2] || '.'

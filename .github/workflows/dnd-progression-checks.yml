@@ -1,22 +1,9 @@
-name: D&D 2024 — testes de progressão
+name: Qualidade — testes, tipos, lint e build
 
 on:
+  # Todas as PRs para a main: testes unitários, tipos, lint dos módulos novos e build (v0.33.6).
   pull_request:
     branches: [main]
-    paths:
-      - 'src/lib/sistemas/dnd2024*'
-      - 'src/lib/sistemas/modoProgressao*'
-      - 'src/lib/sistemas/catalogo.ts'
-      - 'src/lib/sistemas/calculo.ts'
-      - 'src/lib/sistemas/guias.ts'
-      - 'src/lib/nuvem/**'
-      - 'src/app/ficha/page.tsx'
-      - 'src/app/api/prg/fichas/**'
-      - 'src/app/api/prg/campanhas/**'
-      - 'src/components/fichas/**'
-      - 'src/components/central/CampanhasNuvem.tsx'
-      - 'supabase/migrations/*progressao*'
-      - '.github/workflows/dnd-progression-checks.yml'
   workflow_dispatch:
 
 permissions:
@@ -34,12 +21,20 @@ jobs:
           cache: 'npm'
       - name: Instalar dependências sem modificar o lockfile
         run: npm ci
-      - name: Testes unitários
-        run: npm test -- src/lib/sistemas/dnd2024Marcos.test.ts src/lib/sistemas/dnd2024Ficha.test.ts src/lib/sistemas/dnd2024Progressao.test.ts src/lib/sistemas/modoProgressao.test.ts src/lib/sistemas/dnd2024Armadura.test.ts src/lib/nuvem/validacaoProgressao.test.ts
+      - name: Testes unitários (todos)
+        run: npm test
       - name: Checar tipos
         run: npx tsc --noEmit
-      - name: Lint dos novos módulos D&D
-        run: npx eslint src/lib/sistemas/dnd2024*.ts src/lib/sistemas/modoProgressao*.ts src/lib/nuvem/validacaoProgressao.test.ts src/components/fichas/ProgressaoDnd2024.tsx src/components/fichas/SeletorModoProgressao.tsx
+      - name: Lint dos módulos novos e revisados (bloqueia)
+        run: >-
+          npx eslint
+          src/lib/sistemas/dnd2024*.ts src/lib/sistemas/modoProgressao*.ts src/lib/sistemas/arvore*.ts src/lib/sistemas/conferencia*.ts
+          src/lib/nuvem/validacaoProgressao.test.ts
+          src/components/fichas/ProgressaoDnd2024.tsx src/components/fichas/SeletorModoProgressao.tsx src/components/fichas/SeletorFontes.tsx
+          src/components/fichas/MagiasDnd2024.tsx src/components/fichas/MulticlasseDnd2024.tsx src/components/fichas/ExcecaoModo.tsx
+          src/components/fichas/ConferenciaFicha.tsx src/components/fichas/Arvore.tsx src/components/fichas/BarraRecurso.tsx src/components/NaTela.tsx
+          src/components/mestre src/app/mestre
+          "src/app/api/prg/fichas/[id]/route.ts" "src/app/api/prg/campanhas/[id]/route.ts"
       - name: Lint geral (informativo — existem pendências anteriores no projeto)
         continue-on-error: true
         run: npm run lint

@@ -2,7 +2,9 @@
 /** Opção de um campo “escolha” (classe, espécie, origem…): o que o jogador escolhe pode dar bônus automáticos. */
 /** `progressao`: id da tabela de níveis (progressoes.classes) que passa a valer quando esta opção é escolhida. */
 /** `vars`: números que a opção define para as fórmulas (ex.: Guerreiro → pv_ini 20). Sem escolha, valem 0. */
-export type OpcaoCampo = { nome: string; descricao?: string; bonus?: { alvo: string; valor: number }[]; progressao?: string; vars?: Record<string, number> }
+export type OpcaoCampo = { nome: string; descricao?: string; bonus?: { alvo: string; valor: number }[]; progressao?: string; vars?: Record<string, number>
+  /** D&D: opção de livro comercial (id em dnd2024Fontes) — só aparece se o mestre liberar a fonte. */
+  fonte?: string }
 export type CampoDef = { id: string; nome: string; tipo: 'texto' | 'numero' | 'area' | 'escolha'; padrao?: string | number; opcoes?: OpcaoCampo[]; /** Escolha de classe: campo de número com o nível dela (multiclasse). */ nivel?: string }
 export type AtributoDef = { id: string; nome: string; min: number; max: number; padrao: number }
 export type TreinoDef = { id: string; nome: string; formula: string; custo?: number }
@@ -96,6 +98,8 @@ export type DadosFicha = {
   dndMagias?: Record<string, string>
   /** Multiclasse de D&D 2024: id da outra classe → níveis nela (a classe inicial fica com o resto do nível total). */
   dndMulticlasse?: Record<string, number>
+  /** Campanha: criação livre ligada pelo mestre — o dono salva atributos, perícias etc. sem pedir aprovação (v0.33.7). */
+  criacaoLivre?: boolean
   /** Árvore de habilidades (ver arvore.ts). */
   arvore?: unknown
 }

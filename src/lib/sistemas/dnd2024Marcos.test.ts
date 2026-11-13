@@ -20,7 +20,9 @@ describe('marcos D&D 2024 (dados abertos, visual)', () => {
       const m = MARCOS_DND_2024.find(m => m.id === classe + '-subclasse')
       expect(m?.nivel).toBe(3)
       expect(m?.modo).toBe('escolha')
-      expect(m?.opcoes).toHaveLength(1)
+      // 1 subclasse aberta do SRD + 3 do Livro do Jogador (só o nome, marcadas com a fonte).
+      expect(m?.opcoes?.filter(o => !o.fonte)).toHaveLength(1)
+      expect(m?.opcoes?.filter(o => o.fonte === 'phb2024')).toHaveLength(3)
     }
   })
   it('libera a escolha aberta de subclasse no nível 3, não antes', () => {

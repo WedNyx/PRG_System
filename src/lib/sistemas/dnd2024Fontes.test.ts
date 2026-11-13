@@ -52,7 +52,7 @@ describe('fontes de D&D 2024', () => {
     expect(fontePermitida(FONTE_PHB, fontesLiberadas([]))).toBe(false)
     expect(fontePermitida(FONTE_PHB, null)).toBe(true)
     expect(fontePermitida(undefined, fontesLiberadas([]))).toBe(true)
-    expect(FONTES_DND.filter(f => f.tipo === 'comercial')).toHaveLength(3)
+    expect(FONTES_DND.filter(f => f.tipo === 'comercial')).toHaveLength(4)
   })
   it('servidor: subclasse e antecedente do livro só com o livro liberado', () => {
     const antes = { campos: { classe: 'Guerreiro', nivel: 3 } }

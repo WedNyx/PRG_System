@@ -24,10 +24,16 @@ import { GUIAS } from '@/lib/sistemas/guias'
 import { expressaoParada, leituraBlades, leituraD100 } from '@/lib/sistemas/combate'
 import TesteAssimilacao from './TesteAssimilacao'
 import MagiasDnd2024 from './MagiasDnd2024'
+import TalentosOrigemDnd2024 from './TalentosOrigemDnd2024'
 import MulticlasseDnd2024 from './MulticlasseDnd2024'
 import ExcecaoModo from './ExcecaoModo'
 import ConferenciaFicha from './ConferenciaFicha'
+import GuiaAntecedenteDnd from './GuiaAntecedenteDnd'
+import GuiaMagiaHumanoDnd2024 from './GuiaMagiaHumanoDnd2024'
+import { idDe } from '@/lib/sistemas/dnd2024Classes'
 import { fontePermitida } from '@/lib/sistemas/dnd2024Fontes'
+import { lerArvore, sincronizarPoderes } from '@/lib/sistemas/arvore'
+import { lerPoderes } from '@/lib/sistemas/inventario'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
@@ -65,6 +71,9 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         const antes = c.recursosMax[r.id], max = depois.recursosMax[r.id]
         if (!(antes && antes > 0) && max && max > 0 && !(Number(novo.recursos[r.id]?.atual) > 0)) novo.recursos = { ...novo.recursos, [r.id]: { ...novo.recursos[r.id], atual: max } }
       }
+    }
+    if (s.id === 'dnd5e-srd' && k === 'campos' && novo.arvore !== undefined) {
+      novo.poderes = sincronizarPoderes(lerPoderes(novo.poderes), lerArvore(novo.arvore), novo)
     }
     onChange(novo)
   }
@@ -129,7 +138,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade e recursos', ajuda: 'Nome, imagem e os dados básicos do personagem. Mais abaixo ficam os valores calculados e as barras de vida e recursos (use − e +).', ok: true },
     { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? `${tituloAtr} e ${tituloPer[0].toLowerCase()}${tituloPer.slice(1)}` : tituloPer) : tituloAtr, sub: 'Testes e rolagens', ajuda: s.atributos.length ? (s.formulaModificador ? 'Digite os valores dos atributos; os bônus se calculam sozinhos. Toque no bônus de um teste ou perícia para rolar.' : s.rolagem === 'assimilacao' ? 'Digite os pontos de cada Instinto. Use o Teste logo abaixo para rolar os dados de símbolos.' : s.rolagem === 'parada' || s.id === 'ordem-paranormal' ? 'Digite os pontos de cada atributo. Toque num teste ou perícia para rolar a parada de dados.' : 'Digite o valor de cada atributo (ele já é o bônus). Toque num teste ou perícia para rolar.') : s.pericias?.modo === 'valor' ? 'Digite a porcentagem de cada perícia e toque nela para rolar.' : 'Escolha o grau de cada uma e toque no valor para rolar.', ok: s.atributos.length > 0 || !!s.pericias },
     { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ajuda: 'Adicione poderes com custo, usos e dano. Toque no dado do poder para rolar; os usos gastos voltam no descanso.', ok: true },
-    { id: 'arvore', icone: '🌠', nome: 'Árvore de habilidades', sub: 'Hexágonos, pontos e caminhos', ajuda: 'Gaste pontos para liberar habilidades. Uma habilidade só abre quando a anterior do caminho já foi liberada.', ok: true },
+    { id: 'arvore', icone: '🌠', nome: 'Árvore de habilidades', sub: 'Hexágonos, pontos e caminhos', ajuda: s.id === 'dnd5e-srd' ? 'No D&D, as características oficiais aparecem por espécie, classe, subclasse e nível sem gastar pontos. O mestre pode criar hexágonos personalizados no modo Híbrido e vinculá-los às escolhas da ficha.' : 'Gaste pontos para liberar habilidades. Uma habilidade só abre quando a anterior do caminho já foi liberada.', ok: true },
     { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou desenho, separados em abas por tipo. Itens equipados contam nos bônus; os mágicos ficam numa ala própria.', ok: true },
     { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ajuda: 'Espaço livre para a história do personagem, aliados, segredos e lembretes. Embaixo ficam as regras e os créditos do sistema.', ok: true },
     { id: 'guia', icone: '📖', nome: 'Guia de criação', sub: 'Passo a passo deste sistema', ajuda: 'Siga os passos para criar o personagem do jeito que as regras pedem.', ok: !!GUIAS[s.id] },
@@ -214,6 +223,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     </section>}
         </>}
         {secao === 'atributos' && <>
+    {s.id === 'dnd5e-srd' && <GuiaAntecedenteDnd key={idDe(d.campos.antecedente)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} fontes={fontesDnd} />}
     {c.limites.some(l => l.excedido) && <section role="alert" className="rounded-2xl border border-[#c98b3a] bg-[#3a2a14] p-4 text-sm text-[#f6dca8]">
       <p className="flex items-center gap-2 font-semibold"><AlertTriangle size={18} /> Acima do limite das regras</p>
       <ul className="mt-2 list-disc pl-5">{c.limites.filter(l => l.excedido).map(l => <li key={l.nome}>{l.nome}: {l.uso} de {l.max}</li>)}</ul>
@@ -267,7 +277,11 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         </>}
         {secao === 'arvore' && <div className="space-y-4">
           {excecaoModo && <ExcecaoModo {...excecaoModo} />}
-          {s.id === 'dnd5e-srd' && <MulticlasseDnd2024 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
+          {s.id === 'dnd5e-srd' && <MulticlasseDnd2024 d={d} onChange={nova => onChange(nova.arvore === undefined ? nova : {
+            ...nova, poderes: sincronizarPoderes(lerPoderes(nova.poderes), lerArvore(nova.arvore), nova),
+          })} somenteLeitura={somenteLeitura} />}
+          {s.id === 'dnd5e-srd' && <TalentosOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} compacto />}
+          {s.id === 'dnd5e-srd' && <GuiaMagiaHumanoDnd2024 key={idDe(d.campos.especie)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
           {s.id === 'dnd5e-srd' && modoProgressao !== 'manual' && <>
             <ProgressaoDnd2024
               marcos={MARCOS_DND_2024}
@@ -279,7 +293,10 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
                 const escolhas = { ...d.dndEscolhas }
                 if (opcaoId) escolhas[marcoId] = opcaoId
                 else delete escolhas[marcoId]
-                onChange({ ...d, dndEscolhas: escolhas })
+                const nova = { ...d, dndEscolhas: escolhas }
+                onChange(nova.arvore === undefined ? nova : {
+                  ...nova, poderes: sincronizarPoderes(lerPoderes(nova.poderes), lerArvore(nova.arvore), nova),
+                })
               }}
             />
           </>}
@@ -290,6 +307,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
               mestre={podeEditarArvore} nivel={s.campos.some(x => x.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null} />}
         </div>}
         {secao === 'habilidades' && <>
+    {s.id === 'dnd5e-srd' && <TalentosOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} />}
+    {s.id === 'dnd5e-srd' && <GuiaMagiaHumanoDnd2024 key={idDe(d.campos.especie)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
     {s.id === 'dnd5e-srd' && <MagiasDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} semLimites={modoProgressao === 'manual'} rolar={(x, r) => void rolarExpr(x, r)} />}
     <PoderesFicha {...propsInv} />
     {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
@@ -323,7 +342,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       {s.creditos && <p className="mt-2 border-t border-(--a-3d3152) pt-2 text-[11px] leading-relaxed text-(--a-9d8db0)">{s.creditos}</p>}
     </section>}
         </>}
-        {secao === 'guia' && <GuiaSistema sistemaId={s.id} />}
+        {secao === 'guia' && <GuiaSistema sistemaId={s.id} dados={d} irPara={ir} />}
         {proxima && <button type="button" onClick={() => ir(proxima.id)} className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-(--a-62527e) bg-(--s-171325)/80 p-3 text-left text-sm transition hover:border-(--a-b99bff) hover:bg-(--s-2b2140)">
           <span className="text-xl" aria-hidden="true">{proxima.icone}</span><span className="min-w-0 flex-1"><span className="block text-xs text-(--a-a99bbb)">Próxima parte</span><span className="block font-semibold">{proxima.nome}</span></span><span aria-hidden="true" className="text-(--a-b99bff)">→</span></button>}
       </div>

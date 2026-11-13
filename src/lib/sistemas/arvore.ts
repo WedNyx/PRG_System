@@ -6,12 +6,22 @@
  * Fica em `dados.arvore` (área “Habilidades” das permissões da campanha). Funções puras, testadas em arvore.test.ts.
  */
 import { normalizarPoder, type Poder } from './inventario'
+import type { DadosFicha } from './tipos'
 
 export type EfeitoNo = { tipo: 'bonus'; alvo: string; valor: number } | { tipo: 'poder'; poder: Poder }
+/** Restrição opcional do mestre; nada é apagado se a escolha da ficha mudar. */
+export type RequisitoFichaNo = {
+  campo: 'classe' | 'especie' | 'antecedente' | 'subclasse'
+  valor: string
+  /** Para subclasses, id da classe que concede a opção. */
+  classeId?: string
+}
 export type NoArvore = {
   id: string; nome: string; descricao?: string; custo: number; cor: string; x: number; y: number; requer: string[]; efeitos: EfeitoNo[]
   /** Só pode ser liberado a partir deste nível do personagem (v0.33.6). */
   nivel?: number
+  /** Restringe este hexágono a uma escolha do personagem (opcional). */
+  requisitoFicha?: RequisitoFichaNo
 }
 /** O que mudou na árvore (v0.33.6). `antes` guarda o hexágono (editar/excluir) ou os pontos, para poder desfazer. */
 export type AcaoArvore = 'liberar' | 'devolver' | 'conceder' | 'retirar' | 'criar' | 'editar' | 'excluir' | 'pontos'
@@ -76,10 +86,18 @@ function lerNo(x: unknown, vistos = new Set<string>()): NoArvore | null {
   const descricao = txt(n.descricao, LIM_ARVORE.descricao)
   const efeitos = (Array.isArray(n.efeitos) ? n.efeitos : []).slice(0, LIM_ARVORE.efeitos).map((e, i) => lerEfeito(e, id, i)).filter((e): e is EfeitoNo => !!e)
   const nivel = num(n.nivel, 0, 20)
+  const cond = n.requisitoFicha && typeof n.requisitoFicha === 'object' ? n.requisitoFicha as Record<string, unknown> : null
+  const requisitoFicha: RequisitoFichaNo | undefined = cond
+    && ['classe', 'especie', 'antecedente', 'subclasse'].includes(String(cond.campo))
+    && typeof cond.valor === 'string' && ID.test(cond.valor)
+    && (cond.campo !== 'subclasse' || (typeof cond.classeId === 'string' && ID.test(cond.classeId)))
+      ? { campo: cond.campo as RequisitoFichaNo['campo'], valor: cond.valor,
+          ...(cond.campo === 'subclasse' ? { classeId: String(cond.classeId) } : {}) }
+      : undefined
   return { id, nome, ...(descricao ? { descricao } : {}), custo: num(n.custo, 0, 99, 1), cor,
     x: num(n.x, -LIM_ARVORE.area, LIM_ARVORE.area), y: num(n.y, -LIM_ARVORE.area, LIM_ARVORE.area),
     requer: (Array.isArray(n.requer) ? n.requer : []).filter((r): r is string => typeof r === 'string' && ID.test(r) && r !== id).slice(0, LIM_ARVORE.requer), efeitos,
-    ...(nivel > 0 ? { nivel } : {}) }
+    ...(nivel > 0 ? { nivel } : {}), ...(requisitoFicha ? { requisitoFicha } : {}) }
 }
 
 const ACOES: AcaoArvore[] = ['liberar', 'devolver', 'conceder', 'retirar', 'criar', 'editar', 'excluir', 'pontos']
@@ -99,11 +117,29 @@ export const gastos = (a: Arvore) => a.nos.reduce((t, n) => t + (a.liberados.inc
 /** Pontos livres. `extra` = pontos que vêm da progressão por nível (coluna “arvore”). */
 export const disponiveis = (a: Arvore, extra = 0) => a.pontos + extra - gastos(a)
 
+const chaveEscolha = (v: unknown) => typeof v === 'string'
+  ? v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  : ''
+
+/** Escolha declarada na ficha; não confundir com nós já liberados. */
+export function requisitoFichaAtendido(n: NoArvore, dados?: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>): boolean {
+  const c = n.requisitoFicha
+  if (!c || !dados) return true // Compatível com árvores legadas e editores sem contexto.
+  if (c.campo === 'subclasse') return dados.dndEscolhas?.[c.classeId + '-subclasse'] === c.valor
+  if (c.campo === 'classe') return chaveEscolha(dados.campos.classe) === c.valor || Number(dados.dndMulticlasse?.[c.valor] ?? 0) > 0
+  return chaveEscolha(dados.campos[c.campo]) === c.valor
+}
+/** Concessões do mestre podem ignorar a restrição, sem reescrever a ficha oficial. */
+export function noAtivo(a: Arvore, n: NoArvore, dados?: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>): boolean {
+  return a.liberados.includes(n.id) && (a.concedidos?.includes(n.id) || requisitoFichaAtendido(n, dados))
+}
+
 /** `nivel` = nível do personagem (null quando o sistema não tem nível: aí o nível mínimo não é conferido). */
-export function podeLiberar(a: Arvore, id: string, extra = 0, nivel: number | null = null): { ok: boolean; motivo?: string } {
+export function podeLiberar(a: Arvore, id: string, extra = 0, nivel: number | null = null, dados?: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>): { ok: boolean; motivo?: string } {
   const n = a.nos.find(x => x.id === id)
   if (!n) return { ok: false, motivo: 'Hexágono não encontrado.' }
   if (a.liberados.includes(id)) return { ok: false, motivo: 'Já liberado.' }
+  if (!requisitoFichaAtendido(n, dados)) return { ok: false, motivo: 'A escolha exigida pelo mestre não corresponde à ficha atual.' }
   if (n.nivel && nivel !== null && nivel < n.nivel) return { ok: false, motivo: `Libera a partir do nível ${n.nivel}.` }
   const faltam = n.requer.filter(r => !a.liberados.includes(r))
   if (faltam.length) return { ok: false, motivo: 'Precisa antes: ' + faltam.map(r => a.nos.find(x => x.id === r)?.nome ?? '?').join(', ') }
@@ -119,13 +155,13 @@ export function podeDevolver(a: Arvore, id: string, retirarConcedido = false): {
 }
 
 /** Habilidades que os nós liberados dão (entram em “Poderes e habilidades”). */
-export const poderesDaArvore = (a: Arvore): Poder[] =>
-  a.nos.filter(n => a.liberados.includes(n.id)).flatMap(n => n.efeitos.flatMap(e => e.tipo === 'poder' ? [e.poder] : []))
+export const poderesDaArvore = (a: Arvore, dados?: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>): Poder[] =>
+  a.nos.filter(n => noAtivo(a, n, dados)).flatMap(n => n.efeitos.flatMap(e => e.tipo === 'poder' ? [e.poder] : []))
 
 /** Bônus somados de todos os nós liberados, por alvo (mesmo formato dos itens). */
-export function bonusDaArvore(a: Arvore): Record<string, number> {
+export function bonusDaArvore(a: Arvore, dados?: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>): Record<string, number> {
   const out: Record<string, number> = {}
-  for (const n of a.nos) if (a.liberados.includes(n.id)) for (const e of n.efeitos) if (e.tipo === 'bonus') out[e.alvo] = (out[e.alvo] ?? 0) + e.valor
+  for (const n of a.nos) if (noAtivo(a, n, dados)) for (const e of n.efeitos) if (e.tipo === 'bonus') out[e.alvo] = (out[e.alvo] ?? 0) + e.valor
   return out
 }
 export const somarBonus = (...bs: Record<string, number>[]) => {
@@ -138,8 +174,8 @@ export const somarBonus = (...bs: Record<string, number>[]) => {
  * Sincroniza a lista de poderes da ficha com a árvore: tira as habilidades de nós que não estão mais liberados
  * (ou que mudaram) e coloca as dos liberados. Poderes que não vieram da árvore ficam como estão.
  */
-export function sincronizarPoderes(poderes: Poder[], a: Arvore): Poder[] {
-  const daArvore = poderesDaArvore(a)
+export function sincronizarPoderes(poderes: Poder[], a: Arvore, dados?: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>): Poder[] {
+  const daArvore = poderesDaArvore(a, dados)
   const outros = poderes.filter(p => !p.id.startsWith('arv-'))
   return [...outros, ...daArvore]
 }
@@ -187,8 +223,8 @@ export function comHistorico(a: Arvore, e: Omit<EntradaHistorico, 'id' | 'em'>, 
 const tirar = (l: string[] | undefined, id: string) => (l ?? []).filter(x => x !== id)
 const semVazio = (a: Arvore): Arvore => { const { concedidos, ...r } = a; return concedidos?.length ? a : r }
 
-export function liberarNo(a: Arvore, id: string, extra = 0, nivel: number | null = null): Resultado {
-  const p = podeLiberar(a, id, extra, nivel); if (!p.ok) return { erro: p.motivo! }
+export function liberarNo(a: Arvore, id: string, extra = 0, nivel: number | null = null, dados?: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>): Resultado {
+  const p = podeLiberar(a, id, extra, nivel, dados); if (!p.ok) return { erro: p.motivo! }
   return { arvore: comHistorico({ ...a, liberados: [...a.liberados, id] }, { acao: 'liberar', no: id, nome: nomeDe(a, id) }) }
 }
 export function devolverNo(a: Arvore, id: string): Resultado {
@@ -235,7 +271,7 @@ export const ACOES_DO_MESTRE: AcaoArvore[] = ['conceder', 'retirar']
  * liberar ↔ devolver, conceder ↔ retirar, criar → apaga, editar/excluir → volta o hexágono como era, pontos → valor de antes.
  * A entrada fica marcada como desfeita (não some, para o mestre ver).
  */
-export function desfazer(a: Arvore, entradaId: string, extra = 0, nivel: number | null = null): Resultado {
+export function desfazer(a: Arvore, entradaId: string, extra = 0, nivel: number | null = null, dados?: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>): Resultado {
   const e = a.historico?.find(x => x.id === entradaId)
   if (!e) return { erro: 'Entrada não encontrada.' }
   if (e.desfeito) return { erro: 'Já foi desfeita.' }
@@ -243,7 +279,7 @@ export function desfazer(a: Arvore, entradaId: string, extra = 0, nivel: number 
   const no = e.no ? a.nos.find(n => n.id === e.no) : undefined
   switch (e.acao) {
     case 'liberar': { if (!e.no) break; const p = podeDevolver(a, e.no); if (!p.ok) return { erro: p.motivo! }; return { arvore: marcar({ ...a, liberados: tirar(a.liberados, e.no) }) } }
-    case 'devolver': { if (!e.no) break; const p = podeLiberar(a, e.no, extra, nivel); if (!p.ok) return { erro: p.motivo! }; return { arvore: marcar({ ...a, liberados: [...a.liberados, e.no] }) } }
+    case 'devolver': { if (!e.no) break; const p = podeLiberar(a, e.no, extra, nivel, dados); if (!p.ok) return { erro: p.motivo! }; return { arvore: marcar({ ...a, liberados: [...a.liberados, e.no] }) } }
     case 'conceder': { if (!e.no) break; const p = podeDevolver(a, e.no, true); if (!p.ok) return { erro: p.motivo! }; return { arvore: marcar(semVazio({ ...a, liberados: tirar(a.liberados, e.no), concedidos: tirar(a.concedidos, e.no) })) } }
     case 'retirar': { if (!e.no || !no) return { erro: 'O hexágono não existe mais.' }; return { arvore: marcar({ ...a, liberados: [...new Set([...a.liberados, e.no])], concedidos: [...new Set([...(a.concedidos ?? []), e.no])] }) } }
     case 'criar': { if (!e.no || !no) return { erro: 'O hexágono já não existe.' }

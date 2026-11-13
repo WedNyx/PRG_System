@@ -12,6 +12,7 @@ import type { Calculo } from '@/lib/sistemas/calculo'
 import { MAGIAS_SRD, type MagiaSrd } from '@/lib/sistemas/dnd2024Magias'
 import { classeDoTipo, conjuradoresDnd, contarMagias, expressaoMagia, lerMagiasDnd, limitesMagiasDnd, magiaPorId, motivoBloqueio, recursoDoEspaco, tipoPreparada, type LimitesMagia, type TipoMagia } from '@/lib/sistemas/dnd2024Conjuracao'
 import NaTela from '@/components/NaTela'
+import MagiasOrigemDnd2024 from './MagiasOrigemDnd2024'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
 const chip = 'rounded-full border border-(--a-5e4b78) px-2.5 py-1 text-xs'
@@ -82,7 +83,9 @@ export default function MagiasDnd2024({ d, c, onChange, somenteLeitura = false, 
         {x.nivelMax > 0 && <span className={chip}>Prepara até {x.nivelMax}º{x.arcana.length ? ` · Arcana ${x.arcana.join('º, ')}º` : ''}</span>}
       </>}
     </div> })}
-    {lista.length === 0 && <p className="rounded-xl border border-dashed border-(--a-55456e) p-4 text-sm text-(--a-c4b6d4)">Nenhuma magia ainda. {somenteLeitura ? '' : 'Toque em “Adicionar magias” para escolher pelo catálogo do SRD.'}</p>}
+    <MagiasOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolar} />
+    <MagiasOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolar} origemHumana />
+    {lista.length === 0 && <p className="rounded-xl border border-dashed border-(--a-55456e) p-4 text-sm text-(--a-c4b6d4)">Nenhuma magia preparada pela classe. {somenteLeitura ? '' : 'Toque em “Adicionar magias” para escolher pelo catálogo do SRD.'}</p>}
     {[...grupos].map(([nivel, ms]) => <div key={nivel} className="space-y-2">
       <h4 className="text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{nomeNivel(nivel)}</h4>
       {ms.map(m => { const lc = limiteDa(sel[m.id]); return <LinhaMagia key={m.id} m={m} tipo={sel[m.id]} l={lc} varias={ls.length > 1} ataque={prof + modDe(lc)} mod={modDe(lc)} nivelPersonagem={nivelPersonagem} d={d} somenteLeitura={somenteLeitura}

@@ -96,6 +96,10 @@ export type DadosFicha = {
   uso?: unknown
   /** Escolhas de marcos D&D. A progressão visual não concede bônus por si só. */
   dndEscolhas?: Record<string, string>
+  /** Distribuição guiada de atributos de antecedente, aplicada explicitamente uma vez. */
+  dndAntecedente?: import('./dnd2024Antecedentes').RegistroAntecedenteDnd
+  /** Talento Iniciado em Magia do Humano Versátil, independente do antecedente. */
+  dndTalentoHumano?: import('./dnd2024MagiaHumano').RegistroTalentoMagiaHumano
   /** Magias de D&D 2024: id da magia do SRD → 'preparada' (conta no limite) ou 'extra' (veio de outra fonte). */
   dndMagias?: Record<string, string>
   /** Multiclasse de D&D 2024: id da outra classe → níveis nela (a classe inicial fica com o resto do nível total). */

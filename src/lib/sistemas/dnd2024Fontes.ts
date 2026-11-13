@@ -1,9 +1,11 @@
 /**
  * D&D 2024 — fontes e suplementos (v0.33.6).
  *
- * Regra da plataforma: livros COMERCIAIS entram só como metadados — nome do livro e nomes das opções
- * (subclasses, espécie, antecedentes), para a ficha registrar a escolha e o mestre liberar a fonte.
- * Nenhum texto de regra desses livros fica aqui: cada característica aponta para o livro.
+ * Regra da plataforma: livros COMERCIAIS usam metadados verificáveis de criação (nomes,
+ * três atributos elegíveis, perícias, ferramentas, talento, equipamentos) sem reproduzir
+ * descrições literárias ou o texto integral das características protegidas do livro.
+ * Subclasses comerciais ainda possuem só nomes e referências ao livro.
+ * O mestre controla quais fontes ficam liberadas em cada campanha.
  * Os nomes em português são tradução da plataforma.
  */
 import type { MarcoDnd } from './dnd2024Progressao'
@@ -21,12 +23,16 @@ export type FonteDnd = {
 
 export const FONTE_SRD = 'srd521'
 export const FONTE_PHB = 'phb2024'
+/** Livro legado de 2014: habilitar explicitamente na campanha. */
+export const FONTE_LEGADO_2014 = 'phb2014'
 
 export const FONTES_DND: FonteDnd[] = [
   { id: FONTE_SRD, nome: 'SRD 5.2.1 (aberto)', original: 'System Reference Document 5.2.1', ano: 2025, tipo: 'aberta', opcoesNaFicha: true,
     traz: '12 classes com 1 subclasse cada, 9 espécies, 4 antecedentes, talentos e 339 magias. Já vem com texto e regras na plataforma (CC BY 4.0).' },
+  { id: FONTE_LEGADO_2014, nome: 'Livro do Jogador (2014) — legado', original: "Player's Handbook (2014)", ano: 2014, tipo: 'comercial', opcoesNaFicha: true,
+    traz: 'Opções legadas compatíveis mediante aprovação do mestre. Inclui o antecedente Forasteiro (Outlander); regras completas no livro de 2014.' },
   { id: FONTE_PHB, nome: 'Livro do Jogador (2024)', original: "Player's Handbook (2024)", ano: 2024, tipo: 'comercial', opcoesNaFicha: true,
-    traz: 'As outras 36 subclasses, o Aasimar, mais 12 antecedentes, talentos e magias. A ficha registra os nomes; as regras ficam no livro.' },
+    traz: '36 subclasses e Aasimar como opções de referência, mais 12 antecedentes com metadados de criação (atributos, perícias, ferramentas, talentos e equipamentos). Efeitos completos das regras comerciais exigem o livro.' },
   { id: 'dmg2024', nome: 'Guia do Mestre (2024)', original: "Dungeon Master's Guide (2024)", ano: 2024, tipo: 'comercial', opcoesNaFicha: false,
     traz: 'Ferramentas do mestre, tesouros e itens mágicos, criação de mundo. Só marca que a mesa usa o livro.' },
   { id: 'mm2025', nome: 'Manual dos Monstros (2025)', original: 'Monster Manual (2025)', ano: 2025, tipo: 'comercial', opcoesNaFicha: false,
@@ -47,7 +53,7 @@ const NOTA = 'Fonte comercial: consulte o Livro do Jogador (2024). A plataforma 
 export const SUBCLASSES_PHB: Record<string, [string, string][]> = {
   barbaro: [['coracao-selvagem', 'Caminho do Coração Selvagem'], ['arvore-do-mundo', 'Caminho da Árvore do Mundo'], ['fanatico', 'Caminho do Fanático']],
   bardo: [['colegio-danca', 'Colégio da Dança'], ['colegio-glamour', 'Colégio do Glamour'], ['colegio-bravura', 'Colégio da Bravura']],
-  clerigo: [['dominio-conhecimento', 'Domínio do Conhecimento'], ['dominio-luz', 'Domínio da Luz'], ['dominio-enganacao', 'Domínio da Enganação']],
+  clerigo: [['dominio-guerra', 'Domínio da Guerra'], ['dominio-luz', 'Domínio da Luz'], ['dominio-enganacao', 'Domínio da Enganação']],
   druida: [['circulo-lua', 'Círculo da Lua'], ['circulo-mar', 'Círculo do Mar'], ['circulo-estrelas', 'Círculo das Estrelas']],
   guerreiro: [['mestre-batalha', 'Mestre de Batalha'], ['cavaleiro-arcano', 'Cavaleiro Arcano'], ['guerreiro-psiquico', 'Guerreiro Psíquico']],
   monge: [['guerreiro-misericordia', 'Guerreiro da Misericórdia'], ['guerreiro-sombra', 'Guerreiro da Sombra'], ['guerreiro-elementos', 'Guerreiro dos Elementos']],
@@ -61,9 +67,23 @@ export const SUBCLASSES_PHB: Record<string, [string, string][]> = {
 
 /** Espécie e antecedentes do Livro do Jogador fora do SRD (aparecem nos seletores da ficha). */
 export const ESPECIES_PHB: [string, string][] = [['aasimar', 'Aasimar']]
+/** Antecedentes legados que NÃO fazem parte dos 16 backgrounds do PHB 2024. */
+export const ANTECEDENTES_LEGADOS_2014: [string, string][] = [['forasteiro', 'Forasteiro']]
 export const ANTECEDENTES_PHB: [string, string][] = [
   ['artesao', 'Artesão'], ['charlatao', 'Charlatão'], ['animador', 'Animador'], ['fazendeiro', 'Fazendeiro'], ['guarda', 'Guarda'], ['guia', 'Guia'],
   ['eremita', 'Eremita'], ['mercador', 'Mercador'], ['nobre', 'Nobre'], ['marinheiro', 'Marinheiro'], ['escriba', 'Escriba'], ['viajante', 'Viajante'],
+]
+
+/** Mais seis talentos de origem do PHB 2024 que não constam no catálogo aberto SRD 5.2.1.
+ * Somente metadados e fonte: seus efeitos devem ser conferidos no livro comercial.
+ */
+export const TALENTOS_ORIGEM_PHB: [string, string][] = [
+  ['crafter', 'Artesão (Crafter)'],
+  ['healer', 'Curandeiro (Healer)'],
+  ['lucky', 'Sortudo (Lucky)'],
+  ['musician', 'Músico (Musician)'],
+  ['tavern-brawler', 'Brigão de Taverna (Tavern Brawler)'],
+  ['tough', 'Robusto (Tough)'],
 ]
 
 /**
@@ -73,7 +93,12 @@ export const ANTECEDENTES_PHB: [string, string][] = [
 export function marcosComFontes(base: MarcoDnd[]): MarcoDnd[] {
   const out = base.map(m => {
     const extra = m.id.endsWith('-subclasse') && SUBCLASSES_PHB[m.origemId]
-    return extra ? { ...m, opcoes: [...(m.opcoes ?? []), ...extra.map(([id, nome]) => ({ id, nome: `${nome} (${LIVRO})`, fonte: FONTE_PHB }))] } : m
+    if (extra) return { ...m, opcoes: [...(m.opcoes ?? []), ...extra.map(([id, nome]) => ({ id, nome: `${nome} (${LIVRO})`, fonte: FONTE_PHB }))] }
+    if (m.id === 'esp-humano-versatil') return { ...m, opcoes: [
+      ...(m.opcoes ?? []),
+      ...TALENTOS_ORIGEM_PHB.map(([id, nome]) => ({ id, nome: `${nome} (${LIVRO})`, fonte: FONTE_PHB })),
+    ] }
+    return m
   })
   for (const [classe, subs] of Object.entries(SUBCLASSES_PHB)) {
     const escolha = base.find(m => m.id === `${classe}-subclasse`)
@@ -85,6 +110,12 @@ export function marcosComFontes(base: MarcoDnd[]): MarcoDnd[] {
     })
   }
   for (const [id, nome] of ESPECIES_PHB) out.push({ id: `esp-${id}-livro`, nome: `Traços do ${nome}`, nivel: 1, origem: 'especie', origemId: id, modo: 'automatico', descricao: NOTA, fonte: LIVRO })
+  for (const [id, nome] of ANTECEDENTES_LEGADOS_2014) out.push({
+    id: `ant-${id}-legado`, nome: `Antecedente legado: ${nome} (2014)`, nivel: 1,
+    origem: 'antecedente', origemId: id, modo: 'automatico',
+    descricao: 'Fonte comercial: consulte o Livro do Jogador (2014). O Forasteiro legado concede Atletismo, Sobrevivência, escolha de instrumento e idioma, e a característica Viajante; ajuste atributos e talento pela compatibilidade 2024.',
+    fonte: "Livro do Jogador (2014)",
+  })
   for (const [id, nome] of ANTECEDENTES_PHB) out.push({ id: `ant-${id}-livro`, nome: `Antecedente ${nome}: atributos, talento, perícias e ferramenta`, nivel: 1, origem: 'antecedente', origemId: id, modo: 'automatico', descricao: NOTA, fonte: LIVRO })
   return out
 }
@@ -99,5 +130,9 @@ export function validarFontesCamposDnd(antes: Pick<DadosFicha, 'campos'>, depois
     if (item && !fontePermitida(FONTE_PHB, liberadas)) erros.push(`${item[1]} é do ${nomeDaFonte(FONTE_PHB)}, que o mestre não liberou nesta campanha.`)
   }
   conferir('especie', ESPECIES_PHB); conferir('antecedente', ANTECEDENTES_PHB)
+  const antigo = idDe(antes.campos.antecedente), novo = idDe(depois.campos.antecedente)
+  if (antigo !== novo && ANTECEDENTES_LEGADOS_2014.some(([id]) => id === novo) && !fontePermitida(FONTE_LEGADO_2014, liberadas)) {
+    erros.push('Forasteiro (2014) exige que o mestre libere a fonte Livro do Jogador (2014) — legado.')
+  }
   return erros
 }

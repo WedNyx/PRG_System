@@ -10,14 +10,14 @@ describe('guia de criação D&D 2024', () => {
     expect(e.find(x => x.id === 'classe')?.estado).toBe('pendente')
     expect(e.find(x => x.id === 'revisao')?.estado).toBe('revisar')
   })
-  it('mostra classe e espécie registradas, mas mantém revisão de proficiências', () => {
+  it('não aprova espécie sem escolhas de linhagem e mantém revisão de proficiências', () => {
     const d = nova()
     d.nome = 'Exemplo'
     d.campos = { ...d.campos, classe: 'Guerreiro', especie: 'Elfo', antecedente: 'Soldado', nivel: 3 }
     d.atributos = { ...d.atributos, FOR: 15 }
     const e = etapasCriacaoDnd2024(d)
     expect(e.find(x => x.id === 'classe')?.estado).toBe('registrado')
-    expect(e.find(x => x.id === 'especie')?.estado).toBe('registrado')
+    expect(e.find(x => x.id === 'especie')?.estado).toBe('pendente')
     expect(e.find(x => x.id === 'proficiencias')?.estado).toBe('revisar')
     expect(e.find(x => x.id === 'habilidades')?.estado).toBe('pendente')
   })

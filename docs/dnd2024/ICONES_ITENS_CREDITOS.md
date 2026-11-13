@@ -1,7 +1,7 @@
-# Ilustrações de itens do inventário D&D — Game-Icons.net
+# Biblioteca de ilustrações de itens de TODAS as fichas — Game-Icons.net
 
 ## Fonte e licença
-As 21 ilustrações vetoriais adicionadas à PR #48 são derivadas de [Game-Icons.net](https://game-icons.net/), repositório original em [game-icons/icons](https://github.com/game-icons/icons), licenciadas sob **Creative Commons Attribution 3.0 — CC BY 3.0**: https://creativecommons.org/licenses/by/3.0/.
+As 32 ilustrações vetoriais adicionadas à PR #48 são derivadas de [Game-Icons.net](https://game-icons.net/), repositório original em [game-icons/icons](https://github.com/game-icons/icons), licenciadas sob **Creative Commons Attribution 3.0 — CC BY 3.0**: https://creativecommons.org/licenses/by/3.0/.
 
 Créditos aos artistas **Lorc** (http://lorcblog.blogspot.com) e **Delapouite** (https://delapouite.com).
 
@@ -32,8 +32,19 @@ Arquivos copiados/adaptados:
 | Grimório | lorc/book-cover.svg | Lorc |
 | Ponta de flecha | lorc/arrowhead.svg | Lorc |
 | Arqueiro | lorc/bowman.svg | Lorc |
+| Anel | delapouite/ring.svg | Delapouite |
+| Escudo | lorc/shield-reflect.svg | Lorc |
+| Mochila | delapouite/backpack.svg | Delapouite |
+| Amuleto | lorc/gold-scarab.svg | Lorc |
+| Coroa | lorc/crown.svg | Lorc |
+| Maça | lorc/mace-head.svg | Lorc |
+| Machado de batalha | lorc/battle-axe.svg | Lorc |
+| Varinha arcana | lorc/crystal-wand.svg | Lorc |
+| Candelabro | lorc/lit-candelabra.svg | Lorc |
+| Frasco de veneno | lorc/poison-bottle.svg | Lorc |
+| Garra flamejante | lorc/flaming-claw.svg | Lorc |
 
-O editor de item D&D também apresenta, na aba **🎨 Personalizar aparência**, o crédito e o link da biblioteca. Ao publicar em outras partes da plataforma, manter os créditos acessíveis.
+O editor compartilhado de itens de **todos os sistemas**, incluindo a biblioteca do mestre, apresenta a licença, o crédito e o link da biblioteca em **🎨 Escolher ícone Game-Icons ou personalizar na Forja**.
 
 ## Funcionamento na ficha
 1. Sem foto, sem imagem personalizada da Forja: exibe ícone de biblioteca sugerido conforme a forma.
@@ -43,8 +54,10 @@ O editor de item D&D também apresenta, na aba **🎨 Personalizar aparência**,
 5. Ao remover a foto, a ilustração personalizada reaparece.
 6. O botão **📷 Escolher foto** fica visível diretamente no editor, fora dos detalhes da Forja. Quando o Storage não está disponível, o editor explica que não é possível enviar naquele ambiente; não cria upload fictício.
 7. `normalizarItem` aceita somente ids da lista fechada; códigos SVG arbitrários do jogador não são permitidos, preservando segurança e compatibilidade de fichas antigas.
+8. O ícone e a foto são salvos por item independentemente do sistema. Itens criados antes da atualização continuam legíveis sem migração.
+9. O envio de foto usa atualização funcional do estado para não apagar alterações de texto feitas durante o upload; a imagem é exibida inteira, sem corte.
 
-A integração gráfica é específica da ficha **D&D**. Demais sistemas seguem com desenhos tradicionais até receberem suas próprias melhorias.
+A integração gráfica é **global para todas as fichas**, inclusive sistemas ocultos em revisão e a biblioteca de itens do mestre. As regras e os inventários específicos de cada sistema continuam independentes. No computador e no celular, o editor organiza o conteúdo em uma janela com rolagem, botão Salvar visível e grade de ícones responsiva. A foto é aceita em PNG/JPEG/WEBP, reduzida no navegador quando possível, e o envio depende de NEXT_PUBLIC_PRG_SHARED_PROFILES=true e do Storage configurado. O fluxo real de upload precisa ser homologado em um celular e em um computador com contas autorizadas.
 
 ## Alternativas avaliadas
 - [Kenney Game Icons](https://kenney.nl/assets/game-icons): **CC0**, excelente para ícones genéricos, menor variedade específica de armas de RPG.

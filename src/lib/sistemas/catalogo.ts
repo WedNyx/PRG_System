@@ -1,5 +1,6 @@
 import type { PericiaDef, Sistema } from './tipos'
 import { ANTECEDENTES_PHB, ANTECEDENTES_LEGADOS_2014, ESPECIES_PHB, FONTE_PHB, FONTE_LEGADO_2014 } from './dnd2024Fontes'
+import { ANTECEDENTES_PHB_GUIA } from './dnd2024AntecedentesPhb'
 
 /*
  * Catálogo de sistemas. Regras de sistemas com licença aberta usam apenas o que a
@@ -118,7 +119,10 @@ export const SISTEMAS: Sistema[] = [
         { nome: 'Criminoso', descricao: 'Atributos: Destreza, Constituição, Inteligência. Talento: Alerta. Perícias: Furtividade e Prestidigitação.' },
         { nome: 'Sábio', descricao: 'Atributos: Constituição, Inteligência, Sabedoria. Talento: Iniciado em Magia (Mago). Perícias: Arcanismo e História.' },
         { nome: 'Soldado', descricao: 'Atributos: Força, Destreza, Constituição. Talento: Atacante Selvagem. Perícias: Atletismo e Intimidação.' },
-        ...ANTECEDENTES_PHB.map(([, nome]) => ({ nome, descricao: 'Livro do Jogador (2024): atributos, talento, perícias e ferramenta no livro (marque à mão).', fonte: FONTE_PHB })),
+        ...ANTECEDENTES_PHB.map(([id, nome]) => {
+          const b = ANTECEDENTES_PHB_GUIA[id]
+          return { nome, descricao: 'Atributos: ' + b.elegiveis.join(', ') + '. Talento: ' + b.talento + '. Perícias: ' + b.pericias.join(' e ') + '. Ferramenta: ' + b.ferramenta + '. Guia completo na aba Atributos; regras do talento no PHB 2024.', fonte: FONTE_PHB }
+        }),
         ...ANTECEDENTES_LEGADOS_2014.map(([, nome]) => ({ nome, descricao: 'Legado de 2014 (Outlander): Atletismo e Sobrevivência, instrumento e idioma à escolha, Viajante (Wanderer). Adaptar atributos e talento pelas regras de compatibilidade com D&D 2024.', fonte: FONTE_LEGADO_2014 })),
       ] },
       { id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 },
@@ -160,6 +164,7 @@ export const SISTEMAS: Sistema[] = [
       { id: 'feiticaria', nome: 'Pontos de Feitiçaria', formula: 'dnd_feiticaria', ocultarSemMax: true }, { id: 'cura_maos', nome: 'Cura pelas Mãos', formula: 'dnd_cura_maos', ocultarSemMax: true },
       { id: 'marca_cacador', nome: 'Marca do Caçador sem espaço', formula: 'dnd_inimigo', ocultarSemMax: true }, { id: 'pacto', nome: 'Espaços de Magia de Pacto', formula: 'dnd_pacto', ocultarSemMax: true, voltaNoCurto: true },
       ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => ({ id: 'espacos_' + n, nome: `Espaços de magia de ${n}º nível`, formula: 'dnd_espacos_' + n, ocultarSemMax: true })),
+      { id: 'pontos_sorte', nome: 'Pontos de Sorte (Sortudo)', formula: 'dnd_sorte', ocultarSemMax: true },
       { id: 'inspiracao', nome: 'Inspiração Heroica', maxFixo: 1, contador: true }, { id: 'exaustao', nome: 'Exaustão (−2 nos testes de d20 por nível)', maxFixo: 6, contador: true, baixaNoDescanso: 1 },
     ],
     limites: [
@@ -169,7 +174,7 @@ export const SISTEMAS: Sistema[] = [
     listas: [{ id: 'ataques', nome: 'Ataques e magias' }, { id: 'tracos', nome: 'Traços, talentos e características de classe' }, { id: 'proficiencias', nome: 'Proficiências (armas, armaduras, ferramentas) e idiomas' }, ...LISTAS_PADRAO.slice(1)],
     observacoes: [
       'Escolha a classe para a ficha usar o Dado de Vida certo e calcular a CD e o ataque de magia.',
-      'O antecedente diz quais atributos recebem +2/+1 (ou +1/+1/+1): some ao distribuir os atributos.',
+      'Na aba Atributos, use o guia para aplicar +2/+1 ou +1/+1/+1 apenas uma vez, entre os atributos permitidos pelo antecedente.',
       'Salvaguardas: marque como Proficiente as duas que a classe dá (estão na descrição da classe).',
     ],
   },

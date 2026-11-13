@@ -46,6 +46,6 @@ describe('auditoria nominal das origens e classes D&D 2024', () => {
     const idsSrd = [...new Set(MARCOS_ORIGENS_SRD.filter(m => m.origem === 'antecedente').map(m => m.origemId))]
     expect(idsSrd.sort()).toEqual(['acolito','criminoso','sabio','soldado'].sort())
     expect(ANTECEDENTES_PHB).toHaveLength(12)
-    expect(s.campos.find(c => c.id === 'antecedente')?.opcoes).toHaveLength(16)
+    expect(s.campos.find(c => c.id === 'antecedente')?.opcoes).toHaveLength(17) // 16 PHB 2024 + Forasteiro legado 2014
   })
 })

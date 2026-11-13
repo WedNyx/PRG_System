@@ -11,7 +11,7 @@ import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { alvosDeBonus, CATEGORIAS_ITEM, lerItens, lerPeso, lerPoderes, mostrarPeso, lerUso, normalizarItem, normalizarPoder, podeUsar, TIPOS_PODER, type Bonus, type Item, type Poder, type Uso } from '@/lib/sistemas/inventario'
 import NaTela from '@/components/NaTela'
 import CatalogoArmasDnd2024 from './CatalogoArmasDnd2024'
-import { alcanceEmMetrosArmaDnd, armaDndPorId, atributoParaArmaDnd, descricaoArmaDnd, expressaoDanoArmaDnd, expressaoDanoLivreDnd, pesoEmKgArmaDnd, type ArmaDnd2024 } from '@/lib/sistemas/dnd2024Armas'
+import { ARMAS_DND_2024, alcanceEmMetrosArmaDnd, armaDndPorId, atributoParaArmaDnd, descricaoArmaDnd, expressaoDanoArmaDnd, expressaoDanoLivreDnd, pesoEmKgArmaDnd, type ArmaDnd2024 } from '@/lib/sistemas/dnd2024Armas'
 import { ARMAS_DND_EXPANDIDAS, referenciaArmaDndPorId, type ReferenciaArmaDnd } from '@/lib/sistemas/dnd2024ArmasExpandidas'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'

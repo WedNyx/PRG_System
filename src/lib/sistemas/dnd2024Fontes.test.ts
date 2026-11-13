@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ANTECEDENTES_PHB, FONTE_PHB, fontePermitida, fontesLiberadas, FONTES_DND, SUBCLASSES_PHB, validarFontesCamposDnd } from './dnd2024Fontes'
+import { ANTECEDENTES_PHB, FONTE_PHB, fontePermitida, fontesLiberadas, FONTES_DND, SUBCLASSES_PHB, TALENTOS_ORIGEM_PHB, validarFontesCamposDnd } from './dnd2024Fontes'
 import { MARCOS_DND_2024, MARCOS_SRD_2024 } from './dnd2024Marcos'
 import { progressaoVisivel, validarMarcos } from './dnd2024Progressao'
 import { progressoDaFichaDnd, validarAlteracoesEscolhasDnd } from './dnd2024Ficha'
@@ -15,6 +15,24 @@ describe('fontes de D&D 2024', () => {
     for (const m of doLivro) expect(m.descricao).toMatch(/consulte o Livro do Jogador/)
     expect(validarMarcos(MARCOS_DND_2024)).toEqual([])
     expect(MARCOS_SRD_2024.every(m => !m.fonte.startsWith('Livro'))).toBe(true)
+  })
+  it('PHB 2024: Clérigo tem Vida, Luz, Enganação e Guerra (não Conhecimento)', () => {
+    const opcoes = MARCOS_DND_2024.find(m => m.id === 'clerigo-subclasse')?.opcoes ?? []
+    expect(opcoes).toHaveLength(4)
+    expect(opcoes.map(o => o.id).sort()).toEqual([
+      'dominio-enganacao', 'dominio-guerra', 'dominio-luz', 'dominio-vida',
+    ])
+    expect(SUBCLASSES_PHB.clerigo.some(([id]) => id === 'dominio-conhecimento')).toBe(false)
+  })
+  it('Humano Versátil: 4 talentos abertos + 6 nomes do PHB, sujeitos às fontes liberadas', () => {
+    const humano = MARCOS_DND_2024.find(m => m.id === 'esp-humano-versatil')
+    expect(humano?.opcoes).toHaveLength(10)
+    expect(humano?.opcoes?.filter(o => o.fonte === FONTE_PHB)).toHaveLength(6)
+    expect(TALENTOS_ORIGEM_PHB).toHaveLength(6)
+    const antes = { campos: { classe: 'Guerreiro', especie: 'Humano', nivel: 1 } }
+    const depois = { ...antes, dndEscolhas: { 'esp-humano-versatil': 'tough' } }
+    expect(validarAlteracoesEscolhasDnd(antes, depois, fontesLiberadas([]))).not.toEqual([])
+    expect(validarAlteracoesEscolhasDnd(antes, depois, fontesLiberadas(['phb2024']))).toEqual([])
   })
   it('subclasse do livro ganha marcos nos níveis da subclasse do SRD e esconde o “Característica de subclasse” genérico', () => {
     const p = progressoDaFichaDnd({ campos: { classe: 'Guerreiro', nivel: 10 }, dndEscolhas: { 'guerreiro-subclasse': 'mestre-batalha' } })

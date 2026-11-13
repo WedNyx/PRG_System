@@ -65,3 +65,17 @@ portal, central, ficha, mesa, sessão, fichas na mesa, condições com dano por 
 ```
 NODE_PATH=$(npm root -g) node scripts/tela/papeis.cjs /tmp/fotos
 ```
+
+## Teste de dispositivos (v0.33.6)
+`scripts/tela/dispositivos.cjs` abre 11 telas (portal, central, campanhas, ficha de D&D e as abas de magias e árvore, ficha de Tormenta20, mesa, ferramentas do mestre, guia e novidades)
+em 7 dispositivos (celular pequeno 360 px, Pixel 7, iPhone 13, iPad Mini em pé e deitado, computador 1280 px e tela 1920 px). Confere rolagem para o lado,
+erros na tela, respostas 5xx e acessibilidade (axe-core, WCAG 2 A/AA, problemas sérios e críticos), e lista alvos de toque menores que 24 px. Tira uma foto de cada.
+```
+NODE_PATH=$(npm root -g) node scripts/tela/dispositivos.cjs /tmp/fotos
+```
+
+## Depois do deploy (produção, só leitura)
+```
+node scripts/producao/smoke.mjs https://prg-system.vercel.app 0.33.6
+```
+Confere saúde do site e do banco, a versão publicada, as páginas principais e que a API recusa pedidos sem perfil. Ver docs/dnd2024/DEPLOY_v0.33.6.md.

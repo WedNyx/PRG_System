@@ -147,7 +147,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     <RolagemCentral ref={central} />
     {descansando && <JanelaDescanso s={s} d={d} onChange={onChange} rolarTotal={rolarTotal} fechar={() => setDescansando(false)} />}
     <div className="sticky top-[57px] z-10 -mx-3 mb-4 border-b border-(--a-373251) bg-(--s-100d1c)/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-4" aria-label="Resumo do personagem">
-      <div className="flex items-center gap-3 overflow-x-auto">
+      <div className="flex items-center gap-3 overflow-x-auto" tabIndex={0} role="region" aria-label="Vida e recursos (role para o lado)">
       {recursoPrincipal && [recursoPrincipal, ...s.recursos.filter(r => r !== recursoPrincipal && (c.recursosMax[r.id] || d.recursos[r.id]?.max))].slice(0, 3).map(r => {
         const calc = !!r.formula || r.maxFixo !== undefined
         const max = c.recursosMax[r.id] ?? (calc ? null : (d.recursos[r.id]?.max ?? null)) ?? (/^(pv|vida|hp)$/.test(r.id) ? (c.derivados.pv_max ?? c.derivados.pv_sugerido ?? null) : null)

@@ -31,7 +31,7 @@ export default function BarraRecurso({ nome, cor, atual, max, maxEditavel, somen
   // Efeito quando o valor muda (aqui ou vindo da mesa): rastro do que foi perdido e o número subindo.
   const [visto, setVisto] = useState(atual)
   const [efeito, setEfeito] = useState<{ delta: number; de: number; chave: number } | null>(null)
-  if (visto !== atual) { setEfeito({ delta: atual - visto, de: visto, chave: Date.now() }); setVisto(atual) }
+  if (visto !== atual) { setEfeito(e => ({ delta: atual - visto, de: visto, chave: (e?.chave ?? 0) + 1 })); setVisto(atual) }
   useEffect(() => { if (!efeito) return; const t = setTimeout(() => setEfeito(null), 1300); return () => clearTimeout(t) }, [efeito])
   const limite = (v: number) => Math.max(0, max ? Math.min(max, v) : v)
   const pctDe = (v: number) => max ? Math.max(0, Math.min(100, (v / max) * 100)) : 0
@@ -63,9 +63,9 @@ export default function BarraRecurso({ nome, cor, atual, max, maxEditavel, somen
           {editando ? <input autoFocus inputMode="numeric" aria-label={`${nome} ${editando === 'atual' ? 'atual' : 'máximo'}`} value={texto} onChange={e => setTexto(e.target.value)} onBlur={salvar}
             onKeyDown={e => { if (e.key === 'Enter') salvar(); if (e.key === 'Escape') setEditando(null) }} className="w-16 rounded bg-black/60 text-center text-lg outline-none ring-1 ring-white/40" />
             : <>
-              <button type="button" disabled={somenteLeitura} onClick={() => abrir('atual')} className="text-lg" title="Toque para digitar" aria-label={`${nome}: ${atual}. Toque para digitar`}>{atual}</button>
+              <button type="button" disabled={somenteLeitura} onClick={() => abrir('atual')} className="min-w-6 text-lg" title="Toque para digitar" aria-label={`${nome}: ${atual}. Toque para digitar`}>{atual}</button>
               <span className="text-white/70">/</span>
-              <button type="button" disabled={somenteLeitura || !maxEditavel} onClick={() => abrir('max')} className="text-lg" title={maxEditavel ? 'Toque para mudar o máximo' : 'Calculado pela ficha'} aria-label={`${nome} máximo: ${max ?? 'sem máximo'}`}>{max ?? '—'}</button>
+              <button type="button" disabled={somenteLeitura || !maxEditavel} onClick={() => abrir('max')} className="min-w-6 text-lg" title={maxEditavel ? 'Toque para mudar o máximo' : 'Calculado pela ficha'} aria-label={`${nome} máximo: ${max ?? 'sem máximo'}`}>{max ?? '—'}</button>
             </>}
         </div>
       </div>

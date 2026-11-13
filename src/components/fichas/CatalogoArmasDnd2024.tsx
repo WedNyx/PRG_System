@@ -91,7 +91,7 @@ export default function CatalogoArmasDnd2024({ adicionar, adicionarReferencia, f
             {mostrados.map(reg => reg.especie === 'base' ? (() => {
               const a = reg.arma
               return <li key={'base-'+a.id} className="flex gap-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
-                <ArteItem item={{ nome: a.nome, categoria: 'arma' }} tamanho={56} />
+                <ArteItem item={{ nome: a.nome, categoria: 'arma' }} tamanho={56} estiloDnd />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-2">
                     <strong className="text-sm">{a.nome}</strong>
@@ -111,7 +111,7 @@ export default function CatalogoArmasDnd2024({ adicionar, adicionarReferencia, f
               const a = reg.arma
               const baseId = baseEscolhida[a.id] ?? a.armaBase ?? ''
               return <li key={a.id} className="flex gap-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
-                <ArteItem item={{ nome: a.nome, categoria: 'arma', magico: a.classe === 'magica' }} tamanho={56} />
+                <ArteItem item={{ nome: a.nome, categoria: 'arma', magico: a.classe === 'magica' }} tamanho={56} estiloDnd />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <strong className="text-sm">{a.nome}</strong>

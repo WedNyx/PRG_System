@@ -43,6 +43,7 @@ function categoriaGenerica(caminho: string): Campo {
   if (caminho === 'poderes') return 'habilidades'
   if (caminho === 'arvore') return 'habilidades'
   if (caminho === 'dndAntecedente') return 'atributos'
+  if (caminho === 'dndTalentoHumano') return 'habilidades'
   if (caminho === 'dndEscolhas') return 'habilidades'
   if (caminho === 'dndMagias') return 'habilidades'
   if (caminho === 'dndMulticlasse') return 'nivel'

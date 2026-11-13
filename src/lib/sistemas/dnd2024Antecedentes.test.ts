@@ -37,7 +37,7 @@ describe('D&D 2024: distribuição guiada e Forasteiro 2014', () => {
     expect(repetir.ok).toBe(true)
     if (!repetir.ok) return
     expect(repetir.dados.atributos).toEqual(a.dados.atributos)
-    const mudar = aplicarAntecedenteDnd(a.dados, { DES: 2, FOR: 1 }, { equipamento: 'moedas' })
+    const mudar = aplicarAntecedenteDnd(a.dados, { DES: 2, FOR: 1 }, { equipamento: 'moedas', ferramentaEscolhida: 'Xadrez' })
     expect(mudar.ok).toBe(true)
     if (!mudar.ok) return
     expect(mudar.dados.atributos).toMatchObject({ FOR: 16, DES: 14, CON: 13 })

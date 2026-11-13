@@ -111,7 +111,7 @@ export function marcosComFontes(base: MarcoDnd[]): MarcoDnd[] {
   for (const [id, nome] of ANTECEDENTES_LEGADOS_2014) out.push({
     id: `ant-${id}-legado`, nome: `Antecedente legado: ${nome} (2014)`, nivel: 1,
     origem: 'antecedente', origemId: id, modo: 'automatico',
-    descricao: 'Legado do Livro do Jogador (2014): duas perícias, instrumento, idioma e benefício de exploração. Pela compatibilidade 2024, escolha os atributos e um talento de origem elegível; consulte o livro original.',
+    descricao: 'Fonte comercial: consulte o Livro do Jogador (2014). O Forasteiro legado concede Atletismo, Sobrevivência, escolha de instrumento e idioma, e a característica Viajante; ajuste atributos e talento pela compatibilidade 2024.',
     fonte: "Livro do Jogador (2014)",
   })
   for (const [id, nome] of ANTECEDENTES_PHB) out.push({ id: `ant-${id}-livro`, nome: `Antecedente ${nome}: atributos, talento, perícias e ferramenta`, nivel: 1, origem: 'antecedente', origemId: id, modo: 'automatico', descricao: NOTA, fonte: LIVRO })

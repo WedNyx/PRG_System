@@ -164,10 +164,13 @@ export function aplicarAntecedenteDnd(
       return { ok: false, erro: a + ': resultado fora de 1–20. Confira se os bônus já foram aplicados à mão.' }
     atributos[a] = novo
   }
-  return { ok: true, dados: {
-    ...d, atributos,
-    dndAntecedente: { id, aumentos: { ...aumentos }, ...detalhes },
-  } }
+  const dados: DadosFicha = { ...d, atributos, dndAntecedente: { id, aumentos: { ...aumentos }, ...detalhes } }
+  // Nova ficha: disponibiliza a primeira conjuração sem espaço na criação inicial.
+  // Em trocas posteriores de antecedente, não restaura usos gastos; só descanso longo o fará.
+  if (!antes && magiasDeAntecedenteDnd(dados)) {
+    dados.recursos = { ...d.recursos, magia_origem_gratis: { atual: 1 } }
+  }
+  return { ok: true, dados }
 }
 
 /**
@@ -206,6 +209,29 @@ export function validarDetalhesAntecedenteDnd(r: RegistroAntecedenteDnd): string
       erros.push('Iniciado em Magia: escolha dois truques diferentes e uma magia de nível 1 da lista correta.')
   }
   return erros
+}
+
+/** Magias de Iniciado em Magia já confirmadas na criação, sem alterar a lista da classe. */
+export type MagiasDeAntecedenteDnd = {
+  antecedente: string
+  lista: 'clerigo' | 'druida' | 'mago'
+  atributo: 'INT' | 'SAB' | 'CAR'
+  ids: [string, string, string]
+}
+export function magiasDeAntecedenteDnd(d: Pick<DadosFicha, 'campos' | 'dndAntecedente'>): MagiasDeAntecedenteDnd | null {
+  const registro = lerRegistroAntecedenteDnd(d.dndAntecedente)
+  if (!registro || registro.id !== idDe(d.campos.antecedente)) return null
+  const def = ANTECEDENTES_GUIADOS[registro.id]
+  const talento = registro.id === 'forasteiro' ? registro.talento : def?.talentoId
+  if (!talento?.startsWith('iniciado-magia') || validarDetalhesAntecedenteDnd(registro).length) return null
+  const lista = talento === 'iniciado-magia-clerigo' ? 'clerigo'
+    : talento === 'iniciado-magia-druida' ? 'druida'
+    : talento === 'iniciado-magia-mago' ? 'mago' : registro.talentoLista
+  if (!lista || !registro.talentoAtributo || registro.talentoMagias?.length !== 3) return null
+  return {
+    antecedente: def.nome, lista, atributo: registro.talentoAtributo,
+    ids: registro.talentoMagias as [string, string, string],
+  }
 }
 
 export function validarAlteracoesAntecedenteDnd(

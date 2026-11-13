@@ -8,10 +8,12 @@ import { Dice5, Gift, History, Link2, Minus, Pencil, Plus, Sparkles, Trash2, Und
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { alvosDeBonus, lerPoderes, TIPOS_PODER, type TipoPoder } from '@/lib/sistemas/inventario'
 import NaTela from '@/components/NaTela'
+import { MARCOS_DND_2024 } from '@/lib/sistemas/dnd2024Marcos'
+import { idDe } from '@/lib/sistemas/dnd2024Classes'
 import {
   ACOES_DO_MESTRE, arvoreExemplo, concederNo, CORES_NO, desfazer, devolverNo, difereDoSistema, disponiveis, excluirNoArvore, gastos, gravarNoArvore, lerArvore, liberarNo, LIM_ARVORE,
-  mesclarArvore, mudarPontos, novoIdNo, podeDevolver, podeLiberar, retirarNo, sincronizarPoderes, TEXTO_ACAO,
-  type Arvore, type EfeitoNo, type EntradaHistorico, type NoArvore,
+  mesclarArvore, mudarPontos, novoIdNo, noAtivo, podeDevolver, podeLiberar, requisitoFichaAtendido, retirarNo, sincronizarPoderes, TEXTO_ACAO,
+  type Arvore, type EfeitoNo, type EntradaHistorico, type NoArvore, type RequisitoFichaNo,
 } from '@/lib/sistemas/arvore'
 
 const R = 34 // raio do hexágono
@@ -52,7 +54,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
     if (f && Math.abs(e.clientX - f.x) + Math.abs(e.clientY - f.y) < 6) { setSel(null); setLigando(null) }
   }
 
-  const salvar = (nova: Arvore) => onChange({ ...d, arvore: nova, poderes: sincronizarPoderes(lerPoderes(d.poderes), nova) })
+  const salvar = (nova: Arvore) => onChange({ ...d, arvore: nova, poderes: sincronizarPoderes(lerPoderes(d.poderes), nova, s.id === 'dnd5e-srd' ? d : undefined) })
   /** Aplica uma ação que pode falhar (mostra o motivo). */
   const aplicar = (r: { arvore?: Arvore; erro?: string }, ok?: string) => { if (r.erro) toast.error(r.erro); else if (r.arvore) { salvar(r.arvore); if (ok) toast.success(ok) } }
   const historico = a.historico ?? []
@@ -97,7 +99,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
     setArrasto(null)
   }
 
-  function liberar(n: NoArvore) { aplicar(liberarNo(a, n.id, extra, nivel)) }
+  function liberar(n: NoArvore) { aplicar(liberarNo(a, n.id, extra, nivel, s.id === 'dnd5e-srd' ? d : undefined)) }
   function devolver(n: NoArvore) { aplicar(devolverNo(a, n.id)) }
   function novoNo() {
     if (a.nos.length >= LIM_ARVORE.nos) return
@@ -112,7 +114,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
     salvar(excluirNoArvore(a, n.id)); setSel(null)
   }
 
-  const estado = (n: NoArvore) => a.liberados.includes(n.id) ? 'liberado' : !editorSistema && podeLiberar(a, n.id, extra, nivel).ok ? 'disponivel' : n.requer.every(r => a.liberados.includes(r)) ? 'sem-pontos' : 'bloqueado'
+  const estado = (n: NoArvore) => a.liberados.includes(n.id) ? noAtivo(a, n, s.id === 'dnd5e-srd' ? d : undefined) ? 'liberado' : 'inativo' : !editorSistema && podeLiberar(a, n.id, extra, nivel, s.id === 'dnd5e-srd' ? d : undefined).ok ? 'disponivel' : n.requer.every(r => a.liberados.includes(r)) ? 'sem-pontos' : 'bloqueado'
 
   return <section className="overflow-hidden rounded-2xl border border-(--a-55456e) bg-(--s-0c0a16)">
     <div className="flex flex-wrap items-center gap-3 border-b border-(--a-2b2140) bg-(--s-14111f) px-4 py-3">
@@ -125,7 +127,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
       {montando && !somenteLeitura && <span className="flex items-center gap-1" aria-label="Pontos ganhos">
         <button type="button" className={btn + ' !px-2'} aria-label="Menos um ponto" disabled={a.pontos <= gastos(a)} onClick={() => aplicar(mudarPontos(a, a.pontos - 1))}><Minus size={14} /></button>
         <button type="button" className={btn + ' !px-2'} aria-label="Mais um ponto" onClick={() => aplicar(mudarPontos(a, a.pontos + 1))}><Plus size={14} /></button></span>}
-      {!editorSistema && ultima && <button type="button" onClick={() => aplicar(desfazer(a, ultima.id, extra, nivel), 'Desfeito: ' + TEXTO_ACAO[ultima.acao].toLowerCase() + ' ' + ultima.nome)} className={btn} title={`Desfazer: ${TEXTO_ACAO[ultima.acao]} ${ultima.nome}`}><Undo2 size={14} /> Desfazer</button>}
+      {!editorSistema && ultima && <button type="button" onClick={() => aplicar(desfazer(a, ultima.id, extra, nivel, s.id === 'dnd5e-srd' ? d : undefined), 'Desfeito: ' + TEXTO_ACAO[ultima.acao].toLowerCase() + ' ' + ultima.nome)} className={btn} title={`Desfazer: ${TEXTO_ACAO[ultima.acao]} ${ultima.nome}`}><Undo2 size={14} /> Desfazer</button>}
       {!editorSistema && historico.length > 0 && <button type="button" onClick={() => setVerHistorico(v => !v)} aria-expanded={verHistorico} className={btn + (verHistorico ? ' !border-(--a-b99bff) !bg-(--s-3b2b57)' : '')}><History size={14} /> Histórico</button>}
       {!somenteLeitura && !editorSistema && <button type="button" onClick={() => { setMontando(m => !m); setLigando(null) }} className={btn + (montando ? ' !border-(--a-b99bff) !bg-(--s-3b2b57)' : '')}>
         <Pencil size={14} /> {montando ? 'Concluir' : 'Montar árvore'}</button>}
@@ -171,7 +173,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
                 const { x, y } = pos(n), e = estado(n), escolhido = sel === n.id
                 const aceso = e === 'liberado'
                 return <g key={n.id} transform={`translate(${x},${y})`} onPointerDown={ev => tocarNo(ev, n)} className={montando ? 'arvore-no-arrastavel cursor-move' : 'cursor-pointer'}
-                  role="button" aria-label={`${n.nome}, custo ${n.custo}, ${aceso ? 'liberado' : e === 'disponivel' ? 'pode liberar' : 'bloqueado'}`}>
+                  role="button" aria-label={`${n.nome}, custo ${n.custo}, ${e === 'inativo' ? 'inativo pela escolha atual' : aceso ? 'liberado' : e === 'disponivel' ? 'pode liberar' : 'bloqueado'}`}>
                   {escolhido && <polygon points={hex(R + 9)} fill="none" stroke="#fff" strokeWidth={2} opacity={0.9} />}
                   {ligando === n.id && <polygon points={hex(R + 14)} fill="none" stroke="#fbbf24" strokeWidth={2} strokeDasharray="5 4" />}
                   {a.concedidos?.includes(n.id) && <polygon points={hex(R + 5)} fill="none" stroke="#fde68a" strokeWidth={1.5} strokeDasharray="3 3" />}
@@ -190,12 +192,12 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
         </TransformWrapper>}
     </div>
 
-    {no && !editor && <DetalheNo no={no} a={a} extra={extra} nivel={nivel} alvos={alvos} recursos={s.recursos} somenteLeitura={somenteLeitura || montando || editorSistema}
+    {no && !editor && <DetalheNo no={no} a={a} dados={s.id === 'dnd5e-srd' ? d : undefined} extra={extra} nivel={nivel} alvos={alvos} recursos={s.recursos} somenteLeitura={somenteLeitura || montando || editorSistema}
       mestre={mestre && !editorSistema && !somenteLeitura} conceder={() => aplicar(concederNo(a, no.id), `${no.nome}: concedido sem custo.`)} retirar={() => aplicar(retirarNo(a, no.id))}
       liberar={() => liberar(no)} devolver={() => devolver(no)} rolar={rolar} fechar={() => setSel(null)} />}
     {!no && a.nos.length > 0 && <p className="px-4 py-3 text-xs text-(--a-a998bd)">Toque num hexágono para ver o que ele faz. {somenteLeitura ? '' : 'Os que brilham na borda já podem ser liberados.'}</p>}
-    {verHistorico && <HistoricoArvore historico={historico} podeDesfazer={podeDesfazer} desfazer={e => aplicar(desfazer(a, e.id, extra, nivel), 'Desfeito.')} />}
-    {editor && <EditorNo inicial={editor} a={a} alvos={alvos} recursos={s.recursos} temNivel={nivel !== null || editorSistema} gravar={gravarNo} fechar={() => setEditor(null)} />}
+    {verHistorico && <HistoricoArvore historico={historico} podeDesfazer={podeDesfazer} desfazer={e => aplicar(desfazer(a, e.id, extra, nivel, s.id === 'dnd5e-srd' ? d : undefined), 'Desfeito.')} />}
+    {editor && <EditorNo inicial={editor} a={a} sistema={s} alvos={alvos} recursos={s.recursos} temNivel={nivel !== null || editorSistema} gravar={gravarNo} fechar={() => setEditor(null)} />}
   </section>
 }
 
@@ -218,11 +220,11 @@ function textoEfeito(e: EfeitoNo, alvos: { id: string; nome: string }[], recurso
   return [`${TIPOS_PODER.find(t => t.id === p.tipo)?.icone ?? '🌀'} ${p.nome}`, p.expressao, rec && `${p.custo ?? 0} ${rec}`, p.usosMax && `${p.usosMax}× até descansar`].filter(Boolean).join(' · ')
 }
 
-function DetalheNo({ no, a, extra, nivel, alvos, recursos, somenteLeitura, mestre, liberar, devolver, conceder, retirar, rolar, fechar }: {
-  no: NoArvore; a: Arvore; extra: number; nivel: number | null; alvos: { id: string; nome: string }[]; recursos: Sistema['recursos']; somenteLeitura: boolean; mestre: boolean
+function DetalheNo({ no, a, dados, extra, nivel, alvos, recursos, somenteLeitura, mestre, liberar, devolver, conceder, retirar, rolar, fechar }: {
+  no: NoArvore; a: Arvore; dados?: DadosFicha; extra: number; nivel: number | null; alvos: { id: string; nome: string }[]; recursos: Sistema['recursos']; somenteLeitura: boolean; mestre: boolean
   liberar: () => void; devolver: () => void; conceder: () => void; retirar: () => void; rolar: (expressao: string, rotulo: string) => void; fechar: () => void
 }) {
-  const liberado = a.liberados.includes(no.id), concedido = !!a.concedidos?.includes(no.id), pode = podeLiberar(a, no.id, extra, nivel), volta = podeDevolver(a, no.id)
+  const liberado = a.liberados.includes(no.id), ativo = noAtivo(a, no, dados), concedido = !!a.concedidos?.includes(no.id), pode = podeLiberar(a, no.id, extra, nivel, dados), volta = podeDevolver(a, no.id)
   return <div className="border-t border-(--a-2b2140) bg-(--s-14111f) p-4">
     <div className="flex items-start gap-3">
       <span aria-hidden className="mt-0.5 h-5 w-5 shrink-0 rotate-90" style={{ background: no.cor, clipPath: 'polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)', opacity: liberado ? 1 : 0.5 }} />
@@ -233,10 +235,14 @@ function DetalheNo({ no, a, extra, nivel, alvos, recursos, somenteLeitura, mestr
       <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 text-(--a-c4b6d4) hover:bg-(--s-2b2140)"><X size={18} /></button>
     </div>
     {no.descricao && <p className="mt-2 whitespace-pre-wrap text-sm text-(--a-d6c8e8)">{no.descricao}</p>}
+    {no.requisitoFicha && <p className="mt-2 rounded-lg border border-(--a-3d3152) p-2 text-xs text-(--a-d6c8f0)">
+      Requisito da ficha: {no.requisitoFicha.campo === 'subclasse' ? 'Subclasse de ' + no.requisitoFicha.classeId : no.requisitoFicha.campo} = {no.requisitoFicha.valor}.
+      {dados && !requisitoFichaAtendido(no, dados) && !concedido && <span className="ml-1 text-amber-200">Inativo: a escolha atual não atende ao requisito. Os efeitos ficam suspensos, sem apagar o desbloqueio.</span>}
+    </p>}
     {no.requer.length > 0 && <p className="mt-2 text-xs text-(--a-c4b6d4)">Precisa de: {no.requer.map(r => { const n = a.nos.find(x => x.id === r); return n ? (a.liberados.includes(r) ? '✓ ' : '✗ ') + n.nome : '' }).join(' · ')}</p>}
     {no.efeitos.length > 0 && <ul className="mt-3 space-y-1.5">{no.efeitos.map((e, i) => <li key={i} className="flex items-center gap-2 rounded-lg bg-(--s-201a32) px-3 py-2 text-sm">
       <span className="flex-1">{textoEfeito(e, alvos, recursos)}</span>
-      {e.tipo === 'poder' && e.poder.expressao && liberado && <button type="button" onClick={() => rolar(e.poder.expressao!, e.poder.nome)} className="inline-flex items-center gap-1 rounded-md bg-(--s-3b2b57) px-2 py-1 text-xs hover:bg-(--a-533b78)"><Dice5 size={13} /> Rolar</button>}
+      {e.tipo === 'poder' && e.poder.expressao && ativo && <button type="button" onClick={() => rolar(e.poder.expressao!, e.poder.nome)} className="inline-flex items-center gap-1 rounded-md bg-(--s-3b2b57) px-2 py-1 text-xs hover:bg-(--a-533b78)"><Dice5 size={13} /> Rolar</button>}
     </li>)}</ul>}
     {!somenteLeitura && <div className="mt-3 flex flex-wrap items-center gap-2">
       {!liberado && <button type="button" disabled={!pode.ok} onClick={liberar} className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-(--a-7652ac) to-(--a-a855f7) px-4 py-2 font-semibold shadow-[0_0_18px_#a855f766] disabled:opacity-40 disabled:shadow-none"><Sparkles size={16} /> Liberar ({no.custo})</button>}
@@ -252,10 +258,26 @@ function DetalheNo({ no, a, extra, nivel, alvos, recursos, somenteLeitura, mestr
   </div>
 }
 
-function EditorNo({ inicial, a, alvos, recursos, temNivel, gravar, fechar }: {
-  inicial: NoArvore; a: Arvore; alvos: { id: string; nome: string }[]; recursos: Sistema['recursos']; temNivel: boolean; gravar: (n: NoArvore) => void; fechar: () => void
+function EditorNo({ inicial, a, sistema, alvos, recursos, temNivel, gravar, fechar }: {
+  inicial: NoArvore; a: Arvore; sistema: Sistema; alvos: { id: string; nome: string }[]; recursos: Sistema['recursos']; temNivel: boolean; gravar: (n: NoArvore) => void; fechar: () => void
 }) {
   const [n, setN] = useState<NoArvore>(inicial)
+  const opcoesContexto: { chave: string; titulo: string; requisito: RequisitoFichaNo }[] = sistema.id === 'dnd5e-srd'
+    ? [
+      ...['classe', 'especie', 'antecedente'].flatMap(campo =>
+        (sistema.campos.find(c => c.id === campo)?.opcoes ?? []).map(op => {
+          const requisito: RequisitoFichaNo = { campo: campo as 'classe' | 'especie' | 'antecedente', valor: idDe(op.nome) }
+          return { chave: campo + '|' + requisito.valor, titulo: campo + ': ' + op.nome, requisito }
+        })),
+      ...MARCOS_DND_2024.filter(m => m.id.endsWith('-subclasse')).flatMap(m =>
+        (m.opcoes ?? []).map(op => {
+          const requisito: RequisitoFichaNo = { campo: 'subclasse', classeId: m.origemId, valor: op.id }
+          return { chave: 'subclasse|' + m.origemId + '|' + op.id, titulo: 'Subclasse de ' + m.origemId + ': ' + op.nome, requisito }
+        })),
+    ] : []
+  const chaveAtual = n.requisitoFicha
+    ? n.requisitoFicha.campo + '|' + (n.requisitoFicha.campo === 'subclasse' ? n.requisitoFicha.classeId + '|' : '') + n.requisitoFicha.valor
+    : ''
   const outros = a.nos.filter(x => x.id !== n.id)
   const mudarEfeito = (i: number, e: EfeitoNo) => setN({ ...n, efeitos: n.efeitos.map((x, k) => k === i ? e : x) })
   const podeAdd = n.efeitos.length < LIM_ARVORE.efeitos
@@ -277,6 +299,18 @@ function EditorNo({ inicial, a, alvos, recursos, temNivel, gravar, fechar }: {
         <div className="text-sm">Cor<div className="mt-1 flex flex-wrap gap-1.5">{CORES_NO.map(c => <button key={c} type="button" aria-label={'Cor ' + c} onClick={() => setN({ ...n, cor: c })}
           className={'h-7 w-7 rounded-full border-2 ' + (n.cor === c ? 'border-white' : 'border-transparent')} style={{ background: c }} />)}</div></div>
       </div>
+      {sistema.id === 'dnd5e-srd' && <label className="mt-4 block text-sm">Depende de uma escolha da ficha (opcional)
+        <select className={input + ' mt-1'} value={chaveAtual} onChange={e => {
+          const escolhido = opcoesContexto.find(o => o.chave === e.target.value)
+          const { requisitoFicha: _antigo, ...resto } = n
+          void _antigo
+          setN(escolhido ? { ...resto, requisitoFicha: escolhido.requisito } : resto)
+        }}>
+          <option value="">Sem restrição — habilidade personalizada livre</option>
+          {opcoesContexto.map(o => <option key={o.chave} value={o.chave}>{o.titulo}</option>)}
+        </select>
+        <span className="mt-1 block text-xs text-(--a-a998bd)">Se o personagem mudar a escolha, o nó liberado fica inativo sem perder os pontos ou o histórico. Uma concessão do mestre pode ignorar a restrição.</span>
+      </label>}
       {outros.length > 0 && <div className="mt-4 text-sm">Precisa liberar antes<div className="mt-1 flex flex-wrap gap-1.5">{outros.map(o => {
         const on = n.requer.includes(o.id), ciclo = !on && criaCiclo(a, n.id, o.id)
         return <button key={o.id} type="button" disabled={ciclo} onClick={() => setN({ ...n, requer: on ? n.requer.filter(r => r !== o.id) : [...n.requer, o.id].slice(0, LIM_ARVORE.requer) })}

@@ -27,10 +27,12 @@ export const TRUQUES_MAGO_ALTO_ELFO = MAGIAS_SRD
   .map(m => ({ id: m.id, nome: m.nome }))
   .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
 
-export const altoElfoSelecionado = (d: DadosEspecieDnd): boolean =>
+type DadosTruqueAltoElfo = Pick<DadosFicha, 'campos' | 'dndEscolhas'> & { listas?: DadosFicha['listas'] }
+
+export const altoElfoSelecionado = (d: DadosTruqueAltoElfo): boolean =>
   idDe(d.campos.especie) === 'elfo' && lerEscolhasDnd(d.dndEscolhas)['esp-elfo-linhagem'] === 'alto-elfo'
 
-export function truqueAltoElfo(d: DadosEspecieDnd): string {
+export function truqueAltoElfo(d: DadosTruqueAltoElfo): string {
   if (!altoElfoSelecionado(d)) return 'prestidigitation'
   const registrado = d.listas?.[CHAVE_TRUQUE_ALTO_ELFO]
   return TRUQUES_MAGO_ALTO_ELFO.some(x => x.id === registrado) ? registrado : 'prestidigitation'

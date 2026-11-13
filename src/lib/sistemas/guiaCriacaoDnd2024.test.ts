@@ -33,10 +33,10 @@ describe('guia de criação D&D 2024', () => {
     expect(etapasCriacaoDnd2024(d).find(x => x.id === 'especie')?.estado).toBe('registrado')
     expect(etapasCriacaoDnd2024(d).find(x => x.id === 'magias')?.estado).toBe('revisar')
   })
-  it('marca antecedentes preenchidos como revisão, não como concluídos automaticamente', () => {
+  it('marca antecedente sem distribuição como pendente', () => {
     const d = nova()
     d.campos = { ...d.campos, classe: 'Guerreiro', antecedente: 'Soldado', nivel: 1 }
-    expect(etapasCriacaoDnd2024(d).find(x => x.id === 'antecedente')?.estado).toBe('revisar')
+    expect(etapasCriacaoDnd2024(d).find(x => x.id === 'antecedente')?.estado).toBe('pendente')
   })
   it('cobra a escolha de perícia e talento do Humano', () => {
     const d = nova()

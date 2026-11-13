@@ -10,6 +10,9 @@ const FONTE = 'SRD 5.2.1 (CC BY 4.0)'
 type Linha = [nivel: number, codigo: string, nome: string, descricao: string, opcoes?: [string, string][]]
 
 const TALENTOS_ORIGEM: [string, string][] = [['alerta', 'Alerta'], ['iniciado-magia', 'Iniciado em Magia'], ['atacante-selvagem', 'Atacante Selvagem'], ['habilidoso', 'Habilidoso']]
+/** O SRD permite definir o atributo de conjuração destes legados/linhagens ao escolher a espécie. */
+const ATRIBUTO_MAGIA: [string, string][] = [['inteligencia', 'Inteligência'], ['sabedoria', 'Sabedoria'], ['carisma', 'Carisma']]
+const TAMANHO_FLEXIVEL: [string, string][] = [['pequeno', 'Pequeno'], ['medio', 'Médio']]
 
 const ESPECIES: Record<string, Linha[]> = {
   anao: [
@@ -28,6 +31,7 @@ const ESPECIES: Record<string, Linha[]> = {
   elfo: [
     [1, 'visao-escuro', 'Visão no Escuro (18 m)', 'Enxerga no escuro até 18 m (Drow: 36 m).'],
     [1, 'linhagem', 'Linhagem Élfica', 'Benefício do nível 1 e magias nos níveis 3 e 5, conjuradas uma vez sem espaço por descanso longo.', [['drow', 'Drow (Globos de Luz; Fogo das Fadas; Escuridão)'], ['alto-elfo', 'Alto Elfo (Prestidigitação; Detectar Magia; Passo Nebuloso)'], ['elfo-floresta', 'Elfo da Floresta (+1,5 m, Arte Druídica; Passos Longos; Passos sem Pegadas)']]],
+    [1, 'atributo-magia', 'Atributo de conjuração da Linhagem Élfica', 'Escolha Inteligência, Sabedoria ou Carisma para as magias da linhagem. O valor escolhido deve ser usado nas magias concedidas pela espécie.', ATRIBUTO_MAGIA],
     [1, 'ancestralidade-feerica', 'Ancestralidade Feérica', 'Vantagem em salvaguardas contra Enfeitiçado.'],
     [1, 'sentidos', 'Sentidos Aguçados', 'Proficiência em uma perícia.', [['intuicao', 'Intuição'], ['percepcao', 'Percepção'], ['sobrevivencia', 'Sobrevivência']]],
     [1, 'transe', 'Transe', 'Não precisa dormir e faz o descanso longo em 4 horas de meditação.'],
@@ -36,6 +40,7 @@ const ESPECIES: Record<string, Linha[]> = {
   ],
   gnomo: [
     [1, 'visao-escuro', 'Visão no Escuro (18 m)', 'Enxerga no escuro até 18 m.'],
+    [1, 'atributo-magia', 'Atributo de conjuração da Linhagem Gnômica', 'Escolha Inteligência, Sabedoria ou Carisma para conjurar as magias da linhagem gnômica.', ATRIBUTO_MAGIA],
     [1, 'astucia', 'Astúcia Gnômica', 'Vantagem em salvaguardas de Inteligência, Sabedoria e Carisma.'],
     [1, 'linhagem', 'Linhagem Gnômica', 'Magias da linhagem (Inteligência, Sabedoria ou Carisma para conjurar).', [['floresta', 'Gnomo da Floresta (Ilusão Menor; Falar com Animais)'], ['rochas', 'Gnomo das Rochas (Consertar e Prestidigitação; engenhocas)']]],
   ],
@@ -51,6 +56,7 @@ const ESPECIES: Record<string, Linha[]> = {
     [1, 'furtividade', 'Furtividade Natural', 'Pode Esconder atrás de uma criatura pelo menos um tamanho maior.'],
   ],
   humano: [
+    [1, 'tamanho', 'Tamanho', 'Escolha Pequeno ou Médio ao criar o personagem.', TAMANHO_FLEXIVEL],
     [1, 'engenhoso', 'Engenhoso', 'Ganha Inspiração Heroica ao terminar um descanso longo.'],
     [1, 'habilidoso', 'Habilidoso', 'Proficiência em uma perícia à escolha.'],
     [1, 'versatil', 'Versátil', 'Um talento de origem à escolha (Habilidoso é o recomendado).', TALENTOS_ORIGEM],
@@ -61,6 +67,8 @@ const ESPECIES: Record<string, Linha[]> = {
     [1, 'resistencia-implacavel', 'Resistência Implacável', 'Ao cair a 0 PV sem morrer, fica com 1 PV (uma vez por descanso longo).'],
   ],
   tiferino: [
+    [1, 'tamanho', 'Tamanho', 'Escolha Pequeno ou Médio ao criar o personagem.', TAMANHO_FLEXIVEL],
+    [1, 'atributo-magia', 'Atributo de conjuração do Legado Ínfero', 'Escolha Inteligência, Sabedoria ou Carisma para as magias do legado e o truque Taumaturgia.', ATRIBUTO_MAGIA],
     [1, 'visao-escuro', 'Visão no Escuro (18 m)', 'Enxerga no escuro até 18 m.'],
     [1, 'legado', 'Legado Ínfero', 'Resistência e truque do nível 1; magias nos níveis 3 e 5, uma vez sem espaço por descanso longo.', [['abissal', 'Abissal (veneno; Spray Venenoso; Raio Nauseante; Imobilizar Pessoa)'], ['ctonico', 'Ctônico (necrótico; Toque Arrepiante; Vida Falsa; Raio do Enfraquecimento)'], ['infernal', 'Infernal (fogo; Raio de Fogo; Repreensão Infernal; Escuridão)']]],
     [1, 'presenca', 'Presença Sobrenatural', 'Conhece o truque Taumaturgia.'],

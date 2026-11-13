@@ -9,7 +9,7 @@
  * permite recalcular por DELTA, sem somar os mesmos três pontos duas vezes.
  */
 import type { DadosFicha } from './tipos'
-import { idDe } from './dnd2024Classes'
+import { classesDaFicha, idDe } from './dnd2024Classes'
 import { FONTE_LEGADO_2014, FONTE_PHB, TALENTOS_ORIGEM_PHB, fontePermitida } from './dnd2024Fontes'
 import { ANTECEDENTES_PHB_GUIA } from './dnd2024AntecedentesPhb'
 import { MAGIAS_SRD } from './dnd2024Magias'
@@ -169,6 +169,10 @@ export function aplicarAntecedenteDnd(
   // Em trocas posteriores de antecedente, não restaura usos gastos; só descanso longo o fará.
   if (!antes && magiasDeAntecedenteDnd(dados)) {
     dados.recursos = { ...d.recursos, magia_origem_gratis: { atual: 1 } }
+  }
+  if (!antes && (ANTECEDENTES_GUIADOS[id]?.talentoId === 'lucky' || (id === 'forasteiro' && detalhes.talento === 'lucky'))) {
+    const prof = Math.floor((Math.max(1, classesDaFicha(dados).total) - 1) / 4) + 2
+    dados.recursos = { ...dados.recursos, pontos_sorte: { atual: prof } }
   }
   return { ok: true, dados }
 }

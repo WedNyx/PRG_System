@@ -50,7 +50,7 @@ describe('Arsenal D&D 2024 expandido — PR #48', () => {
     expect(lerItens([it])[0].armaRefDnd).toBe(ref.id)
     const s = sistemaPorId('dnd5e-srd')!
     const d = normalizarFicha(s, { itens: [it] })
-    expect(d.itens?.[0].armaRefDnd).toBe(ref.id)
+    expect(lerItens(d.itens)[0].armaRefDnd).toBe(ref.id)
     const transferida = transferirItem({ itens: [it], uso: { itens: { rpgitem1: { qtd: 1, equipado: true } } } },
       { itens: [], uso: {} }, 'rpgitem1', 1)
     if (!transferida.ok) throw new Error(transferida.erro)

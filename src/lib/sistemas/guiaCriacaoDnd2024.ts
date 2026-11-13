@@ -20,7 +20,7 @@ export type EtapaGuia = {
   id: string; titulo: string; estado: EstadoEtapa
   descricao: string; aba: 'principal' | 'atributos' | 'arvore' | 'habilidades' | 'equipamentos'
 }
-type DadosGuia = Pick<DadosFicha, 'nome' | 'campos' | 'atributos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndMagias' | 'itens'>
+type DadosGuia = Pick<DadosFicha, 'nome' | 'campos' | 'atributos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndMagias' | 'dndAntecedente' | 'itens'>
 
 export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
   const campo = (id: string) => String(d.campos?.[id] ?? '').trim()

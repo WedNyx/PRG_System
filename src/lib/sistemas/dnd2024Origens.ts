@@ -13,6 +13,14 @@ const TALENTOS_ORIGEM: [string, string][] = [['alerta', 'Alerta'], ['iniciado-ma
 /** O SRD permite definir o atributo de conjuração destes legados/linhagens ao escolher a espécie. */
 const ATRIBUTO_MAGIA: [string, string][] = [['inteligencia', 'Inteligência'], ['sabedoria', 'Sabedoria'], ['carisma', 'Carisma']]
 const TAMANHO_FLEXIVEL: [string, string][] = [['pequeno', 'Pequeno'], ['medio', 'Médio']]
+const PERICIAS_HUMANO: [string, string][] = [
+  ['acrobacia', 'Acrobacia'], ['adestrar_animais', 'Adestrar Animais'], ['arcanismo', 'Arcanismo'],
+  ['atletismo', 'Atletismo'], ['atuacao', 'Atuação'], ['enganacao', 'Enganação'],
+  ['furtividade', 'Furtividade'], ['historia', 'História'], ['intimidacao', 'Intimidação'],
+  ['intuicao', 'Intuição'], ['investigacao', 'Investigação'], ['medicina', 'Medicina'],
+  ['natureza', 'Natureza'], ['percepcao', 'Percepção'], ['persuasao', 'Persuasão'],
+  ['prestidigitacao', 'Prestidigitação'], ['religiao', 'Religião'], ['sobrevivencia', 'Sobrevivência'],
+]
 
 const ESPECIES: Record<string, Linha[]> = {
   anao: [
@@ -58,7 +66,7 @@ const ESPECIES: Record<string, Linha[]> = {
   humano: [
     [1, 'tamanho', 'Tamanho', 'Escolha Pequeno ou Médio ao criar o personagem.', TAMANHO_FLEXIVEL],
     [1, 'engenhoso', 'Engenhoso', 'Ganha Inspiração Heroica ao terminar um descanso longo.'],
-    [1, 'habilidoso', 'Habilidoso', 'Proficiência em uma perícia à escolha.'],
+    [1, 'habilidoso', 'Habilidoso', 'Proficiência em uma perícia à escolha.', PERICIAS_HUMANO],
     [1, 'versatil', 'Versátil', 'Um talento de origem à escolha (Habilidoso é o recomendado).', TALENTOS_ORIGEM],
   ],
   orc: [

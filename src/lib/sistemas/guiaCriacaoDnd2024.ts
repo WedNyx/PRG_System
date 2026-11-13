@@ -13,7 +13,7 @@ import { MARCOS_DND_2024 } from './dnd2024Marcos'
 import { MARCOS_ORIGENS_SRD } from './dnd2024Origens'
 import { lerEscolhasDnd } from './dnd2024Ficha'
 import { conjuradoresDnd } from './dnd2024Conjuracao'
-import { ANTECEDENTES_GUIADOS, lerRegistroAntecedenteDnd, validarDetalhesAntecedenteDnd, validarDistribuicaoAntecedenteDnd } from './dnd2024Antecedentes'
+import { ANTECEDENTES_GUIADOS, lerRegistroAntecedenteDnd, magiasDeAntecedenteDnd, validarDetalhesAntecedenteDnd, validarDistribuicaoAntecedenteDnd } from './dnd2024Antecedentes'
 
 export type EstadoEtapa = 'registrado' | 'pendente' | 'revisar' | 'nao-aplica'
 export type EtapaGuia = {
@@ -47,7 +47,11 @@ export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
     && validarDetalhesAntecedenteDnd(registroAntecedente).length === 0
   const especieMagica = ['elfo', 'gnomo', 'tiferino'].includes(especieId)
   const precisaMagiasDaClasse = conjuradoresDnd(d).some(l => l.truques > 0 || l.preparadas > 0)
-  const precisaMagias = precisaMagiasDaClasse || especieMagica
+  const origemMagica = magiasDeAntecedenteDnd(d)
+  const temTalentoMagico = !!(guiadoAntecedente?.talentoId?.startsWith('iniciado-magia') ||
+    (antecedenteId === 'forasteiro' && registroAntecedente?.talento?.startsWith('iniciado-magia')))
+  const talentoHumanoMagico = especieId === 'humano' && escolhas['esp-humano-versatil'] === 'iniciado-magia'
+  const precisaMagias = precisaMagiasDaClasse || especieMagica || temTalentoMagico || talentoHumanoMagico
   const magiaAnotada = !!d.dndMagias && Object.keys(d.dndMagias).length > 0
   const equipAnotado = Array.isArray(d.itens) && d.itens.length > 0
   return [
@@ -90,11 +94,18 @@ export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
     { id: 'equipamentos', titulo: '8. Equipamentos e defesa', estado: equipAnotado ? 'registrado' : 'pendente', aba: 'equipamentos',
       descricao: 'Registre equipamento inicial, armas, armaduras, escudo, ferramentas e moedas. Depois confira CA, deslocamento e limitações de uso.' },
     { id: 'magias', titulo: '9. Magias e recursos de conjuração',
-      estado: !precisaMagias ? 'nao-aplica' : precisaMagiasDaClasse ? (magiaAnotada ? 'registrado' : 'pendente') : 'revisar',
+      estado: !precisaMagias ? 'nao-aplica' : (temTalentoMagico && !origemMagica) || talentoHumanoMagico
+        ? 'pendente' : precisaMagiasDaClasse ? (magiaAnotada ? 'registrado' : 'pendente') : especieMagica ? 'revisar' : 'registrado',
       aba: 'habilidades',
-      descricao: especieMagica
-        ? 'Além das magias da classe, confira as magias concedidas pela espécie e o atributo de conjuração escolhido para a linhagem ou legado. A escolha na árvore ainda não adiciona automaticamente essas magias.'
-        : 'Selecione truques e magias conforme a classe, nível e fontes autorizadas. Confira espaços, preparação e atributo de conjuração.' },
+      descricao: talentoHumanoMagico
+        ? 'Iniciado em Magia pelo Humano Versátil: a plataforma ainda não permite registrar as escolhas desse talento da espécie; peça revisão ao mestre. Não atribua magias automaticamente.'
+        : temTalentoMagico && !origemMagica
+          ? 'O antecedente concede Iniciado em Magia, mas faltam magias ou atributo de conjuração. Complete a criação guiada na aba Atributos.'
+          : origemMagica
+            ? 'As três magias do antecedente aparecem no Grimório, com atributo e CD próprios, sem ocupar espaços de preparação da classe. A magia de 1º nível tem um uso gratuito recuperado no descanso longo. Revise outras magias da classe ou espécie separadamente.'
+            : especieMagica
+              ? 'Confira as magias concedidas pela espécie e o atributo de conjuração escolhido na árvore; ainda não são adicionadas automaticamente ao Grimório.'
+              : 'Selecione truques e magias conforme a classe, nível e fontes autorizadas. Confira espaços, preparação e atributo de conjuração.' },
     { id: 'revisao', titulo: '10. Revisão final do mestre', estado: 'revisar', aba: 'principal',
       descricao: 'Revise PV, CA, perícias, salvaguardas, usos, progressão, fontes e exceções. O guia não aprova a ficha automaticamente.' },
   ]

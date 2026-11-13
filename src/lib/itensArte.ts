@@ -61,7 +61,7 @@ const NOME_PARA_FORMA: [RegExp, string][] = [
   [/armadura|cota|couraça|gibão|peitoral|colete/i, 'armadura'], [/po[çc][aã]o|elixir|frasco|ant[ií]doto/i, 'pocao'], [/pergaminho|carta|mapa/i, 'pergaminho'],
   [/livro|grim[oó]rio|tomo|di[aá]rio/i, 'livro'], [/tocha|lanterna|vela/i, 'tocha'], [/chave/i, 'chave'], [/anel/i, 'anel'],
   [/amuleto|colar|talism[aã]|medalh/i, 'amuleto'], [/gema|joia|j[oó]ia|rubi|safira|esmeralda|diamante|cristal/i, 'gema'], [/moeda|bolsa|ouro|tesouro/i, 'bolsa'],
-  [/espada|l[aâ]mina|sabre|katana|rapieira|cimitarra/i, 'espada'],
+  [/espada|l[aâ]mina|sabre|katana|rapieira|sword|blade|razor|rapier|greatsword|shortsword/i, 'espada'],
 ]
 const POR_CATEGORIA: Record<string, string> = { arma: 'espada', armadura: 'armadura', consumivel: 'pocao', equipamento: 'livro', tesouro: 'gema', outro: 'bolsa' }
 const COR_POR_FORMA: Record<string, [string, string]> = {
@@ -78,11 +78,18 @@ export const formaPorId = (id: string) => FORMAS.find(f => f.id === id) ?? FORMA
 const HEX = /^#[0-9a-f]{6}$/i
 
 /** Arte do item: a escolhida na forja, ou uma sugerida pelo nome e pelo tipo. */
-export function arteDoItem(it: { nome: string; categoria: string; arte?: unknown }): ArteItem {
+export function arteDoItem(it: { nome: string; categoria: string; arte?: unknown; magico?: unknown }): ArteItem {
   const a = lerArte(it.arte)
   if (a) return a
   const forma = NOME_PARA_FORMA.find(([re]) => re.test(it.nome))?.[1] ?? POR_CATEGORIA[it.categoria] ?? 'bolsa'
   const [cor, cor2] = COR_POR_FORMA[forma] ?? ['#cbd5e1', '#a78bfa']
+  if (it.magico === true) {
+    // Cada relíquia sem arte manual ganha paleta determinística própria.
+    // Mesmo nome = mesmo desenho em dispositivos diferentes, sem imagens externas.
+    let codigo = 0
+    for (const letra of it.nome) codigo = (codigo * 33 + letra.charCodeAt(0)) >>> 0
+    return { forma, cor: CORES_FORJA[codigo % CORES_FORJA.length], cor2: CORES_FORJA[(Math.floor(codigo / 10) + 4) % CORES_FORJA.length] }
+  }
   return { forma, cor, cor2 }
 }
 export function lerArte(v: unknown): ArteItem | null {

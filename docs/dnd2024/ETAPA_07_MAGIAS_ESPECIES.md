@@ -1,6 +1,6 @@
 # Etapa 7 — Magias de espécies e linhagens (D&D 2024)
 
-**PR em revisão**. Esta etapa parte da PR #45 já mesclada na `main` e não altera o banco nem publica a nova versão automaticamente.
+**Etapa 7 ampliada para finalização, em revisão na PR #47.** Parte da PR #45 já mesclada na `main` e não altera o banco nem publica a nova versão automaticamente.
 
 ## Fonte e distinção
 SRD 5.2.1, licenciado sob CC BY 4.0: https://www.dndbeyond.com/srd
@@ -27,9 +27,33 @@ As magias de espécie são projeções de `campos.especie` e `dndEscolhas`, inde
 - Alteração de espécie, descanso curto/descanso longo, slots de classe e três fontes mágicas coexistem sem contaminar `dndMagias`.
 
 ## Limites explícitos
-- **Alto Elfo:** a opção de substituir Prestidigitação por outro truque de Mago após descanso longo ainda é anotada com o mestre, não é um formulário automático nesta etapa.
-- **Gnomo das Rochas:** fabricação e duração de engenhocas permanecem sob controle do mestre, sem adicionar itens automaticamente.
+- **Alto Elfo:** o seletor de truques do Mago é apresentado no descanso longo. Sem concluir o descanso, o truque não muda. As fichas antigas continuam com Prestidigitação até escolherem outro truque.
+- **Gnomo das Rochas:** permite registrar/desmontar até três engenhocas e anotar o efeito de Prestidigitação. CA 5, 1 PV, criação de 10 minutos e duração de 8 horas de tempo fictício são apresentados. A ficha não expira engenhocas usando relógio real nem as transforma automaticamente em itens de inventário.
 - Magias narrativas, áreas e condições não executam efeitos automáticos no mapa/combate. O Grimório informa quando a resolução exige o mestre.
 - Testar a interface com papéis de jogador/mestre, permissões de campanha e persistência antes do merge; testes de unidade/tipos/build não substituem homologação.
 
 **Não mesclar sem conferir a CI e os testes de uso com mestre e jogador.**
+
+
+## Entregas complementares para concluir a Etapa 7
+- **Resumo de escolhas na aba Principal:** três cartões de Classe/Subclasse, Antecedente e Espécie, com benefícios adquiridos, opções registradas e pendências, e links para as abas corretas.
+- **Progressão por origem:** filtros Tudo / Classe / Antecedente / Espécie, com contador de escolhas pendentes de cada grupo.
+- **Escolhas de classe:** cada uma das 12 classes SRD tem seletores próprios para as perícias iniciais no 1º nível. Somente a classe inicial ganha essas escolhas completas; a multiclasse não as duplica. A lista de opções marca perícias já concedidas pelo antecedente ou por outro seletor, e o servidor recusa selecionar a mesma perícia em dois espaços. Proficiências válidas são calculadas na ficha.
+- **Poderes e Habilidades da espécie:** os traços das nove espécies abertas aparecem em cards, sem criar cópias permanentes na lista de poderes manuais. Escolhas feitas (ancestral, linhagem, legado, proficiência) são refletidas. Benefícios passivos ficam informativos e poderes com cargas têm botões de uso.
+- **Poderes limitados:** Conhecimento de Pedra do Anão, Arma de Sopro e Voo Dracônico, Ancestralidade/Forma Grande do Golias e Pico de Adrenalina/Resistência Implacável do Orc, conforme nível e proficiência. Os contadores são armazenados em `uso.poderes`, recuperados no descanso apropriado (Orc Adrenalina: curto/longo; demais: longo), sem apagar usos de poderes caseiros.
+- **Magias raciais:** permanecem no Grimório com conjuração independente, níveis 1/3/5 e recuperação de usos grátis. Tiferino mostra resistência do legado; Elfo Drow e Floresta mostram seus detalhes visuais.
+- **Alto Elfo:** `dnd_alto_elfo_truque` em `listas` guarda um truque válido da lista de Mago do SRD, escolhido apenas ao concluir um descanso longo na interface de descanso. Essa escolha substitui Prestidigitação na projeção do Grimório, sem mexer em magias preparadas de classe.
+- **Gnomo das Rochas:** `dnd_gnomo_engenhocas` registra os até 3 dispositivos em `listas`; duração em tempo da história, removidos manualmente. A interface não inventa efeitos sem o jogador declarar qual Prestidigitação produz.
+- **Espécies de fonte comercial:** aparecem como referências se a fonte estiver liberada, mas sem criar poderes pagos automaticamente.
+- As estruturas de escolhas continuam separadas do catálogo e das artes de itens da PR #48.
+
+## Critérios de homologação manual que ainda precisam ser confirmados
+1. No celular, criar Guerreiro: 2 perícias iniciais sem repetição, antecedente e linhagem válidos; confirmar na aba Atributos a origem das proficiências.
+2. No desktop, selecionar Anão, Draconato, Elfo (Drow/Alto/Floresta), Gnomo (Floresta/Rochas), Golias, Halfling, Humano, Orc e Tiferino; conferir os traços em Poderes.
+3. Descansar como Alto Elfo: escolher truque novo, concluir descanso longo, reabrir Grimório; descanso curto não permite troca.
+4. Registrar três engenhocas do Gnomo das Rochas, bloquear a quarta, retirar uma, salvar e reabrir. Validar duração pelo tempo da sessão.
+5. Gastar poder racial do Orc e fazer descanso curto; gastar poder do Draconato e confirmar retorno só no longo.
+6. Abrir ficha com múltiplas classes, mudar espécie e conferir que habilidades e poderes caseiros não são duplicados ou removidos.
+7. Conferir permissões de edição para player/mestre, modo Manual/Híbrido/Automático e escrita na nuvem.
+
+O status da CI e da Vercel deve ser conferido no commit final da PR #47, **sem mesclar automaticamente**.

@@ -47,7 +47,7 @@ const NOTA = 'Fonte comercial: consulte o Livro do Jogador (2024). A plataforma 
 export const SUBCLASSES_PHB: Record<string, [string, string][]> = {
   barbaro: [['coracao-selvagem', 'Caminho do Coração Selvagem'], ['arvore-do-mundo', 'Caminho da Árvore do Mundo'], ['fanatico', 'Caminho do Fanático']],
   bardo: [['colegio-danca', 'Colégio da Dança'], ['colegio-glamour', 'Colégio do Glamour'], ['colegio-bravura', 'Colégio da Bravura']],
-  clerigo: [['dominio-conhecimento', 'Domínio do Conhecimento'], ['dominio-luz', 'Domínio da Luz'], ['dominio-enganacao', 'Domínio da Enganação']],
+  clerigo: [['dominio-guerra', 'Domínio da Guerra'], ['dominio-luz', 'Domínio da Luz'], ['dominio-enganacao', 'Domínio da Enganação']],
   druida: [['circulo-lua', 'Círculo da Lua'], ['circulo-mar', 'Círculo do Mar'], ['circulo-estrelas', 'Círculo das Estrelas']],
   guerreiro: [['mestre-batalha', 'Mestre de Batalha'], ['cavaleiro-arcano', 'Cavaleiro Arcano'], ['guerreiro-psiquico', 'Guerreiro Psíquico']],
   monge: [['guerreiro-misericordia', 'Guerreiro da Misericórdia'], ['guerreiro-sombra', 'Guerreiro da Sombra'], ['guerreiro-elementos', 'Guerreiro dos Elementos']],
@@ -66,6 +66,18 @@ export const ANTECEDENTES_PHB: [string, string][] = [
   ['eremita', 'Eremita'], ['mercador', 'Mercador'], ['nobre', 'Nobre'], ['marinheiro', 'Marinheiro'], ['escriba', 'Escriba'], ['viajante', 'Viajante'],
 ]
 
+/** Mais seis talentos de origem do PHB 2024 que não constam no catálogo aberto SRD 5.2.1.
+ * Somente metadados e fonte: seus efeitos devem ser conferidos no livro comercial.
+ */
+export const TALENTOS_ORIGEM_PHB: [string, string][] = [
+  ['crafter', 'Artesão (Crafter)'],
+  ['healer', 'Curandeiro (Healer)'],
+  ['lucky', 'Sortudo (Lucky)'],
+  ['musician', 'Músico (Musician)'],
+  ['tavern-brawler', 'Brigão de Taverna (Tavern Brawler)'],
+  ['tough', 'Robusto (Tough)'],
+]
+
 /**
  * Junta as opções do Livro do Jogador aos marcos do SRD: a escolha de subclasse ganha as 3 subclasses do livro
  * (com `fonte`), e cada uma ganha marcos “consulte o livro” nos mesmos níveis em que a subclasse do SRD ganha características.
@@ -73,7 +85,12 @@ export const ANTECEDENTES_PHB: [string, string][] = [
 export function marcosComFontes(base: MarcoDnd[]): MarcoDnd[] {
   const out = base.map(m => {
     const extra = m.id.endsWith('-subclasse') && SUBCLASSES_PHB[m.origemId]
-    return extra ? { ...m, opcoes: [...(m.opcoes ?? []), ...extra.map(([id, nome]) => ({ id, nome: `${nome} (${LIVRO})`, fonte: FONTE_PHB }))] } : m
+    if (extra) return { ...m, opcoes: [...(m.opcoes ?? []), ...extra.map(([id, nome]) => ({ id, nome: `${nome} (${LIVRO})`, fonte: FONTE_PHB }))] }
+    if (m.id === 'esp-humano-versatil') return { ...m, opcoes: [
+      ...(m.opcoes ?? []),
+      ...TALENTOS_ORIGEM_PHB.map(([id, nome]) => ({ id, nome: `${nome} (${LIVRO})`, fonte: FONTE_PHB })),
+    ] }
+    return m
   })
   for (const [classe, subs] of Object.entries(SUBCLASSES_PHB)) {
     const escolha = base.find(m => m.id === `${classe}-subclasse`)

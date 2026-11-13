@@ -12,6 +12,7 @@ import { lerEscolhasDnd, validarAlteracoesEscolhasDnd } from '@/lib/sistemas/dnd
 import { lerMagiasDnd, validarAlteracoesMagiasDnd } from '@/lib/sistemas/dnd2024Conjuracao'
 import { idDe, lerMulticlasseDnd, validarAlteracoesMulticlasseDnd } from '@/lib/sistemas/dnd2024Classes'
 import { fontesLiberadas, validarFontesCamposDnd } from '@/lib/sistemas/dnd2024Fontes'
+import { lerRegistroAntecedenteDnd, validarAlteracoesAntecedenteDnd } from '@/lib/sistemas/dnd2024Antecedentes'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
@@ -109,12 +110,20 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
       { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas, dndMagias: candidato.dndMagias, dndMulticlasse: candidato.dndMulticlasse },
     ))
     erros.push(...validarFontesCamposDnd({ campos: antigo.campos ?? {} }, { campos: candidato.campos ?? {} }, liberadas))
+    erros.push(...validarAlteracoesAntecedenteDnd(
+      { campos: antigo.campos ?? {}, atributos: antigo.atributos ?? {}, dndAntecedente: antigo.dndAntecedente },
+      { campos: candidato.campos ?? {}, atributos: candidato.atributos ?? {}, dndAntecedente: candidato.dndAntecedente },
+      liberadas,
+    ))
     erros.push(...validarAlteracoesMulticlasseDnd(
       { campos: antigo.campos ?? {}, atributos: antigo.atributos ?? {}, dndMulticlasse: antigo.dndMulticlasse },
       { campos: candidato.campos ?? {}, atributos: candidato.atributos ?? {}, dndMulticlasse: candidato.dndMulticlasse },
       { ignorarRequisitos: admin },
     ))
     if (erros.length) throw new ErroApi(400, erros.join(' '))
+    if (candidato.dndAntecedente !== undefined && lerRegistroAntecedenteDnd(candidato.dndAntecedente)) {
+      v.valor.dados = { ...v.valor.dados, dndAntecedente: lerRegistroAntecedenteDnd(candidato.dndAntecedente) }
+    }
     if (candidato.dndMulticlasse !== undefined) {
       v.valor.dados = { ...v.valor.dados, dndMulticlasse: lerMulticlasseDnd(candidato.dndMulticlasse, idDe(candidato.campos?.classe)) }
     }
@@ -183,6 +192,11 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
       { campos: anterior.campos ?? {}, atributos: anterior.atributos ?? {}, dndMulticlasse: anterior.dndMulticlasse },
       { campos: autorizado.campos ?? {}, atributos: autorizado.atributos ?? {}, dndMulticlasse: autorizado.dndMulticlasse },
       { ignorarRequisitos: admin },
+    ))
+    erros.push(...validarAlteracoesAntecedenteDnd(
+      { campos: anterior.campos ?? {}, atributos: anterior.atributos ?? {}, dndAntecedente: anterior.dndAntecedente },
+      { campos: autorizado.campos ?? {}, atributos: autorizado.atributos ?? {}, dndAntecedente: autorizado.dndAntecedente },
+      liberadas,
     ))
     if (erros.length) throw new ErroApi(400, 'A escolha não foi liberada no nível autorizado: ' + erros.join(' '))
   }

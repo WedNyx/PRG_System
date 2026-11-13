@@ -29,6 +29,7 @@ import MulticlasseDnd2024 from './MulticlasseDnd2024'
 import ExcecaoModo from './ExcecaoModo'
 import ConferenciaFicha from './ConferenciaFicha'
 import GuiaAntecedenteDnd from './GuiaAntecedenteDnd'
+import GuiaMagiaHumanoDnd2024 from './GuiaMagiaHumanoDnd2024'
 import { idDe } from '@/lib/sistemas/dnd2024Classes'
 import { fontePermitida } from '@/lib/sistemas/dnd2024Fontes'
 import { lerArvore, sincronizarPoderes } from '@/lib/sistemas/arvore'
@@ -278,6 +279,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
             ...nova, poderes: sincronizarPoderes(lerPoderes(nova.poderes), lerArvore(nova.arvore), nova),
           })} somenteLeitura={somenteLeitura} />}
           {s.id === 'dnd5e-srd' && <TalentosOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} compacto />}
+          {s.id === 'dnd5e-srd' && <GuiaMagiaHumanoDnd2024 key={idDe(d.campos.especie)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
           {s.id === 'dnd5e-srd' && modoProgressao !== 'manual' && <>
             <ProgressaoDnd2024
               marcos={MARCOS_DND_2024}
@@ -304,6 +306,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         </div>}
         {secao === 'habilidades' && <>
     {s.id === 'dnd5e-srd' && <TalentosOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} />}
+    {s.id === 'dnd5e-srd' && <GuiaMagiaHumanoDnd2024 key={idDe(d.campos.especie)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
     {s.id === 'dnd5e-srd' && <MagiasDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} semLimites={modoProgressao === 'manual'} rolar={(x, r) => void rolarExpr(x, r)} />}
     <PoderesFicha {...propsInv} />
     {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}

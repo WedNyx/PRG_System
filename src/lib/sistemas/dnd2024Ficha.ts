@@ -61,6 +61,18 @@ export function validarAlteracoesEscolhasDnd(
     if (!fontePermitida(fonte, liberadas)) erros.push(`${marco.nome}: a fonte “${nomeDaFonte(fonte!)}” não foi liberada pelo mestre nesta campanha.`)
   }
 
+  // A classe inicial não pode escolher a mesma perícia em dois espaços.
+  // Validar somente se um desses espaços mudou; não bloquear correções de fichas legadas.
+  const classeInicial = Object.keys(estado.nivelPorClasse)[0] ?? ''
+  const idsClasse = Object.keys(novas).filter(id => id.startsWith(classeInicial + '-pericia-'))
+  if (idsClasse.some(id => novas[id] !== anteriores[id])) {
+    const vistos = new Set<string>()
+    for (const id of idsClasse) {
+      if (vistos.has(novas[id])) erros.push('Perícia escolhida mais de uma vez na classe inicial: ' + novas[id])
+      vistos.add(novas[id])
+    }
+  }
+
   if (depois.dndEscolhas && typeof depois.dndEscolhas === 'object' && !Array.isArray(depois.dndEscolhas)) {
     for (const id of Object.keys(depois.dndEscolhas)) {
       if (!Object.hasOwn(novas, id) && !Object.hasOwn(anteriores, id)) {

@@ -12,6 +12,7 @@ import type { DadosFicha } from './tipos'
 import { idDe } from './dnd2024Classes'
 import { FONTE_LEGADO_2014, FONTE_PHB, TALENTOS_ORIGEM_PHB, fontePermitida } from './dnd2024Fontes'
 import { ANTECEDENTES_PHB_GUIA } from './dnd2024AntecedentesPhb'
+import { MAGIAS_SRD } from './dnd2024Magias'
 
 export const ATRIBUTOS_DND = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'] as const
 /** Identificadores das dezoito perícias, compartilhados com os seletores de talentos. */
@@ -36,6 +37,12 @@ export type RegistroAntecedenteDnd = {
   ferramentaEscolhida?: string
   /** Escolhas adicionais de perícias do talento Habilidoso (as ferramentas continuam anotáveis). */
   talentoPericias?: string[]
+  /** Escolhas do talento Artesão ou Músico, até três ferramentas/instrumentos. */
+  talentoFerramentas?: string[]
+  /** Iniciado em Magia: lista, atributo e três magias escolhidas. */
+  talentoLista?: 'clerigo' | 'druida' | 'mago'
+  talentoAtributo?: 'INT' | 'SAB' | 'CAR'
+  talentoMagias?: string[]
 }
 export type ModeloAntecedenteDnd = {
   id: string; nome: string; elegiveis: readonly AtributoDnd[]; talento: string
@@ -119,6 +126,13 @@ export function lerRegistroAntecedenteDnd(valor: unknown): RegistroAntecedenteDn
     ...(Array.isArray(v.talentoPericias) && v.talentoPericias.length <= 3
       ? { talentoPericias: v.talentoPericias.filter((x): x is string => typeof x === 'string' && /^[a-z_]{2,70}$/.test(x)) }
       : {}),
+    ...(Array.isArray(v.talentoFerramentas) && v.talentoFerramentas.length <= 3
+      ? { talentoFerramentas: v.talentoFerramentas.filter((x): x is string => typeof x === 'string' && x.trim().length > 0 && x.trim().length <= 70).map(x => x.trim()) }
+      : {}),
+    ...(['clerigo', 'druida', 'mago'].includes(String(v.talentoLista)) ? { talentoLista: v.talentoLista as 'clerigo' | 'druida' | 'mago' } : {}),
+    ...(['INT', 'SAB', 'CAR'].includes(String(v.talentoAtributo)) ? { talentoAtributo: v.talentoAtributo as 'INT' | 'SAB' | 'CAR' } : {}),
+    ...(Array.isArray(v.talentoMagias) && v.talentoMagias.length <= 3
+      ? { talentoMagias: v.talentoMagias.filter((x): x is string => typeof x === 'string' && /^[a-z0-9-]{2,70}$/.test(x)) } : {}),
   }
 }
 
@@ -136,7 +150,7 @@ export function validarDistribuicaoAntecedenteDnd(id: string, aumentos: Aumentos
 
 /** Ações explícitas: calcula o DELTA do registro anterior e aplica uma única vez. */
 export function aplicarAntecedenteDnd(
-  d: DadosFicha, aumentos: AumentosDnd, detalhes: Partial<Pick<RegistroAntecedenteDnd, 'equipamento' | 'talento' | 'instrumento' | 'idioma' | 'ferramentaEscolhida' | 'talentoPericias'>> = {},
+  d: DadosFicha, aumentos: AumentosDnd, detalhes: Partial<Pick<RegistroAntecedenteDnd, 'equipamento' | 'talento' | 'instrumento' | 'idioma' | 'ferramentaEscolhida' | 'talentoPericias' | 'talentoFerramentas' | 'talentoLista' | 'talentoAtributo' | 'talentoMagias'>> = {},
 ): { ok: true; dados: DadosFicha } | { ok: false; erro: string } {
   const id = idDe(d.campos.antecedente)
   const erros = validarDistribuicaoAntecedenteDnd(id, aumentos)
@@ -160,6 +174,40 @@ export function aplicarAntecedenteDnd(
  * Servidor: protege o registro, as fontes e a aplicação dos aumentos.
  * A escolha inalterada é preservada para não quebrar fichas antigas.
  */
+/** Valida as decisões específicas dos talentos e ferramentas, sem prometer os efeitos ainda não automatizados. */
+export function validarDetalhesAntecedenteDnd(r: RegistroAntecedenteDnd): string[] {
+  const def = ANTECEDENTES_GUIADOS[r.id]
+  if (!def) return ['Antecedente não cadastrado.']
+  const erros: string[] = []
+  if (r.id !== 'forasteiro' && !r.equipamento) erros.push('Selecione o pacote de equipamentos ou 50 PO.')
+  if (def.ferramentaEscolha && !r.ferramentaEscolhida?.trim()) erros.push('Escolha um tipo de ferramenta para este antecedente.')
+  const talento = r.id === 'forasteiro' ? r.talento : def.talentoId
+  if (talento === 'habilidoso') {
+    const escolhas = r.talentoPericias ?? []
+    if (escolhas.length !== 3 || new Set(escolhas).size !== 3 ||
+      escolhas.some(id => !PERICIAS_DND_ORIGENS.includes(id as typeof PERICIAS_DND_ORIGENS[number]) && !/^ferramenta_[a-z_]{2,58}$/.test(id)))
+      erros.push('Habilidoso exige três perícias ou ferramentas diferentes.')
+  }
+  if (talento === 'crafter' || talento === 'musician') {
+    const ferramentas = r.talentoFerramentas ?? []
+    if (ferramentas.length !== 3 || new Set(ferramentas.map(x => x.toLowerCase())).size !== 3 ||
+      ferramentas.some(x => !x.trim() || x.length > 70))
+      erros.push(talento === 'crafter' ? 'Artesão: escolha três tipos diferentes de ferramentas de artesão.' : 'Músico: escolha três instrumentos musicais diferentes.')
+  }
+  if (talento?.startsWith('iniciado-magia')) {
+    const lista = talento === 'iniciado-magia-clerigo' ? 'clerigo'
+      : talento === 'iniciado-magia-druida' ? 'druida'
+      : talento === 'iniciado-magia-mago' ? 'mago' : r.talentoLista
+    if (!lista) erros.push('Iniciado em Magia: escolha uma lista de magias.')
+    if (!r.talentoAtributo) erros.push('Iniciado em Magia: escolha INT, SAB ou CAR como atributo de conjuração.')
+    const magias = r.talentoMagias ?? []
+    if (magias.length !== 3 || new Set(magias).size !== 3 ||
+      magias.some((id, i) => !MAGIAS_SRD.some(m => m.id === id && m.classes.includes(lista ?? '') && m.nivel === (i === 2 ? 1 : 0))))
+      erros.push('Iniciado em Magia: escolha dois truques diferentes e uma magia de nível 1 da lista correta.')
+  }
+  return erros
+}
+
 export function validarAlteracoesAntecedenteDnd(
   antes: Pick<DadosFicha, 'campos' | 'atributos' | 'dndAntecedente'>,
   depois: Pick<DadosFicha, 'campos' | 'atributos' | 'dndAntecedente'>,
@@ -177,25 +225,13 @@ export function validarAlteracoesAntecedenteDnd(
     else if (talento.fonte === 'phb2024' && !fontePermitida(FONTE_PHB, fontes)) erros.push('Talento de origem do PHB 2024 não liberado nesta campanha.')
     if (!atual.instrumento || !atual.idioma) erros.push('Informe o instrumento musical e o idioma do Forasteiro.')
     if (atual.equipamento === 'moedas') erros.push('O Forasteiro legado usa equipamento conforme o livro de 2014, não a opção automática de 50 PO do SRD 2024.')
-  } else if (atual.talento) erros.push('O talento de origem deste antecedente já é determinado pelo antecedente de 2024.')
+  }
   const def = ANTECEDENTES_GUIADOS[atual.id]
   if (def?.fonte === 'phb2024' && !fontePermitida(FONTE_PHB, fontes)) {
     erros.push('Este antecedente é do Livro do Jogador 2024 e a fonte não foi liberada pelo mestre.')
   }
-  if (def?.ferramentaEscolha && !atual.ferramentaEscolhida) {
-    erros.push('Escolha o tipo de ferramenta do antecedente.')
-  }
-  if (def?.talentoId === 'habilidoso') {
-    const opcoes = atual.talentoPericias ?? []
-    if (opcoes.length !== 3 || new Set(opcoes).size !== 3 ||
-      opcoes.some(id => !PERICIAS_DND_ORIGENS.includes(id as typeof PERICIAS_DND_ORIGENS[number]) && !/^ferramenta_[a-z_]{2,58}$/.test(id)))
-      erros.push('Habilidoso: escolha três perícias ou ferramentas diferentes.')
-  } else if (atual.talentoPericias?.length) {
-    erros.push('Este antecedente não concede o talento Habilidoso.')
-  }
-  if (atual.id !== 'forasteiro' && !atual.equipamento) erros.push('Selecione pacote inicial ou 50 PO para este antecedente.')
-  if (atual.ferramentaEscolhida && !def?.ferramentaEscolha && atual.id !== 'forasteiro')
-    erros.push('Este antecedente não pede a escolha de tipo de ferramenta.')
+  erros.push(...validarDetalhesAntecedenteDnd(atual))
+  if (atual.talento && atual.id !== 'forasteiro') erros.push('Talento diferente do determinado pelo antecedente.')
   const anterior = lerRegistroAntecedenteDnd(antes.dndAntecedente)
   for (const a of ATRIBUTOS_DND) {
     const esperado = Number(antes.atributos[a] ?? 10) - (anterior?.aumentos[a] ?? 0) + (atual.aumentos[a] ?? 0)

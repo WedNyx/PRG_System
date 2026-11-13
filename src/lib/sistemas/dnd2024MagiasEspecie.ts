@@ -87,8 +87,9 @@ export function magiasDaEspecieDnd(d: FichaEspecie): OrigemMagicaEspecie | null 
   if (!atributo || !l) return null
   const nivel = Math.max(1, Math.min(20, Math.floor(Number(d.campos.nivel) || 1)))
   const magias = l.magias.filter(m => m.desbloqueia <= nivel && !!magiaPorId(m.id))
+  const observacao = 'observacao' in l && typeof l.observacao === 'string' ? l.observacao : undefined
   return { especie: especie as OrigemMagicaEspecie['especie'], linhagem: l.nome, atributo, magias,
-    ...('observacao' in l && l.observacao ? { observacao: l.observacao } : {}),
+    ...(observacao ? { observacao } : {}),
   }
 }
 

@@ -167,6 +167,9 @@ export const SISTEMAS: Sistema[] = [
       { id: 'pontos_sorte', nome: 'Pontos de Sorte (Sortudo)', formula: 'dnd_sorte', ocultarSemMax: true },
       { id: 'magia_origem_gratis', nome: 'Iniciado em Magia — conjuração gratuita', formula: 'dnd_origem_magia_gratis', ocultarSemMax: true },
       { id: 'magia_humano_gratis', nome: 'Iniciado em Magia — Humano Versátil', formula: 'dnd_humano_magia_gratis', ocultarSemMax: true },
+      { id: 'magia_especie_3', nome: 'Magia da espécie — nível 3', formula: 'dnd_especie_magia_3', ocultarSemMax: true },
+      { id: 'magia_especie_5', nome: 'Magia da espécie — nível 5', formula: 'dnd_especie_magia_5', ocultarSemMax: true },
+      { id: 'magia_gnomo_animais', nome: 'Gnomo da Floresta — Falar com Animais', formula: 'dnd_gnomo_animais', ocultarSemMax: true },
       { id: 'inspiracao', nome: 'Inspiração Heroica', maxFixo: 1, contador: true }, { id: 'exaustao', nome: 'Exaustão (−2 nos testes de d20 por nível)', maxFixo: 6, contador: true, baixaNoDescanso: 1 },
     ],
     limites: [

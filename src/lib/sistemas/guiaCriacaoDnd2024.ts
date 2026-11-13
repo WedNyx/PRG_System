@@ -13,7 +13,7 @@ import { MARCOS_DND_2024 } from './dnd2024Marcos'
 import { MARCOS_ORIGENS_SRD } from './dnd2024Origens'
 import { lerEscolhasDnd } from './dnd2024Ficha'
 import { conjuradoresDnd } from './dnd2024Conjuracao'
-import { ANTECEDENTES_GUIADOS, lerRegistroAntecedenteDnd } from './dnd2024Antecedentes'
+import { ANTECEDENTES_GUIADOS, lerRegistroAntecedenteDnd, validarDetalhesAntecedenteDnd, validarDistribuicaoAntecedenteDnd } from './dnd2024Antecedentes'
 
 export type EstadoEtapa = 'registrado' | 'pendente' | 'revisar' | 'nao-aplica'
 export type EtapaGuia = {
@@ -43,6 +43,8 @@ export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
   const registroAntecedente = lerRegistroAntecedenteDnd(d.dndAntecedente)
   const guiadoAntecedente = ANTECEDENTES_GUIADOS[antecedenteId]
   const aumentoConfirmado = !!guiadoAntecedente && registroAntecedente?.id === antecedenteId
+    && validarDistribuicaoAntecedenteDnd(antecedenteId, registroAntecedente.aumentos).length === 0
+    && validarDetalhesAntecedenteDnd(registroAntecedente).length === 0
   const especieMagica = ['elfo', 'gnomo', 'tiferino'].includes(especieId)
   const precisaMagiasDaClasse = conjuradoresDnd(d).some(l => l.truques > 0 || l.preparadas > 0)
   const precisaMagias = precisaMagiasDaClasse || especieMagica
@@ -69,14 +71,14 @@ export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
         ? (aumentoConfirmado ? 'registrado' : 'pendente') : 'revisar',
       aba: guiadoAntecedente ? 'atributos' : 'principal',
       descricao: !antecedenteId
-        ? 'Escolha o antecedente. Ele determina os atributos permitidos, talento de origem, perícias, ferramenta e equipamento.'
+        ? 'Escolha um antecedente para conferir atributos, proficiências, ferramentas, talento e equipamento.'
         : guiadoAntecedente
           ? aumentoConfirmado
-            ? 'Distribuição registrada na ficha. Confira as proficiências, o talento, a ferramenta e os itens com o mestre; registrado não significa aprovado.'
+            ? 'Distribuição e escolhas internas registradas. Confira o texto dos talentos, o inventário e os efeitos especiais com o mestre; o registro não é aprovação final.'
             : antecedenteId === 'forasteiro'
-              ? 'Forasteiro é LEGADO 2014: o mestre deve liberar o PHB 2014. Vá a Atributos para distribuir +2/+1 ou +1/+1/+1, escolher talento de origem, instrumento e idioma.'
-              : 'A distribuição do antecedente ainda não foi aplicada. Vá a Atributos e selecione +2/+1 ou +1/+1/+1 somente entre os três atributos autorizados.'
-          : 'Antecedente do Livro do Jogador 2024: a plataforma tem apenas os metadados. Mestre e jogador devem conferir os três atributos elegíveis, o talento, as proficiências e o equipamento no livro.' },
+              ? 'Forasteiro (legado 2014): habilite o PHB 2014 e registre os aumentos, o talento, instrumento e idioma na aba Atributos.'
+              : 'Vá à aba Atributos para escolher +2/+1 ou +1/+1/+1 e registrar equipamento, ferramentas e as opções adicionais do talento de origem. Nenhum bônus será somado sem confirmação.'
+          : 'Antecedente não cadastrado: consulte a obra original e revise com o mestre.' },
     { id: 'atributos', titulo: '5. Atributos e aumentos', estado: atributosAnotados ? 'registrado' : 'pendente', aba: 'atributos',
       descricao: 'Use o conjunto padrão, compra de 27 pontos ou rolagem aprovada pelo mestre. Some os aumentos do antecedente UMA vez; esta etapa não prova que a distribuição está correta.' },
     { id: 'proficiencias', titulo: '6. Proficiências e salvaguardas', estado: 'revisar', aba: 'atributos',

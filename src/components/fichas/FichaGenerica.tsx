@@ -27,6 +27,8 @@ import MagiasDnd2024 from './MagiasDnd2024'
 import MulticlasseDnd2024 from './MulticlasseDnd2024'
 import ExcecaoModo from './ExcecaoModo'
 import ConferenciaFicha from './ConferenciaFicha'
+import GuiaAntecedenteDnd from './GuiaAntecedenteDnd'
+import { idDe } from '@/lib/sistemas/dnd2024Classes'
 import { fontePermitida } from '@/lib/sistemas/dnd2024Fontes'
 import { lerArvore, sincronizarPoderes } from '@/lib/sistemas/arvore'
 import { lerPoderes } from '@/lib/sistemas/inventario'
@@ -217,6 +219,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     </section>}
         </>}
         {secao === 'atributos' && <>
+    {s.id === 'dnd5e-srd' && <GuiaAntecedenteDnd key={idDe(d.campos.antecedente)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} fontes={fontesDnd} />}
     {c.limites.some(l => l.excedido) && <section role="alert" className="rounded-2xl border border-[#c98b3a] bg-[#3a2a14] p-4 text-sm text-[#f6dca8]">
       <p className="flex items-center gap-2 font-semibold"><AlertTriangle size={18} /> Acima do limite das regras</p>
       <ul className="mt-2 list-disc pl-5">{c.limites.filter(l => l.excedido).map(l => <li key={l.nome}>{l.nome}: {l.uso} de {l.max}</li>)}</ul>

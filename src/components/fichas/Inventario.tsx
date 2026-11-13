@@ -275,10 +275,10 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
   </section>
 }
 
-function Janela({ titulo, fechar, children }: { titulo: string; fechar: () => void; children: React.ReactNode }) {
+function Janela({ titulo, fechar, children, ampla = false }: { titulo: string; fechar: () => void; children: React.ReactNode; ampla?: boolean }) {
   return <NaTela><div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-3 sm:p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
-    <div role="dialog" aria-modal="true" aria-label={titulo} className="max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-(--a-6d5690) bg-(--s-1b1529) p-5 text-sm text-(--a-f2ebff)">
-      <div className="mb-3 flex items-center justify-between"><h2 className="text-lg font-bold">{titulo}</h2><button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1.5 hover:bg-(--s-38294d)"><X size={18} /></button></div>
+    <div role="dialog" aria-modal="true" aria-label={titulo} className={'w-full overflow-y-auto rounded-2xl border border-(--a-6d5690) bg-(--s-1b1529) text-sm text-(--a-f2ebff) ' + (ampla ? 'max-h-[96dvh] max-w-2xl p-3 sm:p-5' : 'max-h-[88vh] max-w-lg p-5')}>
+      <div className="sticky top-0 z-10 mb-3 flex items-center justify-between rounded-lg bg-(--s-1b1529) py-2"><h2 className="text-lg font-bold">{titulo}</h2><button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1.5 hover:bg-(--s-38294d)"><X size={18} /></button></div>
       {children}
     </div>
   </div></NaTela>
@@ -309,19 +309,39 @@ function FotoDoItem({ it, setIt }: { it: Item; setIt: (i: Item) => void }) {
 
 export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicial: Item; salvar: (i: Item) => void; fechar: () => void }) {
   const [it, setIt] = useState<Item>(inicial)
+  const dnd = s?.id === 'dnd5e-srd'
+  const referencia = dnd ? referenciaArmaDndPorId(it.armaRefDnd) : null
   const alvos = s ? alvosDeBonus(s) : []
   const setB = (i: number, b: Partial<Bonus>) => setIt({ ...it, bonus: it.bonus.map((x, k) => k === i ? { ...x, ...b } : x) })
-  return <Janela titulo={inicial.nome ? 'Editar item' : 'Novo item'} fechar={fechar}>
+  return <Janela titulo={dnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla={dnd}>
     <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return } salvar({ ...v, id: inicial.id }) }}>
-      <FotoDoItem it={it} setIt={setIt} />
-      {!it.imagem && <Forja it={it} setIt={setIt} />}
-      <label className="flex items-center gap-2 rounded-xl border border-(--a-8b6cba)/60 bg-(--s-241a3a) p-2.5 text-sm"><input type="checkbox" checked={!!it.magico} onChange={e => setIt({ ...it, magico: e.target.checked || undefined })} className="h-4 w-4 accent-(--a-b99bff)" />
-        <span>✨ <b>Item mágico</b> <span className="text-xs text-(--a-c4b6d4)">— aparece na ala dos itens mágicos, com brilho</span></span></label>
+      {dnd ? <div className="flex items-center gap-3 rounded-xl border border-(--a-62527e) bg-gradient-to-r from-(--s-2b2143) to-(--s-171325) p-3">
+        <ArteItem item={it} tamanho={72} />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-(--a-d3adf0)">Prévia do item</p>
+          <p className="mt-1 truncate font-semibold">{it.nome || 'Sua próxima descoberta'}</p>
+          <p className="mt-1 text-[11px] text-(--a-c4b6d4)">Preencha os detalhes primeiro. A arte e as cores ficam em “Personalizar aparência”.</p>
+        </div>
+      </div> : <><FotoDoItem it={it} setIt={setIt} />{!it.imagem && <Forja it={it} setIt={setIt} />}</>}
       <label className="block">Nome<input required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Espada longa" /></label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block">Tipo<select value={it.categoria} onChange={e => setIt({ ...it, categoria: e.target.value as Item['categoria'] })} className={input + ' mt-1'}>{CATEGORIAS_ITEM.map(c => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></label>
         <CampoPeso valor={it.peso} unidade={s?.carga?.unidade ?? 'kg'} mudar={peso => setIt({ ...it, peso })} />
       </div>
+      {dnd && it.categoria === 'arma' && <div className="space-y-2 rounded-lg border border-(--a-55456e) bg-(--s-171325) p-3 text-xs">
+        {referencia && <p className="rounded-lg border border-(--a-8b6cba)/50 bg-(--s-241a3a) p-2">📖 <strong>{referencia.nome}</strong> · {referencia.livro} ({referencia.edicao}). Efeitos exclusivos devem ser conferidos no livro.</p>}
+        <label className="block">Modelo físico da arma (opcional)
+          <select className={input + ' mt-1'} value={it.armaDnd ?? ''} onChange={e => {
+            const a = armaDndPorId(e.target.value)
+            setIt({ ...it, armaDnd: a?.id, ...(a ? { dano: a.dano, peso: pesoEmKgArmaDnd(a), alcance: alcanceEmMetrosArmaDnd(a) } : {}) })
+          }}>
+            <option value="">Dano configurado manualmente</option>
+            {ARMAS_DND_2024.map(a => <option key={a.id} value={a.id}>{a.nome} · {a.dano}</option>)}
+          </select>
+        </label>
+        <p className="text-[11px] text-(--a-c4b6d4)">Escolher uma arma base permite rolar dano e crítico automaticamente. Não aplica efeitos mágicos exclusivos.</p>
+      </div>}
+      {dnd && <label className="flex items-center gap-2 rounded-lg border border-(--a-8b6cba)/50 bg-(--s-241a3a) p-3 text-xs"><input type="checkbox" checked={!!it.magico} onChange={e => setIt({ ...it, magico: e.target.checked || undefined })} className="h-4 w-4 accent-(--a-b99bff)" /> ✨ Item mágico · Exibir na coleção mágica</label>}
       {s?.id === 'dnd5e-srd' && it.armaDnd && <div className="rounded-lg border border-(--a-55456e) p-3 text-xs">
         <p className="mb-2">Arma do catálogo: <strong>{armaDndPorId(it.armaDnd)?.nome}</strong>. O dano e o crítico usam automaticamente os atributos da ficha.</p>
         <label className="flex items-center gap-2">Bônus mágico da arma (+0 a +3)
@@ -329,7 +349,20 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
             className={input + ' max-w-24'}>{[0,1,2,3].map(v => <option key={v} value={v}>+{v}</option>)}</select>
         </label>
       </div>}
-      <div className="grid grid-cols-[2fr_1fr] gap-2">
+      {dnd && <details className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+        <summary className="cursor-pointer font-semibold text-(--a-d3adf0)">🎨 Personalizar aparência · ilustração, cores e foto</summary>
+        <div className="mt-3 space-y-3">
+          <FotoDoItem it={it} setIt={setIt} />
+          {!it.imagem && <Forja it={it} setIt={setIt} />}
+          <label className="block text-xs">Raridade
+            <select value={it.raridade ?? ''} onChange={e => setIt({ ...it, raridade: e.target.value as Item['raridade'] || undefined })} className={input + ' mt-1'}>
+              <option value="">Sem raridade</option>
+              {RARIDADES.map(r => <option key={r.id} value={r.id}>{r.nome}</option>)}
+            </select>
+          </label>
+        </div>
+      </details>}
+      <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-2">
         <label className="block">{it.categoria === 'consumivel' ? 'Rolagem ao usar (ex.: cura 2d4+2)' : 'Dano ou rolagem (ex.: 1d8+3)'}
           <input value={it.dano ?? ''} maxLength={40} disabled={s?.id === 'dnd5e-srd' && !!it.armaDnd}
             onChange={e => setIt({ ...it, dano: e.target.value })} className={input + ' mt-1 disabled:opacity-50'} placeholder="Opcional" /></label>
@@ -346,8 +379,8 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
         <p className="mt-2 text-[11px] text-(--a-a998bd)">Ex.: escudo → Classe de Armadura +2; anel → uma resistência +1.</p>
       </fieldset>}
       <label className="block">Descrição<textarea rows={3} value={it.descricao ?? ''} maxLength={2000} onChange={e => setIt({ ...it, descricao: e.target.value })} className={input + ' mt-1'} /></label>
-      <div className="flex gap-2"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-(--a-62527e) p-2.5">Cancelar</button>
-        <button type="submit" className="flex-1 rounded-lg bg-(--a-7654bb) p-2.5 font-semibold">Salvar</button></div>
+      <div className={'flex gap-2 ' + (dnd ? 'sticky bottom-0 -mx-3 rounded-xl border-t border-(--a-62527e) bg-(--s-1b1529) p-3 shadow-2xl sm:mx-0' : '')}><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-(--a-62527e) p-2.5">Cancelar</button>
+        <button type="submit" className="flex-1 rounded-lg bg-(--a-7654bb) p-2.5 font-semibold">Salvar item</button></div>
     </form>
   </Janela>
 }

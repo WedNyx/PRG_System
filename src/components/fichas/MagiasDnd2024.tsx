@@ -84,6 +84,7 @@ export default function MagiasDnd2024({ d, c, onChange, somenteLeitura = false, 
       </>}
     </div> })}
     <MagiasOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolar} />
+    <MagiasOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolar} origemHumana />
     {lista.length === 0 && <p className="rounded-xl border border-dashed border-(--a-55456e) p-4 text-sm text-(--a-c4b6d4)">Nenhuma magia preparada pela classe. {somenteLeitura ? '' : 'Toque em “Adicionar magias” para escolher pelo catálogo do SRD.'}</p>}
     {[...grupos].map(([nivel, ms]) => <div key={nivel} className="space-y-2">
       <h4 className="text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{nomeNivel(nivel)}</h4>

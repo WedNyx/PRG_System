@@ -288,8 +288,8 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
 }
 
 function Janela({ titulo, fechar, children, ampla = false }: { titulo: string; fechar: () => void; children: React.ReactNode; ampla?: boolean }) {
-  return <NaTela><div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-3 sm:p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
-    <div role="dialog" aria-modal="true" aria-label={titulo} className={'w-full overflow-y-auto rounded-2xl border border-(--a-6d5690) bg-(--s-1b1529) text-sm text-(--a-f2ebff) ' + (ampla ? 'max-h-[96dvh] max-w-2xl p-3 sm:p-5' : 'max-h-[88vh] max-w-lg p-5')}>
+  return <NaTela><div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-2 sm:p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
+    <div role="dialog" aria-modal="true" aria-label={titulo} className={'w-full min-w-0 overflow-y-auto overscroll-contain rounded-2xl border border-(--a-6d5690) bg-(--s-1b1529) text-sm text-(--a-f2ebff) ' + (ampla ? 'max-h-[96dvh] max-w-2xl p-3 sm:p-5' : 'max-h-[88vh] max-w-lg p-5')}>
       <div className="sticky top-0 z-10 mb-3 flex items-center justify-between rounded-lg bg-(--s-1b1529) py-2"><h2 className="text-lg font-bold">{titulo}</h2><button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1.5 hover:bg-(--s-38294d)"><X size={18} /></button></div>
       {children}
     </div>
@@ -298,20 +298,24 @@ function Janela({ titulo, fechar, children, ampla = false }: { titulo: string; f
 
 /** Editor de item (usado na ficha e na biblioteca do mestre). `s` pode faltar (biblioteca sem sistema conhecido). */
 /** Foto do item (da galeria do celular ou do computador). Com foto, ela aparece no lugar do desenho da forja. */
-function FotoDoItem({ it, setIt, estiloDnd = false }: { it: Item; setIt: (i: Item) => void; estiloDnd?: boolean }) {
+function FotoDoItem({ it, setIt }: { it: Item; setIt: React.Dispatch<React.SetStateAction<Item>> }) {
   const [ocupado, setOcupado] = useState(false)
   async function enviar(f: File) {
     setOcupado(true)
-    try { setIt({ ...it, imagem: await enviarImagemNuvem('imagens', f, 600) }) } catch (e) { toast.error(e instanceof ErroNuvem ? e.message : 'Falha ao enviar a imagem.') } finally { setOcupado(false) }
+    try {
+      const url = await enviarImagemNuvem('imagens', f, 600)
+      // Evita sobrescrever nome, categoria e outros campos editados enquanto a foto é enviada.
+      setIt(atual => ({ ...atual, imagem: url }))
+    } catch (e) { toast.error(e instanceof ErroNuvem ? e.message : 'Falha ao enviar a imagem.') } finally { setOcupado(false) }
   }
   return <div className="flex items-center gap-3 rounded-xl border border-(--a-8b6cba)/70 bg-(--s-171325) p-3">
-    <ArteItem item={it} tamanho={64} estiloDnd={estiloDnd} />
+    <ArteItem item={it} tamanho={64} />
     <div className="min-w-0 flex-1 text-sm">
       <p className="font-semibold">📷 Foto do item <span className="text-xs font-normal text-(--a-c4b6d4)">(opcional)</span></p>
       <p className="text-[11px] text-(--a-c4b6d4)">{it.imagem ? 'Sua foto aparece no lugar da ilustração, sem apagar a arte selecionada.' : 'Escolha uma foto da sua galeria ou use as ilustrações da biblioteca.'}</p>
       {!NUVEM_ATIVA && <p className="mt-1 text-xs text-amber-200">Envio de fotos indisponível neste ambiente: o armazenamento de imagens precisa estar habilitado.</p>}
       <div className="mt-1.5 flex flex-wrap gap-1.5">
-        <label className={botao + ' cursor-pointer border-(--a-b99bff) bg-(--s-2b2140) px-3 py-2 font-semibold ' + (ocupado || !NUVEM_ATIVA ? 'pointer-events-none opacity-50' : '')}>📷 {ocupado ? 'Enviando…' : it.imagem ? 'Trocar foto' : 'Escolher foto'}
+        <label className={botao + ' min-h-11 cursor-pointer border-(--a-b99bff) bg-(--s-2b2140) px-3 py-2 font-semibold ' + (ocupado || !NUVEM_ATIVA ? 'pointer-events-none opacity-50' : '')}>📷 {ocupado ? 'Enviando…' : it.imagem ? 'Trocar foto' : 'Escolher foto'}
           <input type="file" accept="image/png,image/jpeg,image/webp" disabled={ocupado || !NUVEM_ATIVA} className="sr-only" aria-label="Escolher foto do item" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void enviar(f) }} /></label>
         {it.imagem && <button type="button" className={botao} onClick={() => setIt({ ...it, imagem: undefined })}>Usar o desenho</button>}
       </div>
@@ -410,7 +414,7 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
       </fieldset>}
       <label className="block">Descrição<textarea rows={3} value={it.descricao ?? ''} maxLength={2000} onChange={e => setIt({ ...it, descricao: e.target.value })} className={input + ' mt-1'} /></label>
       <div className="sticky bottom-0 -mx-3 flex gap-2 rounded-xl border-t border-(--a-62527e) bg-(--s-1b1529) p-3 shadow-2xl sm:mx-0"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-(--a-62527e) p-2.5">Cancelar</button>
-        <button type="submit" className="flex-1 rounded-lg bg-(--a-7654bb) p-2.5 font-semibold">Salvar item</button></div>
+        <button type="submit" className="min-h-11 flex-1 rounded-lg bg-(--a-7654bb) p-2.5 font-semibold">Salvar item</button></div>
     </form>
   </Janela>
 }

@@ -5,7 +5,6 @@
  */
 import { CLASSES_SRD } from './dnd2024Srd'
 import type { MarcoDnd } from './dnd2024Progressao'
-import { lerEscolhasDnd } from './dnd2024Ficha'
 import type { DadosFicha } from './tipos'
 
 export const nomePericiaDnd = (id: string): string =>
@@ -24,7 +23,8 @@ export const MARCOS_PERICIAS_CLASSE_DND: MarcoDnd[] = CLASSES_SRD.flatMap(c =>
 export function periciasClasseDnd(d: Pick<DadosFicha, 'campos' | 'dndEscolhas'>): string[] {
   const classe = CLASSES_SRD.find(c => c.nome === d.campos.classe)
   if (!classe) return []
-  const escolhas = lerEscolhasDnd(d.dndEscolhas)
+  const escolhas = d.dndEscolhas && typeof d.dndEscolhas === 'object' && !Array.isArray(d.dndEscolhas)
+    ? d.dndEscolhas : {}
   return Array.from({ length: classe.pericias.qtd }, (_, i) => escolhas[`${classe.id}-pericia-${i + 1}`])
     .filter((id): id is string => !!id && classe.pericias.opcoes.includes(id))
 }

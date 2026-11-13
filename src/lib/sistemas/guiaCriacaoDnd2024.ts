@@ -13,6 +13,7 @@ import { MARCOS_DND_2024 } from './dnd2024Marcos'
 import { MARCOS_ORIGENS_SRD } from './dnd2024Origens'
 import { lerEscolhasDnd } from './dnd2024Ficha'
 import { conjuradoresDnd } from './dnd2024Conjuracao'
+import { ANTECEDENTES_GUIADOS, lerRegistroAntecedenteDnd } from './dnd2024Antecedentes'
 
 export type EstadoEtapa = 'registrado' | 'pendente' | 'revisar' | 'nao-aplica'
 export type EtapaGuia = {
@@ -39,7 +40,9 @@ export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
   const faltasEspecie = escolhasDaEspecie.filter(m =>
     !m.opcoes?.some(o => o.id === escolhas[m.id]))
   const especieAberta = MARCOS_ORIGENS_SRD.some(m => m.origem === 'especie' && m.origemId === especieId)
-  const antecedenteAberto = MARCOS_ORIGENS_SRD.some(m => m.origem === 'antecedente' && m.origemId === antecedenteId)
+  const registroAntecedente = lerRegistroAntecedenteDnd(d.dndAntecedente)
+  const guiadoAntecedente = ANTECEDENTES_GUIADOS[antecedenteId]
+  const aumentoConfirmado = !!guiadoAntecedente && registroAntecedente?.id === antecedenteId
   const especieMagica = ['elfo', 'gnomo', 'tiferino'].includes(especieId)
   const precisaMagiasDaClasse = conjuradoresDnd(d).some(l => l.truques > 0 || l.preparadas > 0)
   const precisaMagias = precisaMagiasDaClasse || especieMagica
@@ -61,13 +64,19 @@ export function etapasCriacaoDnd2024(d: DadosGuia): EtapaGuia[] {
           : faltasEspecie.length
             ? `Espécie ${campo('especie')}: faltam ${faltasEspecie.length} escolha(s) na Árvore — ${faltasEspecie.map(m => m.nome).join(', ')}. O atributo de magia da linhagem deve ser escolhido junto com ela.`
             : 'As opções de espécie do SRD estão registradas. Confira seus efeitos, traços, magias e o tamanho/deslocamento no livro.' },
-    { id: 'antecedente', titulo: '4. Antecedente',
-      estado: !antecedenteId ? 'pendente' : 'revisar', aba: 'principal',
+    { id: 'antecedente', titulo: '4. Antecedente e aumentos',
+      estado: !antecedenteId ? 'pendente' : guiadoAntecedente
+        ? (aumentoConfirmado ? 'registrado' : 'pendente') : 'revisar',
+      aba: guiadoAntecedente ? 'atributos' : 'principal',
       descricao: !antecedenteId
-        ? 'Escolha o antecedente; ele define três atributos elegíveis, um talento de origem, duas perícias, ferramenta e equipamento.'
-        : antecedenteAberto
-          ? 'Antecedente registrado. O mestre ainda deve conferir a distribuição +2/+1 ou +1/+1/+1 entre seus três atributos, o talento de origem, a ferramenta e o equipamento.'
-          : 'Antecedente de livro adicional: confira atributos, talento de origem, proficiências e equipamento na fonte permitida. Não é possível validar tudo pelo SRD.' },
+        ? 'Escolha o antecedente. Ele determina os atributos permitidos, talento de origem, perícias, ferramenta e equipamento.'
+        : guiadoAntecedente
+          ? aumentoConfirmado
+            ? 'Distribuição registrada na ficha. Confira as proficiências, o talento, a ferramenta e os itens com o mestre; registrado não significa aprovado.'
+            : antecedenteId === 'forasteiro'
+              ? 'Forasteiro é LEGADO 2014: o mestre deve liberar o PHB 2014. Vá a Atributos para distribuir +2/+1 ou +1/+1/+1, escolher talento de origem, instrumento e idioma.'
+              : 'A distribuição do antecedente ainda não foi aplicada. Vá a Atributos e selecione +2/+1 ou +1/+1/+1 somente entre os três atributos autorizados.'
+          : 'Antecedente do Livro do Jogador 2024: a plataforma tem apenas os metadados. Mestre e jogador devem conferir os três atributos elegíveis, o talento, as proficiências e o equipamento no livro.' },
     { id: 'atributos', titulo: '5. Atributos e aumentos', estado: atributosAnotados ? 'registrado' : 'pendente', aba: 'atributos',
       descricao: 'Use o conjunto padrão, compra de 27 pontos ou rolagem aprovada pelo mestre. Some os aumentos do antecedente UMA vez; esta etapa não prova que a distribuição está correta.' },
     { id: 'proficiencias', titulo: '6. Proficiências e salvaguardas', estado: 'revisar', aba: 'atributos',

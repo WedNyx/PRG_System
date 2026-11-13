@@ -166,6 +166,7 @@ export const SISTEMAS: Sistema[] = [
       ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => ({ id: 'espacos_' + n, nome: `Espaços de magia de ${n}º nível`, formula: 'dnd_espacos_' + n, ocultarSemMax: true })),
       { id: 'pontos_sorte', nome: 'Pontos de Sorte (Sortudo)', formula: 'dnd_sorte', ocultarSemMax: true },
       { id: 'magia_origem_gratis', nome: 'Iniciado em Magia — conjuração gratuita', formula: 'dnd_origem_magia_gratis', ocultarSemMax: true },
+      { id: 'magia_humano_gratis', nome: 'Iniciado em Magia — Humano Versátil', formula: 'dnd_humano_magia_gratis', ocultarSemMax: true },
       { id: 'inspiracao', nome: 'Inspiração Heroica', maxFixo: 1, contador: true }, { id: 'exaustao', nome: 'Exaustão (−2 nos testes de d20 por nível)', maxFixo: 6, contador: true, baixaNoDescanso: 1 },
     ],
     limites: [

@@ -7,12 +7,12 @@ import { iconeRpgPorId, sugestaoIconeRpg } from '@/lib/iconesRpg'
  * Desenho do item (Forja): moldura com a cor da raridade, fundo que brilha e a forma colorida.
  * Raro para cima ganha brilho; lendário e único ganham faíscas.
  */
-export default function ArteItem({ item, tamanho = 48, className = '', estiloDnd = false }: { item: { nome: string; categoria: string; arte?: unknown; raridade?: Raridade; imagem?: unknown; magico?: unknown; iconeBiblioteca?: unknown }; tamanho?: number; className?: string; estiloDnd?: boolean }) {
+export default function ArteItem({ item, tamanho = 48, className = '' }: { item: { nome: string; categoria: string; arte?: unknown; raridade?: Raridade; imagem?: unknown; magico?: unknown; iconeBiblioteca?: unknown }; tamanho?: number; className?: string; estiloDnd?: boolean }) {
   const a = arteDoItem(item), forma = formaPorId(a.forma), cor = corDaRaridade(item.raridade)
   const nivel = item.raridade ? RARIDADES.findIndex(r => r.id === item.raridade) : -1
-  // Em D&D, a biblioteca ilustra itens sem arte manual; um ícone escolhido prevalece
-  // sobre a forja, e a foto enviada prevalece sobre qualquer desenho.
-  const icone = estiloDnd && (!item.arte || item.iconeBiblioteca)
+  // Todas as fichas usam Game-Icons por padrão, mas mantêm a Forja manual.
+  // Prioridade: foto enviada > ícone escolhido > arte da Forja > sugestão de ícone.
+  const icone = (!item.arte || item.iconeBiblioteca)
     ? (iconeRpgPorId(item.iconeBiblioteca) ?? iconeRpgPorId(sugestaoIconeRpg(a.forma))) : null
   return <span role="img" aria-label={`${item.nome}${item.raridade ? ' (' + RARIDADES[nivel].nome + ')' : ''}`} className={'relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 shadow-inner ' + className}
     style={{ width: tamanho, height: tamanho, borderColor: cor, background: `radial-gradient(circle at 50% 40%, ${cor}55, #1a1430 70%)`, boxShadow: nivel >= 2 ? `0 0 ${nivel * 4}px ${cor}aa, inset 0 0 ${tamanho / 4}px ${cor}55` : undefined }}>

@@ -62,7 +62,14 @@ export function efeitosDnd2024(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'd
     const { cls, nivel } = c
     const col = (nome: string) => cls.colunas[nome]?.[nivel - 1]
     // Salvaguardas: só da classe inicial (quem entra numa classe por multiclasse não ganha as dela).
-    if (c.principal) for (const a of cls.salvaguardas) dar(SALVA[a], 'proficiente', cls.nome)
+    if (c.principal) {
+      for (const a of cls.salvaguardas) dar(SALVA[a], 'proficiente', cls.nome)
+      // Perícias da classe inicial são escolhidas e persistidas nos marcos oficiais.
+      for (let i = 1; i <= cls.pericias.qtd; i++) {
+        const pericia = escolhas[`${cls.id}-pericia-${i}`]
+        if (pericia && cls.pericias.opcoes.includes(pericia)) dar(pericia, 'proficiente', cls.nome + ' (classe inicial)')
+      }
+    }
     // Recursos pela tabela de cada classe, no nível daquela classe.
     v.dnd_furias += numero(col('Fúrias')); v.dnd_dano_furia = Math.max(v.dnd_dano_furia, numero(col('Dano da Fúria')))
     v.dnd_canalizar += numero(col('Canalizar Divindade')); v.dnd_forma_selvagem += numero(col('Forma Selvagem'))

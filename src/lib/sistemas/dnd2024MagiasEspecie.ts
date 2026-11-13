@@ -6,6 +6,7 @@ import type { DadosFicha } from './tipos'
 import { idDe } from './dnd2024Classes'
 import { lerEscolhasDnd } from './dnd2024Ficha'
 import { magiaPorId } from './dnd2024Conjuracao'
+import { truqueAltoElfo } from './dnd2024TracosEspecie'
 
 export const RECURSOS_ESPECIE = {
   nivel3: 'magia_especie_3',
@@ -40,7 +41,7 @@ const elfo: Record<string, { nome: string; magias: MagiaEspecie[]; observacao?: 
   'alto-elfo': { nome: 'Alto Elfo', magias: [
     magia('prestidigitation'), magia('detect-magic', 3, RECURSOS_ESPECIE.nivel3),
     magia('misty-step', 5, RECURSOS_ESPECIE.nivel5),
-  ], observacao: 'O truque Prestidigitação pode ser substituído por um truque da lista de Mago ao concluir um descanso longo. A troca ainda deve ser anotada com o mestre.' },
+  ], observacao: 'O truque da linhagem pode ser substituído ao concluir um descanso longo; escolha o novo truque na janela de descanso.' },
   'elfo-floresta': { nome: 'Elfo da Floresta', magias: [
     magia('druidcraft'), magia('longstrider', 3, RECURSOS_ESPECIE.nivel3),
     magia('pass-without-trace', 5, RECURSOS_ESPECIE.nivel5),
@@ -72,7 +73,7 @@ const tiferino: Record<string, { nome: string; magias: MagiaEspecie[] }> = {
   ] },
 }
 
-type FichaEspecie = Pick<DadosFicha, 'campos' | 'dndEscolhas'>
+type FichaEspecie = Pick<DadosFicha, 'campos' | 'dndEscolhas'> & { listas?: DadosFicha['listas'] }
 /** Se falta linhagem ou atributo, nenhuma magia é liberada por suposição. */
 export function magiasDaEspecieDnd(d: FichaEspecie): OrigemMagicaEspecie | null {
   const especie = idDe(d.campos.especie)
@@ -86,7 +87,10 @@ export function magiasDaEspecieDnd(d: FichaEspecie): OrigemMagicaEspecie | null 
   const l = tabela[linhagemId]
   if (!atributo || !l) return null
   const nivel = Math.max(1, Math.min(20, Math.floor(Number(d.campos.nivel) || 1)))
-  const magias = l.magias.filter(m => m.desbloqueia <= nivel && !!magiaPorId(m.id))
+  const magias = l.magias
+    .map(m => especie === 'elfo' && linhagemId === 'alto-elfo' && m.id === 'prestidigitation'
+      ? { ...m, id: truqueAltoElfo(d) } : m)
+    .filter(m => m.desbloqueia <= nivel && !!magiaPorId(m.id))
   const observacao = 'observacao' in l && typeof l.observacao === 'string' ? l.observacao : undefined
   return { especie: especie as OrigemMagicaEspecie['especie'], linhagem: l.nome, atributo, magias,
     ...(observacao ? { observacao } : {}),

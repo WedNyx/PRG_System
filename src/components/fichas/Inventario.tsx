@@ -79,14 +79,19 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
     else toast(`${it.nome} usado`, { description: `Restam ${qtd(it) - 1}` })
   }
   const nomeAlvo = Object.fromEntries(alvosDeBonus(s).map(a => [a.id, a.nome]))
+  const [buscaItens, setBuscaItens] = useState('')
+  const itensVisiveis = s.id === 'dnd5e-srd' && buscaItens.trim()
+    ? itens.filter(it => [it.nome, it.descricao ?? '', referenciaArmaDndPorId(it.armaRefDnd)?.livro ?? ''].join(' ')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaItens.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))
+    : itens
   const pct = c.carga.max ? Math.min(100, (c.carga.total / c.carga.max) * 100) : 0
   // Abas por tipo (os nomes seguem o sistema, quando ele tem os seus) e a ala dos itens mágicos.
   const [aba, setAba] = useState<'todos' | 'magico' | Item['categoria']>('todos')
   const nomeCategoria = (id: Item['categoria']) => s.nomesItens?.[id] ?? CATEGORIAS_ITEM.find(c => c.id === id)!.nome
   const nomeMagico = s.nomesItens?.magico ?? '✨ Itens mágicos'
-  const magicos = itens.filter(i => i.magico)
-  const abasItens = [{ id: 'todos' as const, nome: 'Todos', n: itens.length },
-    ...CATEGORIAS_ITEM.map(c => ({ id: c.id, nome: `${c.icone} ${nomeCategoria(c.id)}`, n: itens.filter(i => i.categoria === c.id).length })).filter(x => x.n),
+  const magicos = itensVisiveis.filter(i => i.magico)
+  const abasItens = [{ id: 'todos' as const, nome: 'Todos', n: itensVisiveis.length },
+    ...CATEGORIAS_ITEM.map(c => ({ id: c.id, nome: `${c.icone} ${nomeCategoria(c.id)}`, n: itensVisiveis.filter(i => i.categoria === c.id).length })).filter(x => x.n),
     ...(magicos.length ? [{ id: 'magico' as const, nome: nomeMagico, n: magicos.length }] : [])]
   const abaAtual = abasItens.some(x => x.id === aba) ? aba : 'todos'
   const linhaItem = (it: Item) => {
@@ -193,9 +198,15 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
       <label className="rounded-xl bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">💰 Carteira (moedas e valores)
         <input value={uso.carteira} disabled={somenteLeitura} maxLength={500} onChange={e => salvarUso({ ...uso, carteira: e.target.value })} placeholder="Ex.: 35 PO, 12 PP" className={input + ' mt-1 text-sm'} /></label>
     </div>
+    {s.id === 'dnd5e-srd' && itens.length > 0 && <div className="mt-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+      <label className="block text-xs font-semibold text-(--a-d3adf0)">🔎 Encontrar item na bolsa</label>
+      <input type="search" value={buscaItens} onChange={e => setBuscaItens(e.target.value)}
+        placeholder="Busque nome, descrição ou livro…" className={input + ' mt-1 text-sm'} />
+      <p className="mt-1 text-[11px] text-(--a-c4b6d4)">{itensVisiveis.length} de {itens.length} itens encontrados</p>
+    </div>}
     {Object.keys(c.bonus).length > 0 && <p className="mt-3 rounded-lg bg-[#1f3a2c] p-2 text-xs text-[#a9f0c8]">Itens equipados somando: {Object.entries(c.bonus).map(([a, v]) => `${nomeAlvo[a] ?? a} ${v >= 0 ? '+' : ''}${v}`).join(' · ')}</p>}
-    {!itens.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">Nenhum item ainda.{!somenteLeitura && ' Toque em “Novo item”.'}</p>}
-    {itens.length > 0 && <nav aria-label="Tipos de item" className="mt-4 flex gap-1.5 overflow-x-auto pb-1">
+    {!itensVisiveis.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">{itens.length ? 'Nenhum item corresponde à busca.' : 'Nenhum item ainda.'}{!itens.length && !somenteLeitura && ' Toque em “Novo item” ou “Arsenal”.'}</p>}
+    {itensVisiveis.length > 0 && <nav aria-label="Tipos de item" className="mt-4 flex gap-1.5 overflow-x-auto pb-1">
       {abasItens.map(a => <button key={a.id} type="button" onClick={() => setAba(a.id)} aria-pressed={abaAtual === a.id}
         className={'shrink-0 rounded-full border px-3 py-1 text-xs ' + (abaAtual === a.id ? (a.id === 'magico' ? 'border-[#f0c46a] bg-(--s-3a2c58) text-amber-100' : 'border-(--a-b99bff) bg-(--s-3a2c58) text-white') : 'border-(--a-3d3152) text-(--a-cfc0df)')}>{a.nome} <span className="opacity-70">({a.n})</span></button>)}
     </nav>}
@@ -204,12 +215,12 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
       <ul className="space-y-2">{magicos.map(linhaItem)}</ul>
     </div>}
     {abaAtual === 'todos' ? CATEGORIAS_ITEM.map(cat => {
-      const lista = itens.filter(i => i.categoria === cat.id && !i.magico); if (!lista.length) return null
+      const lista = itensVisiveis.filter(i => i.categoria === cat.id && !i.magico); if (!lista.length) return null
       return <div key={cat.id} className="mt-4">
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{cat.icone} {nomeCategoria(cat.id)}</h3>
         <ul className="space-y-2">{lista.map(linhaItem)}</ul>
       </div>
-    }) : <ul className="mt-3 space-y-2">{itens.filter(i => abaAtual === 'magico' ? i.magico : i.categoria === abaAtual).map(linhaItem)}</ul>}
+    }) : <ul className="mt-3 space-y-2">{itensVisiveis.filter(i => abaAtual === 'magico' ? i.magico : i.categoria === abaAtual).map(linhaItem)}</ul>}
     {editando && <EditorItem s={s} inicial={editando} salvar={salvarItem} fechar={() => setEditando(null)} />}
     {catalogoAberto && s.id === 'dnd5e-srd' && <CatalogoArmasDnd2024 adicionar={adicionarArmaCatalogo} adicionarReferencia={adicionarReferenciaCatalogo} fechar={() => setCatalogoAberto(false)} />}
   </section>

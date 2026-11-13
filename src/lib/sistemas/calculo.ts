@@ -90,7 +90,7 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     ...(s.id === 'dnd5e-srd' && d.dndMagias !== undefined ? { dndMagias: lerMagiasDnd(d.dndMagias) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndMulticlasse !== undefined ? { dndMulticlasse: lerMulticlasseDnd(d.dndMulticlasse, idDe(d.campos?.classe)) } : {}),
     // Habilidades da árvore entram/saem dos poderes conforme os hexágonos liberados.
-    ...(d.arvore !== undefined ? { arvore: lerArvore(d.arvore), poderes: sincronizarPoderes(lerPoderes(d.poderes), lerArvore(d.arvore)) }
+    ...(d.arvore !== undefined ? { arvore: lerArvore(d.arvore), poderes: sincronizarPoderes(lerPoderes(d.poderes), lerArvore(d.arvore), { campos: { ...base.campos, ...(d.campos ?? {}) }, dndEscolhas: d.dndEscolhas, dndMulticlasse: d.dndMulticlasse }) }
       : d.poderes !== undefined ? { poderes: lerPoderes(d.poderes) } : {}),
   }
 }
@@ -132,7 +132,7 @@ export function bonusDasEscolhas(s: Sistema, d: Pick<DadosFicha, 'campos'>): Rec
 export function calcular(s: Sistema, d: DadosFicha, opcoes: { efeitosDnd?: boolean } = {}): Calculo {
   const vars: Variaveis = {}
   const itens = lerItens(d.itens), uso = lerUso(d.uso)
-  const bonus = somarBonus(bonusEquipados(itens, uso), bonusDaArvore(lerArvore(d.arvore)), bonusDasEscolhas(s, d))
+  const bonus = somarBonus(bonusEquipados(itens, uso), bonusDaArvore(lerArvore(d.arvore), d), bonusDasEscolhas(s, d))
   const b = (alvo: string) => bonus[alvo] ?? 0
   for (const c of s.campos) if (c.tipo === 'numero') vars[c.id] = num(d.campos[c.id])
   // Números das opções escolhidas (ex.: classe → PV iniciais). Sem escolha, as variáveis do campo valem 0.

@@ -3,6 +3,7 @@ import { imagemDaPlataforma } from '../nuvem/validacao'
 import type { DadosFicha, Sistema } from './tipos'
 import { bonusEquipados, lerItens, lerPoderes, lerUso, pesoTotal } from './inventario'
 import { lerEscolhasDnd } from './dnd2024Ficha'
+import { lerRegistroAntecedenteDnd } from './dnd2024Antecedentes'
 import { lerMagiasDnd } from './dnd2024Conjuracao'
 import { idDe, lerMulticlasseDnd } from './dnd2024Classes'
 import { efeitosDnd2024, VARS_DND, type EfeitosDnd } from './dnd2024Efeitos'
@@ -87,6 +88,7 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     ...(d.itens !== undefined ? { itens: lerItens(d.itens) } : {}), ...(d.uso !== undefined ? { uso: lerUso(d.uso) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndEscolhas !== undefined ? { dndEscolhas: lerEscolhasDnd(d.dndEscolhas) } : {}),
     ...(d.criacaoLivre !== undefined ? { criacaoLivre: d.criacaoLivre === true } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dndAntecedente !== undefined && lerRegistroAntecedenteDnd(d.dndAntecedente) ? { dndAntecedente: lerRegistroAntecedenteDnd(d.dndAntecedente)! } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndMagias !== undefined ? { dndMagias: lerMagiasDnd(d.dndMagias) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndMulticlasse !== undefined ? { dndMulticlasse: lerMulticlasseDnd(d.dndMulticlasse, idDe(d.campos?.classe)) } : {}),
     // Habilidades da árvore entram/saem dos poderes conforme os hexágonos liberados.

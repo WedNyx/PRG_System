@@ -18,7 +18,7 @@ export default function ArteItem({ item, tamanho = 48, className = '' }: { item:
     style={{ width: tamanho, height: tamanho, borderColor: cor, background: `radial-gradient(circle at 50% 40%, ${cor}55, #1a1430 70%)`, boxShadow: nivel >= 2 ? `0 0 ${nivel * 4}px ${cor}aa, inset 0 0 ${tamanho / 4}px ${cor}55` : undefined }}>
     {typeof item.imagem === 'string' && item.imagem
       // eslint-disable-next-line @next/next/no-img-element
-      ? <img src={item.imagem} alt="" loading="lazy" draggable={false} className="absolute inset-0 h-full w-full object-cover" />
+      ? <img src={item.imagem} alt="" loading="lazy" draggable={false} className="absolute inset-0 h-full w-full object-contain p-0.5" />
       : icone ? <svg viewBox="0 0 512 512" width={tamanho * 0.86} height={tamanho * 0.86} aria-hidden
           style={{ filter: item.magico ? `drop-shadow(0 0 ${Math.round(tamanho / 14)}px ${a.cor})` : undefined }}>
           <g fill={a.cor} stroke={a.cor2} strokeWidth="5" strokeLinejoin="round">

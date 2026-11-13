@@ -74,3 +74,36 @@ describe('recorte de imagem do mapa', () => {
     expect(normalizarCamadas([{ url: 'https://a/b.png', w: 5, h: 5, cx: 0.5, cy: 0.5, cw: 0.5, ch: 0.5 }], 20, 15)?.[0]).toMatchObject({ cx: 0.5, cw: 0.5 })
   })
 })
+
+import { aplicarNevoa as aplicarN, compactarNevoa, expandirNevoa, mapaDeNevoa, normalizarAreasNevoa, normalizarLuz } from './mesa'
+describe('névoa e luz (v0.33.8)', () => {
+  it('guarda a névoa em faixas e lê o formato antigo', () => {
+    const s = expandirNevoa(['1,1', '3-5,2', 'lixo'])
+    expect([...s].sort()).toEqual(['1,1', '3,2', '4,2', '5,2'])
+    expect(compactarNevoa(s, 10, 10)).toEqual(['1,1', '3-5,2'])
+  })
+  it('revela um mapa 200×200 inteiro sem estourar (retângulo)', () => {
+    const r = aplicarN([], [], true, 200, 200, { x: 0, y: 0, w: 200, h: 200 })
+    expect(r).toHaveLength(200)
+    expect(expandirNevoa(r).size).toBe(40000)
+    expect(aplicarN(r, [], false, 200, 200, { x: 10, y: 0, w: 5, h: 1 })[0]).toBe('0-9,0')
+  })
+  it('áreas de névoa: só elas ficam escuras, revelada não', () => {
+    const areas = normalizarAreasNevoa([{ id: 'a', nome: 'Sala', x: 0, y: 0, w: 2, h: 2 }, { id: 'b', x: 3, y: 0, w: 1, h: 1, revelada: true }, { x: 1 }], 5, 5)!
+    expect(areas).toHaveLength(2)
+    const m = mapaDeNevoa({ cols: 5, rows: 5, areas, reveladas: new Set(['1,1']) })
+    expect([...m.slice(0, 5)]).toEqual([1, 1, 0, 0, 0])
+    expect(m[1 * 5 + 1]).toBe(0)
+    expect(mapaDeNevoa({ cols: 3, rows: 1, areas: [], reveladas: new Set() }).every(v => v === 1)).toBe(true)
+  })
+  it('a luz tira a névoa num círculo', () => {
+    const m = mapaDeNevoa({ cols: 9, rows: 9, areas: [], reveladas: new Set(), luzes: [{ x: 4.5, y: 4.5, raio: 2 }] })
+    expect(m[4 * 9 + 4]).toBe(0); expect(m[4 * 9 + 6]).toBe(0); expect(m[6 * 9 + 6]).toBe(1); expect(m[0]).toBe(1)
+  })
+  it('luz do token: limites e cor', () => {
+    expect(normalizarLuz({ brilho: 6, penumbra: 6 })).toEqual({ brilho: 6, penumbra: 6, cor: '#ffd27a' })
+    expect(normalizarLuz({ brilho: 999, penumbra: -3, cor: '#abcdef' })).toEqual({ brilho: 60, penumbra: 0, cor: '#abcdef' })
+    expect(normalizarLuz({ brilho: 0, penumbra: 0 })).toBeNull()
+    expect(normalizarLuz(null)).toBeNull()
+  })
+})

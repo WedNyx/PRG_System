@@ -6,6 +6,12 @@ export type Versao = { versao: string; data: string; titulo: string; itens: stri
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.33.8', data: '2026-11-13', titulo: 'Mapa maior, névoa por partes e luz',
+    itens: [
+      '🗺️ Mesa — mapa maior, névoa por partes e luz dos tokens: o mapa agora vai até 200 × 200 quadrados (300 m de lado), com os tamanhos prontos “Região” e “Mundo”, e o zoom afasta bem mais para ver tudo. A névoa ficou mais bonita e leve (borda suave, desenhada de uma vez em vez de milhares de quadrados) e o mestre escolhe QUE PARTES do mapa têm névoa: com a ferramenta “Partes com névoa” ele arrasta um retângulo em cima de cada sala ou região, dá nome, e revela ou esconde cada parte com um toque (no mapa ou na lista do painel); sem partes marcadas, a névoa cobre o mapa todo, como antes. “Revelar tudo”, o pincel e o retângulo continuam e agora funcionam em mapas enormes. Iluminação: o mestre escolhe a escuridão da cena (de dia claro a breu) e cada token pode ter luz própria — luz plena e penumbra em metros e a cor, com atalhos de Vela, Tocha, Lanterna, Magia de luz e Fogueira; o dono do token e o mestre definem. A luz dos personagens dos jogadores também tira a névoa por onde eles passam (o mestre pode desligar isso). O mestre vê a névoa e a escuridão mais claras para conseguir trabalhar.',
+    ],
+  },
+  {
     versao: '0.33.7', data: '2026-11-13', titulo: 'Criação livre, fontes e revisão dos sistemas',
     itens: [
       '🧪 Criação livre e pedidos que não somem: ficha de jogador criada pelo mestre agora começa em “criação livre” — atributos, perícias, habilidades, itens e nível salvam na hora, sem pedir aprovação a cada mudança, até o jogador tocar em “Terminei a criação”. O mestre liga e desliga a criação livre na própria ficha (vale para todos os sistemas; fichas que ainda aguardam a aprovação de entrada também ficam livres). Depois da criação, as áreas “com aprovação” continuam virando pedido, mas agora o que o jogador mudou continua aparecendo na ficha dele ao recarregar (antes voltava ao valor antigo e parecia que não tinha salvo, e uma mudança nova podia apagar o pedido anterior).',

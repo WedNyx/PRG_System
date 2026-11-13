@@ -5,24 +5,30 @@ import { TransformComponent, TransformWrapper, type ReactZoomPanPinchRef } from 
 import { ligarZoomSuave } from '@/lib/zoomRoda'
 import { emojiCondicao } from '@/lib/condicoes'
 import { Bolinhas } from './Combate'
-import { celulasPincel, celulasRetangulo, type Camada } from '@/lib/nuvem/mesa'
+import { celulasPincel, expandirNevoa, mapaDeNevoa, METROS_POR_CELULA_MESA, type AreaNevoa, type Camada, type LuzToken } from '@/lib/nuvem/mesa'
 
 export const CELULA = 44
-export const METROS_POR_CELULA = 1.5
-export type ModoMesa = 'mover' | 'regua' | 'ping' | 'desenhar' | 'revelar' | 'esconder' | 'area-revelar' | 'area-esconder' | 'editar-mapa'
+export const METROS_POR_CELULA = METROS_POR_CELULA_MESA
+export type ModoMesa = 'mover' | 'regua' | 'ping' | 'desenhar' | 'revelar' | 'esconder' | 'area-revelar' | 'area-esconder' | 'nevoa-area' | 'editar-mapa'
 export type Ping = { id: string; x: number; y: number; autor: string }
 export type CursorRemoto = { id: string; nome: string; x: number; y: number }
 export type TokenMapa = {
   id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; tamanho: number
   visivel: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; rodadas?: Record<string, number>; morte?: { estado?: 'caido' | 'estavel' | 'morto'; sucessos?: number; falhas?: number; futuras?: number } | null; podeMover: boolean; meu: boolean
+  /** Luz própria (v0.33.8) e se é personagem de jogador (a luz dele tira a névoa). */
+  luz?: LuzToken | null; jogador?: boolean
 }
 
 type Props = {
   cols: number; rows: number; fundo: string | null; camadas: Camada[]
-  fogAtivo: boolean; fogRevelado: string[]; tokens: TokenMapa[]; desenhos: { id: string; cor: string; pontos: number[] }[]
+  fogAtivo: boolean; fogRevelado: string[]; tokens: TokenMapa[]
+  /** v0.33.8: partes com névoa (vazio = mapa todo), escuridão da cena (0–100) e se a luz dos personagens tira a névoa. */
+  fogAreas?: AreaNevoa[]; escuridao?: number; luzRevela?: boolean
+  onCriarAreaNevoa?: (r: { x: number; y: number; w: number; h: number }) => void; onTocarAreaNevoa?: (id: string) => void
+  desenhos: { id: string; cor: string; pontos: number[] }[]
   cursores: CursorRemoto[]; pings: Ping[]; admin: boolean; modo: ModoMesa; cor: string; pincel: number
   camadaSel: string | null; onSelecionarCamada: (id: string | null) => void; onAlterarCamada: (c: Camada) => void
-  onMoverToken: (id: string, x: number, y: number) => void; onNevoa: (celulas: string[], revelar: boolean) => void
+  onMoverToken: (id: string, x: number, y: number) => void; onNevoa: (celulas: string[], revelar: boolean, retangulo?: { x: number; y: number; w: number; h: number }) => void
   onPing: (x: number, y: number) => void; onTokenClick: (id: string) => void; onDesenhar: (pontos: number[], id: string) => void; onCursor: (x: number, y: number) => void
   /** Ao vivo (para os outros verem): token sendo arrastado e traço sendo desenhado. */
   onArrastando?: (id: string, x: number, y: number) => void; onTracando?: (id: string, pontos: number[]) => void
@@ -41,7 +47,7 @@ export default function MapaMesa(p: Props) {
   const { cols, rows, admin, modo } = p
   const ref = useRef<HTMLDivElement>(null)
   const largura = cols * CELULA, altura = rows * CELULA
-  const reveladas = useMemo(() => new Set(p.fogRevelado), [p.fogRevelado])
+  const reveladas = useMemo(() => expandirNevoa(p.fogRevelado), [p.fogRevelado])
   const [arrastando, setArrastando] = useState<string | null>(null)
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null)
   const [regua, setRegua] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
@@ -53,7 +59,7 @@ export default function MapaMesa(p: Props) {
   const tracoId = useRef('')
   const houveDrag = useRef(false)
   const zoom = useRef<ReactZoomPanPinchRef>(null)
-  useEffect(() => ligarZoomSuave(zoom.current, 0.2, 4), [])
+  useEffect(() => ligarZoomSuave(zoom.current, 0.05, 4), [])
   // Toque/clique num token: só vale no evento “click”. Abrir a janela no “pointerup” fazia o clique-fantasma
   // do celular (que vem depois do toque) cair na janela recém-aberta e fechá-la na hora.
   const tokenTocado = useRef<string | null>(null)
@@ -130,7 +136,15 @@ export default function MapaMesa(p: Props) {
     setArrastando(null); setDragPos(null); inicio.current = null; setRegua(null)
     if (traco && traco.length >= 4) p.onDesenhar(traco, tracoId.current)
     setTraco(null)
-    if (area) { p.onNevoa(celulasRetangulo(area.x1, area.y1, area.x2, area.y2), modo === 'area-revelar'); setArea(null) }
+    if (area) {
+      const r = { x: Math.min(area.x1, area.x2), y: Math.min(area.y1, area.y2), w: Math.abs(area.x2 - area.x1) + 1, h: Math.abs(area.y2 - area.y1) + 1 }
+      if (modo === 'nevoa-area') {
+        // Toque rápido dentro de uma área: revela/esconde ela. Arrastar: cria uma área nova.
+        const tocada = r.w === 1 && r.h === 1 ? [...(p.fogAreas ?? [])].reverse().find(a => r.x >= a.x && r.x < a.x + a.w && r.y >= a.y && r.y < a.y + a.h) : undefined
+        if (tocada) p.onTocarAreaNevoa?.(tocada.id); else if (r.w * r.h >= 2) p.onCriarAreaNevoa?.(r)
+      } else p.onNevoa([], modo === 'area-revelar', r)
+      setArea(null)
+    }
     if (pintando.current && pintura.size) p.onNevoa([...pintura], modo === 'revelar')
     pintando.current = false; setPintura(new Set())
     void e
@@ -142,24 +156,28 @@ export default function MapaMesa(p: Props) {
     if (modo === 'ping') { if (cel) p.onPing(cel.x, cel.y); return }
     if (modo === 'regua') { if (cel) setRegua({ x1: cel.x, y1: cel.y, x2: cel.x, y2: cel.y }); return }
     if (modo === 'desenhar') { const q = ponto(e); if (q) { tracoId.current = crypto.randomUUID(); setTraco([Math.round(q.px), Math.round(q.py)]) } return }
-    if (admin && (modo === 'area-revelar' || modo === 'area-esconder')) { if (cel) setArea({ x1: cel.x, y1: cel.y, x2: cel.x, y2: cel.y }); return }
+    if (admin && (modo === 'area-revelar' || modo === 'area-esconder' || modo === 'nevoa-area')) { if (cel) setArea({ x1: cel.x, y1: cel.y, x2: cel.x, y2: cel.y }); return }
     if (admin && (modo === 'revelar' || modo === 'esconder')) { pintando.current = true; if (cel) setPintura(new Set(celulasPincel(cel.x, cel.y, p.pincel))) }
   }
 
-  // Névoa: o mestre vê a prévia do que está pintando.
-  // Partes pesadas (grade, névoa, desenhos) só são refeitas quando mudam: arrastar e desenhar ficam leves.
-  const camadaNevoa = useMemo(() => {
+  // Névoa (v0.33.8): desenhada num canvas pequeno (uma célula = 4 px) com borda suave, em vez de milhares de quadrados.
+  // O mestre vê a prévia do que está pintando; a luz dos personagens tira a névoa por onde passa (se a cena deixar).
+  const areasNevoa = useMemo(() => p.fogAreas ?? [], [p.fogAreas])
+  const luzesQueRevelam = useMemo(() => p.luzRevela === false ? [] : p.tokens.filter(t => t.jogador && t.luz && t.visivel).map(t => ({
+    x: t.x + t.tamanho / 2, y: t.y + t.tamanho / 2, raio: (t.luz!.brilho + t.luz!.penumbra) / METROS_POR_CELULA + t.tamanho / 2 })), [p.tokens, p.luzRevela])
+  const nevoa = useMemo(() => {
     if (!p.fogAtivo) return null
-    const rects = []
-    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
-      const k = `${x},${y}`
-      let rev = reveladas.has(k)
-      if (pintura.has(k)) rev = modo === 'revelar'
-      if (area && x >= Math.min(area.x1, area.x2) && x <= Math.max(area.x1, area.x2) && y >= Math.min(area.y1, area.y2) && y <= Math.max(area.y1, area.y2)) rev = modo === 'area-revelar'
-      if (!rev) rects.push(<rect key={k} x={x * CELULA} y={y * CELULA} width={CELULA + 0.5} height={CELULA + 0.5} fill={admin ? 'rgba(5,4,12,0.55)' : 'rgb(5,4,12)'} />)
-    }
-    return <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 20 }}>{rects}</svg>
-  }, [p.fogAtivo, rows, cols, reveladas, pintura, area, modo, admin, largura, altura])
+    const vis = new Set(reveladas)
+    if (pintura.size) for (const k of pintura) { if (modo === 'revelar') vis.add(k); else vis.delete(k) }
+    const m = mapaDeNevoa({ cols, rows, areas: areasNevoa, reveladas: vis, luzes: luzesQueRevelam })
+    if (area && (modo === 'area-revelar' || modo === 'area-esconder'))
+      for (let y = Math.min(area.y1, area.y2); y <= Math.max(area.y1, area.y2); y++) for (let x = Math.min(area.x1, area.x2); x <= Math.max(area.x1, area.x2); x++) m[y * cols + x] = modo === 'area-revelar' ? 0 : 1
+    return m
+  }, [p.fogAtivo, cols, rows, areasNevoa, reveladas, pintura, area, modo, luzesQueRevelam])
+  const comNevoa = (x: number, y: number) => !!nevoa && x >= 0 && y >= 0 && x < cols && y < rows && nevoa[y * cols + x] === 1
+  const camadaNevoa = nevoa ? <CanvasNevoa cols={cols} rows={rows} mapa={nevoa} admin={admin} largura={largura} altura={altura} /> : null
+  const luzes = useMemo(() => p.tokens.filter(t => t.luz && (t.visivel || admin)).map(t => ({ x: t.x + t.tamanho / 2, y: t.y + t.tamanho / 2, luz: t.luz!, tam: t.tamanho })), [p.tokens, admin])
+  const camadaEscuro = (p.escuridao ?? 0) > 0 ? <CanvasLuz cols={cols} rows={rows} largura={largura} altura={altura} escuridao={p.escuridao ?? 0} admin={admin} luzes={luzes} /> : null
   const camadaGrade = useMemo(() => <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 2 }}>
     {Array.from({ length: cols + 1 }, (_, i) => <line key={'v' + i} x1={i * CELULA} y1={0} x2={i * CELULA} y2={altura} stroke="rgba(148,163,184,0.18)" />)}
     {Array.from({ length: rows + 1 }, (_, i) => <line key={'h' + i} x1={0} y1={i * CELULA} x2={largura} y2={i * CELULA} stroke="rgba(148,163,184,0.18)" />)}
@@ -169,7 +187,7 @@ export default function MapaMesa(p: Props) {
   const medida = regua ? (() => { const n = Math.max(Math.abs(regua.x2 - regua.x1), Math.abs(regua.y2 - regua.y1)); return { n, m: Math.round(n * METROS_POR_CELULA * 10) / 10 } })() : null
 
   return <div className="h-full w-full overflow-hidden bg-(--s-0b0a14)">
-    <TransformWrapper ref={zoom} minScale={0.2} maxScale={4} centerOnInit doubleClick={{ disabled: true }} wheel={{ disabled: true }}
+    <TransformWrapper ref={zoom} minScale={0.05} maxScale={4} centerOnInit doubleClick={{ disabled: true }} wheel={{ disabled: true }}
       panning={{ disabled: modo !== 'mover' || !!arrastando, velocityDisabled: true }}>
       <TransformComponent wrapperClass="!w-full !h-full" contentClass="p-6">
         <div ref={ref} className="relative select-none touch-none overflow-hidden rounded-lg border border-(--a-2c2840)"
@@ -199,7 +217,7 @@ export default function MapaMesa(p: Props) {
           {p.tokens.map(t => {
             const emDrag = arrastando === t.id && dragPos && t.podeMover
             const x = emDrag ? dragPos.x : t.x, y = emDrag ? dragPos.y : t.y
-            if (p.fogAtivo && !admin && !t.meu && !reveladas.has(`${x},${y}`)) return null
+            if (p.fogAtivo && !admin && !t.meu && comNevoa(x, y)) return null
             const lado = t.tamanho * CELULA
             const pct = t.hp_max ? Math.max(0, Math.min(1, (t.hp_atual ?? 0) / t.hp_max)) : null
             const morto = t.hp_max ? (t.hp_atual ?? 0) <= 0 : false
@@ -234,8 +252,12 @@ export default function MapaMesa(p: Props) {
                 <circle cx={(alvo.x + alvo.tamanho / 2) * CELULA} cy={(alvo.y + alvo.tamanho / 2) * CELULA} r={alvo.tamanho * CELULA * 0.62} fill="none" stroke="#fbbf24" strokeWidth={3} /></>}
             </svg>
           })()}
+          {camadaEscuro}
           {camadaNevoa}
-          {area && <div className="pointer-events-none absolute border-2 border-dashed border-amber-300 bg-amber-300/10" style={{ zIndex: 25, left: Math.min(area.x1, area.x2) * CELULA, top: Math.min(area.y1, area.y2) * CELULA, width: (Math.abs(area.x2 - area.x1) + 1) * CELULA, height: (Math.abs(area.y2 - area.y1) + 1) * CELULA }} />}
+          {admin && p.fogAtivo && (modo === 'nevoa-area' || modo === 'revelar' || modo === 'esconder' || modo === 'area-revelar' || modo === 'area-esconder') && areasNevoa.map(a => <div key={a.id}
+            className={'pointer-events-none absolute border-2 ' + (a.revelada ? 'border-dashed border-emerald-300/70' : 'border-sky-300/80')} style={{ zIndex: 24, left: a.x * CELULA, top: a.y * CELULA, width: a.w * CELULA, height: a.h * CELULA }}>
+            <span className="absolute left-1 top-1 rounded bg-black/75 px-1.5 py-0.5 text-[11px] text-white">{a.revelada ? '👁️' : '🌫️'} {a.nome || 'Área'}</span></div>)}
+          {area && <div className={'pointer-events-none absolute border-2 border-dashed ' + (modo === 'nevoa-area' ? 'border-sky-300 bg-sky-300/15' : 'border-amber-300 bg-amber-300/10')} style={{ zIndex: 25, left: Math.min(area.x1, area.x2) * CELULA, top: Math.min(area.y1, area.y2) * CELULA, width: (Math.abs(area.x2 - area.x1) + 1) * CELULA, height: (Math.abs(area.y2 - area.y1) + 1) * CELULA }} />}
 
           {regua && medida && <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 40 }}>
             <line x1={regua.x1 * CELULA + CELULA / 2} y1={regua.y1 * CELULA + CELULA / 2} x2={regua.x2 * CELULA + CELULA / 2} y2={regua.y2 * CELULA + CELULA / 2} stroke="#fbbf24" strokeWidth={3} strokeDasharray="8 4" />
@@ -251,4 +273,64 @@ export default function MapaMesa(p: Props) {
       </TransformComponent>
     </TransformWrapper>
   </div>
+}
+
+const PX = 4
+/** Névoa num canvas: 4 px por célula, desfocada de leve para a borda ficar suave; o mestre vê transparente. */
+function CanvasNevoa({ cols, rows, mapa, admin, largura, altura }: { cols: number; rows: number; mapa: Uint8Array; admin: boolean; largura: number; altura: number }) {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const c = ref.current; const ctx = c?.getContext('2d'); if (!c || !ctx) return
+    ctx.clearRect(0, 0, c.width, c.height)
+    ctx.filter = 'blur(2px)'
+    ctx.fillStyle = '#07060e'
+    for (let y = 0; y < rows; y++) {
+      let ini = -1
+      for (let x = 0; x <= cols; x++) {
+        const tem = x < cols && mapa[y * cols + x] === 1
+        if (tem && ini < 0) ini = x
+        // Sangra 1 px para fora (a borda do mapa não fica clara com o desfoque).
+        if (!tem && ini >= 0) { ctx.fillRect(ini * PX - (ini === 0 ? 4 : 0), y * PX - (y === 0 ? 4 : 0), (x - ini) * PX + (ini === 0 ? 4 : 0) + (x === cols ? 4 : 0), PX + (y === 0 ? 4 : 0) + (y === rows - 1 ? 4 : 0)); ini = -1 }
+      }
+    }
+    ctx.filter = 'none'
+  }, [cols, rows, mapa])
+  return <canvas ref={ref} width={cols * PX} height={rows * PX} aria-hidden className="pointer-events-none absolute inset-0"
+    style={{ width: largura, height: altura, zIndex: 20, opacity: admin ? 0.55 : 1 }} />
+}
+
+/** Escuridão da cena com a luz dos tokens: luz plena no raio de brilho, meia-luz na penumbra e a cor da luz por cima. */
+function CanvasLuz({ cols, rows, largura, altura, escuridao, admin, luzes }: {
+  cols: number; rows: number; largura: number; altura: number; escuridao: number; admin: boolean; luzes: { x: number; y: number; luz: LuzToken; tam: number }[]
+}) {
+  const ref = useRef<HTMLCanvasElement>(null)
+  const R = 6
+  useEffect(() => {
+    const c = ref.current; const ctx = c?.getContext('2d'); if (!c || !ctx) return
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.clearRect(0, 0, c.width, c.height)
+    ctx.fillStyle = `rgba(3,3,12,${Math.min(1, escuridao / 100) * 0.94})`
+    ctx.fillRect(0, 0, c.width, c.height)
+    for (const l of luzes) {
+      const cx = l.x * R, cy = l.y * R
+      const b = (l.luz.brilho / METROS_POR_CELULA + l.tam / 2) * R, total = ((l.luz.brilho + l.luz.penumbra) / METROS_POR_CELULA + l.tam / 2) * R
+      if (total <= 0) continue
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, total)
+      const f = Math.max(0.001, Math.min(0.999, b / total))
+      g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(f, 'rgba(0,0,0,0.97)'); g.addColorStop(f + (1 - f) * 0.5, 'rgba(0,0,0,0.6)'); g.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.globalCompositeOperation = 'destination-out'
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, total, 0, Math.PI * 2); ctx.fill()
+    }
+    // Brilho colorido das luzes (bem leve).
+    ctx.globalCompositeOperation = 'source-over'
+    for (const l of luzes) {
+      const cx = l.x * R, cy = l.y * R, total = ((l.luz.brilho + l.luz.penumbra) / METROS_POR_CELULA + l.tam / 2) * R
+      if (total <= 0) continue
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, total)
+      g.addColorStop(0, l.luz.cor + '1c'); g.addColorStop(1, l.luz.cor + '00')
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, total, 0, Math.PI * 2); ctx.fill()
+    }
+  }, [cols, rows, escuridao, luzes])
+  return <canvas ref={ref} width={cols * R} height={rows * R} aria-hidden className="pointer-events-none absolute inset-0"
+    style={{ width: largura, height: altura, zIndex: 15, opacity: admin ? 0.5 : 1 }} />
 }

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { ator, buscarFicha, nomeDaCampanha, notificar, participantes, lerJson, ok, papelNaCampanha, q, rest, rota, rpc, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar, type Papel } from '@/lib/nuvem/validacao'
-import { aplicarNevoa, corValida, filtroVisibilidade, normalizarCamadas, normalizarCondicoes, normalizarIniciativa, normalizarPontos, podeMoverToken, todasCelulas, urlValida, type Movimento, type Visibilidade } from '@/lib/nuvem/mesa'
+import { aplicarNevoa, compactarNevoa, corValida, filtroVisibilidade, MAX_GRADE, normalizarAreasNevoa, normalizarCamadas, normalizarLuz, normalizarCondicoes, normalizarIniciativa, normalizarPontos, podeMoverToken, todasCelulas, urlValida, type Movimento, type Visibilidade } from '@/lib/nuvem/mesa'
 import { rolarExpressao } from '@/lib/dice'
 import { aplicarDano, atualizarMorte, avisarMesa, danoComMorte, fichaDeCombate, lerRegrasCombate, mudarFicha, tokenCombate, vidaDasFichas } from '@/lib/nuvem/combateServidor'
 import { aceitarMedida, aoCair, lerMorte, MEDIDAS, testeMorte, type EstadoMorte } from '@/lib/sistemas/morte'
@@ -244,7 +244,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       if (!urlValida(b.mapa_url ?? null)) throw new ErroApi(400, 'Link do mapa inválido (use https://).')
       const existentes = await rest<{ id: string }[]>(`prg_cenas?select=id&campanha_id=eq.${q(cid)}&limit=60`)
       if (existentes.length >= 50) throw new ErroApi(429, 'Limite de 50 cenas por campanha.')
-      const gc = inteiro(b.grid_cols, 5, 100) ?? 20, gr = inteiro(b.grid_rows, 5, 100) ?? 15
+      const gc = inteiro(b.grid_cols, 5, MAX_GRADE) ?? 20, gr = inteiro(b.grid_rows, 5, MAX_GRADE) ?? 15
       const camadas = b.camadas === undefined ? [] : normalizarCamadas(b.camadas, gc, gr)
       if (!camadas) throw new ErroApi(400, 'Imagens do mapa inválidas.')
       const [c] = await rest<Cena[]>('prg_cenas', { method: 'POST', prefer: 'return=representation', body: JSON.stringify({
@@ -259,11 +259,18 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       const m: Record<string, unknown> = {}
       if (typeof b.nome === 'string' && b.nome.trim()) m.nome = b.nome.trim().slice(0, 80)
       if (b.mapa_url !== undefined) { if (!urlValida(b.mapa_url)) throw new ErroApi(400, 'Link do mapa inválido (use https://).'); m.mapa_url = b.mapa_url || null }
-      if (b.grid_cols !== undefined) m.grid_cols = inteiro(b.grid_cols, 5, 100)
-      if (b.grid_rows !== undefined) m.grid_rows = inteiro(b.grid_rows, 5, 100)
+      if (b.grid_cols !== undefined) m.grid_cols = inteiro(b.grid_cols, 5, MAX_GRADE)
+      if (b.grid_rows !== undefined) m.grid_rows = inteiro(b.grid_rows, 5, MAX_GRADE)
       if (typeof b.fog_ativo === 'boolean') m.fog_ativo = b.fog_ativo
       if (b.fog_limpar === true) m.fog_revelado = []
-      if (b.nevoa_tudo === true) m.fog_revelado = todasCelulas(m.grid_cols as number ?? c.grid_cols, m.grid_rows as number ?? c.grid_rows)
+      if (b.nevoa_tudo === true) { const gc = (m.grid_cols as number) ?? c.grid_cols, gr = (m.grid_rows as number) ?? c.grid_rows; m.fog_revelado = compactarNevoa(new Set(todasCelulas(gc, gr)), gc, gr) }
+      if (b.fog_areas !== undefined) {
+        const areas = normalizarAreasNevoa(b.fog_areas, (m.grid_cols as number) ?? c.grid_cols, (m.grid_rows as number) ?? c.grid_rows)
+        if (!areas) throw new ErroApi(400, 'Áreas de névoa inválidas (máximo 80).')
+        m.fog_areas = areas
+      }
+      if (b.escuridao !== undefined) m.escuridao = inteiro(b.escuridao, 0, 100) ?? 0
+      if (typeof b.luz_revela_nevoa === 'boolean') m.luz_revela_nevoa = b.luz_revela_nevoa
       if (typeof b.tokens_travados === 'boolean') m.tokens_travados = b.tokens_travados
       if (b.camadas !== undefined) {
         const camadas = normalizarCamadas(b.camadas, (m.grid_cols as number) ?? c.grid_cols, (m.grid_rows as number) ?? c.grid_rows)
@@ -271,7 +278,11 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         m.camadas = camadas
       }
       if (!Object.keys(m).length) throw new ErroApi(400, 'Nada para alterar.')
-      await rest(`prg_cenas?id=eq.${q(c.id)}`, { method: 'PATCH', body: JSON.stringify(m) })
+      await rest(`prg_cenas?id=eq.${q(c.id)}`, { method: 'PATCH', body: JSON.stringify(m) }).catch(er => {
+        // Sem a migração 028: mapa acima de 100 ou névoa por partes/luz ainda não existem no banco.
+        if (m.fog_areas !== undefined || m.escuridao !== undefined || m.luz_revela_nevoa !== undefined || (m.grid_cols as number) > 100 || (m.grid_rows as number) > 100) throw new ErroApi(409, 'Esta função precisa da atualização do banco (migração 028). Avise o administrador.')
+        throw er
+      })
       return ok({ ok: true })
     }
     case 'cena_ativar': {
@@ -290,7 +301,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
     case 'nevoa': {
       exigirAdmin(admin)
       const c = await cenaDaCampanha(cid, b.cenaId)
-      const novo = aplicarNevoa(c.fog_revelado ?? [], b.celulas, b.revelar === true, c.grid_cols, c.grid_rows)
+      const novo = aplicarNevoa(c.fog_revelado ?? [], b.celulas, b.revelar === true, c.grid_cols, c.grid_rows, b.retangulo)
       await rest(`prg_cenas?id=eq.${q(c.id)}`, { method: 'PATCH', body: JSON.stringify({ fog_revelado: novo }) })
       return ok({ ok: true })
     }
@@ -323,7 +334,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         campanha_id: cid, cena_id: c.id, ficha_id: ficha, dono_id: dono, nome: nome || nomeFicha.slice(0, 60) || 'Personagem', cor: b.cor ?? '#a78bfa', imagem_url: b.imagem_url || null,
         ...(await posicaoLivre(c, b.x, b.y)), npc: admin && b.npc === true,
         visivel: !(admin && b.visivel === false), hp_max: hp, hp_atual: hp,
-        tamanho: inteiro(b.tamanho, 1, 4) ?? 1, movimento: admin && (b.movimento === 'todos' || b.movimento === 'mestre') ? b.movimento : 'dono',
+        tamanho: inteiro(b.tamanho, 1, 4) ?? 1, ...(normalizarLuz(b.luz) ? { luz: normalizarLuz(b.luz) } : {}), movimento: admin && (b.movimento === 'todos' || b.movimento === 'mestre') ? b.movimento : 'dono',
       }) })
       // Casa escolhida pelo servidor: o banco acha a casa livre com a cena travada (vários tokens entrando juntos não empilham).
       if (inteiro(b.x, 0, 1e6) === null || inteiro(b.y, 0, 1e6) === null) {
@@ -368,6 +379,8 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       if (admin || dono) {
         if (b.imagem_url !== undefined) { if (!urlValida(b.imagem_url)) throw new ErroApi(400, 'Imagem inválida.'); m.imagem_url = b.imagem_url || null }
         if (corValida(b.cor)) m.cor = b.cor
+        // Luz própria do token (tocha, magia, visão…): o dono e o mestre definem.
+        if (b.luz !== undefined) m.luz = normalizarLuz(b.luz)
       }
       if (admin) {
         if (b.movimento === 'dono' || b.movimento === 'todos' || b.movimento === 'mestre') m.movimento = b.movimento
@@ -377,7 +390,10 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         if (b.hp_max !== undefined) m.hp_max = inteiro(b.hp_max, 0, 100000)
       }
       if (!Object.keys(m).length) { if (b.hp_atual !== undefined) return ok({ ok: true }); throw new ErroApi(400, 'Nada para alterar.') }
-      await rest(`prg_tokens?id=eq.${q(t.id)}`, { method: 'PATCH', body: JSON.stringify(m) })
+      await rest(`prg_tokens?id=eq.${q(t.id)}`, { method: 'PATCH', body: JSON.stringify(m) }).catch(er => {
+        if (m.luz !== undefined) throw new ErroApi(409, 'A luz dos tokens precisa da atualização do banco (migração 028). Avise o administrador.')
+        throw er
+      })
       return ok({ ok: true })
     }
     case 'token_excluir': {

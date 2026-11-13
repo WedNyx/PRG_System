@@ -2,6 +2,8 @@
 const M='11111111-1111-4111-8111-111111111111', J='22222222-2222-4222-8222-222222222222', X='33333333-3333-4333-8333-333333333333'
 const BASE=process.env.PRG_BASE || 'http://localhost:3000'; let falhas=0
 async function call(quem, metodo, caminho, body){ const r=await fetch(BASE+'/api/prg/'+caminho,{method:metodo,headers:{'content-type':'application/json','x-prg-aventureiro':quem,origin:BASE},body:body===undefined?undefined:JSON.stringify(body)}); let d={}; try{d=await r.json()}catch{}; return {s:r.status,d} }
+// v0.33.8: a névoa vem em faixas (“a-b,y”); conta as células.
+const celulasNevoa=l=>l.reduce((n,k)=>{ const m=/^(\d+)(?:-(\d+))?,\d+$/.exec(k); return n+(m?(m[2]===undefined?1:Number(m[2])-Number(m[1])+1):0) },0)
 function check(n,c,e){ console.log((c?'✔':'✘')+' '+n+(c?'':'  '+JSON.stringify(e).slice(0,300))); if(!c) falhas++ }
 let r=await call(M,'POST','campanhas',{nome:'V06',sistema:'Lunethernnyis — Opositores',modeloPadrao:'C'}); const cid=r.d.campanha.id
 // v0.10.0: a mesa só abre com a sessão aberta pelo mestre.
@@ -20,7 +22,7 @@ r=await mesa(M,{acao:'cena_criar',nome:'Com imagem',grid_cols:10,grid_rows:6,cam
 r=await mesa(M,{acao:'cena_editar',cenaId:c,camadas:[{url:'javascript:alert(1)'}]}); check('camada com link perigoso recusada', r.s===400, r)
 // névoa tudo
 await mesa(M,{acao:'cena_editar',cenaId:c,fog_ativo:true})
-r=await mesa(M,{acao:'cena_editar',cenaId:c,nevoa_tudo:true}); r=await call(J,'GET','mesa/'+cid); check('revelar tudo', r.d.cenaAtiva.fog_revelado.length===240, r.d.cenaAtiva.fog_revelado.length)
+r=await mesa(M,{acao:'cena_editar',cenaId:c,nevoa_tudo:true}); r=await call(J,'GET','mesa/'+cid); check('revelar tudo', celulasNevoa(r.d.cenaAtiva.fog_revelado)===240, r.d.cenaAtiva.fog_revelado)
 await mesa(M,{acao:'cena_editar',cenaId:c,fog_limpar:true}); r=await call(J,'GET','mesa/'+cid); check('esconder tudo', r.d.cenaAtiva.fog_revelado.length===0, r)
 // token do jogador sem ficha
 r=await mesa(J,{acao:'token_criar',cenaId:c,nome:'Sol'}); check('jogador coloca token próprio sem ficha', r.s===201 && r.d.token.dono_id===J, r); const tj=r.d.token.id

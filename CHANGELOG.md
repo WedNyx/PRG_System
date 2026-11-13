@@ -2,6 +2,14 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.33.8 — Mesa: mapa maior, névoa por partes e luz dos tokens (2026-11-13)
+
+- Mapa até 200 × 200 (`MAX_GRADE`); zoom mínimo 0,05.
+- Névoa guardada em faixas por linha (`compactarNevoa`/`expandirNevoa`, compatível com o formato antigo); `nevoa` aceita `retangulo`.
+- Partes do mapa com névoa (`prg_cenas.fog_areas`), ferramenta “Partes com névoa” e lista no painel; névoa desenhada em canvas com borda suave (`mapaDeNevoa`).
+- Escuridão da cena (`prg_cenas.escuridao`), luz própria dos tokens (`prg_tokens.luz`: brilho, penumbra, cor) e `luz_revela_nevoa`.
+- Banco: migração `028_mesa_nevoa_luz.sql`. e2e novo: `v33-mesa-nevoa-luz`.
+
 ## v0.33.7 — Criação livre, fontes e revisão dos sistemas (2026-11-13)
 - 🧪 Criação livre e pedidos que não somem: ficha de jogador criada pelo mestre agora começa em “criação livre” — atributos, perícias, habilidades, itens e nível salvam na hora, sem pedir aprovação a cada mudança, até o jogador tocar em “Terminei a criação”. O mestre liga e desliga a criação livre na própria ficha (vale para todos os sistemas; fichas que ainda aguardam a aprovação de entrada também ficam livres). Depois da criação, as áreas “com aprovação” continuam virando pedido, mas agora o que o jogador mudou continua aparecendo na ficha dele ao recarregar (antes voltava ao valor antigo e parecia que não tinha salvo, e uma mudança nova podia apagar o pedido anterior).
 - ✅ Qualidade: teste novo de dispositivos (11 telas em celular pequeno, celular, iPhone, tablet em pé e deitado, computador e tela grande) que confere rolagem para o lado, erros e acessibilidade; nenhuma tela rola para o lado nem dá erro. Correções de acessibilidade: a faixa de barras de vida da ficha agora dá para rolar pelo teclado, os números das barras ficaram maiores para o dedo, a lista do chat da mesa ficou certa para leitores de tela e o botão de esconder o aviso da sessão cresceu. O GitHub agora roda todos os testes, os tipos, o lint dos módulos novos e o build em toda PR, e há um passo a passo de deploy com checagem rápida da produção.

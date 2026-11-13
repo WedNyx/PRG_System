@@ -12,6 +12,7 @@ import type { DadosFicha } from './tipos'
 import { classesDaFicha, espacosDeMagia } from './dnd2024Classes'
 import { progressoDaFichaDnd, lerEscolhasDnd } from './dnd2024Ficha'
 import { ANTECEDENTES_GUIADOS, PERICIAS_DND_ORIGENS, lerRegistroAntecedenteDnd, magiasDeAntecedenteDnd } from './dnd2024Antecedentes'
+import { magiasDoHumanoDnd } from './dnd2024MagiaHumano'
 
 export type Treino = 'proficiente' | 'especialista'
 export type EfeitosDnd = {
@@ -28,7 +29,7 @@ export type EfeitosDnd = {
 /** Variáveis que as fórmulas do D&D podem usar (o construtor de sistemas também as conhece). */
 export const VARS_DND = ['dnd_nivel', 'dnd_prof', 'dnd_ca_extra', 'dnd_pv_extra', 'dnd_ini_extra', 'dnd_desl_extra', 'dnd_furias', 'dnd_dano_furia',
   'dnd_inspiracao', 'dnd_canalizar', 'dnd_forma_selvagem', 'dnd_retomar', 'dnd_surto', 'dnd_indomavel', 'dnd_foco', 'dnd_feiticaria', 'dnd_cura_maos',
-  'dnd_inimigo', 'dnd_truques', 'dnd_preparadas', 'dnd_pacto', 'dnd_pacto_nivel', 'dnd_furtivo', 'dnd_sorte', 'dnd_origem_magia_gratis',
+  'dnd_inimigo', 'dnd_truques', 'dnd_preparadas', 'dnd_pacto', 'dnd_pacto_nivel', 'dnd_furtivo', 'dnd_sorte', 'dnd_origem_magia_gratis', 'dnd_humano_magia_gratis',
   ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => 'dnd_espacos_' + n)] as const
 
 const SAVES = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR']
@@ -37,7 +38,7 @@ const SALVA: Record<string, string> = { FOR: 'resist_forca', DES: 'resist_destre
 /** Número da coluna da tabela (“2”, “+3”, “1d6”, “+10 ft.”, “—”). */
 const numero = (v: string | undefined) => { const m = (v ?? '').match(/(\d+)/); return m ? Number(m[1]) : 0 }
 
-export function efeitosDnd2024(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndAntecedente'>, vars: Record<string, number>): EfeitosDnd {
+export function efeitosDnd2024(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndAntecedente' | 'dndTalentoHumano'>, vars: Record<string, number>): EfeitosDnd {
   const v: Record<string, number> = Object.fromEntries(VARS_DND.map(k => [k, 0]))
   const treino: EfeitosDnd['treino'] = {}, bonus: EfeitosDnd['bonus'] = {}
   const p = progressoDaFichaDnd(d)
@@ -114,6 +115,7 @@ export function efeitosDnd2024(d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'd
   if (temTalento('tough')) v.dnd_pv_extra += 2 * total
   if (temTalento('lucky')) v.dnd_sorte = prof
   if (magiasDeAntecedenteDnd(d)) v.dnd_origem_magia_gratis = 1
+  if (magiasDoHumanoDnd(d)) v.dnd_humano_magia_gratis = 1
   const sentidos = escolhas['esp-elfo-sentidos']
   if (p.especieId === 'elfo' && sentidos) dar(sentidos, 'proficiente', 'Sentidos Aguçados')
   const periciaHumano = escolhas['esp-humano-habilidoso']

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { enviarImagemNuvem, ErroNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 import ArteItem from './ArteItem'
+import { ICONES_RPG } from '@/lib/iconesRpg'
 import { arteDoItem, CORES_FORJA, corDaRaridade, FORMAS, nomeAleatorio, RARIDADES, type ArteItem as ArteItemT } from '@/lib/itensArte'
 import { Backpack, Dice5, Gift, Minus, Moon, Pencil, Plus, Shield, Sparkles, Trash2, X } from 'lucide-react'
 import type { Calculo } from '@/lib/sistemas/calculo'
@@ -108,7 +109,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
           const danoCriticoLivre = s.id === 'dnd5e-srd' && it.categoria === 'arma' && !armaDnd && it.dano ? expressaoDanoLivreDnd(it.dano, true, modLivre) : null
           return <li key={it.id} className={'rounded-xl border p-3 ' + (eq ? 'border-(--a-8b6cba) bg-(--s-2b2143)' : 'border-transparent bg-(--s-171325)') + (n <= 0 ? ' opacity-60' : '')}>
             <div className="flex items-center gap-3">
-              <ArteItem item={it} tamanho={46} />
+              <ArteItem item={it} tamanho={46} estiloDnd={s.id === 'dnd5e-srd'} />
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">{it.nome}{eq && <span className="ml-2 rounded bg-(--a-5b4380) px-1.5 py-0.5 text-[10px]">equipado</span>}</span>
                 <span className="block text-[11px]">{it.raridade && <strong style={{ color: corDaRaridade(it.raridade) }}>{RARIDADES.find(x => x.id === it.raridade)?.nome} · </strong>}<span className="text-(--a-c4b6d4)">{it.peso ? `${mostrarPeso(it.peso, c.carga.unidade)} cada` : ''}</span></span>
@@ -297,21 +298,21 @@ function Janela({ titulo, fechar, children, ampla = false }: { titulo: string; f
 
 /** Editor de item (usado na ficha e na biblioteca do mestre). `s` pode faltar (biblioteca sem sistema conhecido). */
 /** Foto do item (da galeria do celular ou do computador). Com foto, ela aparece no lugar do desenho da forja. */
-function FotoDoItem({ it, setIt }: { it: Item; setIt: (i: Item) => void }) {
+function FotoDoItem({ it, setIt, estiloDnd = false }: { it: Item; setIt: (i: Item) => void; estiloDnd?: boolean }) {
   const [ocupado, setOcupado] = useState(false)
-  if (!NUVEM_ATIVA) return null
   async function enviar(f: File) {
     setOcupado(true)
     try { setIt({ ...it, imagem: await enviarImagemNuvem('imagens', f, 600) }) } catch (e) { toast.error(e instanceof ErroNuvem ? e.message : 'Falha ao enviar a imagem.') } finally { setOcupado(false) }
   }
-  return <div className="flex items-center gap-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-2.5">
-    <ArteItem item={it} tamanho={64} />
+  return <div className="flex items-center gap-3 rounded-xl border border-(--a-8b6cba)/70 bg-(--s-171325) p-3">
+    <ArteItem item={it} tamanho={64} estiloDnd={estiloDnd} />
     <div className="min-w-0 flex-1 text-sm">
       <p className="font-semibold">📷 Foto do item <span className="text-xs font-normal text-(--a-c4b6d4)">(opcional)</span></p>
-      <p className="text-[11px] text-(--a-c4b6d4)">{it.imagem ? 'A foto aparece no lugar do desenho.' : 'Use uma imagem da sua galeria, ou monte o desenho na forja abaixo.'}</p>
+      <p className="text-[11px] text-(--a-c4b6d4)">{it.imagem ? 'Sua foto aparece no lugar da ilustração, sem apagar a arte selecionada.' : 'Escolha uma foto da sua galeria ou use as ilustrações da biblioteca.'}</p>
+      {!NUVEM_ATIVA && <p className="mt-1 text-xs text-amber-200">Envio de fotos indisponível neste ambiente: o armazenamento de imagens precisa estar habilitado.</p>}
       <div className="mt-1.5 flex flex-wrap gap-1.5">
-        <label className={botao + ' cursor-pointer ' + (ocupado ? 'pointer-events-none opacity-50' : '')}>{ocupado ? 'Enviando…' : it.imagem ? 'Trocar foto' : 'Escolher foto'}
-          <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void enviar(f) }} /></label>
+        <label className={botao + ' cursor-pointer border-(--a-b99bff) bg-(--s-2b2140) px-3 py-2 font-semibold ' + (ocupado || !NUVEM_ATIVA ? 'pointer-events-none opacity-50' : '')}>📷 {ocupado ? 'Enviando…' : it.imagem ? 'Trocar foto' : 'Escolher foto'}
+          <input type="file" accept="image/png,image/jpeg,image/webp" disabled={ocupado || !NUVEM_ATIVA} className="sr-only" aria-label="Escolher foto do item" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void enviar(f) }} /></label>
         {it.imagem && <button type="button" className={botao} onClick={() => setIt({ ...it, imagem: undefined })}>Usar o desenho</button>}
       </div>
     </div>
@@ -327,13 +328,14 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
   return <Janela titulo={dnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla={dnd}>
     <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return } salvar({ ...v, id: inicial.id }) }}>
       {dnd ? <div className="flex items-center gap-3 rounded-xl border border-(--a-62527e) bg-gradient-to-r from-(--s-2b2143) to-(--s-171325) p-3">
-        <ArteItem item={it} tamanho={72} />
+        <ArteItem item={it} tamanho={72} estiloDnd />
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-(--a-d3adf0)">Prévia do item</p>
           <p className="mt-1 truncate font-semibold">{it.nome || 'Sua próxima descoberta'}</p>
           <p className="mt-1 text-[11px] text-(--a-c4b6d4)">Preencha os detalhes primeiro. A arte e as cores ficam em “Personalizar aparência”.</p>
         </div>
       </div> : <><FotoDoItem it={it} setIt={setIt} />{!it.imagem && <Forja it={it} setIt={setIt} />}</>}
+      {dnd && <FotoDoItem it={it} setIt={setIt} estiloDnd />}
       <label className="block">Nome<input required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Espada longa" /></label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block">Tipo<select value={it.categoria} onChange={e => setIt({ ...it, categoria: e.target.value as Item['categoria'] })} className={input + ' mt-1'}>{CATEGORIAS_ITEM.map(c => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></label>
@@ -361,9 +363,26 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
         </label>
       </div>}
       {dnd && <details className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
-        <summary className="cursor-pointer font-semibold text-(--a-d3adf0)">🎨 Personalizar aparência · ilustração, cores e foto</summary>
+        <summary className="cursor-pointer font-semibold text-(--a-d3adf0)">🎨 Personalizar aparência · ícones e Forja</summary>
         <div className="mt-3 space-y-3">
-          <FotoDoItem it={it} setIt={setIt} />
+          <p className="text-xs text-(--a-c4b6d4)">Escolha uma ilustração da biblioteca. A foto enviada sempre tem prioridade; você pode removê-la depois.</p>
+          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6" role="group" aria-label="Biblioteca de ilustrações de itens">
+            {ICONES_RPG.map(icone => <button key={icone.id} type="button" title={icone.nome}
+              aria-label={'Usar ilustração ' + icone.nome} aria-pressed={it.iconeBiblioteca === icone.id}
+              onClick={() => setIt({ ...it, iconeBiblioteca: icone.id, arte: undefined })}
+              className={'flex min-w-0 flex-col items-center gap-1 rounded-lg border p-2 transition hover:bg-(--s-34294f) ' +
+                (it.iconeBiblioteca === icone.id ? 'border-(--a-ed9cd8) bg-(--s-3a2c58)' : 'border-(--a-55456e)')}>
+              <ArteItem item={{ ...it, imagem: undefined, arte: undefined, iconeBiblioteca: icone.id }}
+                tamanho={45} estiloDnd />
+              <span className="w-full truncate text-[10px]">{icone.nome}</span>
+            </button>)}
+          </div>
+          <button type="button" className={botao}
+            onClick={() => setIt({ ...it, iconeBiblioteca: undefined, arte: undefined })}>Usar ilustração automática</button>
+          <p className="text-[11px] text-(--a-c4b6d4)">
+            Ilustrações: <a href="https://game-icons.net" target="_blank" rel="noopener noreferrer" className="underline">Game-Icons.net</a>
+            {' · '}autores Lorc e Delapouite{' · '}licença CC BY 3.0. Vetores adaptados (fundo removido e cores aplicadas).
+          </p>
           {!it.imagem && <Forja it={it} setIt={setIt} />}
           <label className="block text-xs">Raridade
             <select value={it.raridade ?? ''} onChange={e => setIt({ ...it, raridade: e.target.value as Item['raridade'] || undefined })} className={input + ' mt-1'}>
@@ -426,13 +445,13 @@ export function EditorPoder({ s, inicial, salvar, fechar }: { s?: Sistema; inici
 function Forja({ it, setIt }: { it: Item; setIt: (i: Item) => void }) {
   const a = arteDoItem(it)
   const [aberta, setAberta] = useState(!it.nome)
-  const mudar = (x: Partial<ArteItemT>) => setIt({ ...it, arte: { ...a, ...x } })
+  const mudar = (x: Partial<ArteItemT>) => setIt({ ...it, iconeBiblioteca: undefined, arte: { ...a, ...x } })
   const sortear = () => {
     const doTipo = FORMAS.filter(f => f.categoria === it.categoria || (it.categoria === 'outro'))
     const f = (doTipo.length ? doTipo : FORMAS)[Math.floor(Math.random() * (doTipo.length || FORMAS.length))]
     const c = () => CORES_FORJA[Math.floor(Math.random() * CORES_FORJA.length)]
     const rar = RARIDADES[Math.min(5, Math.floor(Math.random() ** 2 * 6))].id
-    setIt({ ...it, arte: { forma: f.id, cor: c(), cor2: c() }, raridade: rar, nome: it.nome || nomeAleatorio(f.id) })
+    setIt({ ...it, iconeBiblioteca: undefined, arte: { forma: f.id, cor: c(), cor2: c() }, raridade: rar, nome: it.nome || nomeAleatorio(f.id) })
   }
   const cor = corDaRaridade(it.raridade)
   return <div className="overflow-hidden rounded-2xl border border-(--a-55456e) bg-(--s-151123)">

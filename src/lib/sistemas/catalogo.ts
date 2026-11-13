@@ -1,5 +1,5 @@
 import type { PericiaDef, Sistema } from './tipos'
-import { ANTECEDENTES_PHB, ESPECIES_PHB, FONTE_PHB } from './dnd2024Fontes'
+import { ANTECEDENTES_PHB, ANTECEDENTES_LEGADOS_2014, ESPECIES_PHB, FONTE_PHB, FONTE_LEGADO_2014 } from './dnd2024Fontes'
 
 /*
  * Catálogo de sistemas. Regras de sistemas com licença aberta usam apenas o que a
@@ -119,6 +119,7 @@ export const SISTEMAS: Sistema[] = [
         { nome: 'Sábio', descricao: 'Atributos: Constituição, Inteligência, Sabedoria. Talento: Iniciado em Magia (Mago). Perícias: Arcanismo e História.' },
         { nome: 'Soldado', descricao: 'Atributos: Força, Destreza, Constituição. Talento: Atacante Selvagem. Perícias: Atletismo e Intimidação.' },
         ...ANTECEDENTES_PHB.map(([, nome]) => ({ nome, descricao: 'Livro do Jogador (2024): atributos, talento, perícias e ferramenta no livro (marque à mão).', fonte: FONTE_PHB })),
+        ...ANTECEDENTES_LEGADOS_2014.map(([, nome]) => ({ nome, descricao: 'Legado de 2014 (Outlander): Atletismo e Sobrevivência, instrumento e idioma à escolha, Viajante (Wanderer). Adaptar atributos e talento pelas regras de compatibilidade com D&D 2024.', fonte: FONTE_LEGADO_2014 })),
       ] },
       { id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 },
       { id: 'xp', nome: 'XP', tipo: 'numero', padrao: 0 },

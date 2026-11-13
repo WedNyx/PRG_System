@@ -11,6 +11,7 @@
 import type { DadosFicha } from './tipos'
 import { idDe } from './dnd2024Classes'
 import { FONTE_LEGADO_2014, FONTE_PHB, TALENTOS_ORIGEM_PHB, fontePermitida } from './dnd2024Fontes'
+import { ANTECEDENTES_PHB_GUIA } from './dnd2024AntecedentesPhb'
 
 export const ATRIBUTOS_DND = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'] as const
 export type AtributoDnd = typeof ATRIBUTOS_DND[number]
@@ -24,11 +25,22 @@ export type RegistroAntecedenteDnd = {
   talento?: string
   instrumento?: string
   idioma?: string
+  /** Tipo escolhido quando a ferramenta do PHB requer especialização. */
+  ferramentaEscolhida?: string
+  /** Escolhas adicionais de perícias do talento Habilidoso (as ferramentas continuam anotáveis). */
+  talentoPericias?: string[]
 }
 export type ModeloAntecedenteDnd = {
   id: string; nome: string; elegiveis: readonly AtributoDnd[]; talento: string
   pericias: readonly string[]; ferramenta: string
-  fonte: 'srd521' | 'phb2014'
+  fonte: 'srd521' | 'phb2024' | 'phb2014'
+  /** Nome/identificador mecânico do talento de origem; texto integral continua na fonte. */
+  talentoId?: string
+  /** Se o tipo de ferramenta deve ser escolhido pelo jogador. */
+  ferramentaEscolha?: 'artesao' | 'instrumento' | 'jogo'
+  /** Pacote inicial factual (lista exibida, mas não adicionada automaticamente ao inventário). */
+  pacote?: readonly string[]
+  moedasPacote?: number
   nota: string
 }
 
@@ -64,6 +76,7 @@ export const ANTECEDENTES_GUIADOS: Record<string, ModeloAntecedenteDnd> = {
     ferramenta: 'Um instrumento musical à escolha', fonte: 'phb2014',
     nota: 'O antecedente de 2014 também concede um idioma à escolha e a característica Viajante (Wanderer). Consulte o PHB 2014. Pela compatibilidade 2024, distribua +2/+1 ou +1 em três atributos e escolha um talento de origem.',
   },
+  ...ANTECEDENTES_PHB_GUIA,
 }
 export const TALENTOS_ORIGEM_LEGADO: { id: string; nome: string; fonte: 'srd521' | 'phb2024' }[] = [
   { id: 'alerta', nome: 'Alerta', fonte: 'srd521' },
@@ -91,6 +104,10 @@ export function lerRegistroAntecedenteDnd(valor: unknown): RegistroAntecedenteDn
     ...(stringCurta(v.talento) ? { talento: stringCurta(v.talento) } : {}),
     ...(stringCurta(v.instrumento) ? { instrumento: stringCurta(v.instrumento) } : {}),
     ...(stringCurta(v.idioma) ? { idioma: stringCurta(v.idioma) } : {}),
+    ...(stringCurta(v.ferramentaEscolhida) ? { ferramentaEscolhida: stringCurta(v.ferramentaEscolhida) } : {}),
+    ...(Array.isArray(v.talentoPericias) && v.talentoPericias.length <= 3
+      ? { talentoPericias: v.talentoPericias.filter((x): x is string => typeof x === 'string' && /^[a-z_]{2,40}$/.test(x)) }
+      : {}),
   }
 }
 
@@ -108,7 +125,7 @@ export function validarDistribuicaoAntecedenteDnd(id: string, aumentos: Aumentos
 
 /** Ações explícitas: calcula o DELTA do registro anterior e aplica uma única vez. */
 export function aplicarAntecedenteDnd(
-  d: DadosFicha, aumentos: AumentosDnd, detalhes: Partial<Pick<RegistroAntecedenteDnd, 'equipamento' | 'talento' | 'instrumento' | 'idioma'>> = {},
+  d: DadosFicha, aumentos: AumentosDnd, detalhes: Partial<Pick<RegistroAntecedenteDnd, 'equipamento' | 'talento' | 'instrumento' | 'idioma' | 'ferramentaEscolhida' | 'talentoPericias'>> = {},
 ): { ok: true; dados: DadosFicha } | { ok: false; erro: string } {
   const id = idDe(d.campos.antecedente)
   const erros = validarDistribuicaoAntecedenteDnd(id, aumentos)
@@ -149,7 +166,20 @@ export function validarAlteracoesAntecedenteDnd(
     else if (talento.fonte === 'phb2024' && !fontePermitida(FONTE_PHB, fontes)) erros.push('Talento de origem do PHB 2024 não liberado nesta campanha.')
     if (!atual.instrumento || !atual.idioma) erros.push('Informe o instrumento musical e o idioma do Forasteiro.')
     if (atual.equipamento === 'moedas') erros.push('O Forasteiro legado usa equipamento conforme o livro de 2014, não a opção automática de 50 PO do SRD 2024.')
-  } else if (atual.talento) erros.push('O talento de origem deste antecedente já é determinado pelo SRD.')
+  } else if (atual.talento) erros.push('O talento de origem deste antecedente já é determinado pelo antecedente de 2024.')
+  const def = ANTECEDENTES_GUIADOS[atual.id]
+  if (def?.fonte === 'phb2024' && !fontePermitida(FONTE_PHB, fontes)) {
+    erros.push('Este antecedente é do Livro do Jogador 2024 e a fonte não foi liberada pelo mestre.')
+  }
+  if (def?.ferramentaEscolha && !atual.ferramentaEscolhida) {
+    erros.push('Escolha o tipo de ferramenta do antecedente.')
+  }
+  if (def?.talentoId === 'habilidoso') {
+    const opcoes = atual.talentoPericias ?? []
+    if (opcoes.length !== 3 || new Set(opcoes).size !== 3) erros.push('Habilidoso: escolha três perícias diferentes ou registre as ferramentas permitidas com o mestre.')
+  } else if (atual.talentoPericias?.length) {
+    erros.push('Este antecedente não concede o talento Habilidoso.')
+  }
   if (atual.id !== 'forasteiro' && !atual.equipamento) erros.push('Selecione pacote inicial ou 50 PO para este antecedente.')
   const anterior = lerRegistroAntecedenteDnd(antes.dndAntecedente)
   for (const a of ATRIBUTOS_DND) {

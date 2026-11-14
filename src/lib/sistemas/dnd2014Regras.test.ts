@@ -77,7 +77,7 @@ describe('D&D 5e 2014 · automações verificadas do SRD 5.1', () => {
     const d=criar('Meio-Elfo','','Ladino')
     expect(validarAlteracoes2014({}, {...d,dnd2014AtributosExtras:['CAR','FOR']},'phb2014')).toContain('Meio-Elfo 2014 deve escolher dois atributos diferentes de Carisma.')
     expect(validarAlteracoes2014({}, {...d,dnd2014PericiasClasse:['atletismo','atletismo']},'phb2014')).toHaveLength(1)
-    expect(validarAlteracoes2014({}, {...d,dnd2014PericiasClasse:['atletismo','persuasao']},'phb2014')).toHaveLength(0)
+    expect(validarAlteracoes2014({}, {...d,dnd2014PericiasClasse:['enganacao','persuasao']},'phb2014')).toHaveLength(0)
     expect(validarAlteracoes2014({}, {...d,dnd2014PericiasClasse:['sobrevivencia']},'phb2014')).toHaveLength(1)
     expect(validarAlteracoes2014(
       {campos:{classe:'Guerreiro',especie:'Elfo',antecedente:'Forasteiro'}},

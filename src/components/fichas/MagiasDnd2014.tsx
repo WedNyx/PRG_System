@@ -76,18 +76,8 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
   </p>}
   {!somenteLeitura&&<div className="flex flex-wrap gap-2">
     <button type="button" className={btn} onClick={()=>setAberto(x=>!x)}><Plus size={15}/> {aberto?'Fechar cadastro':'Registrar magia do livro'}</button>
-    <button type="button" className={btn} onClick={()=>{
-      const recursos={...d.recursos}
-      for(let n=1;n<=9;n++)if(maxSlot(n)>0)recursos['espacos_'+n]={...recursos['espacos_'+n],atual:maxSlot(n)}
-      const pactoMax=Number(c.recursosMax.pacto??0)
-      if(pactoMax>0)recursos.pacto={...recursos.pacto,atual:pactoMax}
-      onChange({...d,recursos})
-    }}>🌙 Descanso longo: repor espaços e pacto</button>
-    {Number(c.recursosMax.pacto??0)>0&&<button type="button" className={btn} onClick={()=>{
-      const max=Number(c.recursosMax.pacto)
-      onChange({...d,recursos:{...d.recursos,pacto:{...d.recursos.pacto,atual:max}}})
-    }}>🌘 Descanso curto: recuperar apenas Pacto</button>}
   </div>}
+  <p className="text-[11px] text-(--a-c4b6d4)">Para recuperar espaços ou Magia de Pacto, use o botão 🌙 Descansar na seção Valores e recursos. O descanso curto não recupera espaços comuns de conjuração.</p>
   {aberto&&!somenteLeitura&&<div className="grid gap-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3 sm:grid-cols-2">
     <div className="space-y-2 rounded-lg border border-(--a-55456e) p-2 sm:col-span-2">
       <strong className="text-xs text-(--a-ed9cd8)">📚 Buscar no catálogo do Livro do Jogador 2014 ({catalogo.length} magias desta classe)</strong>

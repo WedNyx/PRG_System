@@ -6,6 +6,9 @@ Também aparece no site em /novidades. Ao atualizar: aumente a versão no packag
 
 - D&D 2014 (SRD 5.1): seleção de subclasse aberta e marcos de progressão por classe, separados da edição 2024.
 - Regras de conjuração 2014 revisadas, com diferenças de multiclasse e arredondamento sinalizadas.
+- Grimório de 2014 pesquisável: 845 registros por classe de 367 nomes, conforme o índice do PHB 2014; espaços superiores e Magia de Pacto entre classes, com descansos diferenciados.
+- Catálogo com 42 talentos do PHB 2014, limites por nível de classe, Humano Variante e validação pelo mestre; sem somar automaticamente efeitos ainda não codificados.
+- Build Next.js 16 temporariamente com Webpack para contornar falhas da pipeline Turbopack relacionadas a fontes Google.
 - Arsenais de 2014 e 2024 permanecem separados; livros adicionais sem regras abertas confirmadas continuam como referência manual.
 - Testes de fidelidade de personagens por edição, respeitando salvamento, fotos, atributos, itens e escolhas anteriores.
 - Numeração da versão: revisão vai de 0 a 10, menor de 0 a 99. Ex.: 0.0.10→0.1.0; 0.99.10→1.0.0.

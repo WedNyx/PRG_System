@@ -20,6 +20,8 @@ export type LimiteDef = { nome: string; uso: string; max: string }
 
 export type Sistema = {
   id: string
+  /** Indica a edição das regras, mesmo se a ficha antiga não possui dndLivros. */
+  regraLivroDnd?: import('./dndLivros').LivroBaseDnd
   nome: string
   resumo: string
   /** aberto = regras sob licença livre; estrutura = só os campos (regras do seu livro); autoral = criado por você */
@@ -96,6 +98,12 @@ export type DadosFicha = {
   uso?: unknown
   /** Livro do Jogador e suplementos escolhidos para ESTA ficha (mestre autoriza na campanha). */
   dndLivros?: import('./dndLivros').SelecaoLivrosDnd
+  /** Atributos antes dos bônus raciais na criação 2014. Ausência = ficha antiga com totais manuais. */
+  dnd2014AtributosBase?: Record<string, number>
+  /** Aumentos variáveis de atributo 2014 (Meio-Elfo / Humano Variante). */
+  dnd2014AtributosExtras?: string[]
+  /** Perícias selecionadas na classe inicial do SRD 5.1. */
+  dnd2014PericiasClasse?: string[]
   /** Escolhas de marcos D&D. A progressão visual não concede bônus por si só. */
   dndEscolhas?: Record<string, string>
   /** Distribuição guiada de atributos de antecedente, aplicada explicitamente uma vez. */

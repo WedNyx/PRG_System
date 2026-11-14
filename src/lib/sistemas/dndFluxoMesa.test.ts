@@ -4,6 +4,7 @@ import { calcular, fichaVazia, normalizarFicha } from './calculo'
 import { esquemaFichaPorLivro } from './dnd2014Criacao'
 import { aplicarDescanso } from './descanso'
 import { avaliarProntidaoDnd } from './dndProntidao'
+import type { DadosFicha } from './tipos'
 import { validarFichaDados } from '../nuvem/validacao'
 import { validarAlteracoesMagias2014, lerMagias2014 } from './dnd2014Magias'
 import { validarAlteracoes2014 } from './dnd2014Regras'
@@ -30,7 +31,7 @@ describe('Homologação lógica da ficha D&D 2014/2024 para uso em mesa',()=>{
     const valido=validarFichaDados(roundtrip(d))
     expect(valido.ok).toBe(true)
     if(!valido.ok)return
-    const reaberta=normalizarFicha(legado,roundtrip(valido.valor.dados))
+    const reaberta=normalizarFicha(legado,roundtrip(valido.valor.dados) as Partial<DadosFicha>)
     expect(reaberta.dndLivros?.base).toBe('phb2014')
     expect(reaberta.dnd2014Subclasse).toBe('campeao')
     expect(reaberta.dnd2014PericiasClasse).toEqual(['acrobacia','percepcao'])
@@ -92,7 +93,7 @@ describe('Homologação lógica da ficha D&D 2014/2024 para uso em mesa',()=>{
     const validado=validarFichaDados(roundtrip(d))
     expect(validado.ok).toBe(true)
     if(!validado.ok)return
-    const n=normalizarFicha(s,roundtrip(validado.valor.dados))
+    const n=normalizarFicha(s,roundtrip(validado.valor.dados) as Partial<DadosFicha>)
     expect(n.dndLivros?.base).toBe('phb2024')
     expect(n.dndEscolhas?.['guerreiro-subclasse']).toBe('campeao')
     expect(n.dnd2014Subclasse).toBeUndefined()

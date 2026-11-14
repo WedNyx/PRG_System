@@ -128,7 +128,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
     salvar(gravarNoArvore(a, n)); setEditor(null); setSel(n.id)
   }
   function excluirNo(n: NoArvore) {
-    if (!confirm(`Excluir ${visualizacao === 'cartoes' ? 'a habilidade' : 'o hexágono'} “${n.nome}”? As ligações com ela também somem.`)) return
+    if (!confirm(`Excluir ${visualizacao === 'cartoes' ? 'a habilidade' : 'o hexágono'} “${n.nome}”? As dependências vinculadas também somem.`)) return
     salvar(excluirNoArvore(a, n.id)); setSel(null)
   }
 
@@ -140,7 +140,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
       {editorSistema ? <span className="rounded-full border border-(--a-62527e) bg-(--s-201a32) px-3 py-1 text-sm">🌠 Pontos iniciais: <strong>{a.pontos}</strong></span>
         : <span className="rounded-full border border-(--a-62527e) bg-(--s-201a32) px-3 py-1 text-sm" title={`${gastos(a)} gasto(s) · ${a.pontos} ganhos${extra ? ` + ${extra} do nível` : ''}`}>
         🌠 <strong className={livres > 0 ? 'text-amber-200' : ''}>{livres}</strong> livre{livres === 1 ? '' : 's'} <span className="text-xs text-(--a-b4aeca)">de {a.pontos + extra}{extra ? ` (${extra} do nível)` : ''}</span></span>}
-      {sistemaMudou && !somenteLeitura && <button type="button" onClick={() => { if (confirm('Trazer as mudanças da árvore do sistema? Hexágonos novos entram e os iguais são atualizados; o que você liberou continua.')) salvar(mesclarArvore(a, doSistema!)) }}
+      {sistemaMudou && !somenteLeitura && <button type="button" onClick={() => { if (confirm('Trazer as mudanças da árvore do sistema? Novas habilidades entram e as existentes são atualizadas; as liberadas continuam.')) salvar(mesclarArvore(a, doSistema!)) }}
         className={btn + ' !border-amber-300/60 !text-amber-200'}>🔄 Atualizar com a árvore do sistema</button>}
       {montando && !somenteLeitura && <span className="flex items-center gap-1" aria-label="Pontos ganhos">
         <button type="button" className={btn + ' !px-2'} aria-label="Menos um ponto" disabled={a.pontos <= gastos(a)} onClick={() => aplicar(mudarPontos(a, a.pontos - 1))}><Minus size={14} /></button>
@@ -377,7 +377,7 @@ function EditorNo({ inicial, a, sistema, alvos, recursos, temNivel, cartoes, gra
           className={'rounded-full border px-2.5 py-1 text-xs disabled:opacity-30 ' + (on ? 'border-(--a-b99bff) bg-(--s-3b2b57)' : 'border-(--a-4a3d63)')}>{on ? '✓ ' : ''}{o.nome}</button>
       })}</div></div>}
 
-      <h3 className="mt-5 text-sm font-semibold">✨ Efeitos automáticos <span className="font-normal text-(--a-a998bd)">(valem quando o hexágono é liberado)</span></h3>
+      <h3 className="mt-5 text-sm font-semibold">✨ Efeitos automáticos <span className="font-normal text-(--a-a998bd)">(valem quando {cartoes ? 'a habilidade' : 'o hexágono'} é liberado)</span></h3>
       <div className="mt-2 space-y-2">{n.efeitos.map((e, i) => <div key={i} className="rounded-xl border border-(--a-3d3152) bg-(--s-151123) p-3">
         <div className="flex items-center gap-2"><span className="flex-1 text-xs font-semibold text-(--a-c7a8ff)">{e.tipo === 'bonus' ? '➕ Bônus' : '🌀 Habilidade nova'}</span>
           <button type="button" aria-label="Remover efeito" onClick={() => setN({ ...n, efeitos: n.efeitos.filter((_, k) => k !== i) })} className="rounded p-1 text-[#f2a9c3] hover:bg-(--s-2b2140)"><Trash2 size={14} /></button></div>
@@ -400,7 +400,7 @@ function EditorNo({ inicial, a, sistema, alvos, recursos, temNivel, cartoes, gra
       </div>
       <div className="mt-5 flex gap-2">
         <button type="button" onClick={fechar} className="flex-1 rounded-xl border border-(--a-62527e) p-2.5">Cancelar</button>
-        <button type="submit" disabled={!n.nome.trim()} className="flex-1 rounded-xl bg-(--a-7652ac) p-2.5 font-semibold hover:bg-(--a-8b68c4) disabled:opacity-50">Salvar hexágono</button>
+        <button type="submit" disabled={!n.nome.trim()} className="flex-1 rounded-xl bg-(--a-7652ac) p-2.5 font-semibold hover:bg-(--a-8b68c4) disabled:opacity-50">{cartoes ? 'Salvar habilidade' : 'Salvar hexágono'}</button>
       </div>
     </form>
   </div></NaTela>

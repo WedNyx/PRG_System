@@ -14,7 +14,8 @@ import { ARMAS_DND_2024, armaDndPorId, type ArmaDnd2024 } from './dnd2024Armas'
 const alteracoes: Record<string, Partial<ArmaDnd2024>> = {
   'lanca-cavalaria': { dano: '1d12', propriedades: ['Alcance', 'Especial'], preco: '10 PO', pesoLb: 6 },
   tridente: { dano: '1d6', versatil: '1d8', preco: '5 PO', pesoLb: 4 },
-  'picareta-guerra': { preco: '5 PO', propriedades: [] },
+  'picareta-guerra': { preco: '5 PO', propriedades: [], versatil: undefined },
+  'martelo-guerra': { pesoLb: 2 },
 }
 const sem2024 = new Set(['mosquete', 'pistola'])
 export const ARMAS_DND_2014: ArmaDnd2024[] = [

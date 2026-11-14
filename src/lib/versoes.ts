@@ -27,6 +27,15 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.33.10', data: '2026-11-14',
+    titulo: 'Correção da publicação após a Fase 1',
+    itens: [
+      '🛠️ Corrige falha de build em produção ligada ao carregamento de fontes Google pelo Next.js.',
+      '🎨 Mantém as opções de fontes Fantasia, Elegante e Simples, com carregamento CSS no navegador e fontes alternativas se a rede estiver indisponível.',
+      '🌙 Preserva as regras e fichas de D&D 2014 e 2024 integradas pela PR #50.',
+    ],
+  },
+  {
     versao: '0.33.9', data: '2026-11-14',
     titulo: 'D&D 2014: fidelidade às regras e livros por edição',
     itens: [

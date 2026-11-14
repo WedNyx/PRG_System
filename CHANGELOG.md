@@ -2,6 +2,12 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.33.10 — Correção do build de produção (2026-11-14)
+
+- Remove a dependência de download das fontes do Google na compilação Next.js, que estava falhando em `src/app/layout.tsx` depois do merge da PR #50.
+- Passa a solicitar Cinzel, Cormorant Garamond, Geist e Geist Mono via CSS no navegador com fontes alternativas locais, preservando os temas tipográficos quando possível.
+- Sem alterações nas regras ou no conteúdo de personagens D&D.
+
 ## v0.33.9 — D&D por edição e revisão de regras (2026-11-14)
 
 - D&D 2014 (SRD 5.1): seleção de subclasse aberta e marcos de progressão por classe, separados da edição 2024.

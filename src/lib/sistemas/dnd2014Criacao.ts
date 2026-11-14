@@ -73,7 +73,7 @@ export function esquemaFichaPorLivro(s: Sistema, d: Pick<DadosFicha,'dndLivros'>
         : x.id === 'forma_selvagem' ? { ...x, voltaNoCurto: true }
         : x.id === 'retomar_folego' ? { ...x, voltaNoCurto: true }
         : x.id === 'surto_acao' ? { ...x, voltaNoCurto: true }
-        : x.id === 'exaustao' ? { ...x, nome: 'Exaustão 2014 (conferir condições de recuperação)', baixaNoDescanso: 1 }
+        : x.id === 'exaustao' ? { ...x, nome: 'Exaustão 2014 (conferir condições de recuperação)', baixaNoDescanso: 0 }
         : x),
     observacoes: [...(s.observacoes ?? []), 'Edição 2014 (SRD 5.1): bônus raciais aplicados apenas a valores-base confirmados, perícias e salvaguardas automáticas, recursos gerais. Subclasses, progressão avançada e suplementos comerciais exigem conferência manual.'],
   }

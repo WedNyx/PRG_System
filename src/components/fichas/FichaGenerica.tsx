@@ -220,7 +220,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
           ? onChange({ ...d, campos: { ...d.campos, [f.id]: v,
               ...(f.id === 'especie' ? { subraca2014: '' } : {}) },
               ...(f.id === 'especie' ? { dnd2014AtributosExtras: [] } : {}),
-              ...(f.id === 'classe' ? { dnd2014PericiasClasse: [] } : {}) })
+              ...(f.id === 'classe' ? { dnd2014PericiasClasse: [], dnd2014Subclasse: undefined } : {}) })
           : set('campos', { ...d.campos, [f.id]: v })} /></div> : <label key={f.id} className={'flex flex-col justify-end text-sm text-(--a-d6c8e8) ' + (f.tipo === 'area' ? 'col-span-2 lg:col-span-3' : f.tipo === 'numero' ? '' : 'col-span-2 sm:col-span-1')}>{f.nome}
           {f.tipo === 'area'
             ? <textarea rows={3} value={String(d.campos[f.id] ?? '')} disabled={somenteLeitura} onChange={e => set('campos', { ...d.campos, [f.id]: e.target.value.slice(0, 4000) })} className={input + ' mt-1'} />

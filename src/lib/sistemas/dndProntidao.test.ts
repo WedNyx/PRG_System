@@ -68,6 +68,24 @@ describe('Preparação não destrutiva para jogar',()=>{
     expect(x.prontoParaConferir).toBe(false)
     expect(x.pendencias.some(p=>p.id==='classeIncompativel'&&p.tipo==='pendente')).toBe(true)
   })
+  it('mostra espécie e antecedente desconhecidos no catálogo 2024, sem alterar rascunho',()=>{
+    const d=fichaVazia(sistema)
+    d.nome='Kaelen'
+    d.campos={...d.campos,classe:'Mago',especie:'Espécie caseira',antecedente:'Antecedente caseiro',nivel:1}
+    const antes=JSON.stringify(d)
+    const x=avaliarProntidaoDnd(d,'phb2024')
+    expect(x.prontoParaConferir).toBe(false)
+    expect(x.pendencias.some(p=>p.id==='especieIncompativel2024')).toBe(true)
+    expect(x.pendencias.some(p=>p.id==='antecedenteIncompativel2024')).toBe(true)
+    expect(JSON.stringify(d)).toBe(antes)
+  })
+  it('aceita opções registradas de livros de 2024 e Forasteiro legado, sem marcá-las incompatíveis',()=>{
+    const d=fichaVazia(sistema)
+    d.nome='Kaelen'
+    d.campos={...d.campos,classe:'Mago',especie:'Aasimar',antecedente:'Forasteiro',nivel:1}
+    const x=avaliarProntidaoDnd(d,'phb2024')
+    expect(x.pendencias.some(p=>p.id==='especieIncompativel2024'||p.id==='antecedenteIncompativel2024')).toBe(false)
+  })
   it('não concede poderes nem bloqueia salvar ficha incompleta',()=>{
     const d=fichaVazia(sistema)
     const antes=JSON.stringify(d)

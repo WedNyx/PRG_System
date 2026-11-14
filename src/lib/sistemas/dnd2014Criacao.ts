@@ -59,7 +59,7 @@ export const SUBRACAS_2014: Record<string, { nome: string; detalhe: string }[]> 
 }
 export function esquemaFichaPorLivro(s: Sistema, d: Pick<DadosFicha,'dndLivros'>, obrigatorio?: LivroBaseDnd | null): Sistema {
   if (s.id !== 'dnd5e-srd' || (obrigatorio ?? lerLivrosDnd(d.dndLivros).base) !== 'phb2014') return s
-  return { ...s, regraLivroDnd: 'phb2014' as const, nome: 'D&D 5e (2014) — Livro do Jogador', resumo: 'Regras legadas de 2014: seleção de raça/sub-raça e antecedentes próprios. Regras automáticas do SRD 5.1 para atributos raciais, perícias, salvaguardas e recursos básicos. Opções comerciais e subclasses: revisão manual.',
+  return { ...s, progressoes: undefined, regraLivroDnd: 'phb2014' as const, nome: 'D&D 5e (2014) — Livro do Jogador', resumo: 'Regras legadas de 2014: seleção de raça/sub-raça e antecedentes próprios. Regras automáticas do SRD 5.1 para atributos raciais, perícias, salvaguardas e recursos básicos. Opções comerciais e subclasses: revisão manual.',
     campos: s.campos.map(c => {
       if (c.id === 'especie') return { ...c, nome: 'Raça (Livro do Jogador 2014)', opcoes: RACAS_2014 }
       if (c.id === 'antecedente') return { ...c, nome: 'Antecedente (Livro do Jogador 2014)', opcoes: ANTECEDENTES_2014 }

@@ -33,7 +33,11 @@ import GuiaMagiaHumanoDnd2024 from './GuiaMagiaHumanoDnd2024'
 import ResumoEscolhasDnd2024 from './ResumoEscolhasDnd2024'
 import TracosEspecieDnd2024 from './TracosEspecieDnd2024'
 import { idDe } from '@/lib/sistemas/dnd2024Classes'
-import { fontePermitida } from '@/lib/sistemas/dnd2024Fontes'
+import { fontePermitida, FONTE_PHB, FONTE_SRD, FONTE_LEGADO_2014 } from '@/lib/sistemas/dnd2024Fontes'
+import { lerLivrosDnd, type LivroBaseDnd } from '@/lib/sistemas/dndLivros'
+import { esquemaFichaPorLivro } from '@/lib/sistemas/dnd2014Criacao'
+import LivrosPersonagemDnd from './LivrosPersonagemDnd'
+import GuiaCriacaoLegadaDnd from './GuiaCriacaoLegadaDnd'
 import { lerArvore, sincronizarPoderes } from '@/lib/sistemas/arvore'
 import { lerPoderes } from '@/lib/sistemas/inventario'
 
@@ -42,18 +46,32 @@ const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 
 const sinal = (n: number | null | undefined) => n === null || n === undefined ? '—' : n >= 0 ? '+' + n : String(n)
 
 /** Ficha que se monta sozinha a partir do modelo do sistema. */
-export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, excecaoModo, fontesDnd = null, rolarNaCampanha, passarItem }: {
+export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, excecaoModo, fontesDnd = null, livroBaseCampanha = null, rolarNaCampanha, passarItem }: {
   sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean; modoProgressao?: ModoProgressao; podeEditarArvore?: boolean
   /** Mestre de campanha de D&D: troca o modo só desta ficha (exceção). */
   excecaoModo?: { campanha: ModoProgressao; atual: ModoProgressao | null; mudar: (m: ModoProgressao | null) => void | Promise<void> }
   /** D&D em campanha: fontes que o mestre liberou (null = todas: ficha avulsa ou mestre). */
   fontesDnd?: Set<string> | null
+  /** Edição obrigatória do Livro do Jogador definida pelo mestre da campanha. */
+  livroBaseCampanha?: LivroBaseDnd | null
   /** Se a ficha é de campanha: rola no servidor e publica no chat da mesa. */
   rolarNaCampanha?: (expressao: string, rotulo: string, extra?: { estilo: 'assimilacao'; manter?: number; todos?: boolean }) => Promise<{ resultados: number[]; total: number } | null>
   /** Ficha de campanha: passar um item para outro personagem. */
   passarItem?: (it: Item, tem: number) => void
 }) {
-  const efeitosDnd = modoProgressao !== 'manual'
+  const edicaoDnd = livroBaseCampanha ?? lerLivrosDnd(d.dndLivros).base
+  const legado2014 = sistemaOriginal.id === 'dnd5e-srd' && edicaoDnd === 'phb2014'
+  const s = useMemo(() => esquemaFichaPorLivro(sistemaOriginal, d, livroBaseCampanha),
+    [sistemaOriginal, d.dndLivros, livroBaseCampanha])
+  const efeitosDnd = modoProgressao !== 'manual' && !legado2014
+  const fontesFicha = useMemo(() => {
+    if (s.id !== 'dnd5e-srd' || !d.dndLivros) return fontesDnd // fichas antigas preservam suas seleções
+    const escolhido = lerLivrosDnd(d.dndLivros)
+    const lista = [FONTE_SRD, escolhido.base === 'phb2024' ? FONTE_PHB : FONTE_LEGADO_2014,
+      ...escolhido.suplementos]
+    return new Set(lista.filter(id => id === FONTE_SRD || id === FONTE_PHB || id === FONTE_LEGADO_2014 ||
+      !fontesDnd || fontesDnd.has(id)))
+  }, [s.id, d.dndLivros, fontesDnd])
   const c = useMemo(() => calcular(s, d, { efeitosDnd }), [s, d, efeitosDnd])
   const central = useRef<RolagemCentralHandle>(null)
   const naMesa = rolarNaCampanha ? 'Também foi para o chat da mesa' : null
@@ -183,7 +201,9 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
       <div className="min-w-0 flex-1 space-y-4">
         {atual && <p className="flex gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-2 text-xs text-(--a-cfc0df)"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></p>}
         {secao === 'principal' && <>
-    {s.id !== 'livre' && s.tipo !== 'autoral' && <ConferenciaFicha s={s} d={d} c={c} efeitos={efeitosDnd} ir={ir} />}
+    {s.id !== 'livre' && s.tipo !== 'autoral' && !legado2014 && <ConferenciaFicha s={s} d={d} c={c} efeitos={efeitosDnd} ir={ir} />}
+    {s.id === 'dnd5e-srd' && <LivrosPersonagemDnd d={d} onChange={onChange} somenteLeitura={somenteLeitura}
+      baseCampanha={livroBaseCampanha} fontesCampanha={fontesDnd} />}
     <section className={card}>
       <div className="flex items-start gap-4">
         <Retrato url={d.retrato} nome={d.nome} somenteLeitura={somenteLeitura} onChange={u => onChange({ ...d, retrato: u ?? undefined })} />
@@ -191,7 +211,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
           <input value={d.nome} maxLength={90} disabled={somenteLeitura} onChange={e => set('nome', e.target.value)} className={input + ' mt-1 text-lg font-bold'} placeholder="Ex.: Lyra Nyx" /></label>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3 lg:grid-cols-3">
-        {s.campos.map(f => f.tipo === 'escolha' ? <div key={f.id} className="col-span-2 sm:col-span-1"><CampoEscolha s={s} f={f} valor={d.campos[f.id]} somenteLeitura={somenteLeitura} fontes={s.id === 'dnd5e-srd' ? fontesDnd : null} mudar={v => set('campos', { ...d.campos, [f.id]: v })} /></div> : <label key={f.id} className={'flex flex-col justify-end text-sm text-(--a-d6c8e8) ' + (f.tipo === 'area' ? 'col-span-2 lg:col-span-3' : f.tipo === 'numero' ? '' : 'col-span-2 sm:col-span-1')}>{f.nome}
+        {s.campos.map(f => f.tipo === 'escolha' ? <div key={f.id} className="col-span-2 sm:col-span-1"><CampoEscolha s={s} f={f} valor={d.campos[f.id]} somenteLeitura={somenteLeitura} fontes={s.id === 'dnd5e-srd' ? fontesFicha : null} mudar={v => set('campos', { ...d.campos, [f.id]: v,
+          ...(legado2014 && f.id === 'especie' ? { subraca2014: '' } : {}) })} /></div> : <label key={f.id} className={'flex flex-col justify-end text-sm text-(--a-d6c8e8) ' + (f.tipo === 'area' ? 'col-span-2 lg:col-span-3' : f.tipo === 'numero' ? '' : 'col-span-2 sm:col-span-1')}>{f.nome}
           {f.tipo === 'area'
             ? <textarea rows={3} value={String(d.campos[f.id] ?? '')} disabled={somenteLeitura} onChange={e => set('campos', { ...d.campos, [f.id]: e.target.value.slice(0, 4000) })} className={input + ' mt-1'} />
             : <input type={f.tipo === 'numero' ? 'number' : 'text'} value={d.campos[f.id] ?? ''} disabled={somenteLeitura} maxLength={120}
@@ -199,7 +220,8 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         </label>)}
       </div>
     </section>
-    {s.id === 'dnd5e-srd' && <ResumoEscolhasDnd2024 d={d} irPara={ir} modoManual={modoProgressao === 'manual'} />}
+    {s.id === 'dnd5e-srd' && !legado2014 && <ResumoEscolhasDnd2024 d={d} irPara={ir} modoManual={modoProgressao === 'manual'} />}
+    {legado2014 && <GuiaCriacaoLegadaDnd d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
     <Progressao s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} pontosAtributo={Number(c.vars.prog_atributos) || 0} irPara={ir} />
     {c.limites.some(l => l.excedido) && <section role="alert" className="rounded-2xl border border-[#c98b3a] bg-[#3a2a14] p-4 text-sm text-[#f6dca8]">
       <p className="flex items-center gap-2 font-semibold"><AlertTriangle size={18} /> Acima do limite das regras</p>
@@ -226,7 +248,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     </section>}
         </>}
         {secao === 'atributos' && <>
-    {s.id === 'dnd5e-srd' && <GuiaAntecedenteDnd key={idDe(d.campos.antecedente)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} fontes={fontesDnd} />}
+    {s.id === 'dnd5e-srd' && !legado2014 && <GuiaAntecedenteDnd key={idDe(d.campos.antecedente)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} fontes={fontesFicha} />}
     {c.limites.some(l => l.excedido) && <section role="alert" className="rounded-2xl border border-[#c98b3a] bg-[#3a2a14] p-4 text-sm text-[#f6dca8]">
       <p className="flex items-center gap-2 font-semibold"><AlertTriangle size={18} /> Acima do limite das regras</p>
       <ul className="mt-2 list-disc pl-5">{c.limites.filter(l => l.excedido).map(l => <li key={l.nome}>{l.nome}: {l.uso} de {l.max}</li>)}</ul>
@@ -280,17 +302,17 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
         </>}
         {secao === 'arvore' && <div className="space-y-4">
           {excecaoModo && <ExcecaoModo {...excecaoModo} />}
-          {s.id === 'dnd5e-srd' && <MulticlasseDnd2024 d={d} onChange={nova => onChange(nova.arvore === undefined ? nova : {
+          {s.id === 'dnd5e-srd' && !legado2014 && <MulticlasseDnd2024 d={d} onChange={nova => onChange(nova.arvore === undefined ? nova : {
             ...nova, poderes: sincronizarPoderes(lerPoderes(nova.poderes), lerArvore(nova.arvore), nova),
           })} somenteLeitura={somenteLeitura} />}
-          {s.id === 'dnd5e-srd' && <TalentosOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} compacto />}
-          {s.id === 'dnd5e-srd' && <GuiaMagiaHumanoDnd2024 key={idDe(d.campos.especie)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
-          {s.id === 'dnd5e-srd' && modoProgressao !== 'manual' && <>
+          {s.id === 'dnd5e-srd' && !legado2014 && <TalentosOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} compacto />}
+          {s.id === 'dnd5e-srd' && !legado2014 && <GuiaMagiaHumanoDnd2024 key={idDe(d.campos.especie)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
+          {s.id === 'dnd5e-srd' && !legado2014 && modoProgressao !== 'manual' && <>
             <ProgressaoDnd2024
               marcos={MARCOS_DND_2024}
               ficha={progressoDaFichaDnd(d)}
               modo={modoProgressao}
-              fontes={fontesDnd}
+              fontes={fontesFicha}
               somenteLeitura={somenteLeitura}
               onEscolha={(marcoId, opcaoId) => {
                 const escolhas = { ...d.dndEscolhas }
@@ -320,10 +342,10 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
               mestre={podeEditarArvore} nivel={s.campos.some(x => x.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null} />}
         </div>}
         {secao === 'habilidades' && <>
-    {s.id === 'dnd5e-srd' && <TracosEspecieDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={(x, r) => void rolarExpr(x, r)} irPara={ir} />}
-    {s.id === 'dnd5e-srd' && <TalentosOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} />}
-    {s.id === 'dnd5e-srd' && <GuiaMagiaHumanoDnd2024 key={idDe(d.campos.especie)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
-    {s.id === 'dnd5e-srd' && <MagiasDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} semLimites={modoProgressao === 'manual'} rolar={(x, r) => void rolarExpr(x, r)} />}
+    {s.id === 'dnd5e-srd' && !legado2014 && <TracosEspecieDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={(x, r) => void rolarExpr(x, r)} irPara={ir} />}
+    {s.id === 'dnd5e-srd' && !legado2014 && <TalentosOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} />}
+    {s.id === 'dnd5e-srd' && !legado2014 && <GuiaMagiaHumanoDnd2024 key={idDe(d.campos.especie)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
+    {s.id === 'dnd5e-srd' && !legado2014 && <MagiasDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} semLimites={modoProgressao === 'manual'} rolar={(x, r) => void rolarExpr(x, r)} />}
     <PoderesFicha {...propsInv} />
     {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
     <section className="grid gap-4">
@@ -334,7 +356,7 @@ export default function FichaGenerica({ sistema: s, dados: d, onChange, somenteL
     </section>
         </>}
         {secao === 'equipamentos' && <>
-    <InventarioFicha {...propsInv} passarItem={passarItem} />
+    <InventarioFicha {...propsInv} passarItem={passarItem} edicaoDnd={edicaoDnd} />
     {listasDe('equipamentos').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
     <section className="grid gap-4">
       {listasDe('equipamentos').map(l => <label key={l.id} className={card + ' block'}>

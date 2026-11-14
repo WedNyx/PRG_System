@@ -33,6 +33,8 @@ export const VERSOES: Versao[] = [
       '⚔️ Revisão de D&D: tabelas e escolhas específicas das regras de 2014 (SRD 5.1) isoladas das regras revisadas de 2024 (SRD 5.2.1), com indicadores claros do que é automático e do que depende do livro e do mestre.',
       '📚 Criação de personagens 2014: novas escolhas de classe e subclasse aberta, com marcos na árvore e acompanhamento por nível; suplementos comerciais continuam como referência até confirmação das regras no livro escolhido.',
       '🧙 Multiclasse e conjuração: revisão de diferenças entre 2014 e 2024, especialmente arredondamento dos níveis de conjurador; sem conceder automaticamente magias ou efeitos de outra edição.',
+      '📖 Grimório de 2014: catálogo pesquisável de 845 entradas de magias do PHB, organizadas por classe e nível; conjuração com espaços superiores, Magia de Pacto entre classes e recuperação separada no descanso curto ou longo.',
+      '✨ Talentos 2014: 42 opções do Livro do Jogador, incluindo limites dos incrementos de atributos de cada classe e o talento adicional do Humano Variante; efeitos dependentes do mestre continuam manuais.',
       '🎲 Regras e qualidade: testes de regressão para decisões de personagens e cálculos por livro, mantendo fichas anteriores, itens, fotos personalizadas e permissões do mestre.',
       '✨ Versões: nova sequência MAIOR.MENOR.REVISÃO. A revisão vai de 0 a 10; depois cresce a menor (até 99); após 0.99.10, começa 1.0.0. O histórico de Novidades continua exibindo cada atualização.',
     ],

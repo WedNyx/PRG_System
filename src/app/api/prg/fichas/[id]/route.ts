@@ -104,8 +104,9 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const x = lerLivrosDnd(selecao, configLivros?.baseLivro ?? 'phb2024')
     const ids = [FONTE_SRD, x.base === 'phb2024' ? FONTE_PHB : FONTE_LEGADO_2014, ...x.suplementos]
     return new Set(ids.filter(id =>
-      id === FONTE_SRD || id === (x.base === 'phb2024' ? FONTE_PHB : FONTE_LEGADO_2014) ||
-      !liberadasCampanha || liberadasCampanha.has(id)))
+      id === FONTE_SRD || !liberadasCampanha || liberadasCampanha.has(id) ||
+      (!!configLivros?.baseLivro && configLivros.baseLivro === x.base &&
+        id === (x.base === 'phb2024' ? FONTE_PHB : FONTE_LEGADO_2014))))
   }
   // Valida mudanças em escolhas D&D ANTES da aplicação de permissão/aprovação.
   // Personagens antigos podem conservar escolhas históricas sem bloqueios retroativos.

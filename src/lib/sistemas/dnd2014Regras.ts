@@ -14,6 +14,7 @@ import type { EfeitosDnd } from './dnd2024Efeitos'
 import { CLASSES_SRD } from './dnd2024Srd'
 import { idDe } from './dnd2024Classes'
 import { VARS_DND } from './dnd2024Efeitos'
+import { RACAS_2014, ANTECEDENTES_2014, SUBRACAS_2014 } from './dnd2014Criacao'
 
 export const ATRIBUTOS_DND = ['FOR','DES','CON','INT','SAB','CAR'] as const
 export type AtributoDnd = typeof ATRIBUTOS_DND[number]
@@ -208,6 +209,24 @@ export function validarAlteracoes2014(
   const alterou=(k: 'dnd2014AtributosBase'|'dnd2014AtributosExtras'|'dnd2014PericiasClasse'|'dnd2014PericiasRaciais') =>
     JSON.stringify(antes[k]??null)!==JSON.stringify(depois[k]??null)
   const chaves=['dnd2014AtributosBase','dnd2014AtributosExtras','dnd2014PericiasClasse','dnd2014PericiasRaciais'] as const
+  if (edicao === 'phb2014') {
+    // Rejeita novas escolhas de 2024 na versão legada; não apaga fichas
+    // históricas que já continham valores próprios.
+    for (const [id,lista] of [
+      ['classe',CLASSES_SRD.map(x=>x.nome)],
+      ['especie',RACAS_2014.map(x=>x.nome)],
+      ['antecedente',ANTECEDENTES_2014.map(x=>x.nome)],
+    ] as const) {
+      if (antes.campos?.[id] !== depois.campos?.[id] &&
+        depois.campos?.[id] && !lista.includes(String(depois.campos[id])))
+        erros.push('Opção de ' + id + ' indisponível no Livro do Jogador 2014: ' + depois.campos[id])
+    }
+    const raca=String(depois.campos?.especie??'')
+    const sub=String(depois.campos?.subraca2014??'')
+    if (antes.campos?.subraca2014 !== depois.campos?.subraca2014 &&
+      sub && !(SUBRACAS_2014[raca]??[]).some(x=>x.nome===sub))
+      erros.push('Sub-raça incompatível com a raça do Livro do Jogador 2014.')
+  }
   if (edicao !== 'phb2014') {
     if(chaves.some(alterou)) erros.push('As escolhas de criação 2014 não podem ser alteradas numa ficha com livro-base 2024.')
     return erros

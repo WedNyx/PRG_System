@@ -342,8 +342,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
               }}
             />
           </>}
-          {(s.id !== 'dnd5e-srd' || modoProgressao !== 'automatico') &&
-            <>
+          <>
             {s.id === 'dnd5e-srd' && <p className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">🌠 <strong>Hexágonos adicionais do mestre:</strong> habilidades caseiras, talentos extras e recompensas especiais. Esta parte continua editável pelo mestre e não substitui os hexágonos oficiais acima.</p>}
             <ArvoreHabilidades s={s} d={d} onChange={onChange}
               somenteLeitura={somenteLeitura || (s.id === 'dnd5e-srd' && !podeEditarArvore)}

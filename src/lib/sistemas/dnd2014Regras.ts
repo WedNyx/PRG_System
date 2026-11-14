@@ -161,7 +161,7 @@ export function efeitosDnd2014(
   if (em('barbaro')>0 && Number(vars.ca_base)<=10)
     v.dnd_ca_extra=Math.max(0,Number(vars.mod_CON)||0)
   if (em('paladino')>0) v.dnd_cura_maos=5*em('paladino')
-  if (em('bardo')>0) { const n=em('bardo')
+  if (em('bardo')>0) {
     v.dnd_inspiracao=Math.max(1,Number(vars.mod_CAR)||0)
   }
   if (em('ladino')>0) v.dnd_furtivo=1+Math.floor((em('ladino')-1)/2)
@@ -191,11 +191,12 @@ export function efeitosDnd2014(
  */
 export function validarAlteracoes2014(
   antes: Partial<DadosFicha>, depois: Partial<DadosFicha>, edicao: 'phb2014' | 'phb2024',
+  ignorarRequisitos=false,
 ): string[] {
   const erros: string[]=[]
   const alterou=(k: 'dnd2014AtributosBase'|'dnd2014AtributosExtras'|'dnd2014PericiasClasse'|'dnd2014PericiasRaciais') =>
     JSON.stringify(antes[k]??null)!==JSON.stringify(depois[k]??null)
-  const chaves=['dnd2014AtributosBase','dnd2014AtributosExtras','dnd2014PericiasClasse','dnd2014PericiasRaciais','dnd2014Subclasse'] as const
+  const chaves=['dnd2014AtributosBase','dnd2014AtributosExtras','dnd2014PericiasClasse','dnd2014PericiasRaciais','dnd2014Subclasse','dnd2014Multiclasse'] as const
   if (edicao === 'phb2014') {
     // Rejeita novas escolhas de 2024 na versão legada; não apaga fichas
     // históricas que já continham valores próprios.
@@ -216,10 +217,36 @@ export function validarAlteracoes2014(
   }
   if (edicao === 'phb2014') erros.push(...validarSubclasseDnd2014(antes, depois))
   if (edicao !== 'phb2014') {
-    if(chaves.some(k => k==='dnd2014Subclasse'
-      ? antes.dnd2014Subclasse !== depois.dnd2014Subclasse : alterou(k)))
+    if(chaves.some(k => k==='dnd2014Subclasse' ? antes.dnd2014Subclasse !== depois.dnd2014Subclasse
+      : k==='dnd2014Multiclasse' ? JSON.stringify(antes.dnd2014Multiclasse??{})!==JSON.stringify(depois.dnd2014Multiclasse??{})
+      : alterou(k)))
       erros.push('As escolhas de criação 2014 não podem ser alteradas numa ficha com livro-base 2024.')
     return erros
+  }
+  // Subir nível de outra classe é independente de dndMulticlasse (motor 2024).
+  const outras=depois.dnd2014Multiclasse
+  const mudouMulti=JSON.stringify(antes.dnd2014Multiclasse??{})!==JSON.stringify(outras??{}) ||
+    (outras && (antes.campos?.nivel!==depois.campos?.nivel || antes.campos?.classe!==depois.campos?.classe))
+  if(mudouMulti && outras!==undefined) {
+    if(!outras || typeof outras!=='object' || Array.isArray(outras))
+      erros.push('Multiclasse 2014 deve ser um objeto de classe e níveis.')
+    else {
+      const principal=idDe(depois.campos?.classe)
+      const lido=lerMulticlasseDnd(outras,principal)
+      if(Object.keys(outras).some(k=>!Object.hasOwn(lido,k)))
+        erros.push('Multiclasse 2014 contém classe ou nível inválido.')
+      const total=Number(depois.campos?.nivel)
+      const soma=Object.values(lido).reduce((a,b)=>a+b,0)
+      if(!Number.isInteger(total)||total<1||total>20||soma>=total)
+        erros.push('A classe inicial precisa ter pelo menos um nível, com total máximo 20.')
+      const velhas=lerMulticlasseDnd(antes.dnd2014Multiclasse,idDe(antes.campos?.classe))
+      const entrou=Object.keys(lido).some(k=>!velhas[k])
+      if(entrou&&!ignorarRequisitos) {
+        const efetivos=atributosEfetivos2014(depois as DadosFicha) ?? depois.atributos ?? {}
+        const faltas=requisitosMulticlasse(efetivos,[principal,...Object.keys(lido)])
+        if(faltas.length) erros.push('Multiclasse 2014: '+faltas.join('; '))
+      }
+    }
   }
   if (alterou('dnd2014AtributosBase') && depois.dnd2014AtributosBase !== undefined && !lerAtributosBase2014(depois.dnd2014AtributosBase))
     erros.push('Os seis atributos-base de 2014 devem ser números inteiros de 1 a 20.')

@@ -67,9 +67,9 @@ export default function ArvoreDndOficial({ d, edicao, fontes }: Props) {
             (ramoAtivo === r.id ? 'border-(--a-b99bff) bg-(--s-34294f) font-semibold' : 'border-(--a-55456e) hover:bg-(--s-34294f)')}>
           {r.titulo}
         </button>)}
-      {<label className="ml-auto flex items-center gap-2 text-xs text-(--a-c4b6d4)">
+      <label className="ml-auto flex items-center gap-2 text-xs text-(--a-c4b6d4)">
         <input type="checkbox" checked={futuros} onChange={e => setFuturos(e.target.checked)} /> Mostrar níveis futuros
-      </label>}
+      </label>
     </div>
     {!visiveis.length && <p className="p-5 text-sm text-(--a-c4b6d4)">
       Escolha a classe, a espécie/raça e o antecedente na aba Principal para formar os ramos da árvore.
@@ -77,7 +77,7 @@ export default function ArvoreDndOficial({ d, edicao, fontes }: Props) {
     <div className="grid gap-4 bg-[radial-gradient(ellipse_at_50%_30%,#241840_0%,#0b0814_70%)] p-3 sm:p-5">
       {RAMOS_HEX_DND.filter(r => ramoAtivo === 'todos' || r.id === ramoAtivo).map(r => {
         const grupo = visiveis.filter(n => n.ramo === r.id)
-        return grupo.length ? <div key={r.id} className="rounded-xl border border-(--a-55456e)/70 bg-(--s-120e1f)/75 p-2 sm:p-4">
+        return grupo.length ? <div key={r.id} className="rounded-xl border border-(--a-55456e)/70 bg-(--s-171325)/75 p-2 sm:p-4">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: r.cor }}>
             <span aria-hidden>{r.icone}</span>{r.titulo}
             <span className="rounded-full border border-(--a-55456e) px-2 text-[10px] text-(--a-c4b6d4)">{grupo.length}</span>

@@ -16,6 +16,7 @@ type Props={d:DadosFicha;c:Calculo;onChange:(d:DadosFicha)=>void;somenteLeitura:
 export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props) {
  const [nome,setNome]=useState('')
  const [buscaCatalogo,setBuscaCatalogo]=useState('')
+ const [espacosEscolhidos,setEspacosEscolhidos]=useState<Record<string,number>>({})
  const [nivel,setNivel]=useState(0)
  const [classe,setClasse]=useState('')
  const [fonte,setFonte]=useState('phb2014')
@@ -81,7 +82,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
       const pactoMax=Number(c.recursosMax.pacto??0)
       if(pactoMax>0)recursos.pacto={...recursos.pacto,atual:pactoMax}
       onChange({...d,recursos})
-    }}>🌙 Repor espaços (descanso confirmado pelo mestre)</button>
+    }}>🌙 Descanso longo: repor espaços e pacto</button>
   </div>}
   {aberto&&!somenteLeitura&&<div className="grid gap-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3 sm:grid-cols-2">
     <div className="space-y-2 rounded-lg border border-(--a-55456e) p-2 sm:col-span-2">
@@ -152,10 +153,22 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
     {m.expressao&&<p className="text-xs font-semibold text-(--a-ed9cd8)">{m.expressao}</p>}
     <div className="flex flex-wrap gap-2">
       {m.nivel===0&&<button type="button" className={btn} onClick={()=>gastar(0,m,false)}><Sparkles size={14}/> Conjurar truque</button>}
-      {m.nivel>0&&<button type="button" className={btn}
-        disabled={somenteLeitura||atualSlot(m.nivel)<1} onClick={()=>gastar(m.nivel,m,false)}>
-        <Dice5 size={14}/> Gastar 1 espaço {m.nivel}º
-      </button>}
+      {m.nivel>0&&<>
+        <label className="flex items-center gap-1 text-xs">
+          Espaço
+          <select className={campo+' max-w-24'} aria-label={'Nível do espaço para '+m.nome}
+            value={espacosEscolhidos[m.id]??m.nivel}
+            disabled={somenteLeitura}
+            onChange={e=>setEspacosEscolhidos(v=>({...v,[m.id]:Number(e.target.value)}))}>
+            {Array.from({length:10-m.nivel},(_,i)=>m.nivel+i).filter(n=>maxSlot(n)>0)
+              .map(n=><option key={n} value={n}>{n}º</option>)}
+          </select>
+        </label>
+        <button type="button" className={btn} disabled={somenteLeitura||atualSlot(espacosEscolhidos[m.id]??m.nivel)<1}
+          onClick={()=>gastar(espacosEscolhidos[m.id]??m.nivel,m,false)}>
+          <Dice5 size={14}/> Gastar espaço {(espacosEscolhidos[m.id]??m.nivel)}º
+        </button>
+      </>}
       {m.nivel>0&&m.classe==='bruxo'&&Number(c.recursosMax.pacto??0)>0&&<button type="button"
         className={btn} disabled={somenteLeitura||Number(d.recursos.pacto?.atual??0)<1}
         onClick={()=>gastar(Number(c.vars.dnd_pacto_nivel)||m.nivel,m,true)}>

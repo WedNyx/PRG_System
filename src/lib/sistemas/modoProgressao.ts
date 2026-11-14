@@ -26,7 +26,7 @@ export function lerConfiguracaoProgressao(valor: unknown): ConfiguracaoProgressa
       if (/^[a-zA-Z0-9_-]{1,100}$/.test(id) && modoValido(escolha)) excecoesPorFicha[id] = escolha
     }
   }
-  const fontes = Array.isArray(objeto.fontes) ? [...new Set(objeto.fontes.filter((f): f is string => typeof f === 'string' && ID_FONTE.test(f)))].slice(0, 20) : undefined
+  const fontes = Array.isArray(objeto.fontes) ? [...new Set(objeto.fontes.filter((f): f is string => typeof f === 'string' && ID_FONTE.test(f)))].slice(0, 80) : undefined
   const fontesExtras = Array.isArray(objeto.fontesExtras)
     ? [...new Set(objeto.fontesExtras.filter((f): f is string => typeof f === 'string').map(f => f.trim().slice(0, 60)).filter(Boolean))].slice(0, 10) : undefined
   const baseLivro = baseDndValida(objeto.baseLivro) ? objeto.baseLivro : undefined

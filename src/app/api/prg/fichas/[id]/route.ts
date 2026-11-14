@@ -55,7 +55,7 @@ function semAprovacao<T extends Record<string, string>>(r: T): T {
 
 /** Dono vê sempre; mestre/co-mestre vê todas as fichas da campanha (NPCs só eles). */
 export const GET = rota<Ctx>(async (req, { params }) => {
-  const { f, eu, dono, admin } = await carregar(req, (await params).id)
+  const { f, eu, dono, admin, espectador } = await carregar(req, (await params).id)
   if (f.npc ? !admin : (!dono && !admin)) throw new ErroApi(404, 'Ficha não encontrada.')
   let regras = null, pendentes: string[] = [], pedido: Pick<Mudanca, 'caminho' | 'depois'>[] = []
   if (f.campanha_id && !admin) {
@@ -66,7 +66,8 @@ export const GET = rota<Ctx>(async (req, { params }) => {
     // O que o jogador pediu e ainda espera o mestre: a ficha mostra esses valores (sem isso, ao recarregar parecia que não tinha salvo).
     pedido = (p?.mudancas ?? []).map(m => ({ caminho: m.caminho, depois: m.depois }))
   }
-  const podeEditar = f.campanha_id ? (admin || (dono && f.status !== 'recusada' && !f.bloqueada)) : dono
+  // Um espectador que ainda seja dono de uma ficha antiga vê, mas não edita.
+  const podeEditar = f.campanha_id ? (admin || (dono && !espectador && f.status !== 'recusada' && !f.bloqueada)) : dono
   const [configCampanha] = f.campanha_id && f.sistema === 'dnd5e-srd'
     ? await rest<{ config_progressao?: unknown }[]>(`prg_campanhas?select=config_progressao&id=eq.${q(f.campanha_id)}&limit=1`).catch(() => [])
     : []

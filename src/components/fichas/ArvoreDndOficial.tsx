@@ -5,6 +5,7 @@ import { BookOpenCheck, ChevronDown, CircleHelp, GitBranch, X } from 'lucide-rea
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { hexagonosOficiaisDnd, RAMOS_HEX_DND, type EstadoHexDnd, type HexagonoDnd } from '@/lib/sistemas/arvoreDndOficial'
 import type { LivroBaseDnd } from '@/lib/sistemas/dndLivros'
+import { lerArvore, noAtivo } from '@/lib/sistemas/arvore'
 
 type Props = { d: DadosFicha; edicao: LivroBaseDnd; fontes: Set<string> | null }
 const estados: Record<EstadoHexDnd, { texto: string; fundo: string }> = {
@@ -21,9 +22,19 @@ const resumo = (n: HexagonoDnd) => n.titulo.length > 30 ? n.titulo.slice(0, 28) 
 export default function ArvoreDndOficial({ d, edicao, fontes }: Props) {
   const [futuros, setFuturos] = useState(false)
   const [selecionado, setSelecionado] = useState<string | null>(null)
-  const [ramoAtivo, setRamoAtivo] = useState<'todos' | 'classe' | 'especie' | 'antecedente'>('todos')
-  const nos = useMemo(() => hexagonosOficiaisDnd(d, edicao, fontes, futuros),
-    [d, edicao, fontes, futuros])
+  const [ramoAtivo, setRamoAtivo] = useState<'todos' | 'classe' | 'especie' | 'antecedente' | 'mestre'>('todos')
+  const nos = useMemo(() => {
+    const oficiais = hexagonosOficiaisDnd(d, edicao, fontes, futuros)
+    const a = lerArvore(d.arvore)
+    const nv = Math.max(1, Math.floor(Number(d.campos.nivel) || 1))
+    const extras: HexagonoDnd[] = a.nos.filter(n => futuros || !(n.nivel && n.nivel > nv)).map(n => ({
+      id: 'mestre-' + n.id, titulo: n.nome, descricao: n.descricao || 'Hexágono criado na árvore personalizada; veja os requisitos e efeitos no editor abaixo.',
+      nivel: n.nivel ?? 1, ramo: 'mestre' as const,
+      estado: n.nivel && n.nivel > nv ? 'futuro' : noAtivo(a, n, d) ? 'recebido' : 'pendente',
+      livro: 'Personalizado pelo mestre (não é regra oficial)',
+    }))
+    return [...oficiais, ...extras]
+  }, [d, edicao, fontes, futuros])
   const visiveis = nos.filter(n => ramoAtivo === 'todos' || n.ramo === ramoAtivo)
   const detalhe = nos.find(n => n.id === selecionado) ?? null
   const recebidos = nos.filter(n => n.estado === 'recebido').length
@@ -45,8 +56,7 @@ export default function ArvoreDndOficial({ d, edicao, fontes }: Props) {
         {' '}{recebidos} característica(s) adquirida(s){pendentes ? ` · ${pendentes} escolha(s) pendente(s)` : ''}.
       </p>
       <p className="mt-1 text-[11px] text-(--a-a998bd)">
-        Hexágonos oficiais não custam pontos nem se transformam em novos poderes duplicados.
-        Os bônus aplicáveis vêm do motor de regras da edição. Os do mestre são criados na árvore personalizada logo abaixo.
+        Os hexágonos oficiais não custam pontos nem duplicam benefícios. Os hexágonos personalizados do mestre aparecem no mesmo mapa, mas sua edição e liberação permanecem na área abaixo.
       </p>
     </div>
     <div className="flex flex-wrap items-center gap-2 border-b border-(--a-55456e) px-3 py-3 sm:px-4">
@@ -57,7 +67,7 @@ export default function ArvoreDndOficial({ d, edicao, fontes }: Props) {
             (ramoAtivo === r.id ? 'border-(--a-b99bff) bg-(--s-34294f) font-semibold' : 'border-(--a-55456e) hover:bg-(--s-34294f)')}>
           {r.titulo}
         </button>)}
-      {edicao === 'phb2024' && <label className="ml-auto flex items-center gap-2 text-xs text-(--a-c4b6d4)">
+      {<label className="ml-auto flex items-center gap-2 text-xs text-(--a-c4b6d4)">
         <input type="checkbox" checked={futuros} onChange={e => setFuturos(e.target.checked)} /> Mostrar níveis futuros
       </label>}
     </div>
@@ -110,7 +120,7 @@ export default function ArvoreDndOficial({ d, edicao, fontes }: Props) {
       <p className="mt-2 whitespace-pre-wrap text-sm text-(--a-cfc0df)">{detalhe.descricao}</p>
       {detalhe.escolha && <p className="mt-2 text-xs text-emerald-200">Escolha registrada: {detalhe.escolha}</p>}
       {detalhe.estado === 'pendente' && <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-200">
-        <CircleHelp size={14}/> Registre esta escolha no painel de Progressão / Origem abaixo.
+        <CircleHelp size={14}/> {detalhe.ramo === 'mestre' ? 'Hexágono personalizado ainda não liberado: o mestre controla sua liberação na árvore editável abaixo.' : 'Registre esta escolha no painel de Progressão / Origem abaixo.'}
       </p>}
       <p className="mt-2 flex items-center gap-1.5 text-[11px] text-(--a-c4b6d4)">
         <BookOpenCheck size={13}/> Fonte: {detalhe.livro}. {detalhe.estado === 'referencia' ? 'Efeitos comerciais não concedidos automaticamente.' : ''}

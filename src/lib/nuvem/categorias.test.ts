@@ -36,6 +36,7 @@ describe('categorias de ficha genérica', () => {
   it('classifica e aplica', () => {
     expect(categoria('dnd5e-srd', 'campos.nivel')).toBe('nivel')
     expect(categoria('dnd5e-srd', 'campos.classe')).toBe('identidade')
+    expect(categoria('dnd5e-srd', 'dnd2014Subclasses')).toBe('habilidades')
     expect(categoria('dnd5e-srd', 'listas.inventario')).toBe('equipamentos')
     expect(categoria('dnd5e-srd', 'listas.ataques')).toBe('equipamentos')
     expect(categoria('faroeste-arcano', 'listas.talentos')).toBe('habilidades')

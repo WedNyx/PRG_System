@@ -151,13 +151,17 @@ export function calcular(s: Sistema, d: DadosFicha, opcoes: { efeitosDnd?: boole
   const b = (alvo: string) => bonus[alvo] ?? 0
   for (const c of s.campos) if (c.tipo === 'numero') vars[c.id] = num(d.campos[c.id])
   // Números das opções escolhidas (ex.: classe → PV iniciais). Sem escolha, as variáveis do campo valem 0.
+  const edicao = s.regraLivroDnd ?? lerLivrosDnd(d.dndLivros).base
   for (const c of s.campos) if (c.tipo === 'escolha') {
     for (const o of c.opcoes ?? []) for (const k of Object.keys(o.vars ?? {})) vars[k] ??= 0
+    // Em D&D 2014, "Anão robusto" é diferente do traço 2024. A opção
+    // de espécie do catálogo revisado jamais alimenta variáveis do 2014.
+    if (s.id === 'dnd5e-srd' && edicao === 'phb2014' && c.id === 'especie') continue
     Object.assign(vars, opcaoEscolhida(c, d.campos?.[c.id])?.vars ?? {})
   }
+  if (s.id === 'dnd5e-srd' && edicao === 'phb2014') vars.robusto = 0
   // Em 2014, os atributos-base são opt-in: fichas antigas já contêm totais com bônus.
   // Somar os bônus sem uma base registrada os aplicaria duas vezes.
-  const edicao = s.regraLivroDnd ?? lerLivrosDnd(d.dndLivros).base
   const atributos2014 = s.id === 'dnd5e-srd' && edicao === 'phb2014' ? atributosEfetivos2014(d) : null
   const mods: Record<string, number> = {}
   let soma = 0, zeros = 0, maior = -Infinity

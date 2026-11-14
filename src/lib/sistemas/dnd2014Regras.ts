@@ -16,6 +16,8 @@ import { idDe } from './dnd2024Classes'
 import { VARS_DND } from './dnd2024Efeitos'
 import { RACAS_2014, ANTECEDENTES_2014, SUBRACAS_2014 } from './dnd2014Criacao'
 import { validarSubclasseDnd2014 } from './dnd2014Subclasses'
+import { classesDaFicha2014, espacosDeMagia2014 } from './dnd2014Multiclasse'
+import { lerMulticlasseDnd, requisitosMulticlasse } from './dnd2024Classes'
 
 export const ATRIBUTOS_DND = ['FOR','DES','CON','INT','SAB','CAR'] as const
 export type AtributoDnd = typeof ATRIBUTOS_DND[number]
@@ -114,7 +116,7 @@ export function atributosEfetivos2014(d: Pick<DadosFicha,'campos' | 'dnd2014Atri
 
 /** Regras abertas de 2014. A característica de classe particular e subclasse continuam manuais. */
 export function efeitosDnd2014(
-  d: Pick<DadosFicha,'campos' | 'dnd2014PericiasClasse' | 'dnd2014PericiasRaciais'>,
+  d: Pick<DadosFicha,'campos' | 'dnd2014PericiasClasse' | 'dnd2014PericiasRaciais' | 'dnd2014Multiclasse' | 'dnd2014Subclasse'>,
   vars: Record<string,number>,
 ): EfeitosDnd {
   const v: Record<string,number> = Object.fromEntries(VARS_DND.map(x=>[x,0]))
@@ -122,6 +124,8 @@ export function efeitosDnd2014(
   const n = Math.min(20,Math.max(1,Math.floor(Number(d.campos.nivel)||1)))
   const classe = CLASSES_SRD.find(x => x.nome === d.campos.classe)
   const cls = classe?.id ?? ''
+  const {lista:classes}=classesDaFicha2014(d)
+  const em=(id:string)=>classes.find(c=>c.cls.id===id)?.nivel??0
   const prof = 2 + Math.floor((n-1)/4)
   v.dnd_nivel=n;v.dnd_prof=prof
   const dar = (id:string,fonte:string) => {if (!treino[id]) treino[id]={treino:'proficiente',fonte}}
@@ -138,56 +142,38 @@ export function efeitosDnd2014(
   for (const x of [...new Set(escolhasRaciais)].filter(x => periciasClasse2014('Bardo')?.opcoes.includes(x)).slice(0,limiteRacial)) dar(x,'Perícia racial 2014')
   if (d.campos.especie === 'Elfo') dar('percepcao','Sentidos Aguçados (2014)')
   if (d.campos.especie === 'Meio-Orc') dar('intimidacao','Ameaçador (2014)')
-  if (cls === 'barbaro') {
+  if (em('barbaro')>0) { const n=em('barbaro')
     v.dnd_furias = n >= 20 ? 0 /* 20: ilimitado, mostrar como característica */ : n >= 17 ? 6 : n >= 12 ? 5 : n >= 6 ? 4 : n >= 3 ? 3 : 2
     v.dnd_dano_furia = n >= 16 ? 4 : n >= 9 ? 3 : 2
     if (n >= 5 && Number(vars.des_max)!==0) v.dnd_desl_extra += 3
   }
-  if (cls === 'guerreiro') {
+  if (em('guerreiro')>0) { const n=em('guerreiro')
     v.dnd_retomar=1
     v.dnd_surto=n>=17?2:n>=2?1:0
     v.dnd_indomavel=n>=17?3:n>=13?2:n>=9?1:0
   }
-  if (cls === 'monge') {
+  if (em('monge')>0) { const n=em('monge')
     v.dnd_foco=n>=2?n:0
     if(n>=2 && Number(vars.ca_base)<=10 && !(Number(vars.armadura)>0))
       v.dnd_desl_extra+= n>=18?9:n>=14?7.5:n>=10?6:n>=6?4.5:3
     if(Number(vars.ca_base)<=10 && !(Number(vars.armadura)>0)) v.dnd_ca_extra=Math.max(0,Number(vars.mod_SAB)||0)
   }
-  if (cls === 'barbaro' && Number(vars.ca_base)<=10)
+  if (em('barbaro')>0 && Number(vars.ca_base)<=10)
     v.dnd_ca_extra=Math.max(0,Number(vars.mod_CON)||0)
-  if (cls === 'paladino') v.dnd_cura_maos=5*n
-  if (cls === 'bardo') {
+  if (em('paladino')>0) v.dnd_cura_maos=5*em('paladino')
+  if (em('bardo')>0) { const n=em('bardo')
     v.dnd_inspiracao=Math.max(1,Number(vars.mod_CAR)||0)
   }
-  if (cls === 'ladino') v.dnd_furtivo=1+Math.floor((n-1)/2)
-  if (cls === 'feiticeiro') v.dnd_feiticaria=n>=2?n:0
-  if (cls === 'druida') v.dnd_forma_selvagem=n>=2?2:0
-  if (cls === 'clerigo') v.dnd_canalizar=n>=18?3:n>=6?2:n>=2?1:0
-  // Espaços básicos da tabela padrão SRD 5.1. Pact Magic e a combinação
-  // multiclasse exigem tratamento específico, não extrapolamos essas tabelas.
-  const cheio=['bardo','clerigo','druida','feiticeiro','mago'].includes(cls)
-  const meio=['paladino','patrulheiro'].includes(cls)
-  const nl=cheio?n:meio?Math.floor(n/2):0
-  const tabela: number[][] = [
-    [0,0,0,0,0,0,0,0,0],
-    [2,0,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0],
-    [4,2,0,0,0,0,0,0,0],[4,3,0,0,0,0,0,0,0],
-    [4,3,2,0,0,0,0,0,0],[4,3,3,0,0,0,0,0,0],
-    [4,3,3,1,0,0,0,0,0],[4,3,3,2,0,0,0,0,0],
-    [4,3,3,3,1,0,0,0,0],[4,3,3,3,2,0,0,0,0],
-    [4,3,3,3,2,1,0,0,0],[4,3,3,3,2,1,0,0,0],
-    [4,3,3,3,2,1,1,0,0],[4,3,3,3,2,1,1,0,0],
-    [4,3,3,3,2,1,1,1,0],[4,3,3,3,2,1,1,1,0],
-    [4,3,3,3,2,1,1,1,1],[4,3,3,3,3,1,1,1,1],
-    [4,3,3,3,3,2,2,1,1],[4,3,3,3,3,2,2,1,1],
-  ]
-  const slots=tabela[Math.max(0,Math.min(20,nl))]??tabela[0]
-  for(let i=1;i<=9;i++)v['dnd_espacos_'+i]=slots[i-1]??0
-  if (cls === 'bruxo') {
-    v.dnd_pacto=n>=17?4:n>=11?3:n>=2?2:1
-    v.dnd_pacto_nivel=n>=9?5:n>=7?4:n>=5?3:n>=3?2:1
-  }
+  if (em('ladino')>0) v.dnd_furtivo=1+Math.floor((em('ladino')-1)/2)
+  if (em('feiticeiro')>0) v.dnd_feiticaria=em('feiticeiro')>=2?em('feiticeiro'):0
+  if (em('druida')>0) v.dnd_forma_selvagem=em('druida')>=2?2:0
+  if (em('clerigo')>0) {const n=em('clerigo'); v.dnd_canalizar=n>=18?3:n>=6?2:n>=2?1:0}
+  // No 2014, Paladino/Patrulheiro contam metade PARA BAIXO na multiclasse;
+  // como classe única usam a tabela própria e passam a conjurar no nível 2.
+  const slots=espacosDeMagia2014(classes,d.dnd2014Subclasse)
+  for(let i=1;i<=9;i++) v['dnd_espacos_'+i]=slots.espacos[i]??0
+  v.dnd_pacto=slots.pacto
+  v.dnd_pacto_nivel=slots.pactoNivel
   const raca=String(d.campos.especie),sub=String(d.campos.subraca2014)
   if (raca==='Anão'&&sub==='Anão da Colina')v.dnd_pv_extra+=n
   // O campo deslocamento já pode conter o valor racial em fichas antigas.
@@ -196,7 +182,7 @@ export function efeitosDnd2014(
     if (raca==='Elfo'&&sub==='Elfo da Floresta')v.dnd_desl_extra+=1.5
     if (raca==='Anão'||raca==='Halfling'||raca==='Gnomo')v.dnd_desl_extra-=1.5
   }
-  return { vars:v,treino,bonus:{},meiaProficiencia: cls==='bardo'&&n>=2?Math.floor(prof/2):0 }
+  return { vars:v,treino,bonus:{},meiaProficiencia: em('bardo')>=2?Math.floor(prof/2):0 }
 }
 
 

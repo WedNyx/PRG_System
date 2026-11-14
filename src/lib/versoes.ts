@@ -34,6 +34,8 @@ export const VERSOES: Versao[] = [
       '📜 Cartões arredondados com progressão vertical, detalhes do livro e estado da característica substituem os dois mapas de hexágonos da ficha D&D.',
       '✨ A árvore do mestre preserva pontos, requisitos, concessões, poderes e histórico antigos. Os ramos oficiais são calculados pelas escolhas 2014 ou 2024 sem serem gravados ou concedidos novamente.',
       '📱 Cada ramo é exibido separadamente no celular e no computador, com cartões legíveis; outros sistemas mantêm seu visual atual nesta etapa.',
+      '📖 Livro 2014 revisado: Clava Grande, peso traduzido da Lança Longa e característica Andarilho do Forasteiro.',
+      '🛡️ Sub-raças incompatíveis bloqueadas na troca de raça; subclasses secundárias da multiclasse recebem escolha, validação por nível e referência na árvore.',
     ],
   },
   {

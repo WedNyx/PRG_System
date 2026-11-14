@@ -36,12 +36,26 @@ const backgrounds: Record<string, string[]> = {
 }
 export const periciasAntecedente2014 = (nome: unknown): string[] => backgrounds[String(nome)] ?? []
 
+// Listas explícitas de perícias de classe: em 2014 não são idênticas às de 2024
+// (por exemplo Mago 2014 não seleciona Natureza; Ladino seleciona Atuação).
+const SKILLS_2014: Record<string, string[]> = {
+  'Bárbaro':['adestrar_animais','atletismo','intimidacao','natureza','percepcao','sobrevivencia'],
+  'Bardo':['acrobacia','adestrar_animais','arcanismo','atletismo','atuacao','enganacao','furtividade','historia','intimidacao','intuicao','investigacao','medicina','natureza','percepcao','persuasao','prestidigitacao','religiao','sobrevivencia'],
+  'Clérigo':['historia','intuicao','medicina','persuasao','religiao'],
+  'Druida':['adestrar_animais','arcanismo','intuicao','medicina','natureza','percepcao','religiao','sobrevivencia'],
+  'Guerreiro':['acrobacia','adestrar_animais','atletismo','historia','intuicao','intimidacao','percepcao','sobrevivencia'],
+  'Monge':['acrobacia','atletismo','historia','intuicao','religiao','furtividade'],
+  'Paladino':['atletismo','intuicao','intimidacao','medicina','persuasao','religiao'],
+  'Patrulheiro':['adestrar_animais','atletismo','intuicao','investigacao','natureza','percepcao','furtividade','sobrevivencia'],
+  'Ladino':['acrobacia','atletismo','enganacao','intuicao','intimidacao','investigacao','percepcao','atuacao','persuasao','prestidigitacao','furtividade'],
+  'Feiticeiro':['arcanismo','enganacao','intuicao','intimidacao','persuasao','religiao'],
+  'Bruxo':['arcanismo','enganacao','historia','intimidacao','investigacao','natureza','religiao'],
+  'Mago':['arcanismo','historia','intuicao','investigacao','medicina','religiao'],
+}
 export const periciasClasse2014 = (nome: unknown): { qtd: number; opcoes: string[] } | null => {
   const classe = CLASSES_SRD.find(x => x.nome === nome)
-  if (!classe) return null
-  const opcoes = classe.pericias.opcoes.filter(x => !(classe.id === 'guerreiro' && x === 'persuasao'))
-  if (classe.id === 'ladino' && !opcoes.includes('atuacao')) opcoes.push('atuacao')
-  return { qtd: classe.pericias.qtd, opcoes }
+  const opcoes = SKILLS_2014[String(nome)]
+  return classe && opcoes ? { qtd: classe.pericias.qtd, opcoes } : null
 }
 const integer = (x: unknown): number | null => typeof x === 'number' && Number.isInteger(x) && x >= 1 && x <= 20 ? x : null
 export function lerAtributosBase2014(valor: unknown): Record<AtributoDnd, number> | null {

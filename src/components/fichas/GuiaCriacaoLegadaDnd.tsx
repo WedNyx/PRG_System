@@ -3,6 +3,7 @@
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { SUBRACAS_2014, RACAS_2014, ANTECEDENTES_2014 } from '@/lib/sistemas/dnd2014Criacao'
 import { subclassesDaClasse2014, subclasseAtivaDnd2014 } from '@/lib/sistemas/dnd2014Subclasses'
+import { classesDaFicha2014 } from '@/lib/sistemas/dnd2014Multiclasse'
 import { TALENTOS_PHB_2014, limitesTalentos2014 } from '@/lib/sistemas/dnd2014Talentos'
 import { ATRIBUTOS_DND, aumentosRaciais2014, atributosEfetivos2014, lerAtributosBase2014,
   periciasAntecedente2014, periciasClasse2014 } from '@/lib/sistemas/dnd2014Regras'
@@ -26,7 +27,7 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura }: Pr
   const total = atributosEfetivos2014(d)
   const escolhasExtras = d.dnd2014AtributosExtras ?? []
   const subclasses = subclassesDaClasse2014(classe)
-  const classeNivel = Number(d.campos.nivel) || 1
+  const classeNivel = classesDaFicha2014(d).lista.find(c => c.principal)?.nivel ?? 1
   const selecionada = subclasseAtivaDnd2014(classe, d.dnd2014Subclasse, classeNivel)
   const limiteTalentos = limitesTalentos2014(d)
   const talentosEscolhidos = d.dnd2014Talentos ?? []

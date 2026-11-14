@@ -10,6 +10,8 @@ export type TipoDanoArmaDnd = 'Cortante' | 'Perfurante' | 'Contundente'
 export type ArmaDnd2024 = {
   id: string; nome: string; grupo: GrupoArmaDnd; dano: string; tipo: TipoDanoArmaDnd
   propriedades: string[]; maestria: string; pesoLb: number; preco: string
+  /** Peso já expresso em kg na edição traduzida selecionada; não altera a tabela 2024. */
+  pesoKgLivro?: number
   /** Distâncias normal e longa em pés, quando a arma possui Arremesso/Munição. */
   alcancePes?: [number, number]
   versatil?: string
@@ -69,7 +71,7 @@ export const armaDndPorId = (v: unknown): ArmaDnd2024 | null =>
   typeof v === 'string' ? ARMAS_DND_2024.find(a => a.id === v) ?? null : null
 
 export const pesoEmKgArmaDnd = (a: ArmaDnd2024): number =>
-  Math.round(a.pesoLb * 0.45359237 * 1000) / 1000
+  a.pesoKgLivro ?? Math.round(a.pesoLb * 0.45359237 * 1000) / 1000
 
 export const alcanceEmMetrosArmaDnd = (a: ArmaDnd2024): number =>
   Math.round((a.alcancePes?.[0] ?? (a.propriedades.includes('Alcance') ? 10 : 5)) * 0.3048 * 100) / 100

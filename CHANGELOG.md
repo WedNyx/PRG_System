@@ -4,6 +4,10 @@ Também aparece no site em /novidades. Ao atualizar: aumente a versão no packag
 
 ## v0.34.0 — Fase 2: árvores D&D unificadas (2026-11-14)
 
+- **Etapa 1 — fidelidade D&D 2014:** Clava Grande com Pesada, Lança Longa com peso conforme tradução auditada (4 kg), Forasteiro com característica Andarilho e validação de sub-raça ao trocar a raça.
+- Subclasses de classes secundárias de D&D 2014 agora possuem escolhas e validações próprias por nível de classe, refletidas no grimório, nos cálculos de conjuração, na árvore e no checklist de criação. Campo opcional mantém compatibilidade com fichas antigas.
+
+
 - A ficha D&D passa a exibir um único painel com quatro ramos: Classe/Subclasse, Raça/Espécie, Antecedente/Origem e poderes extras do mestre.
 - Interface vertical com cartões arredondados e detalhes de cada nó; remove a duplicação visual de mapas de hexágonos na aba Árvore.
 - Os ramos oficiais são projetados a partir das escolhas e edição 2014/2024 sem salvar ou conceder bônus pela visualização.

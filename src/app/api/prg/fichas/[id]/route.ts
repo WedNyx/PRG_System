@@ -16,6 +16,7 @@ import { lerLivrosDnd, validarLivrosDnd } from '@/lib/sistemas/dndLivros'
 import { validarAlteracoesExclusivas2024 } from '@/lib/sistemas/dnd2014Criacao'
 import { validarAlteracoes2014 } from '@/lib/sistemas/dnd2014Regras'
 import { validarAlteracoesMagias2014 } from '@/lib/sistemas/dnd2014Magias'
+import { validarTalentos2014 } from '@/lib/sistemas/dnd2014Talentos'
 import { lerRegistroAntecedenteDnd, validarAlteracoesAntecedenteDnd } from '@/lib/sistemas/dnd2024Antecedentes'
 import { lerTalentoMagiaHumano, validarAlteracoesTalentoMagiaHumano } from '@/lib/sistemas/dnd2024MagiaHumano'
 
@@ -120,6 +121,7 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const edicao = lerLivrosDnd(candidato.dndLivros, configLivros?.baseLivro ?? 'phb2024').base
     const erros = validarLivrosDnd(antigo.dndLivros, candidato.dndLivros, regrasLivros, admin)
     erros.push(...validarAlteracoesMagias2014(antigo, candidato, edicao))
+    erros.push(...validarTalentos2014(antigo, candidato, edicao, admin))
     const liberadas = fontesDaFicha(candidato.dndLivros)
     if (edicao === 'phb2014') {
       erros.push(...validarAlteracoesExclusivas2024(antigo, candidato))
@@ -220,6 +222,7 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const edicao = lerLivrosDnd(autorizado.dndLivros, configLivros?.baseLivro ?? 'phb2024').base
     const erros = validarLivrosDnd(anterior.dndLivros, autorizado.dndLivros, regrasLivros, admin)
     erros.push(...validarAlteracoesMagias2014(anterior, autorizado, edicao))
+    erros.push(...validarTalentos2014(anterior, autorizado, edicao, admin))
     const liberadas = fontesDaFicha(autorizado.dndLivros)
     if (edicao === 'phb2014') {
       erros.push(...validarAlteracoesExclusivas2024(anterior, autorizado))

@@ -64,9 +64,10 @@ export default function SeletorFontes({ baseLivro, fontes, extras, onBaseChange,
       </label>)}
     </div>
     <p className="rounded-lg border border-amber-400/30 bg-amber-950/15 p-2 text-[11px] text-amber-100">
-      <strong>Importante:</strong> as regras automáticas atuais são as do SRD 5.2.1 (2024).
-      Selecionar 2014 troca a criação para o modelo legado com referência/manual; o sistema não aplica a progressão de 2024 como se fosse 2014.
-      Se a campanha já tem fichas, revise-as antes de mudar a edição-base.
+      <strong>Importante:</strong> a edição 2024 usa o motor SRD 5.2.1. A edição 2014 tem um motor separado
+      do SRD 5.1 para atributos raciais, perícias, salvaguardas e recursos básicos; características avançadas,
+      magias e suplementos continuam sujeitos ao livro e à conferência do mestre. Nenhuma edição aplica
+      progressão da outra. Se a campanha já tem fichas, revise-as antes de mudar o livro-base.
     </p>
 
     <div className="space-y-2">

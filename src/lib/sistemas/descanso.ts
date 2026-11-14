@@ -42,6 +42,9 @@ export function aplicarDescanso(s: Sistema, bruto: Partial<DadosFicha>, tipo: Ti
     for (const r of s.recursos) {
       const atual = Number(recursos[r.id]?.atual ?? 0) || 0
       if (TEMP.test(r.id) || TEMP.test(r.nome)) { if (atual) { recursos[r.id] = { ...recursos[r.id], atual: 0 }; mudancas.push(`${r.nome}: ${atual} → 0`) } continue }
+      // 2014: reduzir Exaustão exige cumprir condições adicionais de descanso.
+      // Não presumir isso automaticamente — o mestre confirma a redução.
+      if (legado2014 && r.id === 'exaustao') continue
       // Marcadores (Exaustão, Morrendo, Estresse…) não enchem: só baixam o quanto a regra manda.
       if (r.contador) { const novo = Math.max(0, atual - (r.baixaNoDescanso ?? 0)); if (novo !== atual) { recursos[r.id] = { ...recursos[r.id], atual: novo }; mudancas.push(`${r.nome}: ${atual} → ${novo}`) } continue }
       const m = max[r.id]

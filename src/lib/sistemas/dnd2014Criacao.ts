@@ -59,13 +59,15 @@ export const SUBRACAS_2014: Record<string, { nome: string; detalhe: string }[]> 
 }
 export function esquemaFichaPorLivro(s: Sistema, d: Pick<DadosFicha,'dndLivros'>, obrigatorio?: LivroBaseDnd | null): Sistema {
   if (s.id !== 'dnd5e-srd' || (obrigatorio ?? lerLivrosDnd(d.dndLivros).base) !== 'phb2014') return s
-  return { ...s, nome: 'D&D 5e (2014) — Livro do Jogador', resumo: 'Regras legadas de 2014: seleção de raça/sub-raça e antecedentes próprios. Progressão legada assistida/manual.',
+  return { ...s, regraLivroDnd: 'phb2014' as const, nome: 'D&D 5e (2014) — Livro do Jogador', resumo: 'Regras legadas de 2014: seleção de raça/sub-raça e antecedentes próprios. Regras automáticas do SRD 5.1 para atributos raciais, perícias, salvaguardas e recursos básicos. Opções comerciais e subclasses: revisão manual.',
     campos: s.campos.map(c => {
       if (c.id === 'especie') return { ...c, nome: 'Raça (Livro do Jogador 2014)', opcoes: RACAS_2014 }
       if (c.id === 'antecedente') return { ...c, nome: 'Antecedente (Livro do Jogador 2014)', opcoes: ANTECEDENTES_2014 }
       return c
     }),
-    observacoes: [...(s.observacoes ?? []), 'Edição-base 2014: bônus de raça, recursos e características legadas exigem conferência no Livro do Jogador 2014. Não aplicar progressão 2024.'],
+    recursos: s.recursos.filter(x => !['magia_origem_gratis','magia_humano_gratis','magia_especie_3','magia_especie_5','magia_gnomo_animais','marca_cacador','pontos_sorte'].includes(x.id))
+      .map(x => x.id === 'foco' ? { ...x, nome: 'Pontos de Ki (Monge 2014)' } : x.id === 'inspiracao' ? { ...x, nome: 'Inspiração (2014)', contador: true } : x),
+    observacoes: [...(s.observacoes ?? []), 'Edição 2014 (SRD 5.1): bônus raciais aplicados apenas a valores-base confirmados, perícias e salvaguardas automáticas, recursos gerais. Subclasses, progressão avançada e suplementos comerciais exigem conferência manual.'],
   }
 }
 

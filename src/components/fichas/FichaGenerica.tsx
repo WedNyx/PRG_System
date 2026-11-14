@@ -144,7 +144,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     return r.total
   }
   const [descansando, setDescansando] = useState(false)
-  const propsInv = { s, d, c, onChange, somenteLeitura, rolar: rolarExpr, abrirDescanso: somenteLeitura ? undefined : () => setDescansando(true) }
+  const propsInv = { s, d, c, onChange, somenteLeitura, rolar: rolarExpr, abrirDescanso: somenteLeitura || legado2014 ? undefined : () => setDescansando(true) }
 
   const grupos = new Map<string, NonNullable<Sistema['pericias']>['lista']>()
   for (const p of s.pericias?.lista ?? []) grupos.set(p.grupo ?? '', [...(grupos.get(p.grupo ?? '') ?? []), p])
@@ -176,7 +176,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
 
   return <div>
     <RolagemCentral ref={central} />
-    {descansando && <JanelaDescanso s={s} d={d} onChange={onChange} rolarTotal={rolarTotal} fechar={() => setDescansando(false)} />}
+    {descansando && !legado2014 && <JanelaDescanso s={s} d={d} onChange={onChange} rolarTotal={rolarTotal} fechar={() => setDescansando(false)} />}
     <div className="sticky top-[57px] z-10 -mx-3 mb-4 border-b border-(--a-373251) bg-(--s-100d1c)/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-4" aria-label="Resumo do personagem">
       <div className="flex items-center gap-3 overflow-x-auto" tabIndex={0} role="region" aria-label="Vida e recursos (role para o lado)">
       {recursoPrincipal && [recursoPrincipal, ...s.recursos.filter(r => r !== recursoPrincipal && (c.recursosMax[r.id] || d.recursos[r.id]?.max))].slice(0, 3).map(r => {
@@ -229,7 +229,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     </section>}
     {(s.derivados.length > 0 || s.recursos.length > 0) && <section className={card}>
       <div className="mb-3 flex flex-wrap items-center gap-2"><h2 className="flex-1 font-bold text-(--a-ed9cd8)">Valores e recursos</h2>
-        {!somenteLeitura && s.recursos.length > 0 && <button type="button" onClick={() => setDescansando(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d4a23a]/70 px-3 py-1.5 text-sm text-amber-100 hover:bg-[#3a2a14]">🌙 Descansar</button>}</div>
+        {!somenteLeitura && !legado2014 && s.recursos.length > 0 && <button type="button" onClick={() => setDescansando(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d4a23a]/70 px-3 py-1.5 text-sm text-amber-100 hover:bg-[#3a2a14]">🌙 Descansar</button>}</div>
       {s.derivados.length > 0 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {s.derivados.map(x => <div key={x.id} className="rounded-xl bg-(--s-171325) p-3" title={x.dica}>
           <p className="text-xs text-(--a-c4b6d4)">{x.nome}</p><p className="text-2xl font-black">{c.derivados[x.id] ?? '—'}</p>
@@ -378,7 +378,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
       {s.creditos && <p className="mt-2 border-t border-(--a-3d3152) pt-2 text-[11px] leading-relaxed text-(--a-9d8db0)">{s.creditos}</p>}
     </section>}
         </>}
-        {secao === 'guia' && <GuiaSistema sistemaId={s.id} dados={d} irPara={ir} />}
+        {secao === 'guia' && (legado2014 ? <GuiaCriacaoLegadaDnd d={d} onChange={onChange} somenteLeitura={somenteLeitura} /> : <GuiaSistema sistemaId={s.id} dados={d} irPara={ir} />)}
         {proxima && <button type="button" onClick={() => ir(proxima.id)} className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-(--a-62527e) bg-(--s-171325)/80 p-3 text-left text-sm transition hover:border-(--a-b99bff) hover:bg-(--s-2b2140)">
           <span className="text-xl" aria-hidden="true">{proxima.icone}</span><span className="min-w-0 flex-1"><span className="block text-xs text-(--a-a99bbb)">Próxima parte</span><span className="block font-semibold">{proxima.nome}</span></span><span aria-hidden="true" className="text-(--a-b99bff)">→</span></button>}
       </div>

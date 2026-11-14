@@ -5,6 +5,7 @@ import {BookOpen,Plus,Trash2,Dice5,Sparkles} from 'lucide-react'
 import type {DadosFicha} from '@/lib/sistemas/tipos'
 import type {Calculo} from '@/lib/sistemas/calculo'
 import {classesDaFicha2014} from '@/lib/sistemas/dnd2014Multiclasse'
+import {subclasseDaFicha2014} from '@/lib/sistemas/dnd2014Subclasses'
 import {lerLivrosDnd,suplementoDndPorId} from '@/lib/sistemas/dndLivros'
 import {lerMagias2014,maximoNivelMagiaClasse2014,expressaoMagia2014Valida,type RegistroMagiaDnd2014} from '@/lib/sistemas/dnd2014Magias'
 import {magiasDaClasse2014} from '@/lib/sistemas/dnd2014CatalogoMagias'
@@ -31,7 +32,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
  const magias=lerMagias2014(d.dnd2014Magias)
  const classeAtual=lista.find(x=>x.cls.id===classe)??lista[0]
  const permissao=classeAtual?maximoNivelMagiaClasse2014(classeAtual.cls.nome,classeAtual.nivel,
-   classeAtual.principal?d.dnd2014Subclasse:undefined):0
+   subclasseDaFicha2014(d,classeAtual.cls.id)?.id):0
  const refonte=fontes.includes(fonte)?fonte:fontes[0]
  const catalogo=magiasDaClasse2014(classe||classeAtual?.cls.id||'')
  const normalizar=(s:string)=>s.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'')

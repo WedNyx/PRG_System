@@ -68,3 +68,15 @@ export function esquemaFichaPorLivro(s: Sistema, d: Pick<DadosFicha,'dndLivros'>
     observacoes: [...(s.observacoes ?? []), 'Edição-base 2014: bônus de raça, recursos e características legadas exigem conferência no Livro do Jogador 2014. Não aplicar progressão 2024.'],
   }
 }
+
+
+/** Evita gravar características e preparações 2024 novas numa ficha 2014.
+ * Dados antigos ficam preservados para quem voltar à edição revisada.
+ */
+export function validarAlteracoesExclusivas2024(
+  antes: Partial<DadosFicha>, depois: Partial<DadosFicha>,
+): string[] {
+  const chaves = ['dndEscolhas','dndMagias','dndAntecedente','dndTalentoHumano','dndMulticlasse'] as const
+  return chaves.filter(k => JSON.stringify(antes[k] ?? null) !== JSON.stringify(depois[k] ?? null))
+    .map(k => 'A opção ' + k + ' pertence ao motor de 2024 e não pode ser alterada numa ficha de 2014.')
+}

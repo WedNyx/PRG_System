@@ -10,6 +10,7 @@ import { alvosDeBonus, lerPoderes, TIPOS_PODER, type TipoPoder } from '@/lib/sis
 import NaTela from '@/components/NaTela'
 import { MARCOS_DND_2024 } from '@/lib/sistemas/dnd2024Marcos'
 import { idDe } from '@/lib/sistemas/dnd2024Classes'
+import { ordenarNosVerticais } from '@/lib/sistemas/arvoreVisual'
 import {
   ACOES_DO_MESTRE, arvoreExemplo, concederNo, CORES_NO, desfazer, devolverNo, difereDoSistema, disponiveis, excluirNoArvore, gastos, gravarNoArvore, lerArvore, liberarNo, LIM_ARVORE,
   mesclarArvore, mudarPontos, novoIdNo, noAtivo, podeDevolver, podeLiberar, requisitoFichaAtendido, retirarNo, sincronizarPoderes, TEXTO_ACAO,
@@ -32,11 +33,14 @@ type Props = {
   mestre?: boolean
   /** Nível do personagem, para o nível mínimo dos hexágonos (null = sistema sem nível). */
   nivel?: number | null
+  /** D&D: cartões verticais para o ramo de poderes do mestre; outros sistemas mantêm o mapa legado. */
+  visualizacao?: 'mapa' | 'cartoes'
 }
 
 /** Árvore de habilidades: hexágonos ligados, liberados com pontos. Modo “Montar” para criar/ligar/arrastar. */
-export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rolar, extra = 0, editorSistema = false, mestre = false, nivel = null }: Props) {
+export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rolar, extra = 0, editorSistema = false, mestre = false, nivel = null, visualizacao = 'mapa' }: Props) {
   const a = useMemo(() => lerArvore(d.arvore), [d.arvore])
+  const nosVerticais = useMemo(() => ordenarNosVerticais(a.nos), [a.nos])
   const alvos = useMemo(() => alvosDeBonus(s), [s])
   const [montando, setMontando] = useState(editorSistema)
   const desligarZoom = useRef<(() => void) | null>(null)
@@ -89,6 +93,19 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
     setSel(n.id)
     if (montando && !somenteLeitura) { (e.target as Element).setPointerCapture?.(e.pointerId); setArrasto({ id: n.id, x: n.x, y: n.y, moveu: false }) }
   }
+  /** Seleção por clique/teclado na apresentação vertical (sem arrastar posições antigas). */
+  function tocarCartao(n: NoArvore) {
+    if (montando && ligando && ligando !== n.id) {
+      const exige = n.requer.includes(ligando)
+      if (!exige && criaCiclo(a, n.id, ligando)) { setLigando(null); toast.error('Esta ligação criaria um ciclo.'); return }
+      salvar(gravarNoArvore(a, { ...n, requer: exige
+        ? n.requer.filter(r => r !== ligando)
+        : [...n.requer, ligando].slice(0, LIM_ARVORE.requer) }))
+      setLigando(null)
+    }
+    setSel(n.id)
+  }
+
   function mover(e: React.PointerEvent) {
     if (!arrasto) return
     const p = pontoSvg(e); if (!p || (p.x === arrasto.x && p.y === arrasto.y)) return
@@ -118,7 +135,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
 
   return <section className="overflow-hidden rounded-2xl border border-(--a-55456e) bg-(--s-0c0a16)">
     <div className="flex flex-wrap items-center gap-3 border-b border-(--a-2b2140) bg-(--s-14111f) px-4 py-3">
-      <h2 className="flex-1 bg-gradient-to-b from-[#fde68a] to-[#d4a23a] bg-clip-text font-serif text-lg font-bold uppercase tracking-[.18em] text-transparent sm:text-xl">{editorSistema ? 'Árvore padrão do sistema' : 'Árvore de habilidades'}</h2>
+      <h2 className="flex-1 bg-gradient-to-b from-[#fde68a] to-[#d4a23a] bg-clip-text font-serif text-lg font-bold uppercase tracking-[.18em] text-transparent sm:text-xl">{editorSistema ? 'Árvore padrão do sistema' : visualizacao === 'cartoes' ? 'Habilidades adicionais do mestre' : 'Árvore de habilidades'}</h2>
       {editorSistema ? <span className="rounded-full border border-(--a-62527e) bg-(--s-201a32) px-3 py-1 text-sm">🌠 Pontos iniciais: <strong>{a.pontos}</strong></span>
         : <span className="rounded-full border border-(--a-62527e) bg-(--s-201a32) px-3 py-1 text-sm" title={`${gastos(a)} gasto(s) · ${a.pontos} ganhos${extra ? ` + ${extra} do nível` : ''}`}>
         🌠 <strong className={livres > 0 ? 'text-amber-200' : ''}>{livres}</strong> livre{livres === 1 ? '' : 's'} <span className="text-xs text-(--a-b4aeca)">de {a.pontos + extra}{extra ? ` (${extra} do nível)` : ''}</span></span>}
@@ -134,14 +151,54 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
     </div>
 
     {montando && <div className="flex flex-wrap items-center gap-2 border-b border-(--a-2b2140) bg-(--s-171325) px-4 py-2 text-sm">
-      <button type="button" className={btn} onClick={novoNo} disabled={a.nos.length >= LIM_ARVORE.nos}><Plus size={14} /> {no ? 'Hexágono ligado a este' : 'Hexágono'}</button>
+      <button type="button" className={btn} onClick={novoNo} disabled={a.nos.length >= LIM_ARVORE.nos}><Plus size={14} /> {visualizacao === 'cartoes' ? (no ? 'Nova habilidade ligada' : 'Nova habilidade') : (no ? 'Hexágono ligado a este' : 'Hexágono')}</button>
       {no && <>
         <button type="button" className={btn} onClick={() => setEditor(no)}><Pencil size={14} /> Editar</button>
-        <button type="button" className={btn + (ligando ? ' !border-amber-300 !text-amber-200' : '')} onClick={() => setLigando(l => l ? null : no.id)}><Link2 size={14} /> {ligando ? 'Toque no hexágono que vai depender dele…' : 'Ligar'}</button>
+        <button type="button" className={btn + (ligando ? ' !border-amber-300 !text-amber-200' : '')} onClick={() => setLigando(l => l ? null : no.id)}><Link2 size={14} /> {ligando ? (visualizacao === 'cartoes' ? 'Escolha o cartão dependente…' : 'Toque no hexágono que vai depender dele…') : 'Ligar'}</button>
         <button type="button" className={btn + ' text-[#f2a9c3]'} onClick={() => excluirNo(no)}><Trash2 size={14} /> Excluir</button></>}
-      <span className="text-xs text-(--a-a998bd)">Arraste os hexágonos para organizar. “Ligar”: escolha um e toque no que depende dele.</span>
+      {visualizacao === 'cartoes'
+        ? <span className="text-xs text-(--a-a998bd)">Cartões ordenados automaticamente pelos pré-requisitos e nível; “Ligar” define a dependência sem mover dados antigos.</span>
+        : <span className="text-xs text-(--a-a998bd)">Arraste os hexágonos para organizar. “Ligar”: escolha um e toque no que depende dele.</span>}
     </div>}
 
+    {visualizacao === 'cartoes' ? <div className="bg-[radial-gradient(ellipse_at_50%_0%,#261a45_0%,#100c1d_70%)] p-3 sm:p-5">
+      {a.nos.length === 0 ? <div className="mx-auto flex max-w-xl flex-col items-center gap-3 py-8 text-center">
+        <span className="text-3xl" aria-hidden>🌱</span>
+        <p className="text-sm text-(--a-d6c8e8)">Ainda não há habilidades adicionais nesta ficha. As características oficiais já aparecem nos outros três ramos; o mestre pode criar recompensas exclusivas aqui.</p>
+        {!somenteLeitura && <div className="flex flex-wrap justify-center gap-2">
+          {doSistema && <button type="button" className={btn} onClick={() => salvar(mesclarArvore(a, doSistema))}>Usar habilidades do sistema</button>}
+          <button type="button" className={btn} onClick={() => { setMontando(true); novoNo() }}><Plus size={15}/> Criar habilidade</button>
+          <button type="button" className={btn} onClick={() => { salvar(arvoreExemplo(alvos)); setMontando(true) }}><Sparkles size={15}/> Exemplo</button>
+        </div>}
+      </div> : <ol aria-label="Árvore vertical de habilidades adicionais" className="mx-auto max-w-3xl">
+        {nosVerticais.map((n, i) => {
+          const e = estado(n), selecionado = sel === n.id
+          const recebido = e === 'liberado', concedido = !!a.concedidos?.includes(n.id)
+          const requisitos = n.requer.map(id => a.nos.find(p => p.id === id)?.nome).filter(Boolean)
+          const rotulo = e === 'liberado' ? 'Recebida' : e === 'inativo' ? 'Inativa' : e === 'disponivel' ? 'Disponível' : e === 'sem-pontos' ? 'Sem pontos' : 'Bloqueada'
+          return <li key={n.id}>
+            {i > 0 && <div aria-hidden className="mx-auto h-5 w-px bg-(--a-70588c)" />}
+            <button type="button" onClick={() => tocarCartao(n)} aria-pressed={selecionado}
+              aria-label={n.nome + ', ' + rotulo + ', custo ' + n.custo}
+              className={'flex min-h-20 w-full items-center gap-3 rounded-xl border border-l-4 p-3 text-left transition hover:bg-(--s-34294f) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--a-b99bff) sm:p-4 ' +
+                (selecionado ? 'border-(--a-b99bff) bg-(--s-34294f)' : 'border-(--a-55456e) bg-(--s-201a32)')}
+              style={{ borderLeftColor: n.cor, opacity: e === 'bloqueado' ? 0.76 : 1 }}>
+              <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/20 text-xl text-white" style={{ backgroundColor: n.cor }}>✦</span>
+              <span className="min-w-0 flex-1">
+                <strong className="block break-words text-sm text-(--a-f2ebff) sm:text-base">{n.nome}</strong>
+                <span className="mt-1 block text-xs text-(--a-cfc0df)"> {n.nivel ? 'Nível ' + n.nivel + ' · ' : ''}{n.custo} ponto(s){concedido ? ' · Concedida pelo mestre 🎁' : ''}</span>
+                {requisitos.length > 0 && <span className="mt-1 block text-xs text-(--a-b4aeca)">Requer: {requisitos.join(' · ')}</span>}
+                {n.descricao && <span className="mt-1 block break-words text-xs text-(--a-cfc0df)">{n.descricao}</span>}
+              </span>
+              <span className={'shrink-0 rounded-lg border px-2 py-1 text-center text-[11px] font-medium ' +
+                (recebido ? 'border-emerald-400/60 text-emerald-200' : e === 'disponivel' ? 'border-amber-300/60 text-amber-200' : 'border-(--a-62527e) text-(--a-cfc0df)')}>
+                {rotulo}
+              </span>
+            </button>
+          </li>
+        })}
+      </ol>}
+    </div> : <>
     <div className="relative h-[62vh] min-h-[380px] touch-none select-none" style={{ background: 'radial-gradient(ellipse at 50% 40%, #2a1d4a 0%, #120d22 55%, #07060d 100%)' }}>
       {a.nos.length === 0 ? <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
         <p className="text-5xl" aria-hidden>🌌</p>
@@ -192,10 +249,12 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
         </TransformWrapper>}
     </div>
 
+    </>}
+
     {no && !editor && <DetalheNo no={no} a={a} dados={s.id === 'dnd5e-srd' ? d : undefined} extra={extra} nivel={nivel} alvos={alvos} recursos={s.recursos} somenteLeitura={somenteLeitura || montando || editorSistema}
       mestre={mestre && !editorSistema && !somenteLeitura} conceder={() => aplicar(concederNo(a, no.id), `${no.nome}: concedido sem custo.`)} retirar={() => aplicar(retirarNo(a, no.id))}
       liberar={() => liberar(no)} devolver={() => devolver(no)} rolar={rolar} fechar={() => setSel(null)} />}
-    {!no && a.nos.length > 0 && <p className="px-4 py-3 text-xs text-(--a-a998bd)">Toque num hexágono para ver o que ele faz. {somenteLeitura ? '' : 'Os que brilham na borda já podem ser liberados.'}</p>}
+    {!no && a.nos.length > 0 && <p className="px-4 py-3 text-xs text-(--a-a998bd)">{visualizacao === 'cartoes' ? 'Selecione uma habilidade para ver os efeitos e requisitos.' : 'Toque num hexágono para ver o que ele faz.'} {somenteLeitura ? '' : 'Os que brilham na borda já podem ser liberados.'}</p>}
     {verHistorico && <HistoricoArvore historico={historico} podeDesfazer={podeDesfazer} desfazer={e => aplicar(desfazer(a, e.id, extra, nivel, s.id === 'dnd5e-srd' ? d : undefined), 'Desfeito.')} />}
     {editor && <EditorNo inicial={editor} a={a} sistema={s} alvos={alvos} recursos={s.recursos} temNivel={nivel !== null || editorSistema} gravar={gravarNo} fechar={() => setEditor(null)} />}
   </section>

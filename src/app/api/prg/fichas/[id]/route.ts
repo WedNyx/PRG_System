@@ -6,6 +6,7 @@ import type { Campo } from '@/lib/campanhas/permissoes'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { normalizarFicha } from '@/lib/sistemas/calculo'
 import { lerArvore } from '@/lib/sistemas/arvore'
+import { alterouDefinicaoArvore, validarDesbloqueiosArvore } from '@/lib/sistemas/arvorePermissoes'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { lerConfiguracaoProgressao } from '@/lib/sistemas/modoProgressao'
 import { lerEscolhasDnd, validarAlteracoesEscolhasDnd } from '@/lib/sistemas/dnd2024Ficha'
@@ -183,6 +184,13 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     if (antes.length !== depois.length || antes.some(x => !depois.includes(x))) throw new ErroApi(403, 'Só o mestre concede ou retira hexágonos sem custo.')
   }
 
+  // Mesmo com permissão livre para "habilidades", a definição dos nós, pontos e
+  // concessões da árvore de campanha D&D só pode ser alterada pelo mestre.
+  if (f.sistema === 'dnd5e-srd' && f.campanha_id && !admin &&
+      alterouDefinicaoArvore((f.dados as Partial<DadosFicha>)?.arvore, (v.valor.dados as Partial<DadosFicha>)?.arvore)) {
+    throw new ErroApi(403, 'Somente o mestre pode criar, editar ou excluir habilidades da árvore, conceder pontos e mudar concessões.')
+  }
+
   // Criação livre: só o mestre liga; o dono pode desligar (“Terminei a criação”).
   if (f.campanha_id && !admin) {
     const antes = (f.dados as Partial<DadosFicha> | null)?.criacaoLivre === true
@@ -262,6 +270,19 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
 
     }
     if (erros.length) throw new ErroApi(400, 'A escolha não foi liberada no nível autorizado: ' + erros.join(' '))
+  }
+
+  // O jogador pode desbloquear nós previamente criados, mas não pode
+  // forçar requisitos, nível, pontos ou concessões por meio de JSON manual.
+  // A validação usa apenas a versão EFETIVAMENTE autorizada após aplicar
+  // permissões; mudanças que aguardam aprovação não contam como liberadas.
+  if (f.sistema === 'dnd5e-srd' && f.campanha_id && !admin) {
+    const autorizado = final as Partial<DadosFicha>
+    const erroArvore = validarDesbloqueiosArvore(
+      (f.dados as Partial<DadosFicha>).arvore, autorizado.arvore,
+      { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas, dndMulticlasse: autorizado.dndMulticlasse },
+    )
+    if (erroArvore) throw new ErroApi(403, erroArvore)
   }
 
   let versao = f.versao

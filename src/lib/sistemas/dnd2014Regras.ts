@@ -16,6 +16,7 @@ import { idDe } from './dnd2024Classes'
 import { VARS_DND } from './dnd2024Efeitos'
 import { RACAS_2014, ANTECEDENTES_2014, SUBRACAS_2014 } from './dnd2014Criacao'
 import { validarSubclasseDnd2014 } from './dnd2014Subclasses'
+import { validarTalentos2014 } from './dnd2014Talentos'
 import { classesDaFicha2014, espacosDeMagia2014 } from './dnd2014Multiclasse'
 import { lerMulticlasseDnd, requisitosMulticlasse } from './dnd2024Classes'
 
@@ -231,6 +232,7 @@ export function validarAlteracoes2014(
       erros.push('Sub-raça incompatível com a raça do Livro do Jogador 2014.')
   }
   if (edicao === 'phb2014') erros.push(...validarSubclasseDnd2014(antes, depois))
+  erros.push(...validarTalentos2014(antes,depois,edicao,ignorarRequisitos))
   if (edicao !== 'phb2014') {
     if(chaves.some(k => k==='dnd2014Subclasse' ? antes.dnd2014Subclasse !== depois.dnd2014Subclasse
       : k==='dnd2014Multiclasse' ? JSON.stringify(antes.dnd2014Multiclasse??{})!==JSON.stringify(depois.dnd2014Multiclasse??{})

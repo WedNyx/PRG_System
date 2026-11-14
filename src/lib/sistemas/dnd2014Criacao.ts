@@ -59,16 +59,21 @@ export const SUBRACAS_2014: Record<string, { nome: string; detalhe: string }[]> 
 }
 export function esquemaFichaPorLivro(s: Sistema, d: Pick<DadosFicha,'dndLivros'>, obrigatorio?: LivroBaseDnd | null): Sistema {
   if (s.id !== 'dnd5e-srd' || (obrigatorio ?? lerLivrosDnd(d.dndLivros).base) !== 'phb2014') return s
-  return { ...s, regraLivroDnd: 'phb2014' as const, nome: 'D&D 5e (2014) — Livro do Jogador', resumo: 'Regras legadas de 2014: seleção de raça/sub-raça e antecedentes próprios. Regras automáticas do SRD 5.1 para atributos raciais, perícias, salvaguardas e recursos básicos. Opções comerciais e subclasses: revisão manual.',
+  return { ...s, progressoes: undefined, regraLivroDnd: 'phb2014' as const, nome: 'D&D 5e (2014) — Livro do Jogador', resumo: 'Regras legadas de 2014: seleção de raça/sub-raça e antecedentes próprios. Regras automáticas do SRD 5.1 para atributos raciais, perícias, salvaguardas e recursos básicos. Opções comerciais e subclasses: revisão manual.',
     campos: s.campos.map(c => {
       if (c.id === 'especie') return { ...c, nome: 'Raça (Livro do Jogador 2014)', opcoes: RACAS_2014 }
       if (c.id === 'antecedente') return { ...c, nome: 'Antecedente (Livro do Jogador 2014)', opcoes: ANTECEDENTES_2014 }
       return c
     }),
     recursos: s.recursos.filter(x => !['magia_origem_gratis','magia_humano_gratis','magia_especie_3','magia_especie_5','magia_gnomo_animais','marca_cacador','pontos_sorte'].includes(x.id))
-      .map(x => x.id === 'foco' ? { ...x, nome: 'Pontos de Ki (Monge 2014)' }
+      .map(x => x.id === 'foco' ? { ...x, nome: 'Pontos de Ki (Monge 2014)', voltaNoCurto: true }
         : x.id === 'inspiracao' ? { ...x, nome: 'Inspiração (2014)', contador: true }
-        : x.id === 'exaustao' ? { ...x, nome: 'Exaustão 2014 (efeitos por nível, não −2 por nível)', baixaNoDescanso: 0 }
+        : x.id === 'inspiracao_bardo' ? { ...x, nome: 'Inspiração de Bardo (2014)', voltaNoCurto: false }
+        : x.id === 'canalizar' ? { ...x, voltaNoCurto: true }
+        : x.id === 'forma_selvagem' ? { ...x, voltaNoCurto: true }
+        : x.id === 'retomar_folego' ? { ...x, voltaNoCurto: true }
+        : x.id === 'surto_acao' ? { ...x, voltaNoCurto: true }
+        : x.id === 'exaustao' ? { ...x, nome: 'Exaustão 2014 (conferir condições de recuperação)', baixaNoDescanso: 0 }
         : x),
     observacoes: [...(s.observacoes ?? []), 'Edição 2014 (SRD 5.1): bônus raciais aplicados apenas a valores-base confirmados, perícias e salvaguardas automáticas, recursos gerais. Subclasses, progressão avançada e suplementos comerciais exigem conferência manual.'],
   }

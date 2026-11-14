@@ -2,6 +2,23 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.33.9 — D&D por edição e revisão de regras (2026-11-14)
+
+- D&D 2014 (SRD 5.1): seleção de subclasse aberta e marcos de progressão por classe, separados da edição 2024.
+- Na janela **Nova ficha → D&D**, escolha explicitamente **2014 (5e)** ou **2024 (5.5e)** antes da criação. A edição é salva junto à ficha, tanto no navegador quanto na nuvem.
+- Painel de prontidão detecta classes, espécies e antecedentes fora do catálogo da edição; na nuvem, as fontes e o talento humano 2024 são revalidados também após aplicar as permissões do mestre.
+- Regras de conjuração 2014 revisadas, com diferenças de multiclasse e arredondamento sinalizadas.
+- Grimório de 2014 pesquisável: 845 registros por classe de 367 nomes, conforme o índice do PHB 2014; espaços superiores e Magia de Pacto entre classes, com descansos diferenciados.
+- Catálogo com 42 talentos do PHB 2014, limites por nível de classe, Humano Variante e validação pelo mestre; sem somar automaticamente efeitos ainda não codificados.
+- Build Next.js 16 temporariamente com Webpack para contornar falhas da pipeline Turbopack relacionadas a fontes Google.
+- Arsenais de 2014 e 2024 permanecem separados; livros adicionais sem regras abertas confirmadas continuam como referência manual.
+- Testes de fidelidade de personagens por edição, respeitando salvamento, fotos, atributos, itens e escolhas anteriores.
+- Diagnóstico não destrutivo **Pronto para jogar?**: escolhas de criação pendentes por edição, incluindo o talento do Humano Variante, sem bloquear rascunhos.
+- Descansos 2014: recuperar recursos de descanso curto por classe; dados de vida gastos são descontados ao curar no curto e apenas metade dos dados totais (mínimo 1) é recuperada no longo; sem aplicar características raciais 2024.
+- Testes de regressão para ciclo de JSON/criação/reabertura/evolução, descanso e compatibilidade 2014/2024 (simulados, sem acesso ao banco real).
+- Numeração da versão: revisão vai de 0 a 10, menor de 0 a 99. Ex.: 0.0.10→0.1.0; 0.99.10→1.0.0.
+- Página /novidades e versionamento do pacote atualizados.
+
 ## v0.33.8 — Mesa: mapa, névoa, luz, fichas e combate (2026-11-13)
 
 - Mapa até 200 × 200 (`MAX_GRADE`); zoom mínimo 0,05.

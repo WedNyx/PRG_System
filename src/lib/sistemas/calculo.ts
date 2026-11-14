@@ -9,6 +9,9 @@ import { lerMagiasDnd } from './dnd2024Conjuracao'
 import { idDe, lerMulticlasseDnd } from './dnd2024Classes'
 import { lerLivrosDnd } from './dndLivros'
 import { atributosEfetivos2014, efeitosDnd2014, lerAtributosBase2014, ATRIBUTOS_DND } from './dnd2014Regras'
+import { classesDaFicha2014 } from './dnd2014Multiclasse'
+import { TALENTOS_PHB_2014 } from './dnd2014Talentos'
+import { lerMagias2014 } from './dnd2014Magias'
 import { efeitosDnd2024, VARS_DND, type EfeitosDnd } from './dnd2024Efeitos'
 import { bonusDaArvore, lerArvore, sincronizarPoderes, somarBonus } from './arvore'
 
@@ -101,6 +104,14 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     ...(s.id === 'dnd5e-srd' && Array.isArray(d.dnd2014PericiasRaciais) ?
       { dnd2014PericiasRaciais: [...new Set(d.dnd2014PericiasRaciais.filter((x): x is string =>
         typeof x === 'string' && /^[a-z_]{3,30}$/.test(x)))].slice(0,2) } : {}),
+    ...(s.id === 'dnd5e-srd' && Array.isArray(d.dnd2014Talentos) ?
+      { dnd2014Talentos:[...new Set(d.dnd2014Talentos.filter((x):x is string=>
+          typeof x==='string' && TALENTOS_PHB_2014.includes(x)))].slice(0,25) } : {}),
+    ...(s.id === 'dnd5e-srd' && typeof d.dnd2014Subclasse === 'string' ?
+      { dnd2014Subclasse: d.dnd2014Subclasse.slice(0,64) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014Multiclasse !== undefined ?
+      { dnd2014Multiclasse: lerMulticlasseDnd(d.dnd2014Multiclasse, idDe(d.campos?.classe)) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014Magias !== undefined ? {dnd2014Magias:lerMagias2014(d.dnd2014Magias)} : {}),
     ...(s.id === 'dnd5e-srd' && d.dndEscolhas !== undefined ? { dndEscolhas: lerEscolhasDnd(d.dndEscolhas) } : {}),
     ...(d.criacaoLivre !== undefined ? { criacaoLivre: d.criacaoLivre === true } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndAntecedente !== undefined && lerRegistroAntecedenteDnd(d.dndAntecedente) ? { dndAntecedente: lerRegistroAntecedenteDnd(d.dndAntecedente)! } : {}),
@@ -200,7 +211,29 @@ export function calcular(s: Sistema, d: DadosFicha, opcoes: { efeitosDnd?: boole
 
   // Derivados podem depender uns dos outros (ex.: nível → limite); avalia em ordem, duas passadas.
   const derivados: Record<string, number | null> = {}
-  const calcDerivados = () => { for (const x of s.derivados) { const val = avaliarSeguro(x.formula, vars); derivados[x.id] = val === null ? null : val + b('derivado:' + x.id); vars[x.id] = derivados[x.id] ?? 0 } }
+  const pvMulticlasse2014 = (): number | null => {
+    if (s.id !== 'dnd5e-srd' || edicao !== 'phb2014') return null
+    const { lista, total } = classesDaFicha2014(d)
+    if (lista.length < 2) return null
+    const inicial = lista.find(c => c.principal)
+    if (!inicial) return null
+    const mod = mods.CON ?? 0
+    const media = (dv: number) => Math.floor(dv / 2) + 1
+    const extras = lista.reduce((acc, c) => acc + (c.principal
+      ? Math.max(0, c.nivel - 1) * media(c.cls.dv) : c.nivel * media(c.cls.dv)), 0)
+    // Nível 1: dado cheio da classe inicial. Demais níveis: média do dado da classe
+    // que ganhou o nível. CON por nível + bônus racial confirmado (Anão da Colina).
+    return inicial.cls.dv + extras + total * mod +
+      (vars.dnd_pv_extra ?? 0) + (vars.robusto ?? 0) * total
+  }
+  const calcDerivados = () => {
+    for (const x of s.derivados) {
+      const calculado = x.id === 'pv_sugerido' ? pvMulticlasse2014() : null
+      const val = calculado ?? avaliarSeguro(x.formula, vars)
+      derivados[x.id] = val === null ? null : val + b('derivado:' + x.id)
+      vars[x.id] = derivados[x.id] ?? 0
+    }
+  }
   calcDerivados()
 
   const pericias: Record<string, number | null> = {}

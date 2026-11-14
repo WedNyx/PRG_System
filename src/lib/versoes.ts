@@ -4,7 +4,46 @@
  */
 export type Versao = { versao: string; data: string; titulo: string; itens: string[] }
 
+/** Versão no formato definido pela plataforma: MAIOR.MENOR.REVISÃO.
+ * Revisão varia de 0 a 10; menor de 0 a 99; só então sobe a maior.
+ * Exemplos: 0.0.10 -> 0.1.0, 0.99.10 -> 1.0.0.
+ */
+export function proximaVersao(atual: string): string {
+  const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(atual)
+  if (!match) throw new Error('Versão inválida; use MAIOR.MENOR.REVISÃO.')
+  let [maior, menor, revisao] = match.slice(1).map(Number)
+  if (![maior, menor, revisao].every(Number.isSafeInteger) || menor > 99 || revisao > 10)
+    throw new Error('Faixa inválida: menor até 99, revisão até 10.')
+  revisao += 1
+  if (revisao > 10) { revisao = 0; menor += 1 }
+  if (menor > 99) { menor = 0; maior += 1 }
+  if (!Number.isSafeInteger(maior)) throw new Error('Versão acima do limite seguro.')
+  return `${maior}.${menor}.${revisao}`
+}
+
+export function versaoValida(versao: string): boolean {
+  try { return proximaVersao(versao).length > 0 } catch { return false }
+}
+
 export const VERSOES: Versao[] = [
+  {
+    versao: '0.33.9', data: '2026-11-14',
+    titulo: 'D&D 2014: fidelidade às regras e livros por edição',
+    itens: [
+      '⚔️ Revisão de D&D: tabelas e escolhas específicas das regras de 2014 (SRD 5.1) isoladas das regras revisadas de 2024 (SRD 5.2.1), com indicadores claros do que é automático e do que depende do livro e do mestre.',
+      '📜 Nova ficha D&D: escolha primeiro o Livro do Jogador 2014 (5e) ou 2024 (5.5e). A edição é registrada imediatamente e direciona as raças, antecedentes, recursos e a criação guiada apropriada, sem duplicar o sistema.',
+      '🛡️ Prontidão e segurança: avisos de opções incompatíveis com o livro selecionado e nova checagem de fontes e escolhas de magia do talento humano após aplicar as permissões do mestre.',
+      '📚 Criação de personagens 2014: novas escolhas de classe e subclasse aberta, com marcos na árvore e acompanhamento por nível; suplementos comerciais continuam como referência até confirmação das regras no livro escolhido.',
+      '🧙 Multiclasse e conjuração: revisão de diferenças entre 2014 e 2024, especialmente arredondamento dos níveis de conjurador; sem conceder automaticamente magias ou efeitos de outra edição.',
+      '📖 Grimório de 2014: catálogo pesquisável de 845 entradas de magias do PHB, organizadas por classe e nível; conjuração com espaços superiores, Magia de Pacto entre classes e recuperação separada no descanso curto ou longo.',
+      '✨ Talentos 2014: 42 opções do Livro do Jogador, incluindo limites dos incrementos de atributos de cada classe e o talento adicional do Humano Variante; efeitos dependentes do mestre continuam manuais.',
+      '🎲 Regras e qualidade: testes de regressão para decisões de personagens e cálculos por livro, mantendo fichas anteriores, itens, fotos personalizadas e permissões do mestre.',
+      '🌙 Mesa pronta: descanso curto e longo de 2014 separados de 2024, recuperação de Dados de Vida de 2014 no longo e gasto registrado de Dados de Vida para curar no curto. Recursos de classe como Pacto, Ki e Surto de Ação retornam conforme a edição.',
+      '✅ Criação guiada: painel Pronto para jogar? sinaliza escolhas pendentes e o que depende do mestre, com simulações de salvar, reabrir e evoluir fichas 2014 e 2024.',
+      '✨ Versões: nova sequência MAIOR.MENOR.REVISÃO. A revisão vai de 0 a 10; depois cresce a menor (até 99); após 0.99.10, começa 1.0.0. O histórico de Novidades continua exibindo cada atualização.',
+    ],
+  },
+
   {
     versao: '0.33.8', data: '2026-11-13', titulo: 'Mesa: mapa, névoa, luz, fichas e combate',
     itens: [

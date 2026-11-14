@@ -94,6 +94,8 @@ export type DadosFicha = {
   nivelAtributos?: Record<string, number>
   poderes?: unknown[]
   uso?: unknown
+  /** Livro do Jogador e suplementos escolhidos para ESTA ficha (mestre autoriza na campanha). */
+  dndLivros?: import('./dndLivros').SelecaoLivrosDnd
   /** Escolhas de marcos D&D. A progressão visual não concede bônus por si só. */
   dndEscolhas?: Record<string, string>
   /** Distribuição guiada de atributos de antecedente, aplicada explicitamente uma vez. */

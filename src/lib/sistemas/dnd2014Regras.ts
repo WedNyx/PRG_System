@@ -15,6 +15,7 @@ import { CLASSES_SRD } from './dnd2024Srd'
 import { idDe } from './dnd2024Classes'
 import { VARS_DND } from './dnd2024Efeitos'
 import { RACAS_2014, ANTECEDENTES_2014, SUBRACAS_2014 } from './dnd2014Criacao'
+import { validarSubclasseDnd2014 } from './dnd2014Subclasses'
 
 export const ATRIBUTOS_DND = ['FOR','DES','CON','INT','SAB','CAR'] as const
 export type AtributoDnd = typeof ATRIBUTOS_DND[number]
@@ -208,7 +209,7 @@ export function validarAlteracoes2014(
   const erros: string[]=[]
   const alterou=(k: 'dnd2014AtributosBase'|'dnd2014AtributosExtras'|'dnd2014PericiasClasse'|'dnd2014PericiasRaciais') =>
     JSON.stringify(antes[k]??null)!==JSON.stringify(depois[k]??null)
-  const chaves=['dnd2014AtributosBase','dnd2014AtributosExtras','dnd2014PericiasClasse','dnd2014PericiasRaciais'] as const
+  const chaves=['dnd2014AtributosBase','dnd2014AtributosExtras','dnd2014PericiasClasse','dnd2014PericiasRaciais','dnd2014Subclasse'] as const
   if (edicao === 'phb2014') {
     // Rejeita novas escolhas de 2024 na versão legada; não apaga fichas
     // históricas que já continham valores próprios.
@@ -227,8 +228,11 @@ export function validarAlteracoes2014(
       sub && !(SUBRACAS_2014[raca]??[]).some(x=>x.nome===sub))
       erros.push('Sub-raça incompatível com a raça do Livro do Jogador 2014.')
   }
+  if (edicao === 'phb2014') erros.push(...validarSubclasseDnd2014(antes, depois))
   if (edicao !== 'phb2014') {
-    if(chaves.some(alterou)) erros.push('As escolhas de criação 2014 não podem ser alteradas numa ficha com livro-base 2024.')
+    if(chaves.some(k => k==='dnd2014Subclasse'
+      ? antes.dnd2014Subclasse !== depois.dnd2014Subclasse : alterou(k)))
+      erros.push('As escolhas de criação 2014 não podem ser alteradas numa ficha com livro-base 2024.')
     return erros
   }
   if (alterou('dnd2014AtributosBase') && depois.dnd2014AtributosBase !== undefined && !lerAtributosBase2014(depois.dnd2014AtributosBase))

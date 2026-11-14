@@ -48,6 +48,7 @@ function categoriaGenerica(caminho: string): Campo {
   if (caminho === 'dnd2014PericiasRaciais') return 'pericias'
   if (caminho === 'dnd2014Subclasse') return 'habilidades'
   if (caminho === 'dnd2014Multiclasse') return 'nivel'
+  if (caminho === 'dnd2014Magias') return 'habilidades'
   if (caminho === 'dndAntecedente') return 'atributos'
   if (caminho === 'dndTalentoHumano') return 'habilidades'
   if (caminho === 'dndEscolhas') return 'habilidades'

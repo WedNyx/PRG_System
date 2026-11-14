@@ -31,6 +31,8 @@ type Props = {
   editorSistema?: boolean
   /** Mestre (ou dono de ficha avulsa): pode conceder hexágonos como exceção e desfazer concessões. */
   mestre?: boolean
+  /** Permite criar/editar/excluir nós. Jogador da campanha pode desbloquear sem montar. */
+  podeMontar?: boolean
   /** Nível do personagem, para o nível mínimo dos hexágonos (null = sistema sem nível). */
   nivel?: number | null
   /** D&D: cartões verticais para o ramo de poderes do mestre; outros sistemas mantêm o mapa legado. */
@@ -38,7 +40,7 @@ type Props = {
 }
 
 /** Árvore de habilidades: hexágonos ligados, liberados com pontos. Modo “Montar” para criar/ligar/arrastar. */
-export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rolar, extra = 0, editorSistema = false, mestre = false, nivel = null, visualizacao = 'mapa' }: Props) {
+export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rolar, extra = 0, editorSistema = false, mestre = false, podeMontar = true, nivel = null, visualizacao = 'mapa' }: Props) {
   const a = useMemo(() => lerArvore(d.arvore), [d.arvore])
   const nosVerticais = useMemo(() => ordenarNosVerticais(a.nos), [a.nos])
   const alvos = useMemo(() => alvosDeBonus(s), [s])
@@ -62,7 +64,9 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
   /** Aplica uma ação que pode falhar (mostra o motivo). */
   const aplicar = (r: { arvore?: Arvore; erro?: string }, ok?: string) => { if (r.erro) toast.error(r.erro); else if (r.arvore) { salvar(r.arvore); if (ok) toast.success(ok) } }
   const historico = a.historico ?? []
-  const podeDesfazer = (e: EntradaHistorico) => !somenteLeitura && !e.desfeito && (mestre || !ACOES_DO_MESTRE.includes(e.acao))
+  const podeDesfazer = (e: EntradaHistorico) => !somenteLeitura && !e.desfeito &&
+    (mestre || !ACOES_DO_MESTRE.includes(e.acao)) &&
+    (podeMontar || !(['criar', 'editar', 'excluir', 'pontos'] as const).some(acao => acao === e.acao))
   const ultima = historico.find(podeDesfazer)
   const no = a.nos.find(n => n.id === sel) ?? null
   const livres = disponiveis(a, extra)
@@ -84,7 +88,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
   }
   function tocarNo(e: React.PointerEvent, n: NoArvore) {
     e.stopPropagation(); fundo.current = null
-    if (montando && ligando && ligando !== n.id) {
+    if (montando && podeMontar && ligando && ligando !== n.id) {
       // Liga: o nó tocado passa a exigir (ou deixa de exigir) o nó escolhido antes.
       const exige = n.requer.includes(ligando)
       if (!exige && criaCiclo(a, n.id, ligando)) { setLigando(null); return }
@@ -140,18 +144,18 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
       {editorSistema ? <span className="rounded-full border border-(--a-62527e) bg-(--s-201a32) px-3 py-1 text-sm">🌠 Pontos iniciais: <strong>{a.pontos}</strong></span>
         : <span className="rounded-full border border-(--a-62527e) bg-(--s-201a32) px-3 py-1 text-sm" title={`${gastos(a)} gasto(s) · ${a.pontos} ganhos${extra ? ` + ${extra} do nível` : ''}`}>
         🌠 <strong className={livres > 0 ? 'text-amber-200' : ''}>{livres}</strong> livre{livres === 1 ? '' : 's'} <span className="text-xs text-(--a-b4aeca)">de {a.pontos + extra}{extra ? ` (${extra} do nível)` : ''}</span></span>}
-      {sistemaMudou && !somenteLeitura && <button type="button" onClick={() => { if (confirm('Trazer as mudanças da árvore do sistema? Novas habilidades entram e as existentes são atualizadas; as liberadas continuam.')) salvar(mesclarArvore(a, doSistema!)) }}
+      {sistemaMudou && !somenteLeitura && podeMontar && <button type="button" onClick={() => { if (confirm('Trazer as mudanças da árvore do sistema? Novas habilidades entram e as existentes são atualizadas; as liberadas continuam.')) salvar(mesclarArvore(a, doSistema!)) }}
         className={btn + ' !border-amber-300/60 !text-amber-200'}>🔄 Atualizar com a árvore do sistema</button>}
       {montando && !somenteLeitura && <span className="flex items-center gap-1" aria-label="Pontos ganhos">
         <button type="button" className={btn + ' !px-2'} aria-label="Menos um ponto" disabled={a.pontos <= gastos(a)} onClick={() => aplicar(mudarPontos(a, a.pontos - 1))}><Minus size={14} /></button>
         <button type="button" className={btn + ' !px-2'} aria-label="Mais um ponto" onClick={() => aplicar(mudarPontos(a, a.pontos + 1))}><Plus size={14} /></button></span>}
       {!editorSistema && ultima && <button type="button" onClick={() => aplicar(desfazer(a, ultima.id, extra, nivel, s.id === 'dnd5e-srd' ? d : undefined), 'Desfeito: ' + TEXTO_ACAO[ultima.acao].toLowerCase() + ' ' + ultima.nome)} className={btn} title={`Desfazer: ${TEXTO_ACAO[ultima.acao]} ${ultima.nome}`}><Undo2 size={14} /> Desfazer</button>}
       {!editorSistema && historico.length > 0 && <button type="button" onClick={() => setVerHistorico(v => !v)} aria-expanded={verHistorico} className={btn + (verHistorico ? ' !border-(--a-b99bff) !bg-(--s-3b2b57)' : '')}><History size={14} /> Histórico</button>}
-      {!somenteLeitura && !editorSistema && <button type="button" onClick={() => { setMontando(m => !m); setLigando(null) }} className={btn + (montando ? ' !border-(--a-b99bff) !bg-(--s-3b2b57)' : '')}>
+      {!somenteLeitura && podeMontar && !editorSistema && <button type="button" onClick={() => { setMontando(m => !m); setLigando(null) }} className={btn + (montando ? ' !border-(--a-b99bff) !bg-(--s-3b2b57)' : '')}>
         <Pencil size={14} /> {montando ? 'Concluir' : visualizacao === 'cartoes' ? 'Editar habilidades' : 'Montar árvore'}</button>}
     </div>
 
-    {montando && <div className="flex flex-wrap items-center gap-2 border-b border-(--a-2b2140) bg-(--s-171325) px-4 py-2 text-sm">
+    {montando && (editorSistema || podeMontar) && <div className="flex flex-wrap items-center gap-2 border-b border-(--a-2b2140) bg-(--s-171325) px-4 py-2 text-sm">
       <button type="button" className={btn} onClick={novoNo} disabled={a.nos.length >= LIM_ARVORE.nos}><Plus size={14} /> {visualizacao === 'cartoes' ? (no ? 'Nova habilidade ligada' : 'Nova habilidade') : (no ? 'Hexágono ligado a este' : 'Hexágono')}</button>
       {no && <>
         <button type="button" className={btn} onClick={() => setEditor(no)}><Pencil size={14} /> Editar</button>
@@ -166,7 +170,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
       {a.nos.length === 0 ? <div className="mx-auto flex max-w-xl flex-col items-center gap-3 py-8 text-center">
         <span className="text-3xl" aria-hidden>🌱</span>
         <p className="text-sm text-(--a-d6c8e8)">Ainda não há habilidades adicionais nesta ficha. As características oficiais já aparecem nos outros três ramos; o mestre pode criar recompensas exclusivas aqui.</p>
-        {!somenteLeitura && <div className="flex flex-wrap justify-center gap-2">
+        {!somenteLeitura && podeMontar && <div className="flex flex-wrap justify-center gap-2">
           {doSistema && <button type="button" className={btn} onClick={() => salvar(mesclarArvore(a, doSistema))}>Usar habilidades do sistema</button>}
           <button type="button" className={btn} onClick={() => { setMontando(true); novoNo() }}><Plus size={15}/> Criar habilidade</button>
           <button type="button" className={btn} onClick={() => { salvar(arvoreExemplo(alvos)); setMontando(true) }}><Sparkles size={15}/> Exemplo</button>
@@ -204,7 +208,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
       {a.nos.length === 0 ? <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
         <p className="text-5xl" aria-hidden>🌌</p>
         <p className="max-w-sm text-(--a-d6c8e8)">{editorSistema ? 'Monte a árvore que toda ficha nova deste sistema vai receber. Os jogadores liberam os hexágonos com pontos.' : 'Esta ficha ainda não tem árvore. Monte os hexágonos com os poderes do personagem e libere com pontos.'}</p>
-        {!somenteLeitura && <div className="flex flex-wrap justify-center gap-2">
+        {!somenteLeitura && podeMontar && <div className="flex flex-wrap justify-center gap-2">
           {doSistema && <button type="button" className="rounded-xl bg-gradient-to-r from-(--a-7652ac) to-[#b45309] px-4 py-2.5 font-semibold" onClick={() => salvar(mesclarArvore(a, doSistema))}>🌠 Usar a árvore do sistema</button>}
           <button type="button" className="rounded-xl bg-(--a-7652ac) px-4 py-2.5 font-semibold hover:bg-(--a-8b68c4)" onClick={() => { setMontando(true); novoNo() }}><Plus size={16} className="mr-1 inline" />Criar o primeiro hexágono</button>
           <button type="button" className={btn} onClick={() => { salvar(arvoreExemplo(alvos)); setMontando(true) }}><Sparkles size={14} /> Começar com um exemplo</button></div>}

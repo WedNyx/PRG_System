@@ -8,6 +8,7 @@ import { lerRegistroAntecedenteDnd } from './dnd2024Antecedentes'
 import { lerMagiasDnd } from './dnd2024Conjuracao'
 import { idDe, lerMulticlasseDnd } from './dnd2024Classes'
 import { lerLivrosDnd } from './dndLivros'
+import { atributosEfetivos2014, efeitosDnd2014, lerAtributosBase2014, ATRIBUTOS_DND } from './dnd2014Regras'
 import { efeitosDnd2024, VARS_DND, type EfeitosDnd } from './dnd2024Efeitos'
 import { bonusDaArvore, lerArvore, sincronizarPoderes, somarBonus } from './arvore'
 
@@ -89,6 +90,14 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     // Inventário só entra quando existe (fichas antigas continuam iguais) e sempre limpo/validado.
     ...(d.itens !== undefined ? { itens: lerItens(d.itens) } : {}), ...(d.uso !== undefined ? { uso: lerUso(d.uso) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndLivros !== undefined ? { dndLivros: lerLivrosDnd(d.dndLivros) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014AtributosBase !== undefined && lerAtributosBase2014(d.dnd2014AtributosBase)
+      ? { dnd2014AtributosBase: lerAtributosBase2014(d.dnd2014AtributosBase)! } : {}),
+    ...(s.id === 'dnd5e-srd' && Array.isArray(d.dnd2014AtributosExtras) ?
+      { dnd2014AtributosExtras: [...new Set(d.dnd2014AtributosExtras.filter((x): x is string =>
+        typeof x === 'string' && (ATRIBUTOS_DND as readonly string[]).includes(x)))].slice(0,2) } : {}),
+    ...(s.id === 'dnd5e-srd' && Array.isArray(d.dnd2014PericiasClasse) ?
+      { dnd2014PericiasClasse: [...new Set(d.dnd2014PericiasClasse.filter((x): x is string =>
+        typeof x === 'string' && /^[a-z_]{3,30}$/.test(x)))].slice(0,4) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndEscolhas !== undefined ? { dndEscolhas: lerEscolhasDnd(d.dndEscolhas) } : {}),
     ...(d.criacaoLivre !== undefined ? { criacaoLivre: d.criacaoLivre === true } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndAntecedente !== undefined && lerRegistroAntecedenteDnd(d.dndAntecedente) ? { dndAntecedente: lerRegistroAntecedenteDnd(d.dndAntecedente)! } : {}),
@@ -146,10 +155,14 @@ export function calcular(s: Sistema, d: DadosFicha, opcoes: { efeitosDnd?: boole
     for (const o of c.opcoes ?? []) for (const k of Object.keys(o.vars ?? {})) vars[k] ??= 0
     Object.assign(vars, opcaoEscolhida(c, d.campos?.[c.id])?.vars ?? {})
   }
+  // Em 2014, os atributos-base são opt-in: fichas antigas já contêm totais com bônus.
+  // Somar os bônus sem uma base registrada os aplicaria duas vezes.
+  const edicao = s.regraLivroDnd ?? lerLivrosDnd(d.dndLivros).base
+  const atributos2014 = s.id === 'dnd5e-srd' && edicao === 'phb2014' ? atributosEfetivos2014(d) : null
   const mods: Record<string, number> = {}
   let soma = 0, zeros = 0, maior = -Infinity
   for (const a of s.atributos) {
-    const base = Math.max(a.min, Math.min(a.max, num(d.atributos[a.id], a.padrao))), v = base + b('atributo:' + a.id)
+    const base = Math.max(a.min, Math.min(a.max, num(atributos2014?.[a.id as keyof typeof atributos2014] ?? d.atributos[a.id], a.padrao))), v = base + b('atributo:' + a.id)
     vars[a.id] = v; soma += base; if (base === 0) zeros++; if (base > maior) maior = base // limites de criação usam o valor sem itens
     mods[a.id] = s.formulaModificador ? (avaliarSeguro(s.formulaModificador, { X: v }) ?? v) : v
     vars['mod_' + a.id] = mods[a.id]
@@ -159,7 +172,10 @@ export function calcular(s: Sistema, d: DadosFicha, opcoes: { efeitosDnd?: boole
   let dnd: EfeitosDnd | null = null
   for (const k of VARS_DND) vars[k] = 0
   if (s.id === 'dnd5e-srd') {
-    if (opcoes.efeitosDnd !== false && lerLivrosDnd(d.dndLivros).base !== 'phb2014') { dnd = efeitosDnd2024(d, vars); Object.assign(vars, dnd.vars) }
+    if (opcoes.efeitosDnd !== false) {
+      dnd = edicao === 'phb2014' ? efeitosDnd2014(d, vars) : efeitosDnd2024(d, vars)
+      Object.assign(vars, dnd.vars)
+    }
   }
   const automaticos: Record<string, string> = {}
 

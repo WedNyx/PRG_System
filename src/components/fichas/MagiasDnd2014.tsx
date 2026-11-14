@@ -7,6 +7,7 @@ import type {Calculo} from '@/lib/sistemas/calculo'
 import {classesDaFicha2014} from '@/lib/sistemas/dnd2014Multiclasse'
 import {lerLivrosDnd,suplementoDndPorId} from '@/lib/sistemas/dndLivros'
 import {lerMagias2014,maximoNivelMagiaClasse2014,expressaoMagia2014Valida,type RegistroMagiaDnd2014} from '@/lib/sistemas/dnd2014Magias'
+import {magiasDaClasse2014} from '@/lib/sistemas/dnd2014CatalogoMagias'
 import {idDe} from '@/lib/sistemas/dnd2024Classes'
 const btn='inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-(--a-5e4b78) px-3 py-2 text-xs hover:bg-(--s-34294f) disabled:opacity-40'
 const campo='min-h-10 w-full min-w-0 rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-sm text-white'
@@ -14,6 +15,7 @@ const nomeLivro=(id:string)=>id==='phb2014'?'Livro do Jogador 2014':suplementoDn
 type Props={d:DadosFicha;c:Calculo;onChange:(d:DadosFicha)=>void;somenteLeitura:boolean;rolar:(ex:string,rotulo:string)=>void}
 export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props) {
  const [nome,setNome]=useState('')
+ const [buscaCatalogo,setBuscaCatalogo]=useState('')
  const [nivel,setNivel]=useState(0)
  const [classe,setClasse]=useState('')
  const [fonte,setFonte]=useState('phb2014')
@@ -30,6 +32,12 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
  const permissao=classeAtual?maximoNivelMagiaClasse2014(classeAtual.cls.nome,classeAtual.nivel,
    classeAtual.principal?d.dnd2014Subclasse:undefined):0
  const refonte=fontes.includes(fonte)?fonte:fontes[0]
+ const catalogo=magiasDaClasse2014(classe||classeAtual?.cls.id||'')
+ const normalizar=(s:string)=>s.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+ const opcoesCatalogo=catalogo.filter(m=>
+   (m.nivel===0||m.nivel<=permissao||modo==='extra')&&
+   normalizar(m.nome).includes(normalizar(buscaCatalogo))).slice(0,100)
+
  const rclasse=classe||classeAtual?.cls.id||''
  const maxSlot=(n:number)=>Math.max(0,Number(c.recursosMax['espacos_'+n]??0))
  const atualSlot=(n:number)=>Math.max(0,Number(d.recursos['espacos_'+n]?.atual??0))
@@ -76,6 +84,26 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
     }}>🌙 Repor espaços (descanso confirmado pelo mestre)</button>
   </div>}
   {aberto&&!somenteLeitura&&<div className="grid gap-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3 sm:grid-cols-2">
+    <div className="space-y-2 rounded-lg border border-(--a-55456e) p-2 sm:col-span-2">
+      <strong className="text-xs text-(--a-ed9cd8)">📚 Buscar no catálogo do Livro do Jogador 2014 ({catalogo.length} magias desta classe)</strong>
+      <input className={campo} aria-label="Buscar magia no catálogo de 2014" value={buscaCatalogo}
+        onChange={e=>setBuscaCatalogo(e.target.value)} placeholder="Digite parte do nome para filtrar..."/>
+      <select className={campo} aria-label="Selecionar magia do livro de 2014" value=""
+        onChange={e=>{
+          const index=Number(e.target.value)
+          if(!Number.isInteger(index)||index<0||index>=opcoesCatalogo.length)return
+          const m=opcoesCatalogo[index]
+          setNome(m.nome);setNivel(m.nivel);setFonte('phb2014')
+          setErro('')
+        }}>
+        <option value="">Selecionar magia ({opcoesCatalogo.length} resultados visíveis)...</option>
+        {opcoesCatalogo.map((m,i)=><option key={m.nivel+'-'+m.nome} value={i}>
+          {m.nivel===0?'Truque':m.nivel+'º nível'} — {m.nome} ({m.escola}{m.ritual?', ritual':''})
+        </option>)}
+      </select>
+      {catalogo.length>100&&!buscaCatalogo&&<p className="text-[11px] text-(--a-a998bd)">Mostrando as primeiras 100. Pesquise para encontrar outras magias.</p>}
+      <p className="text-[11px] text-(--a-a998bd)">A seleção preenche nome e nível. Não aplica automaticamente efeitos de 2024. Magias adicionais dos suplementos podem ser registradas manualmente.</p>
+    </div>
     <label className="text-xs">Nome exato no livro
       <input className={campo} value={nome} maxLength={100} onChange={e=>setNome(e.target.value)} placeholder="Ex.: Mísseis Mágicos"/>
     </label>

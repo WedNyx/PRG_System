@@ -9,6 +9,7 @@ import { lerMagiasDnd } from './dnd2024Conjuracao'
 import { idDe, lerMulticlasseDnd } from './dnd2024Classes'
 import { lerLivrosDnd } from './dndLivros'
 import { atributosEfetivos2014, efeitosDnd2014, lerAtributosBase2014, ATRIBUTOS_DND } from './dnd2014Regras'
+import { classesDaFicha2014 } from './dnd2014Multiclasse'
 import { efeitosDnd2024, VARS_DND, type EfeitosDnd } from './dnd2024Efeitos'
 import { bonusDaArvore, lerArvore, sincronizarPoderes, somarBonus } from './arvore'
 
@@ -204,7 +205,29 @@ export function calcular(s: Sistema, d: DadosFicha, opcoes: { efeitosDnd?: boole
 
   // Derivados podem depender uns dos outros (ex.: nível → limite); avalia em ordem, duas passadas.
   const derivados: Record<string, number | null> = {}
-  const calcDerivados = () => { for (const x of s.derivados) { const val = avaliarSeguro(x.formula, vars); derivados[x.id] = val === null ? null : val + b('derivado:' + x.id); vars[x.id] = derivados[x.id] ?? 0 } }
+  const pvMulticlasse2014 = (): number | null => {
+    if (s.id !== 'dnd5e-srd' || edicao !== 'phb2014') return null
+    const { lista, total } = classesDaFicha2014(d)
+    if (lista.length < 2) return null
+    const inicial = lista.find(c => c.principal)
+    if (!inicial) return null
+    const mod = mods.CON ?? 0
+    const media = (dv: number) => Math.floor(dv / 2) + 1
+    const extras = lista.reduce((acc, c) => acc + (c.principal
+      ? Math.max(0, c.nivel - 1) * media(c.cls.dv) : c.nivel * media(c.cls.dv)), 0)
+    // Nível 1: dado cheio da classe inicial. Demais níveis: média do dado da classe
+    // que ganhou o nível. CON por nível + bônus racial confirmado (Anão da Colina).
+    return inicial.cls.dv + extras + total * mod +
+      (vars.dnd_pv_extra ?? 0) + (vars.robusto ?? 0) * total
+  }
+  const calcDerivados = () => {
+    for (const x of s.derivados) {
+      const calculado = x.id === 'pv_sugerido' ? pvMulticlasse2014() : null
+      const val = calculado ?? avaliarSeguro(x.formula, vars)
+      derivados[x.id] = val === null ? null : val + b('derivado:' + x.id)
+      vars[x.id] = derivados[x.id] ?? 0
+    }
+  }
   calcDerivados()
 
   const pericias: Record<string, number | null> = {}

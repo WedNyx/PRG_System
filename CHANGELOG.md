@@ -11,6 +11,9 @@ Também aparece no site em /novidades. Ao atualizar: aumente a versão no packag
 - Build Next.js 16 temporariamente com Webpack para contornar falhas da pipeline Turbopack relacionadas a fontes Google.
 - Arsenais de 2014 e 2024 permanecem separados; livros adicionais sem regras abertas confirmadas continuam como referência manual.
 - Testes de fidelidade de personagens por edição, respeitando salvamento, fotos, atributos, itens e escolhas anteriores.
+- Diagnóstico não destrutivo **Pronto para jogar?**: escolhas de criação pendentes por edição, incluindo o talento do Humano Variante, sem bloquear rascunhos.
+- Descansos 2014: recuperar recursos de descanso curto por classe; dados de vida gastos são descontados ao curar no curto e apenas metade dos dados totais (mínimo 1) é recuperada no longo; sem aplicar características raciais 2024.
+- Testes de regressão para ciclo de JSON/criação/reabertura/evolução, descanso e compatibilidade 2014/2024 (simulados, sem acesso ao banco real).
 - Numeração da versão: revisão vai de 0 a 10, menor de 0 a 99. Ex.: 0.0.10→0.1.0; 0.99.10→1.0.0.
 - Página /novidades e versionamento do pacote atualizados.
 

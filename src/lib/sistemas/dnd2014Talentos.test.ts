@@ -35,6 +35,7 @@ describe('Talentos PHB 2014 — opções e níveis de classes',()=>{
     expect(validarTalentos2014(base,novo,'phb2014').length).toBeGreaterThan(0)
     expect(validarTalentos2014(base,novo,'phb2014',true)).toEqual([])
     expect(validarTalentos2014(base,novo,'phb2024').length).toBeGreaterThan(0)
+    expect(validarTalentos2014(base,{...base,campos:{...base.campos,nivel:4}},'phb2024')).toEqual([])
     expect(validarTalentos2014(base,{...base,campos:{...base.campos,nivel:4},dnd2014Talentos:['ALERTA']},'phb2014')).toEqual([])
     expect(validarTalentos2014(base,{...base,campos:{...base.campos,nivel:4},dnd2014Talentos:['ALERTA','ALERTA']},'phb2014').length).toBeGreaterThan(0)
   })

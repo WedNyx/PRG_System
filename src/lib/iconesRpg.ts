@@ -187,3 +187,37 @@ export const sugestaoIconeRpg = (forma: string): string | null => {
   const id = iconeRpgPorId(forma) ? forma : alternativas[forma]
   return iconeRpgPorId(id)?.id ?? null
 }
+
+/** Ícone padrão para novos/antigos itens D&D: nenhuma imagem da Forja é gerada.
+ * A ilustração escolhida pelo jogador ou foto própria tem prioridade.
+ * São silhuetas adaptadas da biblioteca Game-Icons (CC BY 3.0).
+ */
+export function sugestaoIconeDnd(nome: string, categoria: string): string {
+  const n = nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const regras: [RegExp, string][] = [
+    [/revolver|pistola|mosquete|rifle|escopeta|arma de fogo|laser/, 'revolver'],
+    [/tridente|bidente/, 'tridente-medieval'],
+    [/machad|axe|hatchet/, 'machado-combate'],
+    [/martelo|maul|hammer|malho/, 'maca-pesada'],
+    [/maca|mangual|clava|flail|morningstar/, 'maca-pesada'],
+    [/lanca|pique|alabarda|glaive|azagaia|javelin|spear/, 'lanca-medieval'],
+    [/adaga|dardo|dagger|faca|knife|kunai/, 'adaga-medieval'],
+    [/arco|besta|bow|crossbow|zarabatana|sling|funda|flecha/, 'arqueiro'],
+    [/espada|cimitarra|rapieira|blade|sabre|sword|rapier|scimitar/, 'espada-medieval'],
+    [/escudo|shield/, 'escudo'],
+    [/cajado|staff|wand|varinha/, 'varinha'],
+    [/pocao|elixir|veneno|poison/, 'pocao'],
+    [/livro|grimorio|pergaminho|tomo|tome|scroll/, 'grimorio'],
+    [/mapa|carta|bússola/, 'mapa'],
+    [/coroa|crown/, 'coroa'],
+    [/anel|ring/, 'anel'],
+    [/amuleto|medalhao/, 'amuleto'],
+    [/gema|cristal|pedra|gem/, 'gema'],
+  ]
+  for (const [padrao, icone] of regras) if (padrao.test(n) && iconeRpgPorId(icone)) return icone
+  const padrao: Record<string, string> = {
+    arma: 'espada-medieval', armadura: 'escudo', consumivel: 'pocao',
+    equipamento: 'mochila', tesouro: 'gema', outro: 'grimorio',
+  }
+  return padrao[categoria] ?? 'grimorio'
+}

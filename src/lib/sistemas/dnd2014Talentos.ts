@@ -26,7 +26,8 @@ export function validarTalentos2014(antes:Partial<DadosFicha>,depois:Partial<Dad
   if(antigo===novo&&antes.campos?.classe===depois.campos?.classe&&antes.campos?.nivel===depois.campos?.nivel&&
      antes.campos?.especie===depois.campos?.especie&&antes.campos?.subraca2014===depois.campos?.subraca2014&&
      JSON.stringify(antes.dnd2014Multiclasse??{})===JSON.stringify(depois.dnd2014Multiclasse??{}))return []
-  if(edicao!=='phb2014')return ['Talentos do Livro do Jogador 2014 não podem ser alterados numa ficha 2024.']
+  if(edicao!=='phb2014')
+    return antigo===novo ? [] : ['Talentos do Livro do Jogador 2014 não podem ser alterados numa ficha 2024.']
   if(depois.dnd2014Talentos===undefined)return []
   if(!Array.isArray(depois.dnd2014Talentos)||depois.dnd2014Talentos.length>25||
     depois.dnd2014Talentos.some(x=>typeof x!=='string'||!TALENTOS_PHB_2014.includes(x))||

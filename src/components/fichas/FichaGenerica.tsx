@@ -68,7 +68,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
   const legado2014 = sistemaOriginal.id === 'dnd5e-srd' && edicaoDnd === 'phb2014'
   const s = useMemo(() => esquemaFichaPorLivro(sistemaOriginal, d, livroBaseCampanha),
     [sistemaOriginal, d.dndLivros, livroBaseCampanha])
-  const efeitosDnd = modoProgressao !== 'manual' && !legado2014
+  const efeitosDnd = modoProgressao !== 'manual'
   const fontesFicha = useMemo(() => {
     if (s.id !== 'dnd5e-srd' || !d.dndLivros) return fontesDnd // fichas antigas preservam suas seleções
     const escolhido = lerLivrosDnd(d.dndLivros)
@@ -253,6 +253,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     </section>}
         </>}
         {secao === 'atributos' && <>
+    {legado2014 && <GuiaCriacaoLegadaDnd d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
     {s.id === 'dnd5e-srd' && !legado2014 && <GuiaAntecedenteDnd key={idDe(d.campos.antecedente)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} fontes={fontesFicha} />}
     {c.limites.some(l => l.excedido) && <section role="alert" className="rounded-2xl border border-[#c98b3a] bg-[#3a2a14] p-4 text-sm text-[#f6dca8]">
       <p className="flex items-center gap-2 font-semibold"><AlertTriangle size={18} /> Acima do limite das regras</p>
@@ -263,9 +264,10 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-8">
         {s.atributos.map(a => <div key={a.id} className="rounded-xl border border-(--a-5e4b78) bg-(--s-171325) p-2 text-center sm:p-3">
           <p className="text-xs uppercase tracking-wider text-(--a-c4b6d4)" title={a.nome}>{a.id}</p>
-          <input type="number" aria-label={a.nome} min={a.min} max={a.max} value={d.atributos[a.id] ?? a.padrao} disabled={somenteLeitura}
+          <input type="number" aria-label={a.nome} min={a.min} max={a.max} value={legado2014 && d.dnd2014AtributosBase ? c.vars[a.id] ?? a.padrao : d.atributos[a.id] ?? a.padrao} disabled={somenteLeitura || (legado2014 && !!d.dnd2014AtributosBase)}
             onChange={e => set('atributos', { ...d.atributos, [a.id]: Math.max(a.min, Math.min(a.max, Number(e.target.value) || 0)) })}
             className="mt-1 w-full bg-transparent text-center text-2xl font-black text-white outline-none" />
+          {legado2014 && d.dnd2014AtributosBase && <p className="mt-1 text-[10px] text-(--a-a998bd)">Total SRD 5.1 · editar a base no guia acima</p>}
           {s.formulaModificador && <p className="text-sm text-(--a-d4baff)">{sinal(c.mods[a.id])}</p>}
           <p className="mt-1 truncate text-[10px] text-(--a-a998bd)">{a.nome}</p>
         </div>)}

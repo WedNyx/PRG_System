@@ -308,7 +308,7 @@ function Janela({ titulo, fechar, children, ampla = false }: { titulo: string; f
 
 /** Editor de item (usado na ficha e na biblioteca do mestre). `s` pode faltar (biblioteca sem sistema conhecido). */
 /** Foto do item (da galeria do celular ou do computador). Com foto, ela aparece no lugar do desenho da forja. */
-function FotoDoItem({ it, setIt }: { it: Item; setIt: React.Dispatch<React.SetStateAction<Item>> }) {
+function FotoDoItem({ it, setIt, estiloDnd = false }: { it: Item; setIt: React.Dispatch<React.SetStateAction<Item>>; estiloDnd?: boolean }) {
   const [ocupado, setOcupado] = useState(false)
   async function enviar(f: File) {
     setOcupado(true)
@@ -319,7 +319,7 @@ function FotoDoItem({ it, setIt }: { it: Item; setIt: React.Dispatch<React.SetSt
     } catch (e) { toast.error(e instanceof ErroNuvem ? e.message : 'Falha ao enviar a imagem.') } finally { setOcupado(false) }
   }
   return <div className="flex items-center gap-3 rounded-xl border border-(--a-8b6cba)/70 bg-(--s-171325) p-3">
-    <ArteItem item={it} tamanho={64} />
+    <ArteItem item={it} tamanho={64} estiloDnd={estiloDnd} />
     <div className="min-w-0 flex-1 text-sm">
       <p className="font-semibold">📷 Foto do item <span className="text-xs font-normal text-(--a-c4b6d4)">(opcional)</span></p>
       <p className="text-[11px] text-(--a-c4b6d4)">{it.imagem ? 'Sua foto aparece no lugar da ilustração, sem apagar a arte selecionada.' : 'Escolha uma foto da sua galeria ou use as ilustrações da biblioteca.'}</p>
@@ -357,7 +357,7 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
           <p className="mt-1 text-[11px] text-(--a-c4b6d4)">{dnd ? 'Escolha um ícone Game-Icons ou use sua própria foto. Sem Forja nas fichas de D&D.' : 'Foto própria, arte da Game-Icons e cores da Forja.'}</p>
         </div>
       </div>
-      <FotoDoItem it={it} setIt={setIt} />
+      <FotoDoItem it={it} setIt={setIt} estiloDnd={dnd} />
       <label className="block">Nome<input required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Espada longa" /></label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block">Tipo<select value={it.categoria} onChange={e => setIt({ ...it, categoria: e.target.value as Item['categoria'] })} className={input + ' mt-1'}>{CATEGORIAS_ITEM.map(c => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></label>

@@ -39,6 +39,4 @@ jobs:
         continue-on-error: true
         run: npm run lint
       - name: Build
-        # CI no runner Ubuntu tem falha do Turbopack Next 16.2 com o mapa interno next/font/google.
-        # Webpack valida a mesma aplicação; Vercel continua compilando normalmente na prévia.
-        run: npx next build --webpack
+        run: npm run build

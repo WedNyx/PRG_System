@@ -12,7 +12,7 @@ import { ANTECEDENTES_2014, RACAS_2014, SUBRACAS_2014 } from './dnd2014Criacao'
 import { lerLivrosDnd, type LivroBaseDnd } from './dndLivros'
 import { fontePermitida, FONTE_LEGADO_2014, FONTE_PHB } from './dnd2024Fontes'
 
-export type RamoHexDnd = 'classe' | 'especie' | 'antecedente'
+export type RamoHexDnd = 'classe' | 'especie' | 'antecedente' | 'mestre'
 export type EstadoHexDnd = 'recebido' | 'pendente' | 'referencia' | 'futuro'
 export type HexagonoDnd = {
   id: string; titulo: string; descricao: string
@@ -23,6 +23,7 @@ export const RAMOS_HEX_DND: { id: RamoHexDnd; titulo: string; icone: string; cor
   { id: 'classe', titulo: 'Classe e subclasse', icone: '⚔️', cor: '#73c5f6' },
   { id: 'especie', titulo: 'Espécie / raça', icone: '🧬', cor: '#c4a0fc' },
   { id: 'antecedente', titulo: 'Origem e antecedente', icone: '📜', cor: '#f2bf69' },
+  { id: 'mestre', titulo: 'Habilidades adicionais do mestre', icone: '🌠', cor: '#7edac0' },
 ]
 const s = (v: unknown): string => typeof v === 'string' ? v : ''
 const fonteComercial = (f: string): boolean => !f.startsWith('SRD')
@@ -65,12 +66,14 @@ export function hexagonosOficiaisDnd(
     .map(m => {
       const pendente = m.estado === 'escolher' || m.estado === 'pendente'
       const nomeEscolha = m.opcoes?.find(o => o.id === m.escolha)?.nome
-      const comercial = fonteComercial(m.fonte)
+      const fonteEscolha = m.opcoes?.find(o => o.id === m.escolha)?.fonte
+      const comercial = fonteComercial(m.fonte) || !!fonteEscolha
       const estado: EstadoHexDnd = m.estado === 'futuro' ? 'futuro'
         : pendente ? 'pendente' : comercial ? 'referencia' : 'recebido'
       const ramo = m.origem === 'subclasse' ? 'classe' : m.origem
       return { id: m.id, titulo: m.nome,
         descricao: m.descricao ?? 'Característica da origem ou da classe indicada no livro.',
-        nivel: m.nivel, ramo, estado, livro: m.fonte, ...(nomeEscolha ? { escolha: nomeEscolha } : {}) }
+        nivel: m.nivel, ramo, estado, livro: fonteEscolha ? 'Livro do Jogador (2024) — opção comercial' : m.fonte,
+        ...(nomeEscolha ? { escolha: nomeEscolha } : {}) }
     })
 }

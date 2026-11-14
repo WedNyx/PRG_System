@@ -43,8 +43,7 @@ export default function SeletorFontes({ baseLivro, fontes, extras, onBaseChange,
   const listados = SUPLEMENTOS_DND.filter(f => compativelLivroDnd(f.id, baseLivro) &&
     (!busca.trim() || [f.titulo, f.versao, f.descricao, String(f.ano)].join(' ').toLocaleLowerCase('pt-BR')
       .includes(busca.trim().toLocaleLowerCase('pt-BR'))))
-  const marcados = fontes.filter(f => compativelLivroDnd(f, baseLivro)).length +
-    (baseLivro === 'phb2024' && fontes.includes('phb2014') ? 1 : 0)
+  const marcados = fontes.filter(f => compativelLivroDnd(f, baseLivro)).length
   return <fieldset className="space-y-4 rounded-2xl border border-(--a-55456e) p-3 sm:p-4">
     <legend className="px-1 font-semibold text-white">📚 Livros e edição da campanha de D&D</legend>
     <p className="text-xs text-(--a-c4b6d4)">

@@ -10,6 +10,7 @@ import { idDe, lerMulticlasseDnd } from './dnd2024Classes'
 import { lerLivrosDnd } from './dndLivros'
 import { atributosEfetivos2014, efeitosDnd2014, lerAtributosBase2014, ATRIBUTOS_DND } from './dnd2014Regras'
 import { classesDaFicha2014 } from './dnd2014Multiclasse'
+import { lerMagias2014 } from './dnd2014Magias'
 import { efeitosDnd2024, VARS_DND, type EfeitosDnd } from './dnd2024Efeitos'
 import { bonusDaArvore, lerArvore, sincronizarPoderes, somarBonus } from './arvore'
 
@@ -106,6 +107,7 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
       { dnd2014Subclasse: d.dnd2014Subclasse.slice(0,64) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014Multiclasse !== undefined ?
       { dnd2014Multiclasse: lerMulticlasseDnd(d.dnd2014Multiclasse, idDe(d.campos?.classe)) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014Magias !== undefined ? {dnd2014Magias:lerMagias2014(d.dnd2014Magias)} : {}),
     ...(s.id === 'dnd5e-srd' && d.dndEscolhas !== undefined ? { dndEscolhas: lerEscolhasDnd(d.dndEscolhas) } : {}),
     ...(d.criacaoLivre !== undefined ? { criacaoLivre: d.criacaoLivre === true } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndAntecedente !== undefined && lerRegistroAntecedenteDnd(d.dndAntecedente) ? { dndAntecedente: lerRegistroAntecedenteDnd(d.dndAntecedente)! } : {}),

@@ -46,7 +46,7 @@ function categoriaGenerica(caminho: string): Campo {
   if (caminho === 'dnd2014AtributosBase' || caminho === 'dnd2014AtributosExtras') return 'atributos'
   if (caminho === 'dnd2014PericiasClasse') return 'pericias'
   if (caminho === 'dnd2014PericiasRaciais') return 'pericias'
-  if (caminho === 'dnd2014Subclasse') return 'habilidades'
+  if (caminho === 'dnd2014Subclasse' || caminho === 'dnd2014Subclasses') return 'habilidades'
   if (caminho === 'dnd2014Talentos') return 'habilidades'
   if (caminho === 'dnd2014Multiclasse') return 'nivel'
   if (caminho === 'dnd2014Magias') return 'habilidades'

@@ -72,8 +72,9 @@ export function hexagonosOficiaisDnd(
           .map((m, i) => ({
             id: '2014-' + c.cls.id + '-' + m.nivel + '-' + i,
             titulo: m.nome, descricao: m.automatico
-              ? 'Recurso-base da classe, disponível quando esta classe atinge o nível indicado.'
-              : 'Característica de classe identificada na edição 2014; decisão ou efeito específico deve ser confirmado no livro.',
+              ? c.cls.nome + ' · nível de classe ' + m.nivel + '. Recurso-base disponível somente quando esta classe atingir o nível indicado.'
+              : c.cls.nome + ' · nível de classe ' + m.nivel + '. Característica 2014; decisão ou efeito específico deve ser confirmado no livro.',
+            escolha: c.cls.nome,
             nivel: m.nivel, ramo: 'classe' as const,
             estado: m.nivel > c.nivel ? 'futuro' as const : m.automatico ? 'recebido' as const : 'referencia' as const,
             livro: 'SRD 5.1 (2014)',

@@ -314,6 +314,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
             ...nova, poderes: sincronizarPoderes(lerPoderes(nova.poderes), lerArvore(nova.arvore), nova),
           })} somenteLeitura={somenteLeitura} />}
           {s.id === 'dnd5e-srd' && !legado2014 && <TalentosOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} compacto />}
+          {s.id === 'dnd5e-srd' && !legado2014 && <GuiaMagiaHumanoDnd2024 key={idDe(d.campos.especie)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
                 {s.id === 'dnd5e-srd' && !legado2014 && modoProgressao !== 'manual' && <>
             <ProgressaoDnd2024
               marcos={MARCOS_DND_2024}
@@ -348,11 +349,11 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
               somenteLeitura={somenteLeitura || (s.id === 'dnd5e-srd' && !podeEditarArvore)}
               rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0}
               mestre={podeEditarArvore} nivel={s.campos.some(x => x.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null} />
-            </>}
+          </>
         </div>}
         {secao === 'habilidades' && <>
     {s.id === 'dnd5e-srd' && <p className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3 text-sm text-(--a-cfc0df)">✨ <strong>Escolhas adicionais:</strong> aqui você registra magias preparadas e poderes que escolher, aprender ou ganhar do mestre. Traços automáticos de raça, classe e antecedente já aparecem na Árvore de habilidades e não precisam ser criados novamente.</p>}
-    {s.id === 'dnd5e-srd' && !legado2014 && <GuiaMagiaHumanoDnd2024 key={idDe(d.campos.especie)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
+
     {s.id === 'dnd5e-srd' && !legado2014 && <MagiasDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} semLimites={modoProgressao === 'manual'} rolar={(x, r) => void rolarExpr(x, r)} />}
     <PoderesFicha {...propsInv} />
     {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}

@@ -11,6 +11,7 @@ import { aumentosRaciais2014, periciasAntecedente2014, periciasClasse2014 } from
 import { subclasseAtivaDnd2014, subclassesDaClasse2014 } from './dnd2014Subclasses'
 import { classesDaFicha2014 } from './dnd2014Multiclasse'
 import { CLASSES_SRD } from './dnd2024Srd'
+import { sistemaPorId } from './catalogo'
 import { MARCOS_DND_2024 } from './dnd2024Marcos'
 import { progressoDaFichaDnd } from './dnd2024Ficha'
 import { progressaoVisivel } from './dnd2024Progressao'
@@ -70,6 +71,20 @@ export function avaliarProntidaoDnd(d: DadosFicha, edicao: LivroBaseDnd = lerLiv
     if ((d.dnd2014Talentos ?? []).length)
       incluir('talentos2014', 'Pré-requisitos dos talentos', 'Confirme os efeitos e pré-requisitos dos talentos escolhidos no Livro do Jogador 2014.', 'conferir', 'habilidades')
   } else {
+    // O catálogo oficial do sistema é a fonte para espécies e antecedentes
+    // SRD 5.2.1 + opções comerciais expressamente indexadas para 2024.
+    // É apenas diagnóstico: fichas legadas ou conteúdo caseiro permanecem editáveis.
+    const campos2024 = sistemaPorId('dnd5e-srd')?.campos ?? []
+    for (const [id, valor, titulo] of [
+      ['especie', especie, 'Espécie incompatível'],
+      ['antecedente', antecedente, 'Antecedente incompatível'],
+    ] as const) {
+      const opcoes = campos2024.find(c => c.id === id)?.opcoes ?? []
+      if (valor && !opcoes.some(op => op.nome === valor))
+        incluir(id + 'Incompativel2024', titulo,
+          'Esta opção não consta no catálogo do livro-base 2024. Se for uma opção caseira ou suplementar, confirme com o mestre.',
+          'pendente', 'principal')
+    }
     const marcos = progressaoVisivel(MARCOS_DND_2024, progressoDaFichaDnd(d))
       .filter(m => m.estado === 'escolher' || m.estado === 'pendente')
     for (const m of marcos) incluir('marco2024-'+m.id,m.nome,

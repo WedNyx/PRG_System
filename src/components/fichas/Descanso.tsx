@@ -18,6 +18,7 @@ export default function JanelaDescanso({ s, d, onChange, rolarTotal, fechar }: {
   fechar: () => void
 }) {
   const [cura, setCura] = useState('')
+  const [dadosGastos, setDadosGastos] = useState('0')
   const [ocupado, setOcupado] = useState(false)
   const [truqueEscolhido, setTruqueEscolhido] = useState(() => truqueAltoElfo(d))
   const legado2014 = s.id === 'dnd5e-srd' && (s.regraLivroDnd ?? lerLivrosDnd(d.dndLivros).base) === 'phb2014'
@@ -34,7 +35,23 @@ export default function JanelaDescanso({ s, d, onChange, rolarTotal, fechar }: {
         if (/^\d+$/.test(t)) valor = Number(t)
         else { const r = await rolarTotal(t, `Cura no descanso curto (${t})`); if (r === null) return; valor = r }
       }
-      const r = aplicarDescanso(s, d, tipo, { cura: valor })
+      const gastos = tipo === 'curto' && legado2014 ? Number(dadosGastos) : 0
+      if (legado2014 && tipo === 'curto') {
+        const atuais = Number(d.recursos.dados_vida?.atual ?? 0)
+        if (!Number.isSafeInteger(gastos) || gastos < 0 || gastos > atuais) {
+          toast.error('Informe uma quantidade válida de Dados de Vida disponíveis.')
+          return
+        }
+        if (valor > 0 && gastos === 0) {
+          toast.error('Registre os Dados de Vida gastos para recuperar PV no descanso curto.')
+          return
+        }
+        if (gastos > 0 && !t) {
+          toast.error('Informe a cura resultante dos Dados de Vida (pode ser 0).')
+          return
+        }
+      }
+      const r = aplicarDescanso(s, d, tipo, { cura: valor, ...(legado2014 && tipo === 'curto' ? { dadosVidaGastos: gastos } : {}) })
       // A troca é uma escolha do personagem, somente após um descanso longo.
       const novaFicha = tipo === 'longo' && altoElfo && TRUQUES_MAGO_ALTO_ELFO.some(x => x.id === truqueEscolhido)
         ? { ...r.d, listas: { ...r.d.listas, [CHAVE_TRUQUE_ALTO_ELFO]: truqueEscolhido } } : r.d
@@ -59,6 +76,12 @@ export default function JanelaDescanso({ s, d, onChange, rolarTotal, fechar }: {
         <p className="mt-1 text-xs text-(--a-cfc0df)">{legado2014
           ? 'D&D 2014: recarrega Surto de Ação, Retomar o Fôlego, Ki, Magia de Pacto e outros recursos elegíveis. A Inspiração de Bardo volta no curto a partir do nível 5. Para recuperar PV, gaste Dados de Vida conforme o livro; informe o total curado abaixo.'
           : `Uma pausa rápida. Voltam os usos dos poderes marcados “descanso curto”${curtos ? ` (${curtos})` : ''}.${vida ? ` Se o sistema deixa curar, escreva quanto de ${vida.nome}.` : ''}`}</p>
+        {legado2014 && <label className="mt-3 block text-sm">Dados de Vida gastos (você possui {Math.max(0, Number(d.recursos.dados_vida?.atual ?? 0))})
+          <input type="number" min={0} max={Math.max(0, Number(d.recursos.dados_vida?.atual ?? 0))}
+            value={dadosGastos} onChange={e=>setDadosGastos(e.target.value)} disabled={ocupado}
+            className="mt-1 w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white"/>
+          <span className="mt-1 block text-xs text-(--a-c4b6d4)">Role os Dados de Vida das classes adequadas. A ficha desconta a quantidade informada.</span>
+        </label>}
         {vida && <label className="mt-3 block text-sm">Cura de {vida.nome} (opcional)
           <input value={cura} onChange={e => setCura(e.target.value)} maxLength={40} placeholder="Ex.: 5 ou 1d8+2" className="mt-1 w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white" /></label>}
         <button type="button" disabled={ocupado} onClick={() => void descansar('curto')} className="mt-3 w-full rounded-xl border border-(--a-b99bff) bg-(--s-34294f) p-2.5 font-semibold hover:bg-(--s-45366a) disabled:opacity-50">Fazer descanso curto</button>

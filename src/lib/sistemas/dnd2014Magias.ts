@@ -7,6 +7,7 @@
  */
 import type { DadosFicha } from './tipos'
 import { classesDaFicha2014 } from './dnd2014Multiclasse'
+import { subclasseDaFicha2014 } from './dnd2014Subclasses'
 import { lerLivrosDnd } from './dndLivros'
 import { idDe } from './dnd2024Classes'
 
@@ -69,6 +70,7 @@ export function validarAlteracoesMagias2014(
     antes.campos?.classe===depois.campos?.classe && antes.campos?.nivel===depois.campos?.nivel &&
     JSON.stringify(antes.dnd2014Multiclasse??{})===JSON.stringify(depois.dnd2014Multiclasse??{}) &&
     antes.dnd2014Subclasse===depois.dnd2014Subclasse &&
+    JSON.stringify(antes.dnd2014Subclasses??{})===JSON.stringify(depois.dnd2014Subclasses??{}) &&
     JSON.stringify(antes.dndLivros??{})===JSON.stringify(depois.dndLivros??{}))return []
   if(edicao!=='phb2014')return ['O grimório de 2014 só pode ser editado em fichas do Livro do Jogador (2014).']
   const raw=depois.dnd2014Magias
@@ -83,7 +85,8 @@ export function validarAlteracoesMagias2014(
     if(!livros.has(m.fonte))erros.push('Fonte de magia não selecionada para esta ficha: '+m.fonte)
     const nivel=classes.get(m.classe)
     if(m.modo!=='extra'&&!nivel)erros.push('Classe da magia não pertence ao personagem: '+m.classe)
-    const max=maximoNivelMagiaClasse2014(m.classe,nivel??0,d.dnd2014Subclasse)
+    const sub=subclasseDaFicha2014(d,m.classe)
+    const max=maximoNivelMagiaClasse2014(m.classe,nivel??0,sub?.id)
     if(m.modo!=='extra' && m.nivel>max)
       erros.push('Nível da magia acima do permitido na classe de 2014: '+m.nome)
     // Paladino e Patrulheiro da edição 2014 não recebem truques pela classe.

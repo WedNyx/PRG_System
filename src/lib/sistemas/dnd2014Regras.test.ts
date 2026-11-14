@@ -79,6 +79,14 @@ describe('D&D 5e 2014 · automações verificadas do SRD 5.1', () => {
     expect(validarAlteracoes2014({}, {...d,dnd2014PericiasClasse:['atletismo','atletismo']},'phb2014')).toHaveLength(1)
     expect(validarAlteracoes2014({}, {...d,dnd2014PericiasClasse:['atletismo','persuasao']},'phb2014')).toHaveLength(0)
     expect(validarAlteracoes2014({}, {...d,dnd2014PericiasClasse:['sobrevivencia']},'phb2014')).toHaveLength(1)
+    expect(validarAlteracoes2014(
+      {campos:{classe:'Guerreiro',especie:'Elfo',antecedente:'Forasteiro'}},
+      {campos:{classe:'Guerreiro',especie:'Golias',antecedente:'Forasteiro'}},
+      'phb2014').some(x=>x.includes('especie'))).toBe(true)
+    expect(validarAlteracoes2014(
+      {campos:{classe:'Guerreiro',especie:'Elfo',antecedente:'Forasteiro'}},
+      {campos:{classe:'Guerreiro',especie:'Elfo',subraca2014:'Gnomo das Rochas',antecedente:'Forasteiro'}},
+      'phb2014').some(x=>x.includes('Sub-raça'))).toBe(true)
     expect(validarAlteracoes2014({}, {...d,dnd2014AtributosExtras:['FOR']},'phb2024')).toHaveLength(1)
   })
   it('preserva campos 2014 em normalização e nunca aplica bônus com edição 2024', () => {

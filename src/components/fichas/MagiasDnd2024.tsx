@@ -27,10 +27,12 @@ type Props = {
   d: DadosFicha; c: Calculo; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean
   /** Modo manual: sem limites da tabela (tudo entra como extra). */
   semLimites?: boolean
+  /** Quando a Árvore exibe as magias inatas, não repetir na seleção de magias preparadas. */
+  ocultarInatas?: boolean
   rolar: (expressao: string, rotulo: string) => void
 }
 
-export default function MagiasDnd2024({ d, c, onChange, somenteLeitura = false, semLimites = false, rolar }: Props) {
+export default function MagiasDnd2024({ d, c, onChange, somenteLeitura = false, semLimites = false, ocultarInatas = false, rolar }: Props) {
   const sel = useMemo(() => lerMagiasDnd(d.dndMagias), [d.dndMagias])
   const principal = useMemo(() => limitesMagiasDnd(d), [d])
   const conj = useMemo(() => conjuradoresDnd(d), [d])
@@ -84,9 +86,11 @@ export default function MagiasDnd2024({ d, c, onChange, somenteLeitura = false, 
         {x.nivelMax > 0 && <span className={chip}>Prepara até {x.nivelMax}º{x.arcana.length ? ` · Arcana ${x.arcana.join('º, ')}º` : ''}</span>}
       </>}
     </div> })}
-    <MagiasOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolar} />
-    <MagiasOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolar} origemHumana />
-    <MagiasEspecieDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolar} />
+    {!ocultarInatas && <>
+      <MagiasOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolar} />
+      <MagiasOrigemDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolar} origemHumana />
+      <MagiasEspecieDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolar} />
+    </>}
     {lista.length === 0 && <p className="rounded-xl border border-dashed border-(--a-55456e) p-4 text-sm text-(--a-c4b6d4)">Nenhuma magia preparada pela classe. {somenteLeitura ? '' : 'Toque em “Adicionar magias” para escolher pelo catálogo do SRD.'}</p>}
     {[...grupos].map(([nivel, ms]) => <div key={nivel} className="space-y-2">
       <h4 className="text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{nomeNivel(nivel)}</h4>

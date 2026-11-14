@@ -40,6 +40,14 @@ describe('D&D 2014 — subclasses por PHB e SRD 5.1',()=>{
    expect(validarSubclasseDnd2014({campos:{classe:'Guerreiro',nivel:2}},
      {campos:{classe:'Guerreiro',nivel:3},dnd2014Subclasse:'campeao'})).toEqual([])
  })
+ it('não libera Campeão 3 em Guerreiro 2/Mago 4 por usar nível total',()=>{
+   const d=ficha('Guerreiro',6,{mago:4})
+   expect(validarSubclasseDnd2014({...d,dnd2014Subclasse:undefined},{...d,dnd2014Subclasse:'campeao'}).length).toBeGreaterThan(0)
+   const campeao={...d,dnd2014Subclasse:'campeao',campos:{...d.campos,nivel:7}}
+   expect(validarSubclasseDnd2014(d,campeao)).toEqual([])
+   const regrediu={...campeao,campos:{...campeao.campos,nivel:6}}
+   expect(validarSubclasseDnd2014(campeao,regrediu).length).toBeGreaterThan(0)
+ })
  it('não permite alterações de subclasses do motor 2014 dentro de fichas 2024',()=>{
    const a=ficha('Guerreiro',3)
    expect(validarAlteracoes2014(a,{...a,dnd2014Subclasse:'campeao'},'phb2024')).toHaveLength(1)

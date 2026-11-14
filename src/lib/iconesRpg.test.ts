@@ -5,8 +5,8 @@ import { sistemaPorId, SISTEMAS } from './sistemas/catalogo'
 import { normalizarFicha } from './sistemas/calculo'
 
 describe('Biblioteca visual RPG Game-Icons · PR #48', () => {
-  it('contém 32 SVGs originais identificados e sem o fundo preto', () => {
-    expect(ICONES_RPG).toHaveLength(32)
+  it('contém pelo menos 43 SVGs originais identificados e sem o fundo preto', () => {
+    expect(ICONES_RPG.length).toBeGreaterThanOrEqual(43)
     expect(new Set(ICONES_RPG.map(x => x.id)).size).toBe(ICONES_RPG.length)
     for (const ic of ICONES_RPG) {
       expect(ic.nome.length).toBeGreaterThan(2)

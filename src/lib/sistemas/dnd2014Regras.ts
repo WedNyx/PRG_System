@@ -117,7 +117,7 @@ export function atributosEfetivos2014(d: Pick<DadosFicha,'campos' | 'dnd2014Atri
 
 /** Regras abertas de 2014. A característica de classe particular e subclasse continuam manuais. */
 export function efeitosDnd2014(
-  d: Pick<DadosFicha,'campos' | 'dnd2014PericiasClasse' | 'dnd2014PericiasRaciais' | 'dnd2014Multiclasse' | 'dnd2014Subclasse'>,
+  d: Pick<DadosFicha,'campos' | 'dnd2014PericiasClasse' | 'dnd2014PericiasRaciais' | 'dnd2014Multiclasse' | 'dnd2014Subclasse' | 'dnd2014Subclasses'>,
   vars: Record<string,number>,
 ): EfeitosDnd {
   const v: Record<string,number> = Object.fromEntries(VARS_DND.map(x=>[x,0]))
@@ -186,7 +186,7 @@ export function efeitosDnd2014(
   v.dnd_canalizar = Math.max(usosClerigo, paladinoN >= 3 ? 1 : 0)
   // No 2014, Paladino/Patrulheiro contam metade PARA BAIXO na multiclasse;
   // como classe única usam a tabela própria e passam a conjurar no nível 2.
-  const slots=espacosDeMagia2014(classes,d.dnd2014Subclasse)
+  const slots=espacosDeMagia2014(classes,d.dnd2014Subclasse,d.dnd2014Subclasses)
   for(let i=1;i<=9;i++) v['dnd_espacos_'+i]=slots.espacos[i]??0
   v.dnd_pacto=slots.pacto
   v.dnd_pacto_nivel=slots.pactoNivel
@@ -212,7 +212,7 @@ export function validarAlteracoes2014(
   const erros: string[]=[]
   const alterou=(k: 'dnd2014AtributosBase'|'dnd2014AtributosExtras'|'dnd2014PericiasClasse'|'dnd2014PericiasRaciais') =>
     JSON.stringify(antes[k]??null)!==JSON.stringify(depois[k]??null)
-  const chaves=['dnd2014AtributosBase','dnd2014AtributosExtras','dnd2014PericiasClasse','dnd2014PericiasRaciais','dnd2014Subclasse','dnd2014Multiclasse'] as const
+  const chaves=['dnd2014AtributosBase','dnd2014AtributosExtras','dnd2014PericiasClasse','dnd2014PericiasRaciais','dnd2014Subclasse','dnd2014Subclasses','dnd2014Multiclasse'] as const
   if (edicao === 'phb2014') {
     // Rejeita novas escolhas de 2024 na versão legada; não apaga fichas
     // históricas que já continham valores próprios.
@@ -238,6 +238,7 @@ export function validarAlteracoes2014(
   erros.push(...validarTalentos2014(antes,depois,edicao,ignorarRequisitos))
   if (edicao !== 'phb2014') {
     if(chaves.some(k => k==='dnd2014Subclasse' ? antes.dnd2014Subclasse !== depois.dnd2014Subclasse
+      : k==='dnd2014Subclasses' ? JSON.stringify(antes.dnd2014Subclasses??{})!==JSON.stringify(depois.dnd2014Subclasses??{})
       : k==='dnd2014Multiclasse' ? JSON.stringify(antes.dnd2014Multiclasse??{})!==JSON.stringify(depois.dnd2014Multiclasse??{})
       : alterou(k)))
       erros.push('As escolhas de criação 2014 não podem ser alteradas numa ficha com livro-base 2024.')

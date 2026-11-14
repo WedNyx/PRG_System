@@ -316,7 +316,12 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     </section>}
         </>}
         {secao === 'arvore' && <div className="space-y-4">
-          {s.id === 'dnd5e-srd' && <ArvoreDndOficial d={d} edicao={edicaoDnd} fontes={fontesFicha} />}
+          {s.id === 'dnd5e-srd' && <ArvoreDndOficial d={d} edicao={edicaoDnd} fontes={fontesFicha}>
+            <ArvoreHabilidades s={s} d={d} onChange={onChange}
+              somenteLeitura={somenteLeitura || !podeEditarArvore}
+              rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0}
+              mestre={podeEditarArvore} nivel={Math.max(1, Number(d.campos.nivel) || 1)} visualizacao="cartoes" />
+          </ArvoreDndOficial>}
           {s.id === 'dnd5e-srd' && !legado2014 && <details className={card}>
             <summary className="cursor-pointer font-semibold text-(--a-ed9cd8)">🧬 Habilidades raciais com usos e recargas</summary>
             <div className="mt-3"><TracosEspecieDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={(x, r) => void rolarExpr(x, r)} irPara={ir} /></div>
@@ -365,13 +370,10 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
               }}
             />
           </>}
-          <>
-            {s.id === 'dnd5e-srd' && <p className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">🌠 <strong>Hexágonos adicionais do mestre:</strong> habilidades caseiras, talentos extras e recompensas especiais. Esta parte continua editável pelo mestre e não substitui os hexágonos oficiais acima.</p>}
-            <ArvoreHabilidades s={s} d={d} onChange={onChange}
-              somenteLeitura={somenteLeitura || (s.id === 'dnd5e-srd' && !podeEditarArvore)}
-              rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0}
-              mestre={podeEditarArvore} nivel={s.campos.some(x => x.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null} />
-          </>
+          {s.id !== 'dnd5e-srd' && <ArvoreHabilidades s={s} d={d} onChange={onChange}
+            somenteLeitura={somenteLeitura}
+            rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0}
+            mestre={podeEditarArvore} nivel={s.campos.some(x => x.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null} />}
         </div>}
         {secao === 'habilidades' && <>
     {s.id === 'dnd5e-srd' && <p className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3 text-sm text-(--a-cfc0df)">✨ <strong>Escolhas adicionais:</strong> aqui você registra magias preparadas e poderes que escolher, aprender ou ganhar do mestre. Traços automáticos de raça, classe e antecedente já aparecem na Árvore de habilidades e não precisam ser criados novamente.</p>}

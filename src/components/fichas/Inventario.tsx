@@ -9,6 +9,7 @@ import { arteDoItem, CORES_FORJA, corDaRaridade, FORMAS, nomeAleatorio, RARIDADE
 import { Backpack, Dice5, Gift, Minus, Moon, Pencil, Plus, Shield, Sparkles, Trash2, X } from 'lucide-react'
 import type { Calculo } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
+import type { LivroBaseDnd } from '@/lib/sistemas/dndLivros'
 import { alvosDeBonus, CATEGORIAS_ITEM, lerItens, lerPeso, lerPoderes, mostrarPeso, lerUso, normalizarItem, normalizarPoder, podeUsar, TIPOS_PODER, type Bonus, type Item, type Poder, type Uso } from '@/lib/sistemas/inventario'
 import NaTela from '@/components/NaTela'
 import CatalogoArmasDnd2024 from './CatalogoArmasDnd2024'
@@ -25,10 +26,11 @@ type Props = { s: Sistema; d: DadosFicha; c: Calculo; onChange: (d: DadosFicha) 
   /** Abre a janela de descanso (curto/longo). */
   abrirDescanso?: () => void
   /** Ficha de campanha: abre a janela para passar o item a outro personagem. */
-  passarItem?: (it: Item, tem: number) => void }
+  passarItem?: (it: Item, tem: number) => void
+  edicaoDnd?: LivroBaseDnd }
 
 /** Seção “Inventário”: itens com quantidade, peso, equipado, dano e bônus automáticos. */
-export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, passarItem }: Props) {
+export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, passarItem, edicaoDnd = 'phb2024' }: Props) {
   const itens = lerItens(d.itens), uso = lerUso(d.uso)
   const [editando, setEditando] = useState<Item | null>(null)
   const [catalogoAberto, setCatalogoAberto] = useState(false)
@@ -185,7 +187,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Backpack size={18} /> Inventário</h2>
       {!somenteLeitura && <div className="flex flex-wrap gap-2">
-        {s.id === 'dnd5e-srd' && <button type="button" className={botao + ' border-(--a-b99bff)'} onClick={() => setCatalogoAberto(true)}><Dice5 size={14} /> Arsenal ({38 + ARMAS_DND_EXPANDIDAS.length})</button>}
+        {s.id === 'dnd5e-srd' && edicaoDnd !== 'phb2014' && <button type="button" className={botao + ' border-(--a-b99bff)'} onClick={() => setCatalogoAberto(true)}><Dice5 size={14} /> Arsenal ({38 + ARMAS_DND_EXPANDIDAS.length})</button>}
         <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', categoria: 'equipamento', peso: 0, bonus: [] })}><Plus size={14} /> Novo item</button>
       </div>}
     </div>
@@ -223,7 +225,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
       </div>
     }) : <ul className="mt-3 space-y-2">{itensVisiveis.filter(i => abaAtual === 'magico' ? i.magico : i.categoria === abaAtual).map(linhaItem)}</ul>}
     {editando && <EditorItem s={s} inicial={editando} salvar={salvarItem} fechar={() => setEditando(null)} />}
-    {catalogoAberto && s.id === 'dnd5e-srd' && <CatalogoArmasDnd2024 adicionar={adicionarArmaCatalogo} adicionarReferencia={adicionarReferenciaCatalogo} fechar={() => setCatalogoAberto(false)} />}
+    {catalogoAberto && s.id === 'dnd5e-srd' && edicaoDnd !== 'phb2014' && <CatalogoArmasDnd2024 adicionar={adicionarArmaCatalogo} adicionarReferencia={adicionarReferenciaCatalogo} fechar={() => setCatalogoAberto(false)} />}
   </section>
 }
 

@@ -121,7 +121,7 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const liberadas = fontesDaFicha(candidato.dndLivros)
     if (edicao === 'phb2014') {
       erros.push(...validarAlteracoesExclusivas2024(antigo, candidato))
-      erros.push(...validarAlteracoes2014(antigo, candidato, 'phb2014'))
+      erros.push(...validarAlteracoes2014(antigo, candidato, 'phb2014', admin))
     } else {
     erros.push(...validarAlteracoes2014(antigo, candidato, 'phb2024'))
     erros.push(...validarAlteracoesEscolhasDnd(
@@ -220,7 +220,7 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const liberadas = fontesDaFicha(autorizado.dndLivros)
     if (edicao === 'phb2014') {
       erros.push(...validarAlteracoesExclusivas2024(anterior, autorizado))
-      erros.push(...validarAlteracoes2014(anterior, autorizado, 'phb2014'))
+      erros.push(...validarAlteracoes2014(anterior, autorizado, 'phb2014', admin))
     } else {
     erros.push(...validarAlteracoes2014(anterior, autorizado, 'phb2024'))
     erros.push(...validarAlteracoesEscolhasDnd(

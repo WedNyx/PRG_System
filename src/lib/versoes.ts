@@ -27,6 +27,16 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.34.0', data: '2026-11-14',
+    titulo: 'Fase 2: quatro árvores verticais integradas de D&D',
+    itens: [
+      '🌳 A ficha D&D agora apresenta quatro árvores por abas: Classe/Subclasse, Raça/Espécie, Antecedente/Origem e habilidades adicionais do Mestre.',
+      '📜 Cartões arredondados com progressão vertical, detalhes do livro e estado da característica substituem os dois mapas de hexágonos da ficha D&D.',
+      '✨ A árvore do mestre preserva pontos, requisitos, concessões, poderes e histórico antigos. Os ramos oficiais são calculados pelas escolhas 2014 ou 2024 sem serem gravados ou concedidos novamente.',
+      '📱 Cada ramo é exibido separadamente no celular e no computador, com cartões legíveis; outros sistemas mantêm seu visual atual nesta etapa.',
+    ],
+  },
+  {
     versao: '0.33.10', data: '2026-11-14',
     titulo: 'Correção da publicação após a Fase 1',
     itens: [

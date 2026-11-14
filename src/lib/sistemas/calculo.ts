@@ -7,6 +7,7 @@ import { lerTalentoMagiaHumano } from './dnd2024MagiaHumano'
 import { lerRegistroAntecedenteDnd } from './dnd2024Antecedentes'
 import { lerMagiasDnd } from './dnd2024Conjuracao'
 import { idDe, lerMulticlasseDnd } from './dnd2024Classes'
+import { lerLivrosDnd } from './dndLivros'
 import { efeitosDnd2024, VARS_DND, type EfeitosDnd } from './dnd2024Efeitos'
 import { bonusDaArvore, lerArvore, sincronizarPoderes, somarBonus } from './arvore'
 
@@ -87,6 +88,7 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     listas: { ...base.listas, ...(d.listas ?? {}) },
     // Inventário só entra quando existe (fichas antigas continuam iguais) e sempre limpo/validado.
     ...(d.itens !== undefined ? { itens: lerItens(d.itens) } : {}), ...(d.uso !== undefined ? { uso: lerUso(d.uso) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dndLivros !== undefined ? { dndLivros: lerLivrosDnd(d.dndLivros) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndEscolhas !== undefined ? { dndEscolhas: lerEscolhasDnd(d.dndEscolhas) } : {}),
     ...(d.criacaoLivre !== undefined ? { criacaoLivre: d.criacaoLivre === true } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndAntecedente !== undefined && lerRegistroAntecedenteDnd(d.dndAntecedente) ? { dndAntecedente: lerRegistroAntecedenteDnd(d.dndAntecedente)! } : {}),
@@ -157,7 +159,7 @@ export function calcular(s: Sistema, d: DadosFicha, opcoes: { efeitosDnd?: boole
   let dnd: EfeitosDnd | null = null
   for (const k of VARS_DND) vars[k] = 0
   if (s.id === 'dnd5e-srd') {
-    if (opcoes.efeitosDnd !== false) { dnd = efeitosDnd2024(d, vars); Object.assign(vars, dnd.vars) }
+    if (opcoes.efeitosDnd !== false && lerLivrosDnd(d.dndLivros).base !== 'phb2014') { dnd = efeitosDnd2024(d, vars); Object.assign(vars, dnd.vars) }
   }
   const automaticos: Record<string, string> = {}
 

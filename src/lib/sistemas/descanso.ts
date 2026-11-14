@@ -30,7 +30,7 @@ export function maximosDosRecursos(s: Sistema, d: DadosFicha): Record<string, nu
 /** Recurso de vida do sistema (PV, Vida…). */
 export const recursoDeVida = (s: Sistema) => s.recursos.find(r => VIDA.test(r.id)) ?? s.recursos.find(r => /^(pv|vida|hp)/i.test(r.id)) ?? null
 
-export function aplicarDescanso(s: Sistema, bruto: Partial<DadosFicha>, tipo: TipoDescanso, opcoes: { cura?: number } = {}): ResultadoDescanso {
+export function aplicarDescanso(s: Sistema, bruto: Partial<DadosFicha>, tipo: TipoDescanso, opcoes: { cura?: number; dadosVidaGastos?: number } = {}): ResultadoDescanso {
   const d = normalizarFicha(s, bruto)
   const max = maximosDosRecursos(s, d)
   const legado2014 = s.id === 'dnd5e-srd' && (s.regraLivroDnd ?? lerLivrosDnd(d.dndLivros).base) === 'phb2014'
@@ -71,6 +71,21 @@ export function aplicarDescanso(s: Sistema, bruto: Partial<DadosFicha>, tipo: Ti
       : r.voltaNoCurto) {
       const atual = Number(recursos[r.id]?.atual ?? 0) || 0, m = max[r.id]
       if (m !== null && m > 0 && atual < m) { recursos[r.id] = { ...recursos[r.id], atual: m }; mudancas.push(`${r.nome}: ${atual} → ${m}`) }
+    }
+  }
+  // No D&D 2014, a cura do descanso curto consome Dados de Vida reais.
+  // Multiclasse possui dados diferentes; o jogador rola os dados da classe
+  // correspondente e informa a cura, sem um d8 fictício automático.
+  if (tipo === 'curto' && legado2014) {
+    const gastos = opcoes.dadosVidaGastos ?? 0
+    const restantes = Number(recursos.dados_vida?.atual ?? 0)
+    if (!Number.isSafeInteger(gastos) || gastos < 0 || gastos > restantes)
+      throw new Error('Dados de Vida gastos precisam ser inteiros e não podem superar os disponíveis.')
+    if (Number(opcoes.cura ?? 0) > 0 && gastos === 0)
+      throw new Error('Para curar durante o descanso curto, registre quantos Dados de Vida foram gastos.')
+    if (gastos > 0) {
+      recursos.dados_vida = { ...recursos.dados_vida, atual: restantes - gastos }
+      mudancas.push(`Dados de Vida gastos: ${gastos}`)
     }
   }
   if (tipo === 'curto' && opcoes.cura && opcoes.cura > 0) {

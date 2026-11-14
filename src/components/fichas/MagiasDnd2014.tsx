@@ -83,6 +83,10 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
       if(pactoMax>0)recursos.pacto={...recursos.pacto,atual:pactoMax}
       onChange({...d,recursos})
     }}>🌙 Descanso longo: repor espaços e pacto</button>
+    {Number(c.recursosMax.pacto??0)>0&&<button type="button" className={btn} onClick={()=>{
+      const max=Number(c.recursosMax.pacto)
+      onChange({...d,recursos:{...d.recursos,pacto:{...d.recursos.pacto,atual:max}}})
+    }}>🌘 Descanso curto: recuperar apenas Pacto</button>}
   </div>}
   {aberto&&!somenteLeitura&&<div className="grid gap-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3 sm:grid-cols-2">
     <div className="space-y-2 rounded-lg border border-(--a-55456e) p-2 sm:col-span-2">
@@ -169,7 +173,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
           <Dice5 size={14}/> Gastar espaço {(espacosEscolhidos[m.id]??m.nivel)}º
         </button>
       </>}
-      {m.nivel>0&&m.classe==='bruxo'&&Number(c.recursosMax.pacto??0)>0&&<button type="button"
+      {m.nivel>0&&Number(c.vars.dnd_pacto_nivel??0)>=m.nivel&&Number(c.recursosMax.pacto??0)>0&&<button type="button"
         className={btn} disabled={somenteLeitura||Number(d.recursos.pacto?.atual??0)<1}
         onClick={()=>gastar(Number(c.vars.dnd_pacto_nivel)||m.nivel,m,true)}>
         <Dice5 size={14}/> Conjurar com Pacto

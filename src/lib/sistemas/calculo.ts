@@ -109,6 +109,9 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
           typeof x==='string' && TALENTOS_PHB_2014.includes(x)))].slice(0,25) } : {}),
     ...(s.id === 'dnd5e-srd' && typeof d.dnd2014Subclasse === 'string' ?
       { dnd2014Subclasse: d.dnd2014Subclasse.slice(0,64) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014Subclasses && typeof d.dnd2014Subclasses === 'object' && !Array.isArray(d.dnd2014Subclasses) ?
+      { dnd2014Subclasses: Object.fromEntries(Object.entries(d.dnd2014Subclasses)
+        .filter(([chave,valor]) => chave.length<=40 && typeof valor==='string' && valor.length<=64)) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014Multiclasse !== undefined ?
       { dnd2014Multiclasse: lerMulticlasseDnd(d.dnd2014Multiclasse, idDe(d.campos?.classe)) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014Magias !== undefined ? {dnd2014Magias:lerMagias2014(d.dnd2014Magias)} : {}),

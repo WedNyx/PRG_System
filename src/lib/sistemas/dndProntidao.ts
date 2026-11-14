@@ -54,6 +54,10 @@ export function avaliarProntidaoDnd(d: DadosFicha, edicao: LivroBaseDnd = lerLiv
     const raciaisNecessarias = especie === 'Meio-Elfo' ? 2 : especie === 'Humano' && d.campos.subraca2014 === 'Humano Variante' ? 1 : 0
     if (raciaisNecessarias > 0 && new Set((d.dnd2014PericiasRaciais ?? []).filter(Boolean)).size < raciaisNecessarias)
       incluir('periciasRaciais2014', 'Perícias raciais', 'Complete as perícias livres da raça/variante.', 'pendente', 'principal')
+    if (especie === 'Humano' && d.campos.subraca2014 === 'Humano Variante' &&
+      !(d.dnd2014Talentos ?? []).length)
+      incluir('talentoHumanoVariante2014', 'Talento inicial do Humano Variante',
+        'Escolha o talento do nível 1 no guia de criação e confirme os pré-requisitos com o mestre.', 'pendente', 'principal')
     const principal = classesDaFicha2014(d).lista.find(c => c.principal)
     if (principal && subclassesDaClasse2014(principal.cls.nome).some(x => principal.nivel >= x.nivel) &&
       !subclasseAtivaDnd2014(principal.cls.nome, d.dnd2014Subclasse, principal.nivel))

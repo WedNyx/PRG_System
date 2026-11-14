@@ -72,7 +72,7 @@ export function avaliarProntidaoDnd(d: DadosFicha, edicao: LivroBaseDnd = lerLiv
       if(ops.some(sub=>c.nivel>=sub.nivel) && !subclasseDaFicha2014(d,c.cls.id))
         incluir('subclasse2014-'+c.cls.id,'Subclasse de '+c.cls.nome,
           'Escolha o arquétipo da classe secundária ao alcançar o nível exigido nesta classe.',
-          'pendente','principal')
+          'pendente','habilidades')
       if(subclasseDaFicha2014(d,c.cls.id)?.fonte==='phb2014')
         incluir('efeitosSubclasse2014-'+c.cls.id,'Regras de subclasse de '+c.cls.nome,
           'Confira os benefícios da subclasse do livro comercial com o mestre.',

@@ -156,11 +156,21 @@ export function efeitosDnd2014(
     v.dnd_foco=n>=2?n:0
     if(n>=2 && Number(vars.ca_base)<=10 && !(Number(vars.armadura)>0))
       v.dnd_desl_extra+= n>=18?9:n>=14?7.5:n>=10?6:n>=6?4.5:3
-    if(em('barbaro')===0 && Number(vars.ca_base)<=10 && !(Number(vars.armadura)>0)) v.dnd_ca_extra=Math.max(0,Number(vars.mod_SAB)||0)
   }
-  // Em multiclasse não se acumulam duas Defesas sem Armadura.
-  if (em('barbaro')>0 && Number(vars.ca_base)<=10)
-    v.dnd_ca_extra=Math.max(0,Number(vars.mod_CON)||0)
+  // Cap. 6 (PHB 2014): Defesa sem Armadura não é adquirida duas vezes.
+  // Se a classe inicial for Monge/Bárbaro, mantém sua fórmula original.
+  // Com duas classes secundárias e nenhuma delas inicial, a ordem em que
+  // foram adquiridas não está armazenada: não presumir uma CA incorreta.
+  const temMonge = em('monge') > 0, temBarbaro = em('barbaro') > 0
+  const origemDaDefesa = temMonge && temBarbaro
+    ? (cls === 'monge' ? 'monge' : cls === 'barbaro' ? 'barbaro' : null)
+    : temMonge ? 'monge' : temBarbaro ? 'barbaro' : null
+  if (Number(vars.ca_base) <= 10 && !(Number(vars.armadura) > 0)) {
+    if (origemDaDefesa === 'monge')
+      v.dnd_ca_extra = Math.max(0, Number(vars.mod_SAB) || 0)
+    if (origemDaDefesa === 'barbaro')
+      v.dnd_ca_extra = Math.max(0, Number(vars.mod_CON) || 0)
+  }
   if (em('paladino')>0) v.dnd_cura_maos=5*em('paladino')
   if (em('bardo')>0) {
     v.dnd_inspiracao=Math.max(1,Number(vars.mod_CAR)||0)
@@ -168,7 +178,11 @@ export function efeitosDnd2014(
   if (em('ladino')>0) v.dnd_furtivo=1+Math.floor((em('ladino')-1)/2)
   if (em('feiticeiro')>0) v.dnd_feiticaria=em('feiticeiro')>=2?em('feiticeiro'):0
   if (em('druida')>0) v.dnd_forma_selvagem=em('druida')>=2?2:0
-  if (em('clerigo')>0) {const n=em('clerigo'); v.dnd_canalizar=n>=18?3:n>=6?2:n>=2?1:0}
+  // Multiclasse: adquirir Canalizar Divindade por Paladino e Clérigo
+  // oferece os efeitos de ambos, mas NÃO soma os usos (PHB 2014, cap. 6).
+  const clerigoN = em('clerigo'), paladinoN = em('paladino')
+  const usosClerigo = clerigoN >= 18 ? 3 : clerigoN >= 6 ? 2 : clerigoN >= 2 ? 1 : 0
+  v.dnd_canalizar = Math.max(usosClerigo, paladinoN >= 3 ? 1 : 0)
   // No 2014, Paladino/Patrulheiro contam metade PARA BAIXO na multiclasse;
   // como classe única usam a tabela própria e passam a conjurar no nível 2.
   const slots=espacosDeMagia2014(classes,d.dnd2014Subclasse)

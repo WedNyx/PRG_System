@@ -10,6 +10,7 @@ import { RACAS_2014, SUBRACAS_2014, ANTECEDENTES_2014 } from './dnd2014Criacao'
 import { aumentosRaciais2014, periciasAntecedente2014, periciasClasse2014 } from './dnd2014Regras'
 import { subclasseAtivaDnd2014, subclassesDaClasse2014 } from './dnd2014Subclasses'
 import { classesDaFicha2014 } from './dnd2014Multiclasse'
+import { CLASSES_SRD } from './dnd2024Srd'
 import { MARCOS_DND_2024 } from './dnd2024Marcos'
 import { progressoDaFichaDnd } from './dnd2024Ficha'
 import { progressaoVisivel } from './dnd2024Progressao'
@@ -29,6 +30,8 @@ export function avaliarProntidaoDnd(d: DadosFicha, edicao: LivroBaseDnd = lerLiv
   const nivel = Number(d.campos.nivel)
   if (!d.nome?.trim()) incluir('nome', 'Nome do personagem', 'Dê um nome à ficha.', 'pendente', 'principal')
   if (!classe) incluir('classe', 'Classe', 'Escolha uma classe do livro-base.', 'pendente', 'principal')
+  else if (!CLASSES_SRD.some(x => x.nome === classe))
+    incluir('classeIncompativel', 'Classe incompatível', 'Esta classe não consta nas 12 classes do D&D do livro-base selecionado. Revise a classe antes de jogar.', 'pendente', 'principal')
   if (!especie) incluir('especie', edicao === 'phb2014' ? 'Raça' : 'Espécie', 'Escolha sua raça/espécie.', 'pendente', 'principal')
   if (!antecedente) incluir('antecedente', 'Antecedente', 'Escolha um antecedente do livro-base.', 'pendente', 'principal')
   if (!Number.isInteger(nivel) || nivel < 1 || nivel > 20)

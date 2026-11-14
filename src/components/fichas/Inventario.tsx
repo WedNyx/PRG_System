@@ -345,12 +345,17 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
   const dnd = s?.id === 'dnd5e-srd'
   const referencia = dnd ? referenciaArmaDndPorId(it.armaRefDnd) : null
   const armasEdicao = edicaoDnd === 'phb2014' ? ARMAS_DND_2014 : ARMAS_DND_2024
-  const icoCategoria = it.categoria === 'arma' ? ['lamina','maca','machado-duplo','flecha','arqueiro','varinha','garra-flamejante']
+  const icoCategoria = it.categoria === 'arma' ? (
+    edicaoDnd === 'phb2014'
+      ? ['espada-medieval','adaga-medieval','machado-combate','maca-pesada','lanca-medieval','tridente-medieval','espadas-cruzadas','arqueiro','flecha','lamina','maca']
+      : ['espada-encantada','espada-medieval','adaga-medieval','machado-combate','maca-pesada','lanca-medieval','tridente-medieval','revolver','choque-espadas','arqueiro','flecha','garra-flamejante','varinha']
+  )
     : it.categoria === 'armadura' ? ['escudo','amuleto','coroa']
     : it.categoria === 'consumivel' ? ['frasco-veneno','gema','varinha']
     : it.categoria === 'tesouro' ? ['gema','anel','coroa','amuleto']
     : ['grimorio','mapa','mochila','candelabro','anel','amuleto']
   const iconesIndicados = ICONES_RPG.filter(x => icoCategoria.includes(x.id))
+    .sort((x, y) => icoCategoria.indexOf(x.id) - icoCategoria.indexOf(y.id))
   const iconesRestantes = ICONES_RPG.filter(x => !icoCategoria.includes(x.id))
   const alvos = s ? alvosDeBonus(s) : []
   const setB = (i: number, b: Partial<Bonus>) => setIt({ ...it, bonus: it.bonus.map((x, k) => k === i ? { ...x, ...b } : x) })

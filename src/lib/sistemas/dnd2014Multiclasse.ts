@@ -31,11 +31,11 @@ export type Espacos2014 = {
   espacos:number[]; nivelConjurador:number; multiclasse:boolean;
   pacto:number; pactoNivel:number; conjuradores:string[];
 }
-export function espacosDeMagia2014(lista: ClasseNaFicha[], subclasseInicial?:string):Espacos2014 {
+export function espacosDeMagia2014(lista: ClasseNaFicha[], subclasseInicial?:string, subclassesExtras: Record<string,string> = {}):Espacos2014 {
   const conjuradores=lista.filter(c=>{
     const id=c.cls.id
     return CHEIOS.has(id) || (MEIOS.has(id) && c.nivel>=2) ||
-      (TERCOS.has(id) && c.nivel>=3 && c.principal && TERCOS.get(id)===subclasseInicial)
+      (TERCOS.has(id) && c.nivel>=3 && TERCOS.get(id)===(c.principal ? subclasseInicial : subclassesExtras[id]))
   })
   // Bruxo usa Magia de Pacto separada da tabela de Conjuração.
   const bruxo=lista.find(c=>c.cls.id==='bruxo')

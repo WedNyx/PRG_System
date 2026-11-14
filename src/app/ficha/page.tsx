@@ -77,7 +77,10 @@ function Conteudo() {
   const [aviso, setAviso] = useState<{ texto: string; desfazer: boolean } | null>(null)
   const [campanhaId, setCampanhaId] = useState<string | null>(null)
   const [modoProgressao, setModoProgressao] = useState<ModoProgressao>('hibrido')
+  // Alterar a ESTRUTURA da árvore é exclusivo do mestre; liberar habilidades
+  // existentes segue a permissão "habilidades" configurada na campanha.
   const [podeEditarArvore, setPodeEditarArvore] = useState(true)
+  const [podeLiberarArvore, setPodeLiberarArvore] = useState(true)
   /** Mestre numa campanha de D&D: modo da campanha e a exceção desta ficha (v0.33.6). */
   const [config, setConfig] = useState<ConfiguracaoProgressao | null>(null)
   const [souMestre, setSouMestre] = useState(false)
@@ -91,7 +94,7 @@ function Conteudo() {
     ;(async () => {
       try {
         if (nuvem) {
-          const r = await api<{ ficha: { sistema: string; dados: DadosFicha; versao: number; status?: string; npc?: boolean; bloqueada?: boolean; observacao_mestre?: string; campanha_id?: string | null }; podeEditar: boolean; souMestre?: boolean; configProgressao?: ConfiguracaoProgressao; pendentes?: string[]; pedido?: { caminho: string; depois: unknown }[] }>('fichas/' + nuvem)
+          const r = await api<{ ficha: { sistema: string; dados: DadosFicha; versao: number; status?: string; npc?: boolean; bloqueada?: boolean; observacao_mestre?: string; campanha_id?: string | null }; podeEditar: boolean; souMestre?: boolean; regras?: { efetivas: { habilidades?: 'livre' | 'aprovacao' | 'mestre' } } | null; configProgressao?: ConfiguracaoProgressao; pendentes?: string[]; pedido?: { caminho: string; depois: unknown }[] }>('fichas/' + nuvem)
           if (r.pendentes?.length) setAviso({ texto: 'Aguardando o mestre aprovar: ' + r.pendentes.map(a => AREAS[a] ?? a).join(', ') + '. Os valores que você mudou já aparecem na ficha; o mestre aprova em Campanhas › Pedidos.', desfazer: false })
           if (r.ficha.observacao_mestre) setErro('Mestre: ' + r.ficha.observacao_mestre)
           else if (!r.podeEditar && r.ficha.bloqueada) setErro('O mestre travou esta ficha neste momento.')
@@ -105,6 +108,8 @@ function Conteudo() {
           setConfig(cfg); setSouMestre(!!r.souMestre)
           setModoProgressao(modoDaFicha(cfg, nuvem))
           setPodeEditarArvore(!r.ficha.campanha_id || !!r.souMestre)
+          setPodeLiberarArvore(!r.ficha.campanha_id || !!r.souMestre ||
+            (r.podeEditar && !!r.regras && r.regras.efetivas.habilidades !== 'mestre'))
           setAguardandoEntrada(r.ficha.status === 'pendente'); setEhNpc(!!r.ficha.npc)
           // O pedido que ainda espera o mestre aparece na ficha (senão, ao recarregar, parecia que não tinha salvo).
           const comPedido = r.pedido?.length ? aplicar(r.ficha.dados as unknown as Record<string, unknown>, r.pedido) as unknown as DadosFicha : r.ficha.dados
@@ -114,7 +119,7 @@ function Conteudo() {
           const salvo = JSON.parse(localStorage.getItem(LOCAL + local) || 'null')
           const s = sistemaPorId(salvo?.sistema ?? q.get('sistema') ?? '')
           if (!s) throw new ErroNuvem(404, 'Ficha não encontrada neste navegador.')
-          setModoProgressao('hibrido'); setPodeEditarArvore(true)
+          setModoProgressao('hibrido'); setPodeEditarArvore(true); setPodeLiberarArvore(true)
           setSistema(s); setDados(normalizarFicha(s, salvo)); setEstado('local')
         } else throw new ErroNuvem(404, 'Ficha não encontrada.')
       } catch (e) { if (ativo) { setErro(e instanceof ErroNuvem ? e.message : 'Falha de conexão.'); setEstado('erro') } }
@@ -212,7 +217,7 @@ function Conteudo() {
             {!aguardandoEntrada && <button type="button" onClick={() => { if (confirm('Terminar a criação? Depois disso, mudanças em atributos, perícias e outras áreas podem precisar da aprovação do mestre.')) mudar({ ...dados, criacaoLivre: false }) }} className="rounded-lg border border-emerald-400/60 px-3 py-1">Terminei a criação</button>}</p>)}
       {aviso && <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-(--a-62527e) bg-(--s-1f2a40) p-3 text-sm">
         <span className="flex-1">{aviso.texto}</span>{aviso.desfazer && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-(--a-b99bff) px-3 py-1">Desfazer (voltar ao salvo)</button>}</p>}
-      {sistema && dados ? <FichaGenerica sistema={sistema} dados={dados} onChange={mudar} somenteLeitura={estado === 'leitura'} modoProgressao={modoProgressao} podeEditarArvore={podeEditarArvore}
+      {sistema && dados ? <FichaGenerica sistema={sistema} dados={dados} onChange={mudar} somenteLeitura={estado === 'leitura'} modoProgressao={modoProgressao} podeEditarArvore={podeEditarArvore} podeLiberarArvore={podeLiberarArvore}
         fontesDnd={campanhaId && config ? fontesLiberadas(config.fontes) : null}
         livroBaseCampanha={campanhaId && config ? config.baseLivro ?? 'phb2024' : null}
         edicaoDefinidaPeloMestre={!!(campanhaId && config?.baseLivro)}

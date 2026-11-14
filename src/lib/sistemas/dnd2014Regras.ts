@@ -98,7 +98,7 @@ export function atributosEfetivos2014(d: Pick<DadosFicha,'campos' | 'dnd2014Atri
 
 /** Regras abertas de 2014. A característica de classe particular e subclasse continuam manuais. */
 export function efeitosDnd2014(
-  d: Pick<DadosFicha,'campos' | 'dnd2014PericiasClasse'>,
+  d: Pick<DadosFicha,'campos' | 'dnd2014PericiasClasse' | 'dnd2014PericiasRaciais'>,
   vars: Record<string,number>,
 ): EfeitosDnd {
   const v: Record<string,number> = Object.fromEntries(VARS_DND.map(x=>[x,0]))
@@ -117,10 +117,13 @@ export function efeitosDnd2014(
       dar(x,classe.nome+' (2014)')
   }
   for (const x of periciasAntecedente2014(d.campos.antecedente)) dar(x,String(d.campos.antecedente)+' (2014)')
+  const escolhasRaciais = Array.isArray(d.dnd2014PericiasRaciais) ? d.dnd2014PericiasRaciais : []
+  const limiteRacial = d.campos.especie === 'Meio-Elfo' ? 2 : d.campos.especie === 'Humano' && d.campos.subraca2014 === 'Humano Variante' ? 1 : 0
+  for (const x of [...new Set(escolhasRaciais)].filter(x => periciasClasse2014('Bardo')?.opcoes.includes(x)).slice(0,limiteRacial)) dar(x,'Perícia racial 2014')
   if (d.campos.especie === 'Elfo') dar('percepcao','Sentidos Aguçados (2014)')
   if (d.campos.especie === 'Meio-Orc') dar('intimidacao','Ameaçador (2014)')
   if (cls === 'barbaro') {
-    v.dnd_furias = n >= 20 ? 6 : n >= 17 ? 6 : n >= 12 ? 5 : n >= 6 ? 4 : n >= 3 ? 3 : 2
+    v.dnd_furias = n >= 20 ? 0 /* 20: ilimitado, mostrar como característica */ : n >= 17 ? 6 : n >= 12 ? 5 : n >= 6 ? 4 : n >= 3 ? 3 : 2
     v.dnd_dano_furia = n >= 16 ? 4 : n >= 9 ? 3 : 2
     if (n >= 5 && Number(vars.des_max)!==0) v.dnd_desl_extra += 3
   }
@@ -171,8 +174,12 @@ export function efeitosDnd2014(
   }
   const raca=String(d.campos.especie),sub=String(d.campos.subraca2014)
   if (raca==='Anão'&&sub==='Anão da Colina')v.dnd_pv_extra+=n
-  if (raca==='Elfo'&&sub==='Elfo da Floresta')v.dnd_desl_extra+=1.5
-  if (raca==='Anão'||raca==='Halfling'||raca==='Gnomo')v.dnd_desl_extra-=1.5
+  // O campo deslocamento já pode conter o valor racial em fichas antigas.
+  // Só sugerir deslocamento racial quando ele ainda está no padrão neutro de 9 m.
+  if (Number(vars.deslocamento) === 9) {
+    if (raca==='Elfo'&&sub==='Elfo da Floresta')v.dnd_desl_extra+=1.5
+    if (raca==='Anão'||raca==='Halfling'||raca==='Gnomo')v.dnd_desl_extra-=1.5
+  }
   return { vars:v,treino,bonus:{},meiaProficiencia: cls==='bardo'&&n>=2?Math.floor(prof/2):0 }
 }
 
@@ -184,9 +191,9 @@ export function validarAlteracoes2014(
   antes: Partial<DadosFicha>, depois: Partial<DadosFicha>, edicao: 'phb2014' | 'phb2024',
 ): string[] {
   const erros: string[]=[]
-  const alterou=(k: 'dnd2014AtributosBase'|'dnd2014AtributosExtras'|'dnd2014PericiasClasse') =>
+  const alterou=(k: 'dnd2014AtributosBase'|'dnd2014AtributosExtras'|'dnd2014PericiasClasse'|'dnd2014PericiasRaciais') =>
     JSON.stringify(antes[k]??null)!==JSON.stringify(depois[k]??null)
-  const chaves=['dnd2014AtributosBase','dnd2014AtributosExtras','dnd2014PericiasClasse'] as const
+  const chaves=['dnd2014AtributosBase','dnd2014AtributosExtras','dnd2014PericiasClasse','dnd2014PericiasRaciais'] as const
   if (edicao !== 'phb2014') {
     if(chaves.some(alterou)) erros.push('As escolhas de criação 2014 não podem ser alteradas numa ficha com livro-base 2024.')
     return erros
@@ -215,6 +222,18 @@ export function validarAlteracoes2014(
        new Set(lista.filter(Boolean)).size!==lista.filter(Boolean).length ||
        lista.some(x=>x!==''&&fundo.includes(x)))
       erros.push('Perícias da classe 2014: escolha sem repetições, somente da classe e diferentes das concedidas pelo antecedente.')
+  }
+  if(alterou('dnd2014PericiasRaciais')) {
+    const x=depois.dnd2014PericiasRaciais
+    const r=String(depois.campos?.especie??'')
+    const v=String(depois.campos?.subraca2014??'')
+    const max=r==='Meio-Elfo'?2:r==='Humano'&&v==='Humano Variante'?1:0
+    const validas=periciasClasse2014('Bardo')?.opcoes??[]
+    const outras=[...(Array.isArray(depois.dnd2014PericiasClasse)?depois.dnd2014PericiasClasse:[]),
+      ...periciasAntecedente2014(depois.campos?.antecedente)]
+    if(!Array.isArray(x) || x.length>max || x.some(y=>typeof y!=='string'||(y!==''&&!validas.includes(y))||outras.includes(y)) ||
+      new Set(x.filter(Boolean)).size!==x.filter(Boolean).length)
+      erros.push('Perícias raciais 2014: escolha apenas as permitidas e sem repetições.')
   }
   return erros
 }

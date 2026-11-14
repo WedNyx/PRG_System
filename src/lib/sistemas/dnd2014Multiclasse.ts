@@ -49,8 +49,8 @@ export function espacosDeMagia2014(lista: ClasseNaFicha[], subclasseInicial?:str
     nivelConjurador=CHEIOS.has(c.cls.id)?c.nivel:
       MEIOS.has(c.cls.id)?Math.ceil(c.nivel/2):Math.ceil(c.nivel/3)
   } else if(conjuradores.length>1) {
-    nivelConjurador=conjuradores.reduce((acc,c)=>acc+
-      (CHEIOS.has(c.cls.id)?c.nivel:MEIOS.has(c.cls.id)?Math.floor(c.nivel/2):Math.floor(c.nivel/3))),0)
+    nivelConjurador = conjuradores.reduce((acc, c) =>
+      acc + (CHEIOS.has(c.cls.id) ? c.nivel : MEIOS.has(c.cls.id) ? Math.floor(c.nivel / 2) : Math.floor(c.nivel / 3)), 0)
   }
   nivelConjurador=Math.min(20,Math.max(0,nivelConjurador))
   const espacos=[0,...(SLOTS_2014[nivelConjurador]??SLOTS_2014[0])]

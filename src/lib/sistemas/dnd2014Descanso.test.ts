@@ -48,6 +48,18 @@ describe('Descanso de D&D 2014 sem usar recargas de 2024',()=>{
    expect(second.recursos.dados_vida.atual).toBe(6)
    expect(aplicarDescanso(sistema(d),second,'longo').d.recursos.dados_vida.atual).toBe(7)
  })
+ it('curto exige e desconta Dados de Vida para recuperar PV em 2014',()=>{
+   const d=ficha('Guerreiro',4)
+   d.recursos={...d.recursos,pv:{atual:5},dados_vida:{atual:3},surto_acao:{atual:0}}
+   expect(()=>aplicarDescanso(sistema(d),d,'curto',{cura:5})).toThrow('Dados de Vida')
+   expect(()=>aplicarDescanso(sistema(d),d,'curto',{cura:5,dadosVidaGastos:4})).toThrow('Dados de Vida')
+   const r=aplicarDescanso(sistema(d),d,'curto',{cura:5,dadosVidaGastos:2}).d
+   expect(r.recursos.pv.atual).toBe(10)
+   expect(r.recursos.dados_vida.atual).toBe(1)
+   expect(r.recursos.surto_acao.atual).toBe(1)
+   // A ficha original não é mutada enquanto se aplica o descanso.
+   expect(d.recursos.dados_vida.atual).toBe(3)
+ })
  it('2024 continua com descanso anterior, não aplica recuperação parcial de Dados de Vida legados',()=>{
    const d=fichaVazia(base,'Aventureiro')
    d.campos.nivel=7

@@ -9,6 +9,7 @@ import { MARCOS_DND_2024 } from './dnd2024Marcos'
 import { progressoDaFichaDnd } from './dnd2024Ficha'
 import { progressaoVisivel } from './dnd2024Progressao'
 import { ANTECEDENTES_2014, RACAS_2014, SUBRACAS_2014 } from './dnd2014Criacao'
+import { marcosDaClasse2014 } from './dnd2014Marcos'
 import { lerLivrosDnd, type LivroBaseDnd } from './dndLivros'
 import { fontePermitida, FONTE_LEGADO_2014, FONTE_PHB } from './dnd2024Fontes'
 
@@ -50,8 +51,17 @@ export function hexagonosOficiaisDnd(
     const sub = subs.find(x => x.nome === subraca)
     const n = Math.max(1, Math.min(20, Number(d.campos.nivel) || 1))
     return [
-      ...(classe ? [{ id: '2014-classe', titulo: classe, descricao: 'Características e progressão da classe na edição 2014: conferir o Livro do Jogador 2014 com o mestre. Sem efeitos 2024.',
-        nivel: n, ramo: 'classe' as const, estado: 'referencia' as const, livro: 'Player’s Handbook (2014)' }] : []),
+      ...(classe ? [{ id: '2014-classe', titulo: classe, descricao: 'Classe inicial do D&D 2014: salvaguardas, proficiências e recursos-base do SRD 5.1. A escolha de subclasse e seus efeitos devem ser registrados conforme o livro.',
+        nivel: 1, ramo: 'classe' as const, estado: 'recebido' as const, livro: 'SRD 5.1 (2014)' }] : []),
+      ...marcosDaClasse2014(classe).filter(m => mostrarFuturos || m.nivel <= n).map((m,i) => ({
+        id: '2014-classe-'+m.nivel+'-'+i,
+        titulo: m.nome, descricao: m.automatico
+          ? 'Recurso-base rastreado pelo motor de 2014. Consulte condições e usos específicos no SRD 5.1.'
+          : 'Característica identificada na progressão de 2014; efeito, escolha de subclasse e situações específicas exigem consulta ao livro.',
+        nivel:m.nivel, ramo:'classe' as const,
+        estado: m.nivel > n ? 'futuro' as const : m.automatico ? 'recebido' as const : 'referencia' as const,
+        livro: 'SRD 5.1 (2014)',
+      })),
       ...(racaMeta ? [{ id: '2014-raca', titulo: 'Raça: ' + raca, descricao: racaMeta.descricao ?? '',
         nivel: 1, ramo: 'especie' as const, estado: 'referencia' as const, livro: 'Player’s Handbook (2014)' }] : []),
       ...(sub ? [{ id: '2014-subraca', titulo: sub.nome, descricao: sub.detalhe,

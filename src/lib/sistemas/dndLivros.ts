@@ -65,6 +65,7 @@ export const suplementoDndPorId = (id: unknown): SuplementoDnd | null =>
   typeof id === 'string' ? SUPLEMENTOS_DND.find(s => s.id === id) ?? null : null
 
 export const compativelLivroDnd = (id: string, base: LivroBaseDnd) => {
+  if (id === 'phb2014') return base === 'phb2024' // conteúdo legado opcional em mesa revisada
   const sup = suplementoDndPorId(id)
   return !!sup && (sup.compatibilidade === 'ambas' ||
     (base === 'phb2014' && sup.compatibilidade === '2014') ||

@@ -89,8 +89,13 @@ describe('Hexágonos naturais da ficha D&D', () => {
     d.campos={...d.campos,classe:'Guerreiro',especie:'Elfo',subraca2014:'Alto Elfo',antecedente:'Forasteiro',nivel:5}
     d.dndLivros={base:'phb2014',suplementos:['tasha2020']}
     const h=hexagonosOficiaisDnd(d,'phb2014')
-    expect(h).toHaveLength(4)
-    expect(h.every(x=>x.estado==='referencia' && x.livro.includes('2014'))).toBe(true)
+    expect(h.length).toBeGreaterThan(4)
+    expect(h.every(x=>['referencia','recebido'].includes(x.estado) && x.livro.includes('2014'))).toBe(true)
+    expect(h.some(x=>x.titulo==='Surto de Ação' && x.estado==='recebido')).toBe(true)
+    expect(h.some(x=>x.titulo==='Arquétipo Marcial (subclasse)' && x.estado==='referencia')).toBe(true)
+    expect(h.every(x=>x.nivel<=5)).toBe(true)
+    const futuros=hexagonosOficiaisDnd(d,'phb2014',null,true)
+    expect(futuros.some(x=>x.estado==='futuro'&&x.nivel>5)).toBe(true)
     expect(h.map(x=>x.titulo)).toContain('Alto Elfo')
     expect(h.map(x=>x.titulo)).toContain('Antecedente: Forasteiro')
   })

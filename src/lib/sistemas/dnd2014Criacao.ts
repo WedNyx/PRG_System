@@ -66,7 +66,10 @@ export function esquemaFichaPorLivro(s: Sistema, d: Pick<DadosFicha,'dndLivros'>
       return c
     }),
     recursos: s.recursos.filter(x => !['magia_origem_gratis','magia_humano_gratis','magia_especie_3','magia_especie_5','magia_gnomo_animais','marca_cacador','pontos_sorte'].includes(x.id))
-      .map(x => x.id === 'foco' ? { ...x, nome: 'Pontos de Ki (Monge 2014)' } : x.id === 'inspiracao' ? { ...x, nome: 'Inspiração (2014)', contador: true } : x),
+      .map(x => x.id === 'foco' ? { ...x, nome: 'Pontos de Ki (Monge 2014)' }
+        : x.id === 'inspiracao' ? { ...x, nome: 'Inspiração (2014)', contador: true }
+        : x.id === 'exaustao' ? { ...x, nome: 'Exaustão 2014 (efeitos por nível, não −2 por nível)', baixaNoDescanso: 0 }
+        : x),
     observacoes: [...(s.observacoes ?? []), 'Edição 2014 (SRD 5.1): bônus raciais aplicados apenas a valores-base confirmados, perícias e salvaguardas automáticas, recursos gerais. Subclasses, progressão avançada e suplementos comerciais exigem conferência manual.'],
   }
 }

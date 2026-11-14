@@ -8,7 +8,7 @@ import type { DadosFicha } from './tipos'
 import { lerLivrosDnd, type LivroBaseDnd } from './dndLivros'
 import { RACAS_2014, SUBRACAS_2014, ANTECEDENTES_2014 } from './dnd2014Criacao'
 import { aumentosRaciais2014, periciasAntecedente2014, periciasClasse2014 } from './dnd2014Regras'
-import { subclasseAtivaDnd2014, subclassesDaClasse2014 } from './dnd2014Subclasses'
+import { subclasseAtivaDnd2014, subclasseDaFicha2014, subclassesDaClasse2014 } from './dnd2014Subclasses'
 import { classesDaFicha2014 } from './dnd2014Multiclasse'
 import { CLASSES_SRD } from './dnd2024Srd'
 import { sistemaPorId } from './catalogo'
@@ -66,6 +66,18 @@ export function avaliarProntidaoDnd(d: DadosFicha, edicao: LivroBaseDnd = lerLiv
     if (principal && subclassesDaClasse2014(principal.cls.nome).some(x => principal.nivel >= x.nivel) &&
       !subclasseAtivaDnd2014(principal.cls.nome, d.dnd2014Subclasse, principal.nivel))
       incluir('subclasse2014', 'Subclasse', 'Selecione um arquétipo disponível para o nível da classe inicial.', 'pendente', 'principal')
+    // Cada classe secundária pode alcançar sua subclasse em nível distinto.
+    for (const c of classesDaFicha2014(d).lista.filter(x => !x.principal)) {
+      const ops=subclassesDaClasse2014(c.cls.nome)
+      if(ops.some(sub=>c.nivel>=sub.nivel) && !subclasseDaFicha2014(d,c.cls.id))
+        incluir('subclasse2014-'+c.cls.id,'Subclasse de '+c.cls.nome,
+          'Escolha o arquétipo da classe secundária ao alcançar o nível exigido nesta classe.',
+          'pendente','principal')
+      if(subclasseDaFicha2014(d,c.cls.id)?.fonte==='phb2014')
+        incluir('efeitosSubclasse2014-'+c.cls.id,'Regras de subclasse de '+c.cls.nome,
+          'Confira os benefícios da subclasse do livro comercial com o mestre.',
+          'conferir','habilidades')
+    }
     if (d.dnd2014Subclasse && principal && subclasseAtivaDnd2014(principal.cls.nome, d.dnd2014Subclasse, principal.nivel)?.fonte === 'phb2014')
       incluir('efeitosSubclasse2014', 'Regras da subclasse', 'Esta subclasse do livro comercial requer conferência dos efeitos com o mestre.', 'conferir', 'habilidades')
     if ((d.dnd2014Talentos ?? []).length)

@@ -254,7 +254,7 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
     {no && !editor && <DetalheNo no={no} a={a} dados={s.id === 'dnd5e-srd' ? d : undefined} extra={extra} nivel={nivel} alvos={alvos} recursos={s.recursos} somenteLeitura={somenteLeitura || montando || editorSistema}
       mestre={mestre && !editorSistema && !somenteLeitura} conceder={() => aplicar(concederNo(a, no.id), `${no.nome}: concedido sem custo.`)} retirar={() => aplicar(retirarNo(a, no.id))}
       liberar={() => liberar(no)} devolver={() => devolver(no)} rolar={rolar} fechar={() => setSel(null)} />}
-    {!no && a.nos.length > 0 && <p className="px-4 py-3 text-xs text-(--a-a998bd)">{visualizacao === 'cartoes' ? 'Selecione uma habilidade para ver os efeitos e requisitos.' : 'Toque num hexágono para ver o que ele faz.'} {somenteLeitura ? '' : 'Os que brilham na borda já podem ser liberados.'}</p>}
+    {!no && a.nos.length > 0 && <p className="px-4 py-3 text-xs text-(--a-a998bd)">{visualizacao === 'cartoes' ? 'Selecione uma habilidade para ver os efeitos e requisitos.' : 'Toque num hexágono para ver o que ele faz.'} {somenteLeitura ? '' : visualizacao === 'cartoes' ? 'Os cartões disponíveis podem ser liberados conforme pontos e requisitos.' : 'Os que brilham na borda já podem ser liberados.'}</p>}
     {verHistorico && <HistoricoArvore historico={historico} podeDesfazer={podeDesfazer} desfazer={e => aplicar(desfazer(a, e.id, extra, nivel, s.id === 'dnd5e-srd' ? d : undefined), 'Desfeito.')} />}
     {editor && <EditorNo inicial={editor} a={a} sistema={s} alvos={alvos} recursos={s.recursos} temNivel={nivel !== null || editorSistema} gravar={gravarNo} fechar={() => setEditor(null)} />}
   </section>

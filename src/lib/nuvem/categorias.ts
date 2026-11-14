@@ -42,6 +42,7 @@ function categoriaGenerica(caminho: string): Campo {
   if (caminho === 'itens') return 'equipamentos'
   if (caminho === 'poderes') return 'habilidades'
   if (caminho === 'arvore') return 'habilidades'
+  if (caminho === 'dndLivros') return 'identidade'
   if (caminho === 'dndAntecedente') return 'atributos'
   if (caminho === 'dndTalentoHumano') return 'habilidades'
   if (caminho === 'dndEscolhas') return 'habilidades'

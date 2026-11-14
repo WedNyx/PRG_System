@@ -46,7 +46,7 @@ const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 
 const sinal = (n: number | null | undefined) => n === null || n === undefined ? '—' : n >= 0 ? '+' + n : String(n)
 
 /** Ficha que se monta sozinha a partir do modelo do sistema. */
-export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, excecaoModo, fontesDnd = null, livroBaseCampanha = null, rolarNaCampanha, passarItem }: {
+export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, excecaoModo, fontesDnd = null, livroBaseCampanha = null, edicaoDefinidaPeloMestre = false, rolarNaCampanha, passarItem }: {
   sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean; modoProgressao?: ModoProgressao; podeEditarArvore?: boolean
   /** Mestre de campanha de D&D: troca o modo só desta ficha (exceção). */
   excecaoModo?: { campanha: ModoProgressao; atual: ModoProgressao | null; mudar: (m: ModoProgressao | null) => void | Promise<void> }
@@ -54,6 +54,8 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
   fontesDnd?: Set<string> | null
   /** Edição obrigatória do Livro do Jogador definida pelo mestre da campanha. */
   livroBaseCampanha?: LivroBaseDnd | null
+  /** Distingue campanha antiga com padrão 2024 de campanha que habilitou explicitamente o PHB completo. */
+  edicaoDefinidaPeloMestre?: boolean
   /** Se a ficha é de campanha: rola no servidor e publica no chat da mesa. */
   rolarNaCampanha?: (expressao: string, rotulo: string, extra?: { estilo: 'assimilacao'; manter?: number; todos?: boolean }) => Promise<{ resultados: number[]; total: number } | null>
   /** Ficha de campanha: passar um item para outro personagem. */
@@ -69,9 +71,9 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     const escolhido = lerLivrosDnd(d.dndLivros)
     const lista = [FONTE_SRD, escolhido.base === 'phb2024' ? FONTE_PHB : FONTE_LEGADO_2014,
       ...escolhido.suplementos]
-    return new Set(lista.filter(id => id === FONTE_SRD || id === FONTE_PHB || id === FONTE_LEGADO_2014 ||
-      !fontesDnd || fontesDnd.has(id)))
-  }, [s.id, d.dndLivros, fontesDnd])
+    return new Set(lista.filter(id => id === FONTE_SRD || !fontesDnd || fontesDnd.has(id) ||
+      (edicaoDefinidaPeloMestre && id === (escolhido.base === 'phb2024' ? FONTE_PHB : FONTE_LEGADO_2014))))
+  }, [s.id, d.dndLivros, fontesDnd, edicaoDefinidaPeloMestre])
   const c = useMemo(() => calcular(s, d, { efeitosDnd }), [s, d, efeitosDnd])
   const central = useRef<RolagemCentralHandle>(null)
   const naMesa = rolarNaCampanha ? 'Também foi para o chat da mesa' : null

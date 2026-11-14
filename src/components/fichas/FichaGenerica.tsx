@@ -36,6 +36,7 @@ import ConferenciaFicha from './ConferenciaFicha'
 import GuiaAntecedenteDnd from './GuiaAntecedenteDnd'
 import GuiaMagiaHumanoDnd2024 from './GuiaMagiaHumanoDnd2024'
 import ResumoEscolhasDnd2024 from './ResumoEscolhasDnd2024'
+import ProntidaoDnd from './ProntidaoDnd'
 import TracosEspecieDnd2024 from './TracosEspecieDnd2024'
 import { idDe } from '@/lib/sistemas/dnd2024Classes'
 import { fontePermitida, FONTE_PHB, FONTE_SRD, FONTE_LEGADO_2014 } from '@/lib/sistemas/dnd2024Fontes'
@@ -231,6 +232,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
         </label>)}
       </div>
     </section>
+    {s.id === 'dnd5e-srd' && <ProntidaoDnd d={d} edicao={edicaoDnd} irPara={ir} />}
     {s.id === 'dnd5e-srd' && !legado2014 && <ResumoEscolhasDnd2024 d={d} irPara={ir} modoManual={modoProgressao === 'manual'} />}
     {legado2014 && <GuiaCriacaoLegadaDnd d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
     <Progressao s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} pontosAtributo={Number(c.vars.prog_atributos) || 0} irPara={ir} />

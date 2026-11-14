@@ -36,6 +36,8 @@ export const VERSOES: Versao[] = [
       '📖 Grimório de 2014: catálogo pesquisável de 845 entradas de magias do PHB, organizadas por classe e nível; conjuração com espaços superiores, Magia de Pacto entre classes e recuperação separada no descanso curto ou longo.',
       '✨ Talentos 2014: 42 opções do Livro do Jogador, incluindo limites dos incrementos de atributos de cada classe e o talento adicional do Humano Variante; efeitos dependentes do mestre continuam manuais.',
       '🎲 Regras e qualidade: testes de regressão para decisões de personagens e cálculos por livro, mantendo fichas anteriores, itens, fotos personalizadas e permissões do mestre.',
+      '🌙 Mesa pronta: descanso curto e longo de 2014 separados de 2024, recuperação de Dados de Vida de 2014 no longo e gasto registrado de Dados de Vida para curar no curto. Recursos de classe como Pacto, Ki e Surto de Ação retornam conforme a edição.',
+      '✅ Criação guiada: painel Pronto para jogar? sinaliza escolhas pendentes e o que depende do mestre, com simulações de salvar, reabrir e evoluir fichas 2014 e 2024.',
       '✨ Versões: nova sequência MAIOR.MENOR.REVISÃO. A revisão vai de 0 a 10; depois cresce a menor (até 99); após 0.99.10, começa 1.0.0. O histórico de Novidades continua exibindo cada atualização.',
     ],
   },

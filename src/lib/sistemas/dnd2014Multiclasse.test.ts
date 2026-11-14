@@ -6,7 +6,7 @@ import { SUBCLASSES_DND_2014, subclassesDaClasse2014, subclasseAtivaDnd2014,
 import { calcular, fichaVazia } from './calculo'
 import { sistemaPorId } from './catalogo'
 import { esquemaFichaPorLivro } from './dnd2014Criacao'
-import { validarAlteracoes2014 } from './dnd2014Regras'
+import { validarAlteracoes2014, efeitosDnd2014 } from './dnd2014Regras'
 const original = sistemaPorId('dnd5e-srd')!
 const legado = esquemaFichaPorLivro(original,{dndLivros:{base:'phb2014',suplementos:[]}})
 function ficha(classe:string,nivel:number,outras:Record<string,number>={}) {
@@ -97,4 +97,19 @@ describe('D&D 2014 — conjuração e multiclasse próprias do SRD 5.1',()=>{
    expect(validarAlteracoes2014(d,low,'phb2014').some(x=>x.includes('Multiclasse 2014:'))).toBe(true)
    expect(validarAlteracoes2014(d,low,'phb2014',true)).toEqual([])
  })
+})
+
+describe('PHB 2014, capítulo 6 — características não cumulativas', () => {
+  const vars={ca_base:10,armadura:0,mod_CON:3,mod_SAB:4,mod_CAR:2,deslocamento:9}
+  it('Canalizar Divindade de Clérigo e Paladino compartilha usos, sem somar',()=>{
+    expect(efeitosDnd2014(ficha('Paladino',3),vars).vars.dnd_canalizar).toBe(1)
+    expect(efeitosDnd2014(ficha('Clérigo',10,{paladino:4}),vars).vars.dnd_canalizar).toBe(2)
+    expect(efeitosDnd2014(ficha('Clérigo',5,{paladino:3}),vars).vars.dnd_canalizar).toBe(1)
+  })
+  it('Defesa sem Armadura usa a fórmula da classe inicial, nunca soma SAB e CON',()=>{
+    expect(efeitosDnd2014(ficha('Bárbaro',6,{monge:3}),vars).vars.dnd_ca_extra).toBe(3)
+    expect(efeitosDnd2014(ficha('Monge',6,{barbaro:3}),vars).vars.dnd_ca_extra).toBe(4)
+    // Ordem de duas classes secundárias desconhecida: não assumir qual defesa foi recebida primeiro.
+    expect(efeitosDnd2014(ficha('Guerreiro',6,{barbaro:2,monge:2}),vars).vars.dnd_ca_extra).toBe(0)
+  })
 })

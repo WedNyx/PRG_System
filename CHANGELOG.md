@@ -5,6 +5,8 @@ Também aparece no site em /novidades. Ao atualizar: aumente a versão no packag
 ## v0.33.9 — D&D por edição e revisão de regras (2026-11-14)
 
 - D&D 2014 (SRD 5.1): seleção de subclasse aberta e marcos de progressão por classe, separados da edição 2024.
+- Na janela **Nova ficha → D&D**, escolha explicitamente **2014 (5e)** ou **2024 (5.5e)** antes da criação. A edição é salva junto à ficha, tanto no navegador quanto na nuvem.
+- Painel de prontidão detecta classes, espécies e antecedentes fora do catálogo da edição; na nuvem, as fontes e o talento humano 2024 são revalidados também após aplicar as permissões do mestre.
 - Regras de conjuração 2014 revisadas, com diferenças de multiclasse e arredondamento sinalizadas.
 - Grimório de 2014 pesquisável: 845 registros por classe de 367 nomes, conforme o índice do PHB 2014; espaços superiores e Magia de Pacto entre classes, com descansos diferenciados.
 - Catálogo com 42 talentos do PHB 2014, limites por nível de classe, Humano Variante e validação pelo mestre; sem somar automaticamente efeitos ainda não codificados.

@@ -75,7 +75,7 @@ describe('Edições e livros D&D por ficha · PR #49', () => {
     ficha.campos.classe='Bárbaro'
     ficha.campos.nivel=3
     ficha.campos.especie='Anão'
-    expect(calcular(legado,ficha).vars.dnd_furias).toBe(0)
+    expect(calcular(legado,ficha).vars.dnd_furias).toBe(3) // tabela própria de Fúrias do SRD 5.1
     expect(calcular(s,{...ficha,dndLivros:{base:'phb2024',suplementos:[]}}).vars.dnd_furias).toBeGreaterThan(0)
     expect(esquemaFichaPorLivro(s,ficha,'phb2024')).toBe(s)
   })

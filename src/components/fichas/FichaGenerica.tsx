@@ -25,6 +25,7 @@ import { GUIAS } from '@/lib/sistemas/guias'
 import { expressaoParada, leituraBlades, leituraD100 } from '@/lib/sistemas/combate'
 import TesteAssimilacao from './TesteAssimilacao'
 import MagiasDnd2024 from './MagiasDnd2024'
+import MagiasDnd2014 from './MagiasDnd2014'
 import MagiasEspecieDnd2024 from './MagiasEspecieDnd2024'
 import MagiasOrigemDnd2024 from './MagiasOrigemDnd2024'
 import TalentosOrigemDnd2024 from './TalentosOrigemDnd2024'
@@ -374,6 +375,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     {s.id === 'dnd5e-srd' && <p className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3 text-sm text-(--a-cfc0df)">✨ <strong>Escolhas adicionais:</strong> aqui você registra magias preparadas e poderes que escolher, aprender ou ganhar do mestre. Traços automáticos de raça, classe e antecedente já aparecem na Árvore de habilidades e não precisam ser criados novamente.</p>}
 
     {s.id === 'dnd5e-srd' && !legado2014 && <MagiasDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} semLimites={modoProgressao === 'manual'} ocultarInatas rolar={(x, r) => void rolarExpr(x, r)} />}
+    {legado2014 && <MagiasDnd2014 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={(x,r)=>void rolarExpr(x,r)}/>}
     <PoderesFicha {...propsInv} />
     {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
     <section className="grid gap-4">

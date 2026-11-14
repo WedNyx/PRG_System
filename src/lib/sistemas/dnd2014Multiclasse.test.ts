@@ -1,0 +1,100 @@
+import { describe, expect, it } from 'vitest'
+import { CLASSES_SRD } from './dnd2024Srd'
+import { classesDaFicha2014, espacosDeMagia2014 } from './dnd2014Multiclasse'
+import { SUBCLASSES_DND_2014, subclassesDaClasse2014, subclasseAtivaDnd2014,
+  validarSubclasseDnd2014 } from './dnd2014Subclasses'
+import { calcular, fichaVazia } from './calculo'
+import { sistemaPorId } from './catalogo'
+import { esquemaFichaPorLivro } from './dnd2014Criacao'
+import { validarAlteracoes2014 } from './dnd2014Regras'
+const original = sistemaPorId('dnd5e-srd')!
+const legado = esquemaFichaPorLivro(original,{dndLivros:{base:'phb2014',suplementos:[]}})
+function ficha(classe:string,nivel:number,outras:Record<string,number>={}) {
+  const d=fichaVazia(original)
+  d.campos={...d.campos,classe,nivel,especie:'Humano',subraca2014:'Humano padrão',antecedente:'Soldado'}
+  d.dndLivros={base:'phb2014',suplementos:[]}
+  d.dnd2014Multiclasse=outras
+  return d
+}
+
+describe('D&D 2014 — subclasses por PHB e SRD 5.1',()=>{
+ it('tem um arquétipo aberto SRD 5.1 para as 12 classes e distingue os comerciais',()=>{
+   for(const cls of CLASSES_SRD) {
+     const subs=subclassesDaClasse2014(cls.nome)
+     expect(subs.some(x=>x.fonte==='srd51'),cls.nome).toBe(true)
+     expect(subs.some(x=>x.fonte==='phb2014'),cls.nome).toBe(true)
+     expect(new Set(subs.map(x=>x.id)).size,cls.nome).toBe(subs.length)
+   }
+   expect(SUBCLASSES_DND_2014.filter(x=>x.fonte==='srd51')).toHaveLength(12)
+ })
+ it('somente seleciona arquétipos no nível certo da classe de 2014',()=>{
+   expect(subclasseAtivaDnd2014('Clérigo','vida',1)?.fonte).toBe('srd51')
+   expect(subclasseAtivaDnd2014('Mago','evocacao',1)).toBeNull()
+   expect(subclasseAtivaDnd2014('Mago','evocacao',2)?.nivel).toBe(2)
+   expect(subclasseAtivaDnd2014('Guerreiro','campeao',2)).toBeNull()
+   expect(subclasseAtivaDnd2014('Guerreiro','campeao',3)?.nivel).toBe(3)
+   expect(subclasseAtivaDnd2014('Guerreiro','vida',10)).toBeNull()
+   expect(validarSubclasseDnd2014({campos:{classe:'Guerreiro',nivel:2}},
+     {campos:{classe:'Guerreiro',nivel:2},dnd2014Subclasse:'campeao'})).toHaveLength(1)
+   expect(validarSubclasseDnd2014({campos:{classe:'Guerreiro',nivel:2}},
+     {campos:{classe:'Guerreiro',nivel:3},dnd2014Subclasse:'campeao'})).toEqual([])
+ })
+ it('não permite alterações de subclasses do motor 2014 dentro de fichas 2024',()=>{
+   const a=ficha('Guerreiro',3)
+   expect(validarAlteracoes2014(a,{...a,dnd2014Subclasse:'campeao'},'phb2024')).toHaveLength(1)
+   expect(validarAlteracoes2014(a,{...a,dnd2014Subclasse:'campeao'},'phb2014')).toEqual([])
+ })
+})
+
+describe('D&D 2014 — conjuração e multiclasse próprias do SRD 5.1',()=>{
+ it('Paladino 3 como único conjurador tem 3 espaços de 1º nível',()=>{
+   const d=ficha('Paladino',3)
+   const e=espacosDeMagia2014(classesDaFicha2014(d).lista)
+   expect(e.espacos[1]).toBe(3)
+   expect(e.espacos[2]).toBe(0)
+ })
+ it('Paladino 3 + Feiticeiro 2 arredonda 3/2 para baixo (conjurador 3)',()=>{
+   const d=ficha('Paladino',5,{feiticeiro:2})
+   const e=espacosDeMagia2014(classesDaFicha2014(d).lista)
+   expect(e.multiclasse).toBe(true)
+   expect(e.nivelConjurador).toBe(3)
+   expect(e.espacos[1]).toBe(4)
+   expect(e.espacos[2]).toBe(2)
+   expect(calcular(legado,d).vars.dnd_espacos_2).toBe(2)
+ })
+ it('Paladino 5 + Feiticeiro 3 é conjurador 5 (2+3), e não 6',()=>{
+   const d=ficha('Paladino',8,{feiticeiro:3})
+   const e=espacosDeMagia2014(classesDaFicha2014(d).lista)
+   expect(e.nivelConjurador).toBe(5)
+   expect(e.espacos[3]).toBe(2)
+ })
+ it('Bruxo combina Pacto sem somar os slots ao conjurador comum',()=>{
+   const d=ficha('Bruxo',8,{mago:3})
+   const e=espacosDeMagia2014(classesDaFicha2014(d).lista)
+   expect(e.nivelConjurador).toBe(3)
+   expect(e.pacto).toBe(2)
+   expect(e.pactoNivel).toBe(3)
+   expect(calcular(legado,d).vars.dnd_espacos_2).toBe(2)
+ })
+ it('Cavaleiro Arcano 7 contribui como 2 níveis ao combinar com Mago 4',()=>{
+   const d=ficha('Guerreiro',11,{mago:4})
+   d.dnd2014Subclasse='cavaleiro-arcano'
+   const e=espacosDeMagia2014(classesDaFicha2014(d).lista,d.dnd2014Subclasse)
+   expect(e.nivelConjurador).toBe(6)
+   expect(e.espacos[3]).toBe(3)
+ })
+ it('PV usam dados de vida de todas as classes e só o primeiro dado cheio',()=>{
+   const d=ficha('Guerreiro',8,{mago:3})
+   d.atributos={...d.atributos,CON:10}
+   expect(classesDaFicha2014(d).lista.map(x=>x.nivel)).toEqual([5,3])
+   expect(calcular(legado,d).derivados.pv_sugerido).toBe(46)
+ })
+ it('servidor rejeita níveis inválidos e multiclasse incompatível com requisitos',()=>{
+   const d=ficha('Paladino',3)
+   const invalid={...d,campos:{...d.campos,nivel:3},dnd2014Multiclasse:{feiticeiro:3}}
+   expect(validarAlteracoes2014(d,invalid,'phb2014').some(x=>x.includes('pelo menos um nível'))).toBe(true)
+   const low={...d,campos:{...d.campos,nivel:4},dnd2014Multiclasse:{feiticeiro:1}}
+   expect(validarAlteracoes2014(d,low,'phb2014').some(x=>x.includes('Multiclasse 2014:'))).toBe(true)
+   expect(validarAlteracoes2014(d,low,'phb2014',true)).toEqual([])
+ })
+})

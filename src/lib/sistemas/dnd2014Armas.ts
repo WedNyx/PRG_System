@@ -15,6 +15,10 @@ const alteracoes: Record<string, Partial<ArmaDnd2024>> = {
   'lanca-cavalaria': { dano: '1d12', propriedades: ['Alcance', 'Especial'], preco: '10 PO', pesoLb: 6 },
   tridente: { dano: '1d6', versatil: '1d8', preco: '5 PO', pesoLb: 4 },
   'picareta-guerra': { preco: '5 PO', propriedades: [], versatil: undefined },
+  'clava-grande': { propriedades: ['Pesada', 'Duas mãos'] },
+  // A tradução fornecida do PHB 2014 traz Lança Longa com 4 kg (pág. 151).
+  // O peso em libras herdado da tabela 2024 renderizava mais de 8 kg.
+  'pique': { pesoKgLivro: 4 },
   'martelo-guerra': { pesoLb: 2 },
 }
 const sem2024 = new Set(['mosquete', 'pistola'])

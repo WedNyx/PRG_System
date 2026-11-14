@@ -77,8 +77,8 @@ export function subclasseAtivaDnd2014(classe:unknown,id:unknown,nivel:unknown):S
   return sub && Number.isInteger(n) && n>=sub.nivel ? sub : null
 }
 export function validarSubclasseDnd2014(
-  antes: {campos?:Record<string,unknown>;dnd2014Subclasse?:string;dnd2014Multiclasse?:Record<string,number>},
-  depois: {campos?:Record<string,unknown>;dnd2014Subclasse?:string;dnd2014Multiclasse?:Record<string,number>},
+  antes: {campos?:Record<string,string|number>;dnd2014Subclasse?:string;dnd2014Multiclasse?:Record<string,number>},
+  depois: {campos?:Record<string,string|number>;dnd2014Subclasse?:string;dnd2014Multiclasse?:Record<string,number>},
 ):string[] {
   if(antes.dnd2014Subclasse===depois.dnd2014Subclasse &&
     antes.campos?.classe===depois.campos?.classe &&

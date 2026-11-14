@@ -14,6 +14,7 @@ import { idDe, lerMulticlasseDnd, validarAlteracoesMulticlasseDnd } from '@/lib/
 import { fontesLiberadas, validarFontesCamposDnd, FONTE_PHB, FONTE_LEGADO_2014, FONTE_SRD } from '@/lib/sistemas/dnd2024Fontes'
 import { lerLivrosDnd, validarLivrosDnd } from '@/lib/sistemas/dndLivros'
 import { validarAlteracoesExclusivas2024 } from '@/lib/sistemas/dnd2014Criacao'
+import { validarAlteracoes2014 } from '@/lib/sistemas/dnd2014Regras'
 import { lerRegistroAntecedenteDnd, validarAlteracoesAntecedenteDnd } from '@/lib/sistemas/dnd2024Antecedentes'
 import { lerTalentoMagiaHumano, validarAlteracoesTalentoMagiaHumano } from '@/lib/sistemas/dnd2024MagiaHumano'
 
@@ -120,7 +121,9 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const liberadas = fontesDaFicha(candidato.dndLivros)
     if (edicao === 'phb2014') {
       erros.push(...validarAlteracoesExclusivas2024(antigo, candidato))
+      erros.push(...validarAlteracoes2014(antigo, candidato, 'phb2014'))
     } else {
+    erros.push(...validarAlteracoes2014(antigo, candidato, 'phb2024'))
     erros.push(...validarAlteracoesEscolhasDnd(
       { campos: antigo.campos ?? {}, dndEscolhas: antigo.dndEscolhas, dndMulticlasse: antigo.dndMulticlasse },
       { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas, dndMulticlasse: candidato.dndMulticlasse },
@@ -217,7 +220,9 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const liberadas = fontesDaFicha(autorizado.dndLivros)
     if (edicao === 'phb2014') {
       erros.push(...validarAlteracoesExclusivas2024(anterior, autorizado))
+      erros.push(...validarAlteracoes2014(anterior, autorizado, 'phb2014'))
     } else {
+    erros.push(...validarAlteracoes2014(anterior, autorizado, 'phb2024'))
     erros.push(...validarAlteracoesEscolhasDnd(
       { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas, dndMulticlasse: anterior.dndMulticlasse },
       { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas, dndMulticlasse: autorizado.dndMulticlasse },

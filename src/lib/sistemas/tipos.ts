@@ -104,6 +104,8 @@ export type DadosFicha = {
   dnd2014AtributosExtras?: string[]
   /** Perícias selecionadas na classe inicial do SRD 5.1. */
   dnd2014PericiasClasse?: string[]
+  /** Duas perícias livres do Meio-Elfo ou uma do Humano Variante (2014). */
+  dnd2014PericiasRaciais?: string[]
   /** Escolhas de marcos D&D. A progressão visual não concede bônus por si só. */
   dndEscolhas?: Record<string, string>
   /** Distribuição guiada de atributos de antecedente, aplicada explicitamente uma vez. */

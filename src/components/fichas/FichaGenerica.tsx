@@ -52,8 +52,10 @@ const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 
 const sinal = (n: number | null | undefined) => n === null || n === undefined ? '—' : n >= 0 ? '+' + n : String(n)
 
 /** Ficha que se monta sozinha a partir do modelo do sistema. */
-export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, excecaoModo, fontesDnd = null, livroBaseCampanha = null, edicaoDefinidaPeloMestre = false, rolarNaCampanha, passarItem }: {
+export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onChange, somenteLeitura = false, modoProgressao = 'hibrido', podeEditarArvore = true, podeLiberarArvore = true, excecaoModo, fontesDnd = null, livroBaseCampanha = null, edicaoDefinidaPeloMestre = false, rolarNaCampanha, passarItem }: {
   sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean; modoProgressao?: ModoProgressao; podeEditarArvore?: boolean
+  /** Dono pode desbloquear nós já criados conforme regras de habilidades da campanha. */
+  podeLiberarArvore?: boolean
   /** Mestre de campanha de D&D: troca o modo só desta ficha (exceção). */
   excecaoModo?: { campanha: ModoProgressao; atual: ModoProgressao | null; mudar: (m: ModoProgressao | null) => void | Promise<void> }
   /** D&D em campanha: fontes que o mestre liberou (null = todas: ficha avulsa ou mestre). */
@@ -318,7 +320,8 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
         {secao === 'arvore' && <div className="space-y-4">
           {s.id === 'dnd5e-srd' && <ArvoreDndOficial d={d} edicao={edicaoDnd} fontes={fontesFicha}>
             <ArvoreHabilidades s={s} d={d} onChange={onChange}
-              somenteLeitura={somenteLeitura || !podeEditarArvore}
+              somenteLeitura={somenteLeitura || !podeLiberarArvore}
+              podeMontar={podeEditarArvore}
               rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0}
               mestre={podeEditarArvore} nivel={Math.max(1, Number(d.campos.nivel) || 1)} visualizacao="cartoes" />
           </ArvoreDndOficial>}

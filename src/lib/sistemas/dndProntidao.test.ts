@@ -35,6 +35,12 @@ describe('Preparação não destrutiva para jogar',()=>{
     const x=avaliarProntidaoDnd(d,'phb2014')
     expect(x.pendencias.some(p=>p.id==='atributosRaciais2014')).toBe(true)
     expect(x.pendencias.some(p=>p.id==='periciasRaciais2014')).toBe(true)
+    expect(x.pendencias.some(p=>p.id==='talentoHumanoVariante2014')).toBe(true)
+    d.dnd2014AtributosExtras=['FOR','DES']
+    d.dnd2014PericiasRaciais=['percepcao']
+    d.dnd2014Talentos=['ALERTA']
+    const completo=avaliarProntidaoDnd(d,'phb2014')
+    expect(completo.pendencias.some(p=>p.id==='talentoHumanoVariante2014')).toBe(false)
   })
   it('não mistura um rascunho de 2024 com pendências exclusivas de 2014',()=>{
     const d=fichaVazia(sistema)

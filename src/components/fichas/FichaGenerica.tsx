@@ -29,6 +29,7 @@ import MagiasEspecieDnd2024 from './MagiasEspecieDnd2024'
 import MagiasOrigemDnd2024 from './MagiasOrigemDnd2024'
 import TalentosOrigemDnd2024 from './TalentosOrigemDnd2024'
 import MulticlasseDnd2024 from './MulticlasseDnd2024'
+import MulticlasseDnd2014 from './MulticlasseDnd2014'
 import ExcecaoModo from './ExcecaoModo'
 import ConferenciaFicha from './ConferenciaFicha'
 import GuiaAntecedenteDnd from './GuiaAntecedenteDnd'
@@ -327,6 +328,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
             </div>
           </details>}
           {excecaoModo && <ExcecaoModo {...excecaoModo} />}
+          {legado2014 && <MulticlasseDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
           {s.id === 'dnd5e-srd' && !legado2014 && <MulticlasseDnd2024 d={d} onChange={nova => onChange(nova.arvore === undefined ? nova : {
             ...nova, poderes: sincronizarPoderes(lerPoderes(nova.poderes), lerArvore(nova.arvore), nova),
           })} somenteLeitura={somenteLeitura} />}

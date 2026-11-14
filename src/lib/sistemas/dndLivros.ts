@@ -23,7 +23,7 @@ export type SelecaoLivrosDnd = { base: LivroBaseDnd; suplementos: string[] }
 
 export const LIVROS_BASE_DND: { id: LivroBaseDnd; titulo: string; versao: string; ano: number; descricao: string }[] = [
   { id: 'phb2014', titulo: 'Livro do Jogador — Player’s Handbook', versao: '5ª edição (2014 / 5e)', ano: 2014,
-    descricao: 'Criação clássica: raça e sub-raça influenciam atributos; antecedentes oferecem perícias e características. Requer o livro de 2014. Suporte guiado/manual nesta etapa.' },
+    descricao: 'Criação clássica: raça e sub-raça influenciam atributos; antecedentes oferecem perícias e características. Motor SRD 5.1: atributos raciais guiados, perícias e recursos básicos automáticos; subclasses, magias e suplementos exigem o livro e conferência do mestre.' },
   { id: 'phb2024', titulo: 'Livro do Jogador — Player’s Handbook', versao: '5ª edição revisada (2024 / 5.5e)', ano: 2024,
     descricao: 'Criação revisada: espécie, antecedente com aumentos de atributos e talento de origem. Regras do SRD 5.2.1 já automatizadas.' },
 ]

@@ -3,6 +3,8 @@
  * Identificação bibliográfica, sem reproduzir o texto de subclasses comerciais.
  * Cada classe tem uma opção aberta no SRD 5.1, CC BY 4.0.
  */
+import { classesDaFicha2014 } from './dnd2014Multiclasse'
+
 export type SubclasseDnd2014 = {
   id: string; nome: string; classe: string; nivel: number;
   fonte: 'srd51' | 'phb2014';
@@ -75,14 +77,21 @@ export function subclasseAtivaDnd2014(classe:unknown,id:unknown,nivel:unknown):S
   return sub && Number.isInteger(n) && n>=sub.nivel ? sub : null
 }
 export function validarSubclasseDnd2014(
-  antes: {campos?:Record<string,unknown>;dnd2014Subclasse?:string},
-  depois: {campos?:Record<string,unknown>;dnd2014Subclasse?:string},
+  antes: {campos?:Record<string,unknown>;dnd2014Subclasse?:string;dnd2014Multiclasse?:Record<string,number>},
+  depois: {campos?:Record<string,unknown>;dnd2014Subclasse?:string;dnd2014Multiclasse?:Record<string,number>},
 ):string[] {
   if(antes.dnd2014Subclasse===depois.dnd2014Subclasse &&
     antes.campos?.classe===depois.campos?.classe &&
-    antes.campos?.nivel===depois.campos?.nivel) return []
+    antes.campos?.nivel===depois.campos?.nivel &&
+    JSON.stringify(antes.dnd2014Multiclasse??{})===JSON.stringify(depois.dnd2014Multiclasse??{})) return []
   const id=depois.dnd2014Subclasse
   if(!id)return []
-  return subclasseAtivaDnd2014(depois.campos?.classe,id,depois.campos?.nivel)?[]
-    : ['A subclasse escolhida não existe para esta classe ou ainda não está disponível no nível atual do D&D 2014.']
+  // PHB 2014, capítulo 6: uma subclasse é liberada por nível NA CLASSE,
+  // não pelo nível total da personagem multiclasse.
+  const nivelInicial=classesDaFicha2014({
+    campos: depois.campos ?? {},
+    dnd2014Multiclasse: depois.dnd2014Multiclasse,
+  }).lista.find(c=>c.principal)?.nivel ?? 0
+  return subclasseAtivaDnd2014(depois.campos?.classe,id,nivelInicial)?[]
+    : ['A subclasse escolhida não existe para esta classe ou ainda não está disponível no nível da classe inicial do D&D 2014.']
 }

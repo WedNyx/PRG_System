@@ -25,6 +25,14 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura }: Pr
   const escolhasExtras = d.dnd2014AtributosExtras ?? []
   const periciasClasse = periciasClasse2014(classe)
   const periciasEscolhidas = d.dnd2014PericiasClasse ?? []
+  const raciais = d.dnd2014PericiasRaciais ?? []
+  const qtdRaciais = raca === 'Meio-Elfo' ? 2 : raca === 'Humano' && escolha === 'Humano Variante' ? 1 : 0
+  const todasPericias = periciasClasse2014('Bardo')?.opcoes ?? []
+  const alterarRacial = (pos:number, pericia:string) => {
+    const lista=Array.from({ length:qtdRaciais },(_,i)=>raciais[i]??'')
+    lista[pos]=pericia
+    onChange({ ...d, dnd2014PericiasRaciais:lista })
+  }
   const doAntecedente = periciasAntecedente2014(antecedente)
   const precisaEscolher = raca === 'Meio-Elfo' || raca === 'Humano' && escolha === 'Humano Variante'
   const mudarBase = (atr: string, valor: number) => {
@@ -112,6 +120,26 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura }: Pr
             {periciasClasse.opcoes.filter(x => !doAntecedente.includes(x) &&
               (!periciasEscolhidas.includes(x) || periciasEscolhidas[i] === x))
               .map(x => <option value={x} key={x}>{nomePericia(x)}</option>)}
+          </select>
+        </label>)}
+      </div>
+    </div>}
+    {qtdRaciais>0 && <div className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+      <h4 className="text-sm font-semibold text-(--a-d3adf0)">
+        Perícias raciais · {raca} {escolha}
+      </h4>
+      <p className="mt-1 text-xs text-(--a-c4b6d4)">
+        {raca==='Meio-Elfo' ? 'Versatilidade: duas perícias à escolha.' : 'Humano Variante: uma perícia à escolha.'}
+        Não repita as concedidas pela classe ou antecedente.
+      </p>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        {Array.from({length:qtdRaciais},(_,i)=><label key={i} className="text-xs">
+          Perícia racial {i+1}/{qtdRaciais}
+          <select className={classInput} disabled={somenteLeitura} value={raciais[i]??''}
+            onChange={e=>alterarRacial(i,e.target.value)}>
+            <option value="">Escolher...</option>
+            {todasPericias.filter(x=> !doAntecedente.includes(x) && !periciasEscolhidas.includes(x) &&
+              (raciais[i]===x || !raciais.includes(x))).map(x=><option key={x} value={x}>{nomePericia(x)}</option>)}
           </select>
         </label>)}
       </div>

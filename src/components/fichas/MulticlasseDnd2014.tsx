@@ -41,7 +41,7 @@ export default function MulticlasseDnd2014({d,onChange,somenteLeitura=false}:{
      if(!sub || nivel<sub.nivel)delete extras[key]
    }
    onChange({...d,campos:{...d.campos,nivel:novoTotal},dnd2014Multiclasse:proximas,
-     dnd2014Subclasses:extras})
+     ...(Object.keys(extras).length || d.dnd2014Subclasses ? {dnd2014Subclasses:extras} : {})})
  }
  return <section aria-label="Multiclasse de D&D 2014" className="space-y-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4">
    <h3 className="flex items-center gap-2 font-semibold text-(--a-ed9cd8)"><Users size={18}/> Multiclasse · D&D 2014 · nível total {total}</h3>

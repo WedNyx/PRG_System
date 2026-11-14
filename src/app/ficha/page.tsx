@@ -213,7 +213,8 @@ function Conteudo() {
       {aviso && <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-(--a-62527e) bg-(--s-1f2a40) p-3 text-sm">
         <span className="flex-1">{aviso.texto}</span>{aviso.desfazer && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-(--a-b99bff) px-3 py-1">Desfazer (voltar ao salvo)</button>}</p>}
       {sistema && dados ? <FichaGenerica sistema={sistema} dados={dados} onChange={mudar} somenteLeitura={estado === 'leitura'} modoProgressao={modoProgressao} podeEditarArvore={podeEditarArvore}
-        fontesDnd={campanhaId && config && !souMestre ? fontesLiberadas(config.fontes) : null}
+        fontesDnd={campanhaId && config ? fontesLiberadas(config.fontes) : null}
+        livroBaseCampanha={campanhaId && config ? config.baseLivro ?? null : null}
         excecaoModo={campanhaId && nuvem && souMestre && config && sistema.id === 'dnd5e-srd' ? {
           campanha: config.modo, atual: config.excecoesPorFicha?.[nuvem] ?? null,
           mudar: async modo => {

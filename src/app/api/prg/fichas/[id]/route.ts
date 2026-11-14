@@ -238,6 +238,16 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
       { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas, dndMagias: anterior.dndMagias, dndMulticlasse: anterior.dndMulticlasse },
       { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas, dndMagias: autorizado.dndMagias, dndMulticlasse: autorizado.dndMulticlasse },
     ))
+    // Revalidar fontes e talento humano após aplicação das permissões.
+    // Uma escolha aprovada isoladamente não pode persistir se o contexto
+    // de origem/classe/livro necessário ficou bloqueado ou pendente.
+    erros.push(...validarFontesCamposDnd(
+      { campos: anterior.campos ?? {} }, { campos: autorizado.campos ?? {} }, liberadas
+    ))
+    erros.push(...validarAlteracoesTalentoMagiaHumano(
+      { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas, dndAntecedente: anterior.dndAntecedente, dndTalentoHumano: anterior.dndTalentoHumano },
+      { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas, dndAntecedente: autorizado.dndAntecedente, dndTalentoHumano: autorizado.dndTalentoHumano },
+    ))
     erros.push(...validarAlteracoesMulticlasseDnd(
       { campos: anterior.campos ?? {}, atributos: anterior.atributos ?? {}, dndMulticlasse: anterior.dndMulticlasse },
       { campos: autorizado.campos ?? {}, atributos: autorizado.atributos ?? {}, dndMulticlasse: autorizado.dndMulticlasse },

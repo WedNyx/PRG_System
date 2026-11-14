@@ -110,6 +110,8 @@ export type DadosFicha = {
   dnd2014Subclasse?: string
   /** Níveis em outras classes na multiclasse 2014 (não usa a tabela 2024). */
   dnd2014Multiclasse?: Record<string,number>
+  /** Magias de D&D 2014, registradas separadamente do catálogo SRD 2024. */
+  dnd2014Magias?: import('./dnd2014Magias').RegistroMagiaDnd2014[]
   /** Escolhas de marcos D&D. A progressão visual não concede bônus por si só. */
   dndEscolhas?: Record<string, string>
   /** Distribuição guiada de atributos de antecedente, aplicada explicitamente uma vez. */

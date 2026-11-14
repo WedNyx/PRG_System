@@ -1,7 +1,7 @@
 'use client'
 
 import { arteDoItem, corDaRaridade, formaPorId, RARIDADES, type Raridade } from '@/lib/itensArte'
-import { iconeRpgPorId, sugestaoIconeRpg } from '@/lib/iconesRpg'
+import { iconeRpgPorId, sugestaoIconeRpg, sugestaoIconeDnd } from '@/lib/iconesRpg'
 
 /**
  * Desenho do item (Forja): moldura com a cor da raridade, fundo que brilha e a forma colorida.
@@ -12,8 +12,11 @@ export default function ArteItem({ item, tamanho = 48, className = '', estiloDnd
   const nivel = item.raridade ? RARIDADES.findIndex(r => r.id === item.raridade) : -1
   // Em D&D a Forja foi retirada: até itens antigos com arte legada mostram Game-Icons.
   // Em todos os sistemas, a foto própria continua tendo prioridade sobre o ícone.
-  const icone = (estiloDnd || !item.arte || item.iconeBiblioteca)
-    ? (iconeRpgPorId(item.iconeBiblioteca) ?? iconeRpgPorId(sugestaoIconeRpg(a.forma))) : null
+  const icone = estiloDnd
+    ? (iconeRpgPorId(item.iconeBiblioteca) ?? iconeRpgPorId(sugestaoIconeDnd(item.nome, item.categoria)))
+    : ((!item.arte || item.iconeBiblioteca)
+        ? (iconeRpgPorId(item.iconeBiblioteca) ?? iconeRpgPorId(sugestaoIconeRpg(a.forma)))
+        : null)
   return <span role="img" aria-label={`${item.nome}${item.raridade ? ' (' + RARIDADES[nivel].nome + ')' : ''}`} className={'relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 shadow-inner ' + className}
     style={{ width: tamanho, height: tamanho, borderColor: cor, background: `radial-gradient(circle at 50% 40%, ${cor}55, #1a1430 70%)`, boxShadow: nivel >= 2 ? `0 0 ${nivel * 4}px ${cor}aa, inset 0 0 ${tamanho / 4}px ${cor}55` : undefined }}>
     {typeof item.imagem === 'string' && item.imagem

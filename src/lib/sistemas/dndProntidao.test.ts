@@ -51,6 +51,23 @@ describe('Preparação não destrutiva para jogar',()=>{
     expect(x.pendencias.some(p=>p.id.endsWith('2014'))).toBe(false)
     expect(x.pendencias.some(p=>p.id.startsWith('marco2024-'))).toBe(true)
   })
+  it('sinaliza classe inventada em 2014, mesmo com raça e antecedente preenchidos',()=>{
+    const d=personagem2014()
+    d.campos.classe='Classe inexistente'
+    const antes=JSON.stringify(d)
+    const x=avaliarProntidaoDnd(d,'phb2014')
+    expect(x.prontoParaConferir).toBe(false)
+    expect(x.pendencias).toEqual(expect.arrayContaining([expect.objectContaining({id:'classeIncompativel',tipo:'pendente'})]))
+    expect(JSON.stringify(d)).toBe(antes)
+  })
+  it('sinaliza classe inventada em 2024 mesmo quando não há marcos para essa classe',()=>{
+    const d=fichaVazia(sistema)
+    d.nome='Kira'
+    d.campos={...d.campos,classe:'Classe inexistente',especie:'Elfo',antecedente:'Soldado',nivel:1}
+    const x=avaliarProntidaoDnd(d,'phb2024')
+    expect(x.prontoParaConferir).toBe(false)
+    expect(x.pendencias.some(p=>p.id==='classeIncompativel'&&p.tipo==='pendente')).toBe(true)
+  })
   it('não concede poderes nem bloqueia salvar ficha incompleta',()=>{
     const d=fichaVazia(sistema)
     const antes=JSON.stringify(d)

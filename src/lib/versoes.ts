@@ -31,6 +31,8 @@ export const VERSOES: Versao[] = [
     titulo: 'D&D 2014: fidelidade às regras e livros por edição',
     itens: [
       '⚔️ Revisão de D&D: tabelas e escolhas específicas das regras de 2014 (SRD 5.1) isoladas das regras revisadas de 2024 (SRD 5.2.1), com indicadores claros do que é automático e do que depende do livro e do mestre.',
+      '📜 Nova ficha D&D: escolha primeiro o Livro do Jogador 2014 (5e) ou 2024 (5.5e). A edição é registrada imediatamente e direciona as raças, antecedentes, recursos e a criação guiada apropriada, sem duplicar o sistema.',
+      '🛡️ Prontidão e segurança: avisos de opções incompatíveis com o livro selecionado e nova checagem de fontes e escolhas de magia do talento humano após aplicar as permissões do mestre.',
       '📚 Criação de personagens 2014: novas escolhas de classe e subclasse aberta, com marcos na árvore e acompanhamento por nível; suplementos comerciais continuam como referência até confirmação das regras no livro escolhido.',
       '🧙 Multiclasse e conjuração: revisão de diferenças entre 2014 e 2024, especialmente arredondamento dos níveis de conjurador; sem conceder automaticamente magias ou efeitos de outra edição.',
       '📖 Grimório de 2014: catálogo pesquisável de 845 entradas de magias do PHB, organizadas por classe e nível; conjuração com espaços superiores, Magia de Pacto entre classes e recuperação separada no descanso curto ou longo.',

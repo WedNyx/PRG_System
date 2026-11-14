@@ -2,6 +2,15 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.33.9 — D&D por edição e revisão de regras (2026-11-14)
+
+- D&D 2014 (SRD 5.1): seleção de subclasse aberta e marcos de progressão por classe, separados da edição 2024.
+- Regras de conjuração 2014 revisadas, com diferenças de multiclasse e arredondamento sinalizadas.
+- Arsenais de 2014 e 2024 permanecem separados; livros adicionais sem regras abertas confirmadas continuam como referência manual.
+- Testes de fidelidade de personagens por edição, respeitando salvamento, fotos, atributos, itens e escolhas anteriores.
+- Numeração da versão: revisão vai de 0 a 10, menor de 0 a 99. Ex.: 0.0.10→0.1.0; 0.99.10→1.0.0.
+- Página /novidades e versionamento do pacote atualizados.
+
 ## v0.33.8 — Mesa: mapa, névoa, luz, fichas e combate (2026-11-13)
 
 - Mapa até 200 × 200 (`MAX_GRADE`); zoom mínimo 0,05.

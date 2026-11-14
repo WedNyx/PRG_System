@@ -1,6 +1,6 @@
 # D&D — edição-base e suplementos selecionados por campanha e ficha
 
-**PR #49 · 13/11/2026 · em revisão (não mesclar automaticamente)**
+**PR #49 · atualizado em 14/11/2026 · em revisão (não mesclar automaticamente)**
 
 ## Requisito do grupo
 O **mestre junto com o jogador** escolhe os livros de D&D usados para a criação do personagem. A edição-base é uma decisão da campanha (mestre) e deve ser apresentada explicitamente na ficha. O jogador pode escolher os suplementos liberados dentro da campanha. Cada item exibe título original, **ano**, edição e compatibilidade.
@@ -13,12 +13,12 @@ O **mestre junto com o jogador** escolhe os livros de D&D usados para a criaçã
 | Raças | Raça + sub-raça (inclui Meio-Elfo e Meio-Orc) | Espécie com linhagens/legados quando aplicáveis |
 | Antecedente | Perícias, ferramentas/idiomas, característica narrativa | Perícias, ferramenta, **aumentos de atributos** e talento de origem |
 | Aumentos iniciais de atributo | Raça / sub-raça | Antecedente |
-| Automação atual | Guia assistido, **não automatiza as características de 2014**, para não misturar regras | SRD 5.2.1: bônus, progressão, magias, usos e descansos implementados |
+| Automação atual | SRD 5.1: aumentos raciais guiados, perícias e salvaguardas básicas, recursos de classes e espaços básicos; **progressão avançada e escolhas de subclasses continuam manuais** | SRD 5.2.1: bônus, progressão, magias, usos e descansos já implementados; regras situacionais são conferidas com o mestre |
 | Regras pagas | Referência ao livro, preenchimento manual | Referência ao livro, preenchimento manual |
 
 **O SRD 5.2.1 não é o livro de 2014.** Desabilitamos seus efeitos, grimório, magias raciais, descanso automático, talentos de origem e progressão visual revisada nas fichas 2014. O formulário 2014 oferece seletores específicos de raças, sub-raças e antecedentes e facilita anotações manuais. Não convertemos atributos, magias, proficiências ou inventário existentes silenciosamente quando muda a edição.
 
-**Importante:** o suporte 2014 está em **modo assistido/manual** até construir o motor próprio baseado no SRD 5.1 (CC BY 4.0). O usuário NÃO deve supor que a criação, os valores de atributo ou os poderes 2014 são calculados automaticamente. Recursos genéricos da ficha continuam disponíveis. A separação evita aplicar inadvertidamente valores de 2024 na 5e original.
+**Importante:** o suporte 2014 tem agora **automação parcial verificável com motor próprio SRD 5.1 (CC BY 4.0)**. Fichas novas podem registrar os seis valores-base antes da raça; só então o sistema aplica aumentos raciais automaticamente. Fichas antigas sem esses valores ficam intactas, pois seus atributos podem já incluir bônus raciais. A árvore mostra o progresso das doze classes por nível, marcando o que está automatizado e o que exige livro/mestre. Não está implementada a totalidade das subclasses, talentos, magias de classe e decisões de 2014.
 
 ### Passos de interface
 
@@ -59,7 +59,7 @@ Fontes de consulta:
 - [ ] Jogador seleciona suplemento liberado, salva, fecha e reabre ficha
 - [ ] Mudar edição em campanha existente não apaga itens, fotos nem notas; UI avisa incompatibilidades
 - [ ] Mesma sequência em Android e computador com mestre e jogador separados
-- [ ] Se a mesa precisar das regras completas de 2014, a próxima etapa é implementar **motor legado SRD 5.1** separadamente antes de considerar automação completa
+- [ ] Para automação integral 2014, completar escolhas de subclasses, talentos, magias de classe, multiclasses e efeitos situacionais do SRD 5.1; o núcleo de atributos e classes está implementado nesta PR.
 
 **Não mesclar na `main` até homologação manual e revisão de regras com o grupo.**
 
@@ -83,13 +83,29 @@ Fontes de consulta:
 ### Árvore de origem com hexágonos naturais
 - Na aba **Árvore de Habilidades** do D&D existe agora o painel `ArvoreDndOficial` com hexágonos gerados a partir da ficha para **Classe/Subclasse, Espécie/Raça, Origem/Antecedente e Habilidades do Mestre**.
 - Em 2024, a projeção usa diretamente os marcos SRD 5.2.1 e as escolhas do personagem, respeita níveis, sinaliza decisões pendentes, aceita visualizar níveis futuros e diferencia características comerciais (referência sem conceder efeitos pagos).
-- Em 2014, gera os hexágonos da raça, sub-raça, classe e antecedente conhecidos **como referências para conferência manual** até existir motor SRD 5.1 separado. Não aplica habilidades 2024.
+- Em 2014, gera hexágonos da raça, sub-raça, antecedente e **marcos das 12 classes** conforme nível. Marcadores básicos que já são calculados pelo motor 2014 ficam identificados como recebidos, enquanto subclasses e habilidades sem automação continuam como referência. Não aplica habilidades 2024.
 - Hexágonos oficiais são uma **visualização derivada e sem custo**. Não são gravados na árvore personalizável nem alteram diretamente proficiências, atributos ou poderes. Isso evita bônus duplicados. Os hexágonos extras do mestre aparecem no mesmo quadro, mas sua edição e liberação são feitas no editor abaixo e seguem as permissões de campanha.
 - **Poderes e Habilidades Extras** registra habilidades manuais, magias preparadas e escolhas adicionais do jogador. Magias naturais do antecedente, espécie ou Humano Versátil têm seus módulos de uso no painel da Árvore, sem desaparecer do sistema de recursos.
-- A biblioteca de feitiços segue SRD 5.2.1; fichas D&D 2014 usam campo manual até possuir implementação 2014 própria.
+- A biblioteca de feitiços preparados ainda segue SRD 5.2.1 e é desabilitada nas fichas 2014; em 2014 a nova camada calcula **quantidade de espaços** da progressão básica (incluindo Pacto do Bruxo), mas **não** automatiza seleção e regras completas das magias legadas.
 
 ### Testes
 - `src/lib/sistemas/dndArsenaisArvore.test.ts`: diferenças 2014/2024, críticos, compatibilidade de fontes e ausência de duplicação de hexágonos.
 - `src/lib/iconesRpg.test.ts`: catálogo ampliado e sugestões sem ícones externos não autorizados.
 - Homologação manual: em desktop e celular, simular mestre e player escolhendo bases 2014/2024 e suplementos, criando armamentos e testando críticos; conferindo foto personalizada, hexágonos adquiridos, pendentes e futuros, além de poderes caseiros.
 - **Nenhum merge automático.** Revisar CI e prévia Vercel antes de aprovar.
+
+
+## Motor de fidelidade D&D 2014 — implementação parcial no SRD 5.1
+
+Código: `src/lib/sistemas/dnd2014Regras.ts` e `src/lib/sistemas/dnd2014Marcos.ts`.
+- Atributos raciais das nove raças da criação 2014, sub-raças e opções condicionais; seleção de dois atributos no Meio-Elfo e Humano Variante com validação.
+- Proteção contra duplicação de bônus: o usuário deve fornecer **valores antes da raça** para a automação entrar. Sem `dnd2014AtributosBase`, o sistema presume que os valores digitados já estão completos.
+- Guias de classe inicial com suas **listas específicas de perícias 2014**, além dos dois espaços raciais do Meio-Elfo ou do único do Humano Variante. Perícias e salvaguardas concedidas são aplicadas apenas como proficiência mínima, não somadas com treinamento manual repetido.
+- Recursos básicos de classe e tabelas abertas de espaços de magia aplicados pelo motor 2014, sem recorrer ao `efeitosDnd2024`. O 20º nível do Bárbaro é indicado como **Fúria ilimitada** na árvore; não cabe em contador de usos com máximo finito.
+- A Árvore traz marcos principais das doze classes SRD por nível, distingue aquisição acompanhada automaticamente de *referências ainda manuais*. Hexágonos oficiais não concedem o mesmo bônus novamente.
+- A API valida as escolhas novas antes e depois de avaliar permissões do mestre; os novos dados foram classificados em `atributos` e `pericias`.
+- Esta implementação **não promete regras de livro comercial**. Suplementos continuam identificados individualmente como referência, até que regras licenciadas ou fornecidas pelo grupo sejam conferidas e implementadas.
+
+**Ainda não concluído para afirmar fidelidade integral:** características avançadas e subclasses, magias aprendidas/preparadas específicas de 2014, progressão de multiclasse em 2014, talentos do livro e inúmeras regras condicionais. Revisar junto do SRD 5.1 e dos exemplares dos jogadores; preferir modo/manual onde a implementação não cobre a opção.
+
+Testes: `src/lib/sistemas/dnd2014Regras.test.ts`, `src/lib/sistemas/dndLivros.test.ts`, `src/lib/sistemas/dndArsenaisArvore.test.ts`.

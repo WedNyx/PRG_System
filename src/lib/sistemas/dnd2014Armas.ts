@@ -12,9 +12,9 @@ import { ARMAS_DND_2024, armaDndPorId, type ArmaDnd2024 } from './dnd2024Armas'
  * lança montada e tridente com dados diferentes; rede no lugar de armas de fogo.
  */
 const alteracoes: Record<string, Partial<ArmaDnd2024>> = {
-  'lanca-montada': { dano: '1d12', propriedades: ['Alcance', 'Especial'], preco: '10 PO', pesoLb: 6 },
+  'lanca-cavalaria': { dano: '1d12', propriedades: ['Alcance', 'Especial'], preco: '10 PO', pesoLb: 6 },
   tridente: { dano: '1d6', versatil: '1d8', preco: '5 PO', pesoLb: 4 },
-  'picareta-guerra': { preco: '5 PO' },
+  'picareta-guerra': { preco: '5 PO', propriedades: [] },
 }
 const sem2024 = new Set(['mosquete', 'pistola'])
 export const ARMAS_DND_2014: ArmaDnd2024[] = [

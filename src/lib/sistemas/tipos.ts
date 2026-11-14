@@ -108,6 +108,8 @@ export type DadosFicha = {
   dnd2014PericiasRaciais?: string[]
   /** Arquétipo/subclasse do Livro do Jogador 2014, escolhido no nível correto. */
   dnd2014Subclasse?: string
+  /** Subclasses das classes secundárias em 2014, por id de classe; preserva o campo legado da classe inicial. */
+  dnd2014Subclasses?: Record<string, string>
   /** Níveis em outras classes na multiclasse 2014 (não usa a tabela 2024). */
   dnd2014Multiclasse?: Record<string,number>
   /** Magias de D&D 2014, registradas separadamente do catálogo SRD 2024. */

@@ -152,7 +152,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     return r.total
   }
   const [descansando, setDescansando] = useState(false)
-  const propsInv = { s, d, c, onChange, somenteLeitura, rolar: rolarExpr, abrirDescanso: somenteLeitura || legado2014 ? undefined : () => setDescansando(true) }
+  const propsInv = { s, d, c, onChange, somenteLeitura, rolar: rolarExpr, abrirDescanso: somenteLeitura ? undefined : () => setDescansando(true) }
 
   const grupos = new Map<string, NonNullable<Sistema['pericias']>['lista']>()
   for (const p of s.pericias?.lista ?? []) grupos.set(p.grupo ?? '', [...(grupos.get(p.grupo ?? '') ?? []), p])

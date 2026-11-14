@@ -99,6 +99,8 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     configLivros = lerConfiguracaoProgressao(cc?.config_progressao)
   }
   const liberadasCampanha = configLivros && !admin ? fontesLiberadas(configLivros.fontes) : null
+  // Campanhas preexistentes permanecem na edição 2024 até o mestre mudar a opção.
+  const regrasLivros = configLivros ? { ...configLivros, baseLivro: configLivros.baseLivro ?? 'phb2024' as const } : null
   const fontesDaFicha = (selecao: unknown): Set<string> | null => {
     if (selecao === undefined || selecao === null) return liberadasCampanha // compatibilidade com fichas antigas
     const x = lerLivrosDnd(selecao, configLivros?.baseLivro ?? 'phb2024')
@@ -114,7 +116,7 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const antigo = f.dados as Partial<DadosFicha>
     const candidato = v.valor.dados as Partial<DadosFicha>
     const edicao = lerLivrosDnd(candidato.dndLivros, configLivros?.baseLivro ?? 'phb2024').base
-    const erros = validarLivrosDnd(antigo.dndLivros, candidato.dndLivros, configLivros, admin)
+    const erros = validarLivrosDnd(antigo.dndLivros, candidato.dndLivros, regrasLivros, admin)
     const liberadas = fontesDaFicha(candidato.dndLivros)
     if (edicao === 'phb2014') {
       erros.push(...validarAlteracoesExclusivas2024(antigo, candidato))
@@ -211,7 +213,7 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const anterior = f.dados as Partial<DadosFicha>
     const autorizado = final as Partial<DadosFicha>
     const edicao = lerLivrosDnd(autorizado.dndLivros, configLivros?.baseLivro ?? 'phb2024').base
-    const erros = validarLivrosDnd(anterior.dndLivros, autorizado.dndLivros, configLivros, admin)
+    const erros = validarLivrosDnd(anterior.dndLivros, autorizado.dndLivros, regrasLivros, admin)
     const liberadas = fontesDaFicha(autorizado.dndLivros)
     if (edicao === 'phb2014') {
       erros.push(...validarAlteracoesExclusivas2024(anterior, autorizado))

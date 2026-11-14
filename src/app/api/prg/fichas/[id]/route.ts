@@ -11,7 +11,10 @@ import { lerConfiguracaoProgressao } from '@/lib/sistemas/modoProgressao'
 import { lerEscolhasDnd, validarAlteracoesEscolhasDnd } from '@/lib/sistemas/dnd2024Ficha'
 import { lerMagiasDnd, validarAlteracoesMagiasDnd } from '@/lib/sistemas/dnd2024Conjuracao'
 import { idDe, lerMulticlasseDnd, validarAlteracoesMulticlasseDnd } from '@/lib/sistemas/dnd2024Classes'
-import { fontesLiberadas, validarFontesCamposDnd } from '@/lib/sistemas/dnd2024Fontes'
+import { fontesLiberadas, validarFontesCamposDnd, FONTE_PHB, FONTE_LEGADO_2014, FONTE_SRD } from '@/lib/sistemas/dnd2024Fontes'
+import { lerLivrosDnd, validarLivrosDnd } from '@/lib/sistemas/dndLivros'
+import { validarAlteracoesExclusivas2024 } from '@/lib/sistemas/dnd2014Criacao'
+import { validarAlteracoes2014 } from '@/lib/sistemas/dnd2014Regras'
 import { lerRegistroAntecedenteDnd, validarAlteracoesAntecedenteDnd } from '@/lib/sistemas/dnd2024Antecedentes'
 import { lerTalentoMagiaHumano, validarAlteracoesTalentoMagiaHumano } from '@/lib/sistemas/dnd2024MagiaHumano'
 
@@ -90,22 +93,42 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
   if (!Number.isInteger(body.versao)) throw new ErroApi(400, 'Versão ausente.')
   const v = validarFichaDados(body.dados)
   if (!v.ok) throw new ErroApi(400, v.erro)
-  // Fontes liberadas pelo mestre (D&D em campanha). Mestre e ficha avulsa: todas.
-  let liberadas: Set<string> | null = null
-  if (f.sistema === 'dnd5e-srd' && f.campanha_id && !admin) {
+  // Livro-base e fontes liberadas pelo mestre. Revalidar também na gravação da ficha.
+  let configLivros: ReturnType<typeof lerConfiguracaoProgressao> | null = null
+  if (f.sistema === 'dnd5e-srd' && f.campanha_id) {
     const [cc] = await rest<{ config_progressao?: unknown }[]>(`prg_campanhas?select=config_progressao&id=eq.${q(f.campanha_id)}&limit=1`).catch(() => [])
-    liberadas = fontesLiberadas(lerConfiguracaoProgressao(cc?.config_progressao).fontes)
+    configLivros = lerConfiguracaoProgressao(cc?.config_progressao)
+  }
+  const liberadasCampanha = configLivros && !admin ? fontesLiberadas(configLivros.fontes) : null
+  // Campanhas preexistentes permanecem na edição 2024 até o mestre mudar a opção.
+  const regrasLivros = configLivros ? { ...configLivros, baseLivro: configLivros.baseLivro ?? 'phb2024' as const } : null
+  const fontesDaFicha = (selecao: unknown): Set<string> | null => {
+    if (selecao === undefined || selecao === null) return liberadasCampanha // compatibilidade com fichas antigas
+    const x = lerLivrosDnd(selecao, configLivros?.baseLivro ?? 'phb2024')
+    const ids = [FONTE_SRD, x.base === 'phb2024' ? FONTE_PHB : FONTE_LEGADO_2014, ...x.suplementos]
+    return new Set(ids.filter(id =>
+      id === FONTE_SRD || !liberadasCampanha || liberadasCampanha.has(id) ||
+      (!!configLivros?.baseLivro && configLivros.baseLivro === x.base &&
+        id === (x.base === 'phb2024' ? FONTE_PHB : FONTE_LEGADO_2014))))
   }
   // Valida mudanças em escolhas D&D ANTES da aplicação de permissão/aprovação.
   // Personagens antigos podem conservar escolhas históricas sem bloqueios retroativos.
   if (f.sistema === 'dnd5e-srd') {
     const antigo = f.dados as Partial<DadosFicha>
     const candidato = v.valor.dados as Partial<DadosFicha>
-    const erros = validarAlteracoesEscolhasDnd(
+    const edicao = lerLivrosDnd(candidato.dndLivros, configLivros?.baseLivro ?? 'phb2024').base
+    const erros = validarLivrosDnd(antigo.dndLivros, candidato.dndLivros, regrasLivros, admin)
+    const liberadas = fontesDaFicha(candidato.dndLivros)
+    if (edicao === 'phb2014') {
+      erros.push(...validarAlteracoesExclusivas2024(antigo, candidato))
+      erros.push(...validarAlteracoes2014(antigo, candidato, 'phb2014'))
+    } else {
+    erros.push(...validarAlteracoes2014(antigo, candidato, 'phb2024'))
+    erros.push(...validarAlteracoesEscolhasDnd(
       { campos: antigo.campos ?? {}, dndEscolhas: antigo.dndEscolhas, dndMulticlasse: antigo.dndMulticlasse },
       { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas, dndMulticlasse: candidato.dndMulticlasse },
       liberadas
-    )
+    ))
     erros.push(...validarAlteracoesMagiasDnd(
       { campos: antigo.campos ?? {}, dndEscolhas: antigo.dndEscolhas, dndMagias: antigo.dndMagias, dndMulticlasse: antigo.dndMulticlasse },
       { campos: candidato.campos ?? {}, dndEscolhas: candidato.dndEscolhas, dndMagias: candidato.dndMagias, dndMulticlasse: candidato.dndMulticlasse },
@@ -125,6 +148,8 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
       { campos: candidato.campos ?? {}, atributos: candidato.atributos ?? {}, dndMulticlasse: candidato.dndMulticlasse },
       { ignorarRequisitos: admin },
     ))
+
+    }
     if (erros.length) throw new ErroApi(400, erros.join(' '))
     if (candidato.dndAntecedente !== undefined && lerRegistroAntecedenteDnd(candidato.dndAntecedente)) {
       v.valor.dados = { ...v.valor.dados, dndAntecedente: lerRegistroAntecedenteDnd(candidato.dndAntecedente) }
@@ -134,6 +159,9 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     }
     if (candidato.dndMulticlasse !== undefined) {
       v.valor.dados = { ...v.valor.dados, dndMulticlasse: lerMulticlasseDnd(candidato.dndMulticlasse, idDe(candidato.campos?.classe)) }
+    }
+    if (candidato.dndLivros !== undefined) {
+      v.valor.dados = { ...v.valor.dados, dndLivros: lerLivrosDnd(candidato.dndLivros, configLivros?.baseLivro ?? 'phb2024') }
     }
     if (candidato.dndEscolhas !== undefined) {
       v.valor.dados = { ...v.valor.dados, dndEscolhas: lerEscolhasDnd(candidato.dndEscolhas) }
@@ -187,11 +215,19 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
   if (f.sistema === 'dnd5e-srd') {
     const anterior = f.dados as Partial<DadosFicha>
     const autorizado = final as Partial<DadosFicha>
-    const erros = validarAlteracoesEscolhasDnd(
+    const edicao = lerLivrosDnd(autorizado.dndLivros, configLivros?.baseLivro ?? 'phb2024').base
+    const erros = validarLivrosDnd(anterior.dndLivros, autorizado.dndLivros, regrasLivros, admin)
+    const liberadas = fontesDaFicha(autorizado.dndLivros)
+    if (edicao === 'phb2014') {
+      erros.push(...validarAlteracoesExclusivas2024(anterior, autorizado))
+      erros.push(...validarAlteracoes2014(anterior, autorizado, 'phb2014'))
+    } else {
+    erros.push(...validarAlteracoes2014(anterior, autorizado, 'phb2024'))
+    erros.push(...validarAlteracoesEscolhasDnd(
       { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas, dndMulticlasse: anterior.dndMulticlasse },
       { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas, dndMulticlasse: autorizado.dndMulticlasse },
       liberadas
-    )
+    ))
     erros.push(...validarAlteracoesMagiasDnd(
       { campos: anterior.campos ?? {}, dndEscolhas: anterior.dndEscolhas, dndMagias: anterior.dndMagias, dndMulticlasse: anterior.dndMulticlasse },
       { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas, dndMagias: autorizado.dndMagias, dndMulticlasse: autorizado.dndMulticlasse },
@@ -206,6 +242,8 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
       { campos: autorizado.campos ?? {}, atributos: autorizado.atributos ?? {}, dndAntecedente: autorizado.dndAntecedente },
       liberadas,
     ))
+
+    }
     if (erros.length) throw new ErroApi(400, 'A escolha não foi liberada no nível autorizado: ' + erros.join(' '))
   }
 

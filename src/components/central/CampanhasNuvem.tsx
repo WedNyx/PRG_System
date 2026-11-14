@@ -12,6 +12,7 @@ import { enviarImagemNuvem } from '@/lib/nuvem/cliente'
 import SeletorSistemaCampanha from './SeletorSistemaCampanha'
 import SeletorModoProgressao from '@/components/fichas/SeletorModoProgressao'
 import SeletorFontes from '@/components/fichas/SeletorFontes'
+import type { LivroBaseDnd } from '@/lib/sistemas/dndLivros'
 import { lerConfiguracaoProgressao, type ConfiguracaoProgressao, type ModoProgressao } from '@/lib/sistemas/modoProgressao'
 import { SISTEMAS, sistemaDaCampanha } from '@/lib/sistemas/catalogo'
 import { useSistemasAutorais } from '@/lib/sistemas/cliente'
@@ -115,6 +116,7 @@ function FormCampanha({ aventureiroId, campanha, onFechar }: { aventureiroId: st
   const [modelo, setModelo] = useState<Modelo>(campanha?.modelo_padrao ?? 'C')
   const [regras, setRegras] = useState<Permissoes>(campanha?.permissoes ?? permissoesPadrao('C'))
   const [modoProgressao, setModoProgressao] = useState<ModoProgressao>(lerConfiguracaoProgressao(campanha?.config_progressao).modo)
+  const [baseLivro, setBaseLivro] = useState<LivroBaseDnd>(lerConfiguracaoProgressao(campanha?.config_progressao).baseLivro ?? 'phb2024')
   const [fontes, setFontes] = useState<string[]>(lerConfiguracaoProgressao(campanha?.config_progressao).fontes ?? [])
   const [fontesExtras, setFontesExtras] = useState<string[]>(lerConfiguracaoProgressao(campanha?.config_progressao).fontesExtras ?? [])
   const [erro, setErro] = useState('')
@@ -122,7 +124,7 @@ function FormCampanha({ aventureiroId, campanha, onFechar }: { aventureiroId: st
   async function salvar(e: React.FormEvent) {
     e.preventDefault(); setSalvando(true); setErro('')
     try {
-      const body = { nome, descricao, sistema, modeloPadrao: modelo, permissoes: regras, ...(sistemaDaCampanha(sistema) === 'dnd5e-srd' ? { configProgressao: { modo: modoProgressao, fontes, fontesExtras } } : {}) }
+      const body = { nome, descricao, sistema, modeloPadrao: modelo, permissoes: regras, ...(sistemaDaCampanha(sistema) === 'dnd5e-srd' ? { configProgressao: { modo: modoProgressao, baseLivro, fontes, fontesExtras } } : {}) }
       await api(campanha ? 'campanhas/' + campanha.id : 'campanhas', { method: campanha ? 'PATCH' : 'POST', body, aventureiro: aventureiroId })
       onFechar(true)
     } catch (e) { setErro(msg(e)); setSalvando(false) }
@@ -133,7 +135,7 @@ function FormCampanha({ aventureiroId, campanha, onFechar }: { aventureiroId: st
     <label className="block text-sm font-medium">Descrição<textarea maxLength={600} rows={3} value={descricao} onChange={e => setDescricao(e.target.value)} className="mt-2 w-full rounded-xl border border-(--a-70588c) bg-(--s-151123) p-3 text-white" /></label>
     <div className="block text-sm font-medium">Sistema de RPG<SeletorSistemaCampanha valor={sistema} onChange={setSistema} classe="mt-2 w-full rounded-xl border border-(--a-70588c) bg-(--s-151123) p-3 text-white" /></div>
     {sistemaDaCampanha(sistema) === 'dnd5e-srd' && <SeletorModoProgressao valor={modoProgressao} onChange={setModoProgressao} podeEditar />}
-    {sistemaDaCampanha(sistema) === 'dnd5e-srd' && <SeletorFontes fontes={fontes} extras={fontesExtras} onChange={(f, x) => { setFontes(f); setFontesExtras(x) }} />}
+    {sistemaDaCampanha(sistema) === 'dnd5e-srd' && <SeletorFontes baseLivro={baseLivro} onBaseChange={setBaseLivro} fontes={fontes} extras={fontesExtras} onChange={(f, x) => { setFontes(f); setFontesExtras(x) }} />}
     <fieldset className="space-y-3"><legend className="mb-3 font-semibold">Modelo padrão de edição das fichas</legend>
       {modelos.map(m => <label key={m.id} className={'flex cursor-pointer gap-3 rounded-xl border p-4 ' + (modelo === m.id ? 'border-(--a-b79aff) bg-(--s-3a2a53)' : 'border-(--a-55456e)')}>
         <input type="radio" name="modelo" checked={modelo === m.id} onChange={() => { setModelo(m.id); setRegras(permissoesPadrao(m.id)) }} className="accent-(--a-b79aff)" />

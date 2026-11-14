@@ -43,7 +43,11 @@ export const POST = rota(async req => {
   })
   // Sem a migração 027 (coluna config_progressao), cria sem o modo: a campanha usa o padrão Híbrido.
   const { config_progressao, ...semModo } = v.valor
-  const [campanha] = config_progressao ? await criar(v.valor).catch(() => criar(semModo)) : await criar(v.valor)
+  // A edição-base do D&D é uma regra da campanha: jamais criar silenciosamente
+  // sem ela caso o banco não tenha a coluna config_progressao (migração 027).
+  const [campanha] = config_progressao?.baseLivro
+    ? await criar(v.valor).catch(() => { throw new ErroApi(409, 'É necessário aplicar a migração 027 para salvar a edição-base do D&D nesta campanha.') })
+    : config_progressao ? await criar(v.valor).catch(() => criar(semModo)) : await criar(v.valor)
   try {
     await rest('prg_campanha_membros', { method: 'POST', body: JSON.stringify({ campanha_id: campanha.id, aventureiro_id: eu, papel: 'mestre' }) })
   } catch (e) {

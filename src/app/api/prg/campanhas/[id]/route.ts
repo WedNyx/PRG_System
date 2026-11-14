@@ -60,6 +60,7 @@ export const PATCH = rota<Ctx>(async (req, { params }) => {
     const antes = lerConfiguracaoProgressao(atual?.config_progressao)
     v.valor.config_progressao = { ...v.valor.config_progressao, excecoesPorFicha: { ...antes.excecoesPorFicha, ...v.valor.config_progressao.excecoesPorFicha },
       // Fontes: só mudam quando vierem no pedido.
+      ...(v.valor.config_progressao.baseLivro === undefined && antes.baseLivro ? { baseLivro: antes.baseLivro } : {}),
       ...(v.valor.config_progressao.fontes === undefined && antes.fontes ? { fontes: antes.fontes } : {}),
       ...(v.valor.config_progressao.fontesExtras === undefined && antes.fontesExtras ? { fontesExtras: antes.fontesExtras } : {}) }
   }

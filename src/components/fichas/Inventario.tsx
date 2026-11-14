@@ -9,11 +9,16 @@ import { arteDoItem, CORES_FORJA, corDaRaridade, FORMAS, nomeAleatorio, RARIDADE
 import { Backpack, Dice5, Gift, Minus, Moon, Pencil, Plus, Shield, Sparkles, Trash2, X } from 'lucide-react'
 import type { Calculo } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
+import type { LivroBaseDnd } from '@/lib/sistemas/dndLivros'
 import { alvosDeBonus, CATEGORIAS_ITEM, lerItens, lerPeso, lerPoderes, mostrarPeso, lerUso, normalizarItem, normalizarPoder, podeUsar, TIPOS_PODER, type Bonus, type Item, type Poder, type Uso } from '@/lib/sistemas/inventario'
 import NaTela from '@/components/NaTela'
 import CatalogoArmasDnd2024 from './CatalogoArmasDnd2024'
-import { ARMAS_DND_2024, alcanceEmMetrosArmaDnd, armaDndPorId, atributoParaArmaDnd, descricaoArmaDnd, expressaoDanoArmaDnd, expressaoDanoLivreDnd, pesoEmKgArmaDnd, type ArmaDnd2024 } from '@/lib/sistemas/dnd2024Armas'
-import { ARMAS_DND_EXPANDIDAS, referenciaArmaDndPorId, type ReferenciaArmaDnd } from '@/lib/sistemas/dnd2024ArmasExpandidas'
+import { alcanceEmMetrosArmaDnd, atributoParaArmaDnd, descricaoArmaDnd, expressaoDanoArmaDnd, expressaoDanoLivreDnd, pesoEmKgArmaDnd, type ArmaDnd2024 } from '@/lib/sistemas/dnd2024Armas'
+import { ARMAS_DND_2014, armaDndPorIdEdicao, descricaoArma2014 } from '@/lib/sistemas/dnd2014Armas'
+import { ARMAS_DND_2024 } from '@/lib/sistemas/dnd2024Armas'
+import { lerLivrosDnd } from '@/lib/sistemas/dndLivros'
+import { arsenaisPermitidosDnd } from '@/lib/sistemas/dndArsenais'
+import { referenciaArmaDndPorId, type ReferenciaArmaDnd } from '@/lib/sistemas/dnd2024ArmasExpandidas'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
@@ -25,11 +30,13 @@ type Props = { s: Sistema; d: DadosFicha; c: Calculo; onChange: (d: DadosFicha) 
   /** Abre a janela de descanso (curto/longo). */
   abrirDescanso?: () => void
   /** Ficha de campanha: abre a janela para passar o item a outro personagem. */
-  passarItem?: (it: Item, tem: number) => void }
+  passarItem?: (it: Item, tem: number) => void
+  edicaoDnd?: LivroBaseDnd }
 
 /** Seção “Inventário”: itens com quantidade, peso, equipado, dano e bônus automáticos. */
-export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, passarItem }: Props) {
+export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, passarItem, edicaoDnd = 'phb2024' }: Props) {
   const itens = lerItens(d.itens), uso = lerUso(d.uso)
+  const livrosDnd = lerLivrosDnd(d.dndLivros, edicaoDnd)
   const [editando, setEditando] = useState<Item | null>(null)
   const [catalogoAberto, setCatalogoAberto] = useState(false)
   const [atributosArma, setAtributosArma] = useState<Record<string, 'FOR' | 'DES'>>({})
@@ -47,14 +54,15 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
   function adicionarArmaCatalogo(a: ArmaDnd2024) {
     if (itens.length >= 300) { toast.error('O inventário já chegou ao limite de 300 itens.'); return }
     salvarItem({ id: novoId(), nome: a.nome, categoria: 'arma', peso: pesoEmKgArmaDnd(a),
-      dano: a.dano, alcance: alcanceEmMetrosArmaDnd(a), descricao: descricaoArmaDnd(a),
+      ...(a.dano ? { dano: a.dano } : {}), alcance: alcanceEmMetrosArmaDnd(a),
+      descricao: a.id.startsWith('2014-') ? descricaoArma2014(a) : descricaoArmaDnd(a),
       armaDnd: a.id, bonus: [] })
     setCatalogoAberto(false)
     toast.success(a.nome + ' adicionada ao inventário!')
   }
   function adicionarReferenciaCatalogo(ref: ReferenciaArmaDnd, baseId?: string) {
     if (itens.length >= 300) { toast.error('O inventário já chegou ao limite de 300 itens.'); return }
-    const base = armaDndPorId(baseId)
+    const base = armaDndPorIdEdicao(baseId)
     const magico = ref.classe === 'magica' || ref.classe === 'indice'
     const item: Item = { id: novoId(), nome: ref.nome, categoria: 'arma',
       peso: base ? pesoEmKgArmaDnd(base) : 0, bonus: [],
@@ -97,8 +105,11 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
   const abaAtual = abasItens.some(x => x.id === aba) ? aba : 'todos'
   const linhaItem = (it: Item) => {
           const eq = !!uso.itens[it.id]?.equipado, n = qtd(it)
-          const armaDnd = s.id === 'dnd5e-srd' && it.categoria === 'arma' ? armaDndPorId(it.armaDnd) : null
+          const armaDnd = s.id === 'dnd5e-srd' && it.categoria === 'arma' ? armaDndPorIdEdicao(it.armaDnd) : null
           const referenciaDnd = s.id === 'dnd5e-srd' && it.categoria === 'arma' ? referenciaArmaDndPorId(it.armaRefDnd) : null
+          const armaForaDaEdicao = !!armaDnd && (edicaoDnd === 'phb2014'
+            ? !armaDnd.id.startsWith('2014-')
+            : armaDnd.id.startsWith('2014-') && !livrosDnd.suplementos.includes('phb2014'))
           const atributoArma = armaDnd ? atributoParaArmaDnd(armaDnd, c.mods, atributosArma[it.id]) : null
           const duasMaos = !!duasMaosArma[it.id], leveExtra = !!ataqueLeveExtra[it.id]
           const danoNormal = armaDnd && atributoArma ? expressaoDanoArmaDnd(armaDnd, atributoArma.mod, false, duasMaos, it.bonusArma, leveExtra) : ''
@@ -117,6 +128,10 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
             </div>
             {(it.bonus.length > 0 || it.descricao) && <p className="mt-1 text-xs text-(--a-c9bcd9)">{it.bonus.map(b => `${nomeAlvo[b.alvo] ?? b.alvo} ${b.valor >= 0 ? '+' : ''}${b.valor}`).join(' · ')}{it.bonus.length && it.descricao ? ' — ' : ''}{it.descricao}</p>}
             {referenciaDnd && <p className="mt-1 text-[11px] font-medium text-(--a-d3adf0)">📖 {referenciaDnd.livro} · {referenciaDnd.edicao}</p>}
+            {armaForaDaEdicao && <p role="alert" className="mt-2 rounded-lg border border-amber-500/40 p-2 text-xs text-amber-200">
+              ⚠️ Arma registrada com regras de outra edição. Escolha o modelo correspondente ao livro atual antes de rolar.
+              Os dados foram preservados; nenhuma conversão automática foi feita.
+            </p>}
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <span className="inline-flex items-center rounded-lg border border-(--a-5e4b78)">
                 <button type="button" disabled={somenteLeitura || n <= 0} onClick={() => mudarQtd(it, -1)} aria-label={'Menos ' + it.nome} className="px-2 py-1 disabled:opacity-40"><Minus size={13} /></button>
@@ -130,6 +145,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
               {!somenteLeitura && <><button type="button" className={botao} onClick={() => setEditando(it)} aria-label={'Editar ' + it.nome}><Pencil size={13} /></button>
                 <button type="button" className={botao} onClick={() => remover(it)} aria-label={'Remover ' + it.nome}><Trash2 size={13} /></button></>}
             </div>
+            {armaDnd && !armaDnd.dano && <p className="mt-2 text-xs text-amber-200">Rede 2014: sem dano; verifique as regras especiais de captura no PHB 2014.</p>}
             {!armaDnd && s.id === 'dnd5e-srd' && it.categoria === 'arma' && <div className="mt-3 space-y-2 rounded-lg border border-(--a-5e4b78)/70 bg-(--s-151123)/50 p-2.5">
               {referenciaDnd && it.dano && <label className="flex items-center gap-2 text-xs text-(--a-c4b6d4)">Atributo do dano
                 <select value={atributoLivre} aria-label={'Atributo de dano para ' + it.nome}
@@ -149,9 +165,9 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
               </div>}
               <p className="text-[11px] text-(--a-a998bd)">No crítico somente os dados dobram. Confira bônus especiais, condições e proficiência no livro e com o mestre.</p>
             </div>}
-            {armaDnd && atributoArma && <div className="mt-3 space-y-2 rounded-lg border border-(--a-5e4b78)/70 bg-(--s-151123)/50 p-2.5">
+            {armaDnd && atributoArma && !!armaDnd.dano && <div className="mt-3 space-y-2 rounded-lg border border-(--a-5e4b78)/70 bg-(--s-151123)/50 p-2.5">
               <div className="flex flex-wrap items-center gap-2 text-xs text-(--a-cfc0df)">
-                <span>{armaDnd.tipo}</span><span>· Maestria {armaDnd.maestria}</span>
+                <span>{armaDnd.tipo}</span>{armaDnd.maestria && <span>· Maestria {armaDnd.maestria}</span>}
                 <span>· Atributo {atributoArma.atributo} ({atributoArma.mod >= 0 ? '+' : ''}{atributoArma.mod})</span>
                 {it.bonusArma ? <span>· Encantamento +{it.bonusArma}</span> : null}
               </div>
@@ -169,10 +185,10 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
                   onChange={e => setAtaqueLeveExtra(a => ({ ...a, [it.id]: e.target.checked }))} /> Ataque adicional (sem modificador positivo)</label>}
               </div>
               <div className="flex flex-wrap gap-2">
-                <button type="button" className={botao} disabled={n <= 0}
+                <button type="button" className={botao} disabled={n <= 0 || armaForaDaEdicao}
                   onClick={() => void rolar(danoNormal, it.nome + ' · dano ' + armaDnd.tipo)}>
                   <Dice5 size={14} /> Dano: {danoNormal}</button>
-                <button type="button" className={botao + ' border-amber-400/50 text-amber-100'} disabled={n <= 0}
+                <button type="button" className={botao + ' border-amber-400/50 text-amber-100'} disabled={n <= 0 || armaForaDaEdicao}
                   onClick={() => void rolar(danoCritico, it.nome + ' · CRÍTICO ' + armaDnd.tipo)}>
                   <Sparkles size={14} /> Crítico: {danoCritico}</button>
               </div>
@@ -185,7 +201,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Backpack size={18} /> Inventário</h2>
       {!somenteLeitura && <div className="flex flex-wrap gap-2">
-        {s.id === 'dnd5e-srd' && <button type="button" className={botao + ' border-(--a-b99bff)'} onClick={() => setCatalogoAberto(true)}><Dice5 size={14} /> Arsenal ({38 + ARMAS_DND_EXPANDIDAS.length})</button>}
+        {s.id === 'dnd5e-srd' && <button type="button" className={botao + ' border-(--a-b99bff) min-h-10'} onClick={() => setCatalogoAberto(true)}><Dice5 size={14} /> Arsenais por livro ({arsenaisPermitidosDnd(edicaoDnd, livrosDnd.suplementos).length})</button>}
         <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', categoria: 'equipamento', peso: 0, bonus: [] })}><Plus size={14} /> Novo item</button>
       </div>}
     </div>
@@ -222,8 +238,8 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
         <ul className="space-y-2">{lista.map(linhaItem)}</ul>
       </div>
     }) : <ul className="mt-3 space-y-2">{itensVisiveis.filter(i => abaAtual === 'magico' ? i.magico : i.categoria === abaAtual).map(linhaItem)}</ul>}
-    {editando && <EditorItem s={s} inicial={editando} salvar={salvarItem} fechar={() => setEditando(null)} />}
-    {catalogoAberto && s.id === 'dnd5e-srd' && <CatalogoArmasDnd2024 adicionar={adicionarArmaCatalogo} adicionarReferencia={adicionarReferenciaCatalogo} fechar={() => setCatalogoAberto(false)} />}
+    {editando && <EditorItem s={s} edicaoDnd={edicaoDnd} inicial={editando} salvar={salvarItem} fechar={() => setEditando(null)} />}
+    {catalogoAberto && s.id === 'dnd5e-srd' && <CatalogoArmasDnd2024 edicao={edicaoDnd} livrosAtivos={livrosDnd.suplementos} adicionar={adicionarArmaCatalogo} adicionarReferencia={adicionarReferenciaCatalogo} fechar={() => setCatalogoAberto(false)} />}
   </section>
 }
 
@@ -254,12 +270,13 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
 
   return <section className={card}>
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Sparkles size={18} /> Poderes e magias</h2>
+      <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Sparkles size={18} /> {s.id === 'dnd5e-srd' ? 'Poderes extras e personalizados' : 'Poderes e magias'}</h2>
       <div className="flex gap-2">
         {comUsos && !somenteLeitura && <button type="button" className={botao} onClick={descansar} title="Zera os usos gastos"><Moon size={14} /> Descansar</button>}
         {!somenteLeitura && <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', tipo: 'habilidade' })}><Plus size={14} /> Novo poder</button>}
       </div>
     </div>
+    {s.id === 'dnd5e-srd' && <p className="mt-2 text-xs text-(--a-c4b6d4)">Habilidades de raça/espécie, classe e antecedente são geradas nos hexágonos oficiais da Árvore. Adicione aqui apenas poderes aprendidos ou concedidos além daqueles naturais.</p>}
     {!poderes.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">Nenhum poder ainda.{!somenteLeitura && ' Toque em “Novo poder”.'}</p>}
     <ul className="mt-3 space-y-2">{poderes.map(p => {
       const tipo = TIPOS_PODER.find(t => t.id === p.tipo)!, gastos = uso.poderes[p.id] ?? 0
@@ -298,7 +315,7 @@ function Janela({ titulo, fechar, children, ampla = false }: { titulo: string; f
 
 /** Editor de item (usado na ficha e na biblioteca do mestre). `s` pode faltar (biblioteca sem sistema conhecido). */
 /** Foto do item (da galeria do celular ou do computador). Com foto, ela aparece no lugar do desenho da forja. */
-function FotoDoItem({ it, setIt }: { it: Item; setIt: React.Dispatch<React.SetStateAction<Item>> }) {
+function FotoDoItem({ it, setIt, estiloDnd = false }: { it: Item; setIt: React.Dispatch<React.SetStateAction<Item>>; estiloDnd?: boolean }) {
   const [ocupado, setOcupado] = useState(false)
   async function enviar(f: File) {
     setOcupado(true)
@@ -309,7 +326,7 @@ function FotoDoItem({ it, setIt }: { it: Item; setIt: React.Dispatch<React.SetSt
     } catch (e) { toast.error(e instanceof ErroNuvem ? e.message : 'Falha ao enviar a imagem.') } finally { setOcupado(false) }
   }
   return <div className="flex items-center gap-3 rounded-xl border border-(--a-8b6cba)/70 bg-(--s-171325) p-3">
-    <ArteItem item={it} tamanho={64} />
+    <ArteItem item={it} tamanho={64} estiloDnd={estiloDnd} />
     <div className="min-w-0 flex-1 text-sm">
       <p className="font-semibold">📷 Foto do item <span className="text-xs font-normal text-(--a-c4b6d4)">(opcional)</span></p>
       <p className="text-[11px] text-(--a-c4b6d4)">{it.imagem ? 'Sua foto aparece no lugar da ilustração, sem apagar a arte selecionada.' : 'Escolha uma foto da sua galeria ou use as ilustrações da biblioteca.'}</p>
@@ -323,23 +340,36 @@ function FotoDoItem({ it, setIt }: { it: Item; setIt: React.Dispatch<React.SetSt
   </div>
 }
 
-export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicial: Item; salvar: (i: Item) => void; fechar: () => void }) {
+export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }: { s?: Sistema; inicial: Item; salvar: (i: Item) => void; fechar: () => void; edicaoDnd?: LivroBaseDnd }) {
   const [it, setIt] = useState<Item>(inicial)
   const dnd = s?.id === 'dnd5e-srd'
   const referencia = dnd ? referenciaArmaDndPorId(it.armaRefDnd) : null
+  const armasEdicao = edicaoDnd === 'phb2014' ? ARMAS_DND_2014 : ARMAS_DND_2024
+  const icoCategoria = it.categoria === 'arma' ? (
+    edicaoDnd === 'phb2014'
+      ? ['espada-medieval','adaga-medieval','machado-combate','maca-pesada','lanca-medieval','tridente-medieval','espadas-cruzadas','arqueiro','flecha','lamina','maca']
+      : ['espada-encantada','espada-medieval','adaga-medieval','machado-combate','maca-pesada','lanca-medieval','tridente-medieval','revolver','choque-espadas','arqueiro','flecha','garra-flamejante','varinha']
+  )
+    : it.categoria === 'armadura' ? ['escudo','amuleto','coroa']
+    : it.categoria === 'consumivel' ? ['frasco-veneno','gema','varinha']
+    : it.categoria === 'tesouro' ? ['gema','anel','coroa','amuleto']
+    : ['grimorio','mapa','mochila','candelabro','anel','amuleto']
+  const iconesIndicados = ICONES_RPG.filter(x => icoCategoria.includes(x.id))
+    .sort((x, y) => icoCategoria.indexOf(x.id) - icoCategoria.indexOf(y.id))
+  const iconesRestantes = ICONES_RPG.filter(x => !icoCategoria.includes(x.id))
   const alvos = s ? alvosDeBonus(s) : []
   const setB = (i: number, b: Partial<Bonus>) => setIt({ ...it, bonus: it.bonus.map((x, k) => k === i ? { ...x, ...b } : x) })
   return <Janela titulo={dnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla>
     <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return } salvar({ ...v, id: inicial.id }) }}>
       <div className="flex items-center gap-3 rounded-xl border border-(--a-62527e) bg-gradient-to-r from-(--s-2b2143) to-(--s-171325) p-3">
-        <ArteItem item={it} tamanho={72} />
+        <ArteItem item={it} tamanho={72} estiloDnd={dnd} />
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-(--a-d3adf0)">Prévia do item</p>
           <p className="mt-1 truncate font-semibold">{it.nome || 'Sua próxima descoberta'}</p>
-          <p className="mt-1 text-[11px] text-(--a-c4b6d4)">Foto própria ou arte da Game-Icons; personalize as cores e a raridade na seção de aparência.</p>
+          <p className="mt-1 text-[11px] text-(--a-c4b6d4)">{dnd ? 'Escolha um ícone Game-Icons ou use sua própria foto. Sem Forja nas fichas de D&D.' : 'Foto própria, arte da Game-Icons e cores da Forja.'}</p>
         </div>
       </div>
-      <FotoDoItem it={it} setIt={setIt} />
+      <FotoDoItem it={it} setIt={setIt} estiloDnd={dnd} />
       <label className="block">Nome<input required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Espada longa" /></label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block">Tipo<select value={it.categoria} onChange={e => setIt({ ...it, categoria: e.target.value as Item['categoria'] })} className={input + ' mt-1'}>{CATEGORIAS_ITEM.map(c => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></label>
@@ -349,29 +379,29 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
         {referencia && <p className="rounded-lg border border-(--a-8b6cba)/50 bg-(--s-241a3a) p-2">📖 <strong>{referencia.nome}</strong> · {referencia.livro} ({referencia.edicao}). Efeitos exclusivos devem ser conferidos no livro.</p>}
         <label className="block">Modelo físico da arma (opcional)
           <select className={input + ' mt-1'} value={it.armaDnd ?? ''} onChange={e => {
-            const a = armaDndPorId(e.target.value)
+            const a = armaDndPorIdEdicao(e.target.value)
             setIt({ ...it, armaDnd: a?.id, ...(a ? { dano: a.dano, peso: pesoEmKgArmaDnd(a), alcance: alcanceEmMetrosArmaDnd(a) } : {}) })
           }}>
             <option value="">Dano configurado manualmente</option>
-            {ARMAS_DND_2024.map(a => <option key={a.id} value={a.id}>{a.nome} · {a.dano}</option>)}
+            {armasEdicao.map(a => <option key={a.id} value={a.id}>{a.nome} · {a.dano || 'Sem dano'}</option>)}
           </select>
         </label>
         <p className="text-[11px] text-(--a-c4b6d4)">Escolher uma arma base permite rolar dano e crítico automaticamente. Não aplica efeitos mágicos exclusivos.</p>
       </div>}
       {dnd && <label className="flex items-center gap-2 rounded-lg border border-(--a-8b6cba)/50 bg-(--s-241a3a) p-3 text-xs"><input type="checkbox" checked={!!it.magico} onChange={e => setIt({ ...it, magico: e.target.checked || undefined })} className="h-4 w-4 accent-(--a-b99bff)" /> ✨ Item mágico · Exibir na coleção mágica</label>}
       {s?.id === 'dnd5e-srd' && it.armaDnd && <div className="rounded-lg border border-(--a-55456e) p-3 text-xs">
-        <p className="mb-2">Arma do catálogo: <strong>{armaDndPorId(it.armaDnd)?.nome}</strong>. O dano e o crítico usam automaticamente os atributos da ficha.</p>
+        <p className="mb-2">Arma do catálogo: <strong>{armaDndPorIdEdicao(it.armaDnd)?.nome}</strong>. {it.armaDnd?.startsWith('2014-') ? 'Regras e dano da edição 2014.' : 'Regras e dano da edição 2024.'} O crítico dobra apenas os dados, não os modificadores.</p>
         <label className="flex items-center gap-2">Bônus mágico da arma (+0 a +3)
           <select value={it.bonusArma ?? 0} onChange={e => setIt({ ...it, bonusArma: Number(e.target.value), magico: Number(e.target.value) > 0 ? true : it.magico })}
             className={input + ' max-w-24'}>{[0,1,2,3].map(v => <option key={v} value={v}>+{v}</option>)}</select>
         </label>
       </div>}
       <details className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
-        <summary className="cursor-pointer font-semibold text-(--a-d3adf0)">🎨 Escolher ícone Game-Icons ou personalizar na Forja</summary>
+        <summary className="cursor-pointer font-semibold text-(--a-d3adf0)">{dnd ? '🎨 Ícones Game-Icons · adequados ao tipo de item e ao livro D&D' : '🎨 Ícone Game-Icons ou personalizar na Forja'}</summary>
         <div className="mt-3 space-y-3">
           <p className="text-xs text-(--a-c4b6d4)">Escolha uma ilustração da biblioteca. A foto enviada sempre tem prioridade; você pode removê-la depois.</p>
           <div className="grid grid-cols-3 gap-2 min-[400px]:grid-cols-4 sm:grid-cols-6" role="group" aria-label="Biblioteca de ilustrações de itens">
-            {ICONES_RPG.map(icone => <button key={icone.id} type="button" title={icone.nome}
+            {(dnd ? iconesIndicados : ICONES_RPG).map(icone => <button key={icone.id} type="button" title={icone.nome}
               aria-label={'Usar ilustração ' + icone.nome} aria-pressed={it.iconeBiblioteca === icone.id}
               onClick={() => setIt({ ...it, iconeBiblioteca: icone.id, arte: undefined })}
               className={'flex min-w-0 flex-col items-center gap-1 rounded-lg border p-2 transition hover:bg-(--s-34294f) ' +
@@ -387,7 +417,20 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
             Ilustrações: <a href="https://game-icons.net" target="_blank" rel="noopener noreferrer" className="underline">Game-Icons.net</a>
             {' · '}autores Lorc e Delapouite{' · '}licença CC BY 3.0. Vetores adaptados (fundo removido e cores aplicadas).
           </p>
-          <Forja it={it} setIt={setIt} />
+          {dnd && <details className="rounded-lg border border-(--a-55456e) p-2">
+            <summary className="cursor-pointer text-xs text-(--a-d3adf0)">Ver todos os ícones Game-Icons ({iconesRestantes.length})</summary>
+            <div className="mt-2 grid grid-cols-3 gap-2 min-[400px]:grid-cols-4 sm:grid-cols-6">
+              {iconesRestantes.map(icone => <button type="button" key={icone.id} title={icone.nome}
+                aria-label={'Usar ilustração ' + icone.nome} aria-pressed={it.iconeBiblioteca === icone.id}
+                onClick={() => setIt({ ...it, iconeBiblioteca: icone.id, arte: undefined })}
+                className={'flex min-w-0 flex-col items-center gap-1 rounded-lg border p-2 hover:bg-(--s-34294f) ' +
+                  (it.iconeBiblioteca === icone.id ? 'border-(--a-ed9cd8)' : 'border-(--a-55456e)')}>
+                <ArteItem item={{ ...it, imagem: undefined, arte: undefined, iconeBiblioteca: icone.id }} tamanho={45} estiloDnd />
+                <span className="w-full truncate text-[10px]">{icone.nome}</span>
+              </button>)}
+            </div>
+          </details>}
+          {!dnd && <Forja it={it} setIt={setIt} />}
           <label className="block text-xs">Raridade
             <select value={it.raridade ?? ''} onChange={e => setIt({ ...it, raridade: e.target.value as Item['raridade'] || undefined })} className={input + ' mt-1'}>
               <option value="">Sem raridade</option>

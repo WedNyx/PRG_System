@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { ICONES_RPG, iconeRpgPorId, sugestaoIconeRpg } from './iconesRpg'
+import { ICONES_RPG, iconeRpgPorId, sugestaoIconeRpg, sugestaoIconeDnd } from './iconesRpg'
 import { lerItens, normalizarItem, transferirItem } from './sistemas/inventario'
 import { sistemaPorId, SISTEMAS } from './sistemas/catalogo'
 import { normalizarFicha } from './sistemas/calculo'
 
 describe('Biblioteca visual RPG Game-Icons · PR #48', () => {
-  it('contém 32 SVGs originais identificados e sem o fundo preto', () => {
-    expect(ICONES_RPG).toHaveLength(32)
+  it('contém pelo menos 43 SVGs originais identificados e sem o fundo preto', () => {
+    expect(ICONES_RPG.length).toBeGreaterThanOrEqual(43)
     expect(new Set(ICONES_RPG.map(x => x.id)).size).toBe(ICONES_RPG.length)
     for (const ic of ICONES_RPG) {
       expect(ic.nome.length).toBeGreaterThan(2)
@@ -30,6 +30,18 @@ describe('Biblioteca visual RPG Game-Icons · PR #48', () => {
     expect(sugestaoIconeRpg('bolsa')).toBe('mochila')
     expect(sugestaoIconeRpg('cajado')).toBe('varinha')
     expect(sugestaoIconeRpg('forma-inexistente')).toBeNull()
+  })
+  it('sugere ícones específicos para armas e objetos da edição D&D, sem Forja', () => {
+    expect(sugestaoIconeDnd('Espada longa','arma')).toBe('espada-medieval')
+    expect(sugestaoIconeDnd('Adaga','arma')).toBe('adaga-medieval')
+    expect(sugestaoIconeDnd('Tridente','arma')).toBe('tridente-medieval')
+    expect(sugestaoIconeDnd('Machado de batalha','arma')).toBe('machado-combate')
+    expect(sugestaoIconeDnd('Revólver','arma')).toBe('revolver')
+    expect(sugestaoIconeDnd('Arco longo','arma')).toBe('arqueiro')
+    expect(sugestaoIconeDnd('item desconhecido','arma')).toBe('espada-medieval')
+    expect(sugestaoIconeDnd('item desconhecido','consumivel')).toBe('pocao')
+    for (const categoria of ['arma','armadura','consumivel','equipamento','tesouro','outro'])
+      expect(iconeRpgPorId(sugestaoIconeDnd('item sem nome',categoria))).not.toBeNull()
   })
   it('salva a imagem e o ícone sem perder nenhum, inclusive após normalização da ficha', () => {
     const imagem = 'https://abc.supabase.co/storage/v1/object/public/prg-mesa/imagens/arma.png'

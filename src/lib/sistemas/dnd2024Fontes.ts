@@ -11,6 +11,7 @@
 import type { MarcoDnd } from './dnd2024Progressao'
 import type { DadosFicha } from './tipos'
 import { idDe } from './dnd2024Classes'
+import { SUPLEMENTOS_DND } from './dndLivros'
 
 export type FonteDnd = {
   id: string; nome: string; original: string; ano: number
@@ -37,6 +38,12 @@ export const FONTES_DND: FonteDnd[] = [
     traz: 'Ferramentas do mestre, tesouros e itens mágicos, criação de mundo. Só marca que a mesa usa o livro.' },
   { id: 'mm2025', nome: 'Manual dos Monstros (2025)', original: 'Monster Manual (2025)', ano: 2025, tipo: 'comercial', opcoesNaFicha: false,
     traz: 'Fichas de criaturas. Só marca que a mesa usa o livro (o encontro aceita qualquer criatura pelo Nível de Desafio).' },
+  // Os suplementos têm nome, versão e ano; regras não publicadas no SRD são referência.
+  ...SUPLEMENTOS_DND.filter(x => x.id !== 'dmg2024' && x.id !== 'mm2025').map(x => ({
+    id: x.id, nome: x.titulo + ' — ' + x.versao + ' (' + x.ano + ')',
+    original: x.titulo, ano: x.ano, tipo: 'comercial' as const,
+    opcoesNaFicha: x.implementacao === 'parcial', traz: x.descricao,
+  })),
 ]
 export const nomeDaFonte = (id: string) => FONTES_DND.find(f => f.id === id)?.nome ?? id
 

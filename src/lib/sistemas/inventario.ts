@@ -8,7 +8,7 @@
 import { imagemDaPlataforma } from '../imagens'
 import type { Sistema } from './tipos'
 import { lerArte, lerRaridade, type ArteItem, type Raridade } from '../itensArte'
-import { armaDndPorId } from './dnd2024Armas'
+import { armaDndPorIdEdicao } from './dnd2014Armas'
 import { referenciaArmaDndPorId } from './dnd2024ArmasExpandidas'
 import { iconeRpgPorId } from '../iconesRpg'
 
@@ -65,7 +65,7 @@ export function normalizarItem(v: unknown): Item | null {
   const dano = txt(o.dano, 40).trim()
   const arte = lerArte(o.arte), raridade = lerRaridade(o.raridade)
   const iconeBiblioteca = iconeRpgPorId(o.iconeBiblioteca)
-  const armaDnd = categoria === 'arma' ? armaDndPorId(o.armaDnd) : null
+  const armaDnd = categoria === 'arma' ? armaDndPorIdEdicao(o.armaDnd) : null
   const armaRefDnd = categoria === 'arma' ? referenciaArmaDndPorId(o.armaRefDnd) : null
   const bonusArma = armaDnd && typeof o.bonusArma === 'number' && Number.isInteger(o.bonusArma) && o.bonusArma >= 1 && o.bonusArma <= 3 ? o.bonusArma : 0
   return { id: id(o.id), nome, categoria, peso: Math.round(num(o.peso, 0, 100000) * 1000) / 1000, ...(dano && EXPR.test(dano) ? { dano } : {}), ...(Number(o.alcance) > 0 ? { alcance: num(o.alcance, 0, 1000) } : {}), bonus, ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}),

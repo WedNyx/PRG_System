@@ -62,6 +62,9 @@ export function livrosPermitidosMagias2014(d:Pick<DadosFicha,'dndLivros'>):strin
 export function validarAlteracoesMagias2014(
   antes:Partial<DadosFicha>,depois:Partial<DadosFicha>,edicao:'phb2014'|'phb2024',
 ):string[] {
+  // Fichas sem grimório não ganham erro ao alterar nível, classe ou livro.
+  if(JSON.stringify(antes.dnd2014Magias??[])===JSON.stringify(depois.dnd2014Magias??[]) &&
+    (!Array.isArray(depois.dnd2014Magias) || depois.dnd2014Magias.length===0))return []
   if(JSON.stringify(antes.dnd2014Magias??[])===JSON.stringify(depois.dnd2014Magias??[]) &&
     antes.campos?.classe===depois.campos?.classe && antes.campos?.nivel===depois.campos?.nivel &&
     JSON.stringify(antes.dnd2014Multiclasse??{})===JSON.stringify(depois.dnd2014Multiclasse??{}) &&

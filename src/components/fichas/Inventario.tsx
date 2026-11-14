@@ -107,6 +107,9 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
           const eq = !!uso.itens[it.id]?.equipado, n = qtd(it)
           const armaDnd = s.id === 'dnd5e-srd' && it.categoria === 'arma' ? armaDndPorIdEdicao(it.armaDnd) : null
           const referenciaDnd = s.id === 'dnd5e-srd' && it.categoria === 'arma' ? referenciaArmaDndPorId(it.armaRefDnd) : null
+          const armaForaDaEdicao = !!armaDnd && (edicaoDnd === 'phb2014'
+            ? !armaDnd.id.startsWith('2014-')
+            : armaDnd.id.startsWith('2014-') && !livrosDnd.suplementos.includes('phb2014'))
           const atributoArma = armaDnd ? atributoParaArmaDnd(armaDnd, c.mods, atributosArma[it.id]) : null
           const duasMaos = !!duasMaosArma[it.id], leveExtra = !!ataqueLeveExtra[it.id]
           const danoNormal = armaDnd && atributoArma ? expressaoDanoArmaDnd(armaDnd, atributoArma.mod, false, duasMaos, it.bonusArma, leveExtra) : ''
@@ -125,6 +128,10 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
             </div>
             {(it.bonus.length > 0 || it.descricao) && <p className="mt-1 text-xs text-(--a-c9bcd9)">{it.bonus.map(b => `${nomeAlvo[b.alvo] ?? b.alvo} ${b.valor >= 0 ? '+' : ''}${b.valor}`).join(' · ')}{it.bonus.length && it.descricao ? ' — ' : ''}{it.descricao}</p>}
             {referenciaDnd && <p className="mt-1 text-[11px] font-medium text-(--a-d3adf0)">📖 {referenciaDnd.livro} · {referenciaDnd.edicao}</p>}
+            {armaForaDaEdicao && <p role="alert" className="mt-2 rounded-lg border border-amber-500/40 p-2 text-xs text-amber-200">
+              ⚠️ Arma registrada com regras de outra edição. Escolha o modelo correspondente ao livro atual antes de rolar.
+              Os dados foram preservados; nenhuma conversão automática foi feita.
+            </p>}
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <span className="inline-flex items-center rounded-lg border border-(--a-5e4b78)">
                 <button type="button" disabled={somenteLeitura || n <= 0} onClick={() => mudarQtd(it, -1)} aria-label={'Menos ' + it.nome} className="px-2 py-1 disabled:opacity-40"><Minus size={13} /></button>
@@ -178,10 +185,10 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
                   onChange={e => setAtaqueLeveExtra(a => ({ ...a, [it.id]: e.target.checked }))} /> Ataque adicional (sem modificador positivo)</label>}
               </div>
               <div className="flex flex-wrap gap-2">
-                <button type="button" className={botao} disabled={n <= 0}
+                <button type="button" className={botao} disabled={n <= 0 || armaForaDaEdicao}
                   onClick={() => void rolar(danoNormal, it.nome + ' · dano ' + armaDnd.tipo)}>
                   <Dice5 size={14} /> Dano: {danoNormal}</button>
-                <button type="button" className={botao + ' border-amber-400/50 text-amber-100'} disabled={n <= 0}
+                <button type="button" className={botao + ' border-amber-400/50 text-amber-100'} disabled={n <= 0 || armaForaDaEdicao}
                   onClick={() => void rolar(danoCritico, it.nome + ' · CRÍTICO ' + armaDnd.tipo)}>
                   <Sparkles size={14} /> Crítico: {danoCritico}</button>
               </div>

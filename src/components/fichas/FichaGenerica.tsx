@@ -166,7 +166,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade e recursos', ajuda: 'Nome, imagem e os dados básicos do personagem. Mais abaixo ficam os valores calculados e as barras de vida e recursos (use − e +).', ok: true },
     { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? `${tituloAtr} e ${tituloPer[0].toLowerCase()}${tituloPer.slice(1)}` : tituloPer) : tituloAtr, sub: 'Testes e rolagens', ajuda: s.atributos.length ? (s.formulaModificador ? 'Digite os valores dos atributos; os bônus se calculam sozinhos. Toque no bônus de um teste ou perícia para rolar.' : s.rolagem === 'assimilacao' ? 'Digite os pontos de cada Instinto. Use o Teste logo abaixo para rolar os dados de símbolos.' : s.rolagem === 'parada' || s.id === 'ordem-paranormal' ? 'Digite os pontos de cada atributo. Toque num teste ou perícia para rolar a parada de dados.' : 'Digite o valor de cada atributo (ele já é o bônus). Toque num teste ou perícia para rolar.') : s.pericias?.modo === 'valor' ? 'Digite a porcentagem de cada perícia e toque nela para rolar.' : 'Escolha o grau de cada uma e toque no valor para rolar.', ok: s.atributos.length > 0 || !!s.pericias },
     { id: 'habilidades', icone: '🌌', nome: s.id === 'dnd5e-srd' ? 'Poderes e habilidades extras' : 'Poderes e habilidades', sub: s.id === 'dnd5e-srd' ? 'Novos poderes e magias escolhidas' : 'Magias, técnicas, usos e custos', ajuda: s.id === 'dnd5e-srd' ? 'Aqui ficam poderes personalizados, opções adicionais e escolhas de magias. Os benefícios naturais de classe, espécie e antecedente aparecem na Árvore de habilidades, sem duplicação.' : 'Adicione poderes com custo, usos e dano. Toque no dado do poder para rolar; os usos gastos voltam no descanso.', ok: true },
-    { id: 'arvore', icone: '🌠', nome: 'Árvore de habilidades', sub: s.id === 'dnd5e-srd' ? 'Hexágonos oficiais + extras do mestre' : 'Hexágonos, pontos e caminhos', ajuda: s.id === 'dnd5e-srd' ? 'A árvore gera automaticamente hexágonos de classe, espécie/raça, origem e antecedente conforme o livro e o nível. Logo abaixo o mestre cria hexágonos extras sem alterar nem duplicar os benefícios naturais.' : 'Gaste pontos para liberar habilidades. Uma habilidade só abre quando a anterior do caminho já foi liberada.', ok: true },
+    { id: 'arvore', icone: '🌠', nome: 'Árvore de habilidades', sub: s.id === 'dnd5e-srd' ? 'Quatro ramos de habilidades por edição' : 'Hexágonos, pontos e caminhos', ajuda: s.id === 'dnd5e-srd' ? 'Quatro árvores verticais mostram classe, espécie/raça, antecedente e habilidades adicionais do mestre. Os cartões oficiais seguem as escolhas e o nível sem duplicar bônus; o mestre edita o quarto ramo.' : 'Gaste pontos para liberar habilidades. Uma habilidade só abre quando a anterior do caminho já foi liberada.', ok: true },
     { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou desenho, separados em abas por tipo. Itens equipados contam nos bônus; os mágicos ficam numa ala própria.', ok: true },
     { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ajuda: 'Espaço livre para a história do personagem, aliados, segredos e lembretes. Embaixo ficam as regras e os créditos do sistema.', ok: true },
     { id: 'guia', icone: '📖', nome: 'Guia de criação', sub: 'Passo a passo deste sistema', ajuda: 'Siga os passos para criar o personagem do jeito que as regras pedem.', ok: !!GUIAS[s.id] },
@@ -316,7 +316,12 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     </section>}
         </>}
         {secao === 'arvore' && <div className="space-y-4">
-          {s.id === 'dnd5e-srd' && <ArvoreDndOficial d={d} edicao={edicaoDnd} fontes={fontesFicha} />}
+          {s.id === 'dnd5e-srd' && <ArvoreDndOficial d={d} edicao={edicaoDnd} fontes={fontesFicha}>
+            <ArvoreHabilidades s={s} d={d} onChange={onChange}
+              somenteLeitura={somenteLeitura || !podeEditarArvore}
+              rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0}
+              mestre={podeEditarArvore} nivel={Math.max(1, Number(d.campos.nivel) || 1)} visualizacao="cartoes" />
+          </ArvoreDndOficial>}
           {s.id === 'dnd5e-srd' && !legado2014 && <details className={card}>
             <summary className="cursor-pointer font-semibold text-(--a-ed9cd8)">🧬 Habilidades raciais com usos e recargas</summary>
             <div className="mt-3"><TracosEspecieDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={(x, r) => void rolarExpr(x, r)} irPara={ir} /></div>
@@ -365,13 +370,10 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
               }}
             />
           </>}
-          <>
-            {s.id === 'dnd5e-srd' && <p className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">🌠 <strong>Hexágonos adicionais do mestre:</strong> habilidades caseiras, talentos extras e recompensas especiais. Esta parte continua editável pelo mestre e não substitui os hexágonos oficiais acima.</p>}
-            <ArvoreHabilidades s={s} d={d} onChange={onChange}
-              somenteLeitura={somenteLeitura || (s.id === 'dnd5e-srd' && !podeEditarArvore)}
-              rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0}
-              mestre={podeEditarArvore} nivel={s.campos.some(x => x.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null} />
-          </>
+          {s.id !== 'dnd5e-srd' && <ArvoreHabilidades s={s} d={d} onChange={onChange}
+            somenteLeitura={somenteLeitura}
+            rolar={(x, r) => void rolarExpr(x, r)} extra={Number(c.vars.prog_arvore) || 0}
+            mestre={podeEditarArvore} nivel={s.campos.some(x => x.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null} />}
         </div>}
         {secao === 'habilidades' && <>
     {s.id === 'dnd5e-srd' && <p className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3 text-sm text-(--a-cfc0df)">✨ <strong>Escolhas adicionais:</strong> aqui você registra magias preparadas e poderes que escolher, aprender ou ganhar do mestre. Traços automáticos de raça, classe e antecedente já aparecem na Árvore de habilidades e não precisam ser criados novamente.</p>}

@@ -1,7 +1,7 @@
 # PRG System — árvore de habilidades: decisões aprovadas
 
-Status: **especificação salva; implementação reservada para a Fase 2**.
-Data: 14/11/2026. Não alterar a árvore atual durante a estabilização do D&D (Fase 1).
+Status: **Fase 2 em implementação na PR de árvores verticais; homologação pendente.**
+Data: 14/11/2026. Fase 1 publicada; preservar os dados antigos da árvore durante a transição visual.
 
 ## Prioridades aprovadas
 

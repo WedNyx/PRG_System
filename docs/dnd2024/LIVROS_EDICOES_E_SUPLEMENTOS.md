@@ -62,3 +62,34 @@ Fontes de consulta:
 - [ ] Se a mesa precisar das regras completas de 2014, a próxima etapa é implementar **motor legado SRD 5.1** separadamente antes de considerar automação completa
 
 **Não mesclar na `main` até homologação manual e revisão de regras com o grupo.**
+
+
+## Complemento: arsenal por publicação, ícones e árvore de características
+
+### Arsenal por livro
+
+- **Livro do Jogador (2014) — 5e:** catálogo PHB/SRD 5.1 com IDs de arma distintos (`2014-...`), para evitar converter silenciosamente dados de itens de 2024. Mostra propriedades antigas, sem Maestria de Armas; inclui Rede (sem dano), Lança de Cavalaria 1d12, Tridente 1d6 (versátil 1d8).
+- **Livro do Jogador (2024) — 5e revisado:** mantém 38 armas SRD 5.2.1, com Maestria, dados de dano e crítico próprios.
+- **Suplementos autorizados:** cada livro aparece como seu próprio arsenal, quando o mestre o libera e o jogador o seleciona na ficha. Itens mágicos comerciais são apenas referências bibliográficas: não inventamos encantamentos ou dano. O livro ainda pode ser consultado e o jogador preenche características manuais.
+- Na ficha de D&D há botão **Arsenais por livro**; filtro por tipo, busca e seletor de publicação, com layout responsivo.
+- Itens já guardados de outra edição ficam preservados, mas a interface avisa incompatibilidade e impede rolagem automática usando os dados da edição errada até revisar o modelo de arma. A foto do item permanece.
+
+### Ícones, foto e raridade
+- Para fichas D&D, **Forja removida do editor e da prévia**. Apenas Game-Icons por nome/tipo, com 43 ícones SVG atribuídos à biblioteca Game-Icons, Lorc e Delapouite (CC BY 3.0); 11 novos ícones adicionais de espadas, adagas, tridente, lança, machado, maça, revólver etc.
+- Ícones aparecem de forma sugerida de acordo com a categoria e, no seletor, com ordem de preferência por versão 2014/2024. A seção **Ver todos os ícones** permite escolher livremente outro desenho.
+- **Foto personalizada continua disponível** para player via galeria do celular/arquivos do computador e mantém prioridade sobre a arte sugerida. Retirar a foto volta ao ícone, sem apagar o item.
+- A Forja permanece disponível para outros sistemas de RPG que já usavam esse recurso; não foi removida globalmente.
+
+### Árvore de origem com hexágonos naturais
+- Na aba **Árvore de Habilidades** do D&D existe agora o painel `ArvoreDndOficial` com hexágonos gerados a partir da ficha para **Classe/Subclasse, Espécie/Raça, Origem/Antecedente e Habilidades do Mestre**.
+- Em 2024, a projeção usa diretamente os marcos SRD 5.2.1 e as escolhas do personagem, respeita níveis, sinaliza decisões pendentes, aceita visualizar níveis futuros e diferencia características comerciais (referência sem conceder efeitos pagos).
+- Em 2014, gera os hexágonos da raça, sub-raça, classe e antecedente conhecidos **como referências para conferência manual** até existir motor SRD 5.1 separado. Não aplica habilidades 2024.
+- Hexágonos oficiais são uma **visualização derivada e sem custo**. Não são gravados na árvore personalizável nem alteram diretamente proficiências, atributos ou poderes. Isso evita bônus duplicados. Os hexágonos extras do mestre aparecem no mesmo quadro, mas sua edição e liberação são feitas no editor abaixo e seguem as permissões de campanha.
+- **Poderes e Habilidades Extras** registra habilidades manuais, magias preparadas e escolhas adicionais do jogador. Magias naturais do antecedente, espécie ou Humano Versátil têm seus módulos de uso no painel da Árvore, sem desaparecer do sistema de recursos.
+- A biblioteca de feitiços segue SRD 5.2.1; fichas D&D 2014 usam campo manual até possuir implementação 2014 própria.
+
+### Testes
+- `src/lib/sistemas/dndArsenaisArvore.test.ts`: diferenças 2014/2024, críticos, compatibilidade de fontes e ausência de duplicação de hexágonos.
+- `src/lib/iconesRpg.test.ts`: catálogo ampliado e sugestões sem ícones externos não autorizados.
+- Homologação manual: em desktop e celular, simular mestre e player escolhendo bases 2014/2024 e suplementos, criando armamentos e testando críticos; conferindo foto personalizada, hexágonos adquiridos, pendentes e futuros, além de poderes caseiros.
+- **Nenhum merge automático.** Revisar CI e prévia Vercel antes de aprovar.

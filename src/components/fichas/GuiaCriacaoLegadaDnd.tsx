@@ -3,6 +3,7 @@
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { SUBRACAS_2014, RACAS_2014, ANTECEDENTES_2014 } from '@/lib/sistemas/dnd2014Criacao'
 import { subclassesDaClasse2014, subclasseAtivaDnd2014 } from '@/lib/sistemas/dnd2014Subclasses'
+import { TALENTOS_PHB_2014, limitesTalentos2014 } from '@/lib/sistemas/dnd2014Talentos'
 import { ATRIBUTOS_DND, aumentosRaciais2014, atributosEfetivos2014, lerAtributosBase2014,
   periciasAntecedente2014, periciasClasse2014 } from '@/lib/sistemas/dnd2014Regras'
 
@@ -27,6 +28,12 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura }: Pr
   const subclasses = subclassesDaClasse2014(classe)
   const classeNivel = Number(d.campos.nivel) || 1
   const selecionada = subclasseAtivaDnd2014(classe, d.dnd2014Subclasse, classeNivel)
+  const limiteTalentos = limitesTalentos2014(d)
+  const talentosEscolhidos = d.dnd2014Talentos ?? []
+  const adicionarTalento = (nome:string) => {
+    if(!nome || talentosEscolhidos.includes(nome) || talentosEscolhidos.length>=limiteTalentos.total)return
+    onChange({...d,dnd2014Talentos:[...talentosEscolhidos,nome]})
+  }
   const periciasClasse = periciasClasse2014(classe)
   const periciasEscolhidas = d.dnd2014PericiasClasse ?? []
   const raciais = d.dnd2014PericiasRaciais ?? []
@@ -138,6 +145,34 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura }: Pr
         {selecionada.marcos?.map(m=>
           <p key={m.nivel} className="text-(--a-c4b6d4)">Nv. {m.nivel}: {m.nome}</p>)}
       </div>}
+    </section>}
+    {(limiteTalentos.total>0 || talentosEscolhidos.length>0) && <section
+      aria-label="Talentos do Livro do Jogador 2014"
+      className="space-y-2 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+      <h4 className="text-sm font-semibold text-(--a-d3adf0)">✨ Talentos · Livro do Jogador 2014</h4>
+      <p className="text-xs text-(--a-c4b6d4)">
+        {talentosEscolhidos.length} de {limiteTalentos.total} escolhas possíveis
+        ({limiteTalentos.aumentos} no lugar de Incremento de Atributo
+        {limiteTalentos.variante>0?' + 1 do Humano Variante':''}).
+        O mestre deve confirmar que a campanha usa a regra opcional de talentos.
+        Os pré-requisitos e efeitos devem ser conferidos no livro; esta escolha não
+        acrescenta bônus automaticamente.
+      </p>
+      {talentosEscolhidos.map(nome=><div key={nome}
+        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-(--a-55456e) p-2">
+        <span className="text-xs font-semibold">{nome}</span>
+        {!somenteLeitura&&<button type="button" className="rounded-lg border border-(--a-55456e) px-3 py-2 text-xs"
+          onClick={()=>onChange({...d,dnd2014Talentos:talentosEscolhidos.filter(x=>x!==nome)})}
+          aria-label={'Remover talento '+nome}>Remover</button>}
+      </div>)}
+      {!somenteLeitura && talentosEscolhidos.length<limiteTalentos.total &&
+        <label className="block text-xs">Adicionar talento permitido
+          <select value="" className={classInput} onChange={e=>adicionarTalento(e.target.value)}>
+            <option value="">Escolha um dos 42 talentos do PHB 2014</option>
+            {TALENTOS_PHB_2014.filter(x=>!talentosEscolhidos.includes(x)).map(nome=>
+              <option key={nome} value={nome}>{nome}</option>)}
+          </select>
+        </label>}
     </section>}
     {periciasClasse && <div className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
       <h4 className="text-sm font-semibold text-(--a-d3adf0)">Perícias iniciais de {classe} · SRD 5.1</h4>

@@ -10,6 +10,7 @@ import { progressoDaFichaDnd } from './dnd2024Ficha'
 import { progressaoVisivel } from './dnd2024Progressao'
 import { ANTECEDENTES_2014, RACAS_2014, SUBRACAS_2014 } from './dnd2014Criacao'
 import { marcosDaClasse2014 } from './dnd2014Marcos'
+import { subclasseAtivaDnd2014 } from './dnd2014Subclasses'
 import { lerLivrosDnd, type LivroBaseDnd } from './dndLivros'
 import { fontePermitida, FONTE_LEGADO_2014, FONTE_PHB } from './dnd2024Fontes'
 
@@ -37,7 +38,7 @@ const fonteVisivel = (f: string, permitidas: Set<string> | null): boolean =>
  * devem alimentar os hexágonos próprios do personagem.
  */
 export function hexagonosOficiaisDnd(
-  d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndLivros'>,
+  d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndLivros' | 'dnd2014Subclasse'>,
   edicao: LivroBaseDnd = lerLivrosDnd(d.dndLivros).base,
   fontes: Set<string> | null = null,
   mostrarFuturos = false,
@@ -50,6 +51,7 @@ export function hexagonosOficiaisDnd(
     const subs = SUBRACAS_2014[raca] ?? []
     const sub = subs.find(x => x.nome === subraca)
     const n = Math.max(1, Math.min(20, Number(d.campos.nivel) || 1))
+    const subclasse = subclasseAtivaDnd2014(classe, d.dnd2014Subclasse, n)
     return [
       ...(classe ? [{ id: '2014-classe', titulo: classe, descricao: 'Classe inicial do D&D 2014: salvaguardas, proficiências e recursos-base do SRD 5.1. A escolha de subclasse e seus efeitos devem ser registrados conforme o livro.',
         nivel: 1, ramo: 'classe' as const, estado: 'recebido' as const, livro: 'SRD 5.1 (2014)' }] : []),
@@ -62,6 +64,20 @@ export function hexagonosOficiaisDnd(
         estado: m.nivel > n ? 'futuro' as const : m.automatico ? 'recebido' as const : 'referencia' as const,
         livro: 'SRD 5.1 (2014)',
       })),
+      ...(subclasse ? [{
+        id:'2014-subclasse', titulo:subclasse.nome, descricao:subclasse.fonte==='srd51'
+          ? 'Arquétipo do SRD 5.1; características identificadas abaixo, efeitos específicos dependem das condições do jogo.'
+          : 'Subclasse comercial do Livro do Jogador 2014, sem conceder automaticamente efeitos que dependem do livro.',
+        nivel:subclasse.nivel, ramo:'classe' as const, estado:'referencia' as const,
+        livro:subclasse.fonte==='srd51'?'SRD 5.1 (2014)':'Player’s Handbook (2014)',
+      },
+      ...(subclasse.marcos??[]).filter(m=>mostrarFuturos||m.nivel<=n).map(m=>({
+        id:'2014-subclasse-'+m.nivel+'-'+m.nome, titulo:m.nome,
+        descricao:'Recurso da subclasse escolhida. Consulte o SRD 5.1 e as condições para aplicá-lo.',
+        nivel:m.nivel, ramo:'classe' as const,
+        estado:m.nivel>n?'futuro' as const:'referencia' as const,
+        livro:'SRD 5.1 (2014)',
+      }))] : []),
       ...(racaMeta ? [{ id: '2014-raca', titulo: 'Raça: ' + raca, descricao: racaMeta.descricao ?? '',
         nivel: 1, ramo: 'especie' as const, estado: 'referencia' as const, livro: 'Player’s Handbook (2014)' }] : []),
       ...(sub ? [{ id: '2014-subraca', titulo: sub.nome, descricao: sub.detalhe,

@@ -108,6 +108,8 @@ export type DadosFicha = {
   dnd2014PericiasRaciais?: string[]
   /** Arquétipo/subclasse do Livro do Jogador 2014, escolhido no nível correto. */
   dnd2014Subclasse?: string
+  /** Níveis em outras classes na multiclasse 2014 (não usa a tabela 2024). */
+  dnd2014Multiclasse?: Record<string,number>
   /** Escolhas de marcos D&D. A progressão visual não concede bônus por si só. */
   dndEscolhas?: Record<string, string>
   /** Distribuição guiada de atributos de antecedente, aplicada explicitamente uma vez. */

@@ -103,6 +103,8 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
         typeof x === 'string' && /^[a-z_]{3,30}$/.test(x)))].slice(0,2) } : {}),
     ...(s.id === 'dnd5e-srd' && typeof d.dnd2014Subclasse === 'string' ?
       { dnd2014Subclasse: d.dnd2014Subclasse.slice(0,64) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014Multiclasse !== undefined ?
+      { dnd2014Multiclasse: lerMulticlasseDnd(d.dnd2014Multiclasse, idDe(d.campos?.classe)) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndEscolhas !== undefined ? { dndEscolhas: lerEscolhasDnd(d.dndEscolhas) } : {}),
     ...(d.criacaoLivre !== undefined ? { criacaoLivre: d.criacaoLivre === true } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndAntecedente !== undefined && lerRegistroAntecedenteDnd(d.dndAntecedente) ? { dndAntecedente: lerRegistroAntecedenteDnd(d.dndAntecedente)! } : {}),

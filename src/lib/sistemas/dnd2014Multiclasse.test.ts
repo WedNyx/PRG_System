@@ -7,6 +7,7 @@ import { calcular, fichaVazia } from './calculo'
 import { sistemaPorId } from './catalogo'
 import { esquemaFichaPorLivro } from './dnd2014Criacao'
 import { validarAlteracoes2014, efeitosDnd2014 } from './dnd2014Regras'
+import { hexagonosOficiaisDnd } from './arvoreDndOficial'
 const original = sistemaPorId('dnd5e-srd')!
 const legado = esquemaFichaPorLivro(original,{dndLivros:{base:'phb2014',suplementos:[]}})
 function ficha(classe:string,nivel:number,outras:Record<string,number>={}) {
@@ -111,5 +112,19 @@ describe('PHB 2014, capítulo 6 — características não cumulativas', () => {
     expect(efeitosDnd2014(ficha('Monge',6,{barbaro:3}),vars).vars.dnd_ca_extra).toBe(4)
     // Ordem de duas classes secundárias desconhecida: não assumir qual defesa foi recebida primeiro.
     expect(efeitosDnd2014(ficha('Guerreiro',6,{barbaro:2,monge:2}),vars).vars.dnd_ca_extra).toBe(0)
+  })
+})
+
+describe('Árvore 2014 respeita níveis de cada classe', () => {
+  it('Guerreiro 2 / Mago 4 não recebe Ataque Extra de Guerreiro 5', () => {
+    const d=ficha('Guerreiro',6,{mago:4})
+    d.dnd2014Subclasse='campeao' // ainda bloqueada: Guerreiro só tem nível 2
+    const hex=hexagonosOficiaisDnd(d,'phb2014')
+    expect(hex.some(x=>x.titulo==='Surto de Ação')).toBe(true)
+    expect(hex.some(x=>x.titulo==='Ataque Extra')).toBe(false)
+    expect(hex.some(x=>x.titulo==='Tradição Arcana (subclasse)')).toBe(true)
+    expect(hex.some(x=>x.id==='2014-subclasse')).toBe(false)
+    const futuros=hexagonosOficiaisDnd(d,'phb2014',null,true)
+    expect(futuros.some(x=>x.titulo==='Ataque Extra' && x.estado==='futuro')).toBe(true)
   })
 })

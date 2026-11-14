@@ -98,6 +98,9 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     ...(s.id === 'dnd5e-srd' && Array.isArray(d.dnd2014PericiasClasse) ?
       { dnd2014PericiasClasse: [...new Set(d.dnd2014PericiasClasse.filter((x): x is string =>
         typeof x === 'string' && /^[a-z_]{3,30}$/.test(x)))].slice(0,4) } : {}),
+    ...(s.id === 'dnd5e-srd' && Array.isArray(d.dnd2014PericiasRaciais) ?
+      { dnd2014PericiasRaciais: [...new Set(d.dnd2014PericiasRaciais.filter((x): x is string =>
+        typeof x === 'string' && /^[a-z_]{3,30}$/.test(x)))].slice(0,2) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndEscolhas !== undefined ? { dndEscolhas: lerEscolhasDnd(d.dndEscolhas) } : {}),
     ...(d.criacaoLivre !== undefined ? { criacaoLivre: d.criacaoLivre === true } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndAntecedente !== undefined && lerRegistroAntecedenteDnd(d.dndAntecedente) ? { dndAntecedente: lerRegistroAntecedenteDnd(d.dndAntecedente)! } : {}),

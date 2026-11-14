@@ -34,7 +34,7 @@ describe('Servidor: jogador não modifica a estrutura ou recompensa do mestre', 
   })
   it('preserva concessão já dada pelo mestre, sem deixar o jogador retirá-la', () => {
     const a={ ...base(), liberados:['a'], concedidos:['a'] }
-    expect(validarDesbloqueiosArvore(a, { ...a, liberados:[] }, d)).toMatch(/Concedido pelo mestre/)
+    expect(validarDesbloqueiosArvore(a, { ...a, liberados:[] }, d)).toMatch(/Somente o mestre/)
     expect(validarDesbloqueiosArvore(a, { ...a, liberados:['a','b'] }, d)).toBeNull()
   })
 })

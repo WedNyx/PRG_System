@@ -227,8 +227,11 @@ export function validarAlteracoes2014(
     }
     const raca=String(depois.campos?.especie??'')
     const sub=String(depois.campos?.subraca2014??'')
-    if (antes.campos?.subraca2014 !== depois.campos?.subraca2014 &&
-      sub && !(SUBRACAS_2014[raca]??[]).some(x=>x.nome===sub))
+    // Também revalidar ao trocar a raça mantendo uma sub-raça antiga.
+    // Fichas em rascunho ainda podem deixar a sub-raça em branco.
+    if ((antes.campos?.especie !== depois.campos?.especie ||
+         antes.campos?.subraca2014 !== depois.campos?.subraca2014) &&
+        sub && !(SUBRACAS_2014[raca]??[]).some(x=>x.nome===sub))
       erros.push('Sub-raça incompatível com a raça do Livro do Jogador 2014.')
   }
   if (edicao === 'phb2014') erros.push(...validarSubclasseDnd2014(antes, depois))

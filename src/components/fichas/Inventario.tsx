@@ -13,7 +13,11 @@ import type { LivroBaseDnd } from '@/lib/sistemas/dndLivros'
 import { alvosDeBonus, CATEGORIAS_ITEM, lerItens, lerPeso, lerPoderes, mostrarPeso, lerUso, normalizarItem, normalizarPoder, podeUsar, TIPOS_PODER, type Bonus, type Item, type Poder, type Uso } from '@/lib/sistemas/inventario'
 import NaTela from '@/components/NaTela'
 import CatalogoArmasDnd2024 from './CatalogoArmasDnd2024'
-import { ARMAS_DND_2024, alcanceEmMetrosArmaDnd, armaDndPorId, atributoParaArmaDnd, descricaoArmaDnd, expressaoDanoArmaDnd, expressaoDanoLivreDnd, pesoEmKgArmaDnd, type ArmaDnd2024 } from '@/lib/sistemas/dnd2024Armas'
+import { alcanceEmMetrosArmaDnd, atributoParaArmaDnd, descricaoArmaDnd, expressaoDanoArmaDnd, expressaoDanoLivreDnd, pesoEmKgArmaDnd, type ArmaDnd2024 } from '@/lib/sistemas/dnd2024Armas'
+import { ARMAS_DND_2014, armaDndPorIdEdicao, descricaoArma2014 } from '@/lib/sistemas/dnd2014Armas'
+import { ARMAS_DND_2024 } from '@/lib/sistemas/dnd2024Armas'
+import { lerLivrosDnd } from '@/lib/sistemas/dndLivros'
+import { arsenaisPermitidosDnd } from '@/lib/sistemas/dndArsenais'
 import { ARMAS_DND_EXPANDIDAS, referenciaArmaDndPorId, type ReferenciaArmaDnd } from '@/lib/sistemas/dnd2024ArmasExpandidas'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
@@ -32,6 +36,7 @@ type Props = { s: Sistema; d: DadosFicha; c: Calculo; onChange: (d: DadosFicha) 
 /** Seção “Inventário”: itens com quantidade, peso, equipado, dano e bônus automáticos. */
 export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, passarItem, edicaoDnd = 'phb2024' }: Props) {
   const itens = lerItens(d.itens), uso = lerUso(d.uso)
+  const livrosDnd = lerLivrosDnd(d.dndLivros, edicaoDnd)
   const [editando, setEditando] = useState<Item | null>(null)
   const [catalogoAberto, setCatalogoAberto] = useState(false)
   const [atributosArma, setAtributosArma] = useState<Record<string, 'FOR' | 'DES'>>({})
@@ -49,14 +54,15 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
   function adicionarArmaCatalogo(a: ArmaDnd2024) {
     if (itens.length >= 300) { toast.error('O inventário já chegou ao limite de 300 itens.'); return }
     salvarItem({ id: novoId(), nome: a.nome, categoria: 'arma', peso: pesoEmKgArmaDnd(a),
-      dano: a.dano, alcance: alcanceEmMetrosArmaDnd(a), descricao: descricaoArmaDnd(a),
+      ...(a.dano ? { dano: a.dano } : {}), alcance: alcanceEmMetrosArmaDnd(a),
+      descricao: a.id.startsWith('2014-') ? descricaoArma2014(a) : descricaoArmaDnd(a),
       armaDnd: a.id, bonus: [] })
     setCatalogoAberto(false)
     toast.success(a.nome + ' adicionada ao inventário!')
   }
   function adicionarReferenciaCatalogo(ref: ReferenciaArmaDnd, baseId?: string) {
     if (itens.length >= 300) { toast.error('O inventário já chegou ao limite de 300 itens.'); return }
-    const base = armaDndPorId(baseId)
+    const base = armaDndPorIdEdicao(baseId)
     const magico = ref.classe === 'magica' || ref.classe === 'indice'
     const item: Item = { id: novoId(), nome: ref.nome, categoria: 'arma',
       peso: base ? pesoEmKgArmaDnd(base) : 0, bonus: [],
@@ -99,7 +105,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
   const abaAtual = abasItens.some(x => x.id === aba) ? aba : 'todos'
   const linhaItem = (it: Item) => {
           const eq = !!uso.itens[it.id]?.equipado, n = qtd(it)
-          const armaDnd = s.id === 'dnd5e-srd' && it.categoria === 'arma' ? armaDndPorId(it.armaDnd) : null
+          const armaDnd = s.id === 'dnd5e-srd' && it.categoria === 'arma' ? armaDndPorIdEdicao(it.armaDnd) : null
           const referenciaDnd = s.id === 'dnd5e-srd' && it.categoria === 'arma' ? referenciaArmaDndPorId(it.armaRefDnd) : null
           const atributoArma = armaDnd ? atributoParaArmaDnd(armaDnd, c.mods, atributosArma[it.id]) : null
           const duasMaos = !!duasMaosArma[it.id], leveExtra = !!ataqueLeveExtra[it.id]
@@ -132,6 +138,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
               {!somenteLeitura && <><button type="button" className={botao} onClick={() => setEditando(it)} aria-label={'Editar ' + it.nome}><Pencil size={13} /></button>
                 <button type="button" className={botao} onClick={() => remover(it)} aria-label={'Remover ' + it.nome}><Trash2 size={13} /></button></>}
             </div>
+            {armaDnd && !armaDnd.dano && <p className="mt-2 text-xs text-amber-200">Rede 2014: sem dano; verifique as regras especiais de captura no PHB 2014.</p>}
             {!armaDnd && s.id === 'dnd5e-srd' && it.categoria === 'arma' && <div className="mt-3 space-y-2 rounded-lg border border-(--a-5e4b78)/70 bg-(--s-151123)/50 p-2.5">
               {referenciaDnd && it.dano && <label className="flex items-center gap-2 text-xs text-(--a-c4b6d4)">Atributo do dano
                 <select value={atributoLivre} aria-label={'Atributo de dano para ' + it.nome}
@@ -151,9 +158,9 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
               </div>}
               <p className="text-[11px] text-(--a-a998bd)">No crítico somente os dados dobram. Confira bônus especiais, condições e proficiência no livro e com o mestre.</p>
             </div>}
-            {armaDnd && atributoArma && <div className="mt-3 space-y-2 rounded-lg border border-(--a-5e4b78)/70 bg-(--s-151123)/50 p-2.5">
+            {armaDnd && atributoArma && !!armaDnd.dano && <div className="mt-3 space-y-2 rounded-lg border border-(--a-5e4b78)/70 bg-(--s-151123)/50 p-2.5">
               <div className="flex flex-wrap items-center gap-2 text-xs text-(--a-cfc0df)">
-                <span>{armaDnd.tipo}</span><span>· Maestria {armaDnd.maestria}</span>
+                <span>{armaDnd.tipo}</span>{armaDnd.maestria && <span>· Maestria {armaDnd.maestria}</span>}
                 <span>· Atributo {atributoArma.atributo} ({atributoArma.mod >= 0 ? '+' : ''}{atributoArma.mod})</span>
                 {it.bonusArma ? <span>· Encantamento +{it.bonusArma}</span> : null}
               </div>
@@ -187,7 +194,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Backpack size={18} /> Inventário</h2>
       {!somenteLeitura && <div className="flex flex-wrap gap-2">
-        {s.id === 'dnd5e-srd' && edicaoDnd !== 'phb2014' && <button type="button" className={botao + ' border-(--a-b99bff)'} onClick={() => setCatalogoAberto(true)}><Dice5 size={14} /> Arsenal ({38 + ARMAS_DND_EXPANDIDAS.length})</button>}
+        {s.id === 'dnd5e-srd' && <button type="button" className={botao + ' border-(--a-b99bff) min-h-10'} onClick={() => setCatalogoAberto(true)}><Dice5 size={14} /> Arsenais por livro ({arsenaisPermitidosDnd(edicaoDnd, livrosDnd.suplementos).length})</button>}
         <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', categoria: 'equipamento', peso: 0, bonus: [] })}><Plus size={14} /> Novo item</button>
       </div>}
     </div>
@@ -224,8 +231,8 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
         <ul className="space-y-2">{lista.map(linhaItem)}</ul>
       </div>
     }) : <ul className="mt-3 space-y-2">{itensVisiveis.filter(i => abaAtual === 'magico' ? i.magico : i.categoria === abaAtual).map(linhaItem)}</ul>}
-    {editando && <EditorItem s={s} inicial={editando} salvar={salvarItem} fechar={() => setEditando(null)} />}
-    {catalogoAberto && s.id === 'dnd5e-srd' && edicaoDnd !== 'phb2014' && <CatalogoArmasDnd2024 adicionar={adicionarArmaCatalogo} adicionarReferencia={adicionarReferenciaCatalogo} fechar={() => setCatalogoAberto(false)} />}
+    {editando && <EditorItem s={s} edicaoDnd={edicaoDnd} inicial={editando} salvar={salvarItem} fechar={() => setEditando(null)} />}
+    {catalogoAberto && s.id === 'dnd5e-srd' && <CatalogoArmasDnd2024 edicao={edicaoDnd} livrosAtivos={livrosDnd.suplementos} adicionar={adicionarArmaCatalogo} adicionarReferencia={adicionarReferenciaCatalogo} fechar={() => setCatalogoAberto(false)} />}
   </section>
 }
 
@@ -362,7 +369,7 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
       </div>}
       {dnd && <label className="flex items-center gap-2 rounded-lg border border-(--a-8b6cba)/50 bg-(--s-241a3a) p-3 text-xs"><input type="checkbox" checked={!!it.magico} onChange={e => setIt({ ...it, magico: e.target.checked || undefined })} className="h-4 w-4 accent-(--a-b99bff)" /> ✨ Item mágico · Exibir na coleção mágica</label>}
       {s?.id === 'dnd5e-srd' && it.armaDnd && <div className="rounded-lg border border-(--a-55456e) p-3 text-xs">
-        <p className="mb-2">Arma do catálogo: <strong>{armaDndPorId(it.armaDnd)?.nome}</strong>. O dano e o crítico usam automaticamente os atributos da ficha.</p>
+        <p className="mb-2">Arma do catálogo: <strong>{armaDndPorIdEdicao(it.armaDnd)?.nome}</strong>. O dano e o crítico usam automaticamente os atributos da ficha.</p>
         <label className="flex items-center gap-2">Bônus mágico da arma (+0 a +3)
           <select value={it.bonusArma ?? 0} onChange={e => setIt({ ...it, bonusArma: Number(e.target.value), magico: Number(e.target.value) > 0 ? true : it.magico })}
             className={input + ' max-w-24'}>{[0,1,2,3].map(v => <option key={v} value={v}>+{v}</option>)}</select>

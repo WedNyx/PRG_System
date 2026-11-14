@@ -6,8 +6,7 @@
  * seus efeitos devem ser consultados no livro, nunca copiados/inventados aqui.
  */
 import type { DadosFicha } from './tipos'
-import { classesDaFicha2014, espacosDeMagia2014 } from './dnd2014Multiclasse'
-import { subclassesDaClasse2014 } from './dnd2014Subclasses'
+import { classesDaFicha2014 } from './dnd2014Multiclasse'
 import { lerLivrosDnd } from './dndLivros'
 import { idDe } from './dnd2024Classes'
 

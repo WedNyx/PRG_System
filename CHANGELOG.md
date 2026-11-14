@@ -2,6 +2,15 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.34.0 — Fase 2: árvores D&D unificadas (2026-11-14)
+
+- A ficha D&D passa a exibir um único painel com quatro ramos: Classe/Subclasse, Raça/Espécie, Antecedente/Origem e poderes extras do mestre.
+- Interface vertical com cartões arredondados e detalhes de cada nó; remove a duplicação visual de mapas de hexágonos na aba Árvore.
+- Os ramos oficiais são projetados a partir das escolhas e edição 2014/2024 sem salvar ou conceder bônus pela visualização.
+- O ramo do mestre reutiliza a árvore editável existente, respeitando autorizações, pontos, requisitos, poderes vinculados, concessões e histórico.
+- A ordenação vertical é determinística, considera dependências e não modifica posições antigas; os demais sistemas não são alterados nesta etapa.
+- A fase de homologação requer verificar fichas antigas, edição do mestre, reabertura e responsividade antes do merge.
+
 ## v0.33.10 — Correção do build de produção (2026-11-14)
 
 - Remove a dependência de download das fontes do Google na compilação Next.js, que estava falhando em `src/app/layout.tsx` depois do merge da PR #50.

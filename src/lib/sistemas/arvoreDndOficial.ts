@@ -10,7 +10,7 @@ import { progressoDaFichaDnd } from './dnd2024Ficha'
 import { progressaoVisivel } from './dnd2024Progressao'
 import { ANTECEDENTES_2014, RACAS_2014, SUBRACAS_2014 } from './dnd2014Criacao'
 import { marcosDaClasse2014 } from './dnd2014Marcos'
-import { subclasseAtivaDnd2014 } from './dnd2014Subclasses'
+import { subclasseDaFicha2014 } from './dnd2014Subclasses'
 import { classesDaFicha2014 } from './dnd2014Multiclasse'
 import { lerLivrosDnd, type LivroBaseDnd } from './dndLivros'
 import { fontePermitida, FONTE_LEGADO_2014, FONTE_PHB } from './dnd2024Fontes'
@@ -39,22 +39,39 @@ const fonteVisivel = (f: string, permitidas: Set<string> | null): boolean =>
  * devem alimentar os hexágonos próprios do personagem.
  */
 export function hexagonosOficiaisDnd(
-  d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndLivros' | 'dnd2014Subclasse' | 'dnd2014Multiclasse'>,
+  d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndLivros' | 'dnd2014Subclasse' | 'dnd2014Subclasses' | 'dnd2014Multiclasse'>,
   edicao: LivroBaseDnd = lerLivrosDnd(d.dndLivros).base,
   fontes: Set<string> | null = null,
   mostrarFuturos = false,
 ): HexagonoDnd[] {
   if (edicao === 'phb2014') {
-    const raca = s(d.campos.especie), classe = s(d.campos.classe)
+    const raca = s(d.campos.especie)
     const antecedente = s(d.campos.antecedente), subraca = s(d.campos.subraca2014)
     const racaMeta = RACAS_2014.find(x => x.nome === raca)
     const antMeta = ANTECEDENTES_2014.find(x => x.nome === antecedente)
     const subs = SUBRACAS_2014[raca] ?? []
     const sub = subs.find(x => x.nome === subraca)
     const { lista } = classesDaFicha2014(d)
-    const principal = lista.find(c => c.principal)
-    const nivelPrincipal = principal?.nivel ?? 1
-    const subclasse = subclasseAtivaDnd2014(classe, d.dnd2014Subclasse, nivelPrincipal)
+    const subclassesDaFicha: HexagonoDnd[] = lista.flatMap(c => {
+      const subclasse = subclasseDaFicha2014(d,c.cls.id)
+      if(!subclasse)return []
+      return [{
+        id:c.principal?'2014-subclasse':'2014-subclasse-'+c.cls.id,
+        titulo:subclasse.nome,
+        descricao:subclasse.fonte==='srd51'
+          ? c.cls.nome+' · arquétipo do SRD 5.1, progressão pelo nível desta classe.'
+          : 'Subclasse do Livro do Jogador 2014; benefícios exigem conferência.',
+        nivel:subclasse.nivel, ramo:'classe' as const, estado:'referencia' as const,
+        livro:subclasse.fonte==='srd51'?'SRD 5.1 (2014)':'Player’s Handbook (2014)',
+      },...(subclasse.marcos??[]).filter(m=>mostrarFuturos||m.nivel<=c.nivel).map(m=>({
+        id:c.principal?'2014-subclasse-'+m.nivel+'-'+m.nome:
+          '2014-subclasse-'+c.cls.id+'-'+m.nivel+'-'+m.nome,
+        titulo:m.nome, descricao:c.cls.nome+' · característica pelo nível da classe, não pelo nível total.',
+        nivel:m.nivel, ramo:'classe' as const,
+        estado:m.nivel>c.nivel?'futuro' as const:'referencia' as const,
+        livro:'SRD 5.1 (2014)',
+      }))]
+    })
     // PHB 2014 cap. 6: habilidades são recebidas pelo nível EM CADA CLASSE,
     // nunca pelo nível total do personagem multiclasse.
     return [
@@ -80,20 +97,7 @@ export function hexagonosOficiaisDnd(
             livro: 'SRD 5.1 (2014)',
           })),
       ]),
-      ...(subclasse ? [{
-        id:'2014-subclasse', titulo:subclasse.nome, descricao:subclasse.fonte==='srd51'
-          ? 'Arquétipo do SRD 5.1. Os marcos da subclasse seguem o nível da classe inicial.'
-          : 'Subclasse comercial do Livro do Jogador 2014. Nenhum efeito é aplicado sem validação.',
-        nivel:subclasse.nivel, ramo:'classe' as const, estado:'referencia' as const,
-        livro:subclasse.fonte==='srd51'?'SRD 5.1 (2014)':'Player’s Handbook (2014)',
-      },
-      ...(subclasse.marcos??[]).filter(m=>mostrarFuturos||m.nivel<=nivelPrincipal).map(m=>({
-        id:'2014-subclasse-'+m.nivel+'-'+m.nome, titulo:m.nome,
-        descricao:'Característica da subclasse inicial, determinada pelo nível dessa classe, não pelo nível total.',
-        nivel:m.nivel, ramo:'classe' as const,
-        estado:m.nivel>nivelPrincipal?'futuro' as const:'referencia' as const,
-        livro:'SRD 5.1 (2014)',
-      }))] : []),
+      ...subclassesDaFicha,
       ...(racaMeta ? [{ id: '2014-raca', titulo: 'Raça: ' + raca, descricao: racaMeta.descricao ?? '',
         nivel: 1, ramo: 'especie' as const, estado: 'referencia' as const, livro: 'Player’s Handbook (2014)' }] : []),
       ...(sub ? [{ id: '2014-subraca', titulo: sub.nome, descricao: sub.detalhe,

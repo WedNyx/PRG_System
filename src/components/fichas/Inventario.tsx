@@ -18,7 +18,7 @@ import { ARMAS_DND_2014, armaDndPorIdEdicao, descricaoArma2014 } from '@/lib/sis
 import { ARMAS_DND_2024 } from '@/lib/sistemas/dnd2024Armas'
 import { lerLivrosDnd } from '@/lib/sistemas/dndLivros'
 import { arsenaisPermitidosDnd } from '@/lib/sistemas/dndArsenais'
-import { ARMAS_DND_EXPANDIDAS, referenciaArmaDndPorId, type ReferenciaArmaDnd } from '@/lib/sistemas/dnd2024ArmasExpandidas'
+import { referenciaArmaDndPorId, type ReferenciaArmaDnd } from '@/lib/sistemas/dnd2024ArmasExpandidas'
 
 const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
@@ -332,20 +332,28 @@ function FotoDoItem({ it, setIt }: { it: Item; setIt: React.Dispatch<React.SetSt
   </div>
 }
 
-export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicial: Item; salvar: (i: Item) => void; fechar: () => void }) {
+export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }: { s?: Sistema; inicial: Item; salvar: (i: Item) => void; fechar: () => void; edicaoDnd?: LivroBaseDnd }) {
   const [it, setIt] = useState<Item>(inicial)
   const dnd = s?.id === 'dnd5e-srd'
   const referencia = dnd ? referenciaArmaDndPorId(it.armaRefDnd) : null
+  const armasEdicao = edicaoDnd === 'phb2014' ? ARMAS_DND_2014 : ARMAS_DND_2024
+  const icoCategoria = it.categoria === 'arma' ? ['lamina','maca','machado-duplo','flecha','arqueiro','varinha','garra-flamejante']
+    : it.categoria === 'armadura' ? ['escudo','amuleto','coroa']
+    : it.categoria === 'consumivel' ? ['frasco-veneno','gema','varinha']
+    : it.categoria === 'tesouro' ? ['gema','anel','coroa','amuleto']
+    : ['grimorio','mapa','mochila','candelabro','anel','amuleto']
+  const iconesIndicados = ICONES_RPG.filter(x => icoCategoria.includes(x.id))
+  const iconesRestantes = ICONES_RPG.filter(x => !icoCategoria.includes(x.id))
   const alvos = s ? alvosDeBonus(s) : []
   const setB = (i: number, b: Partial<Bonus>) => setIt({ ...it, bonus: it.bonus.map((x, k) => k === i ? { ...x, ...b } : x) })
   return <Janela titulo={dnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla>
     <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return } salvar({ ...v, id: inicial.id }) }}>
       <div className="flex items-center gap-3 rounded-xl border border-(--a-62527e) bg-gradient-to-r from-(--s-2b2143) to-(--s-171325) p-3">
-        <ArteItem item={it} tamanho={72} />
+        <ArteItem item={it} tamanho={72} estiloDnd={dnd} />
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-(--a-d3adf0)">Prévia do item</p>
           <p className="mt-1 truncate font-semibold">{it.nome || 'Sua próxima descoberta'}</p>
-          <p className="mt-1 text-[11px] text-(--a-c4b6d4)">Foto própria ou arte da Game-Icons; personalize as cores e a raridade na seção de aparência.</p>
+          <p className="mt-1 text-[11px] text-(--a-c4b6d4)">{dnd ? 'Escolha um ícone Game-Icons ou use sua própria foto. Sem Forja nas fichas de D&D.' : 'Foto própria, arte da Game-Icons e cores da Forja.'}</p>
         </div>
       </div>
       <FotoDoItem it={it} setIt={setIt} />
@@ -358,29 +366,29 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
         {referencia && <p className="rounded-lg border border-(--a-8b6cba)/50 bg-(--s-241a3a) p-2">📖 <strong>{referencia.nome}</strong> · {referencia.livro} ({referencia.edicao}). Efeitos exclusivos devem ser conferidos no livro.</p>}
         <label className="block">Modelo físico da arma (opcional)
           <select className={input + ' mt-1'} value={it.armaDnd ?? ''} onChange={e => {
-            const a = armaDndPorId(e.target.value)
+            const a = armaDndPorIdEdicao(e.target.value)
             setIt({ ...it, armaDnd: a?.id, ...(a ? { dano: a.dano, peso: pesoEmKgArmaDnd(a), alcance: alcanceEmMetrosArmaDnd(a) } : {}) })
           }}>
             <option value="">Dano configurado manualmente</option>
-            {ARMAS_DND_2024.map(a => <option key={a.id} value={a.id}>{a.nome} · {a.dano}</option>)}
+            {armasEdicao.map(a => <option key={a.id} value={a.id}>{a.nome} · {a.dano || 'Sem dano'}</option>)}
           </select>
         </label>
         <p className="text-[11px] text-(--a-c4b6d4)">Escolher uma arma base permite rolar dano e crítico automaticamente. Não aplica efeitos mágicos exclusivos.</p>
       </div>}
       {dnd && <label className="flex items-center gap-2 rounded-lg border border-(--a-8b6cba)/50 bg-(--s-241a3a) p-3 text-xs"><input type="checkbox" checked={!!it.magico} onChange={e => setIt({ ...it, magico: e.target.checked || undefined })} className="h-4 w-4 accent-(--a-b99bff)" /> ✨ Item mágico · Exibir na coleção mágica</label>}
       {s?.id === 'dnd5e-srd' && it.armaDnd && <div className="rounded-lg border border-(--a-55456e) p-3 text-xs">
-        <p className="mb-2">Arma do catálogo: <strong>{armaDndPorIdEdicao(it.armaDnd)?.nome}</strong>. O dano e o crítico usam automaticamente os atributos da ficha.</p>
+        <p className="mb-2">Arma do catálogo: <strong>{armaDndPorIdEdicao(it.armaDnd)?.nome}</strong>. {it.armaDnd?.startsWith('2014-') ? 'Regras e dano da edição 2014.' : 'Regras e dano da edição 2024.'} O crítico dobra apenas os dados, não os modificadores.</p>
         <label className="flex items-center gap-2">Bônus mágico da arma (+0 a +3)
           <select value={it.bonusArma ?? 0} onChange={e => setIt({ ...it, bonusArma: Number(e.target.value), magico: Number(e.target.value) > 0 ? true : it.magico })}
             className={input + ' max-w-24'}>{[0,1,2,3].map(v => <option key={v} value={v}>+{v}</option>)}</select>
         </label>
       </div>}
       <details className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
-        <summary className="cursor-pointer font-semibold text-(--a-d3adf0)">🎨 Escolher ícone Game-Icons ou personalizar na Forja</summary>
+        <summary className="cursor-pointer font-semibold text-(--a-d3adf0)">{dnd ? '🎨 Ícones Game-Icons · adequados ao tipo de item e ao livro D&D' : '🎨 Ícone Game-Icons ou personalizar na Forja'}</summary>
         <div className="mt-3 space-y-3">
           <p className="text-xs text-(--a-c4b6d4)">Escolha uma ilustração da biblioteca. A foto enviada sempre tem prioridade; você pode removê-la depois.</p>
           <div className="grid grid-cols-3 gap-2 min-[400px]:grid-cols-4 sm:grid-cols-6" role="group" aria-label="Biblioteca de ilustrações de itens">
-            {ICONES_RPG.map(icone => <button key={icone.id} type="button" title={icone.nome}
+            {(dnd ? iconesIndicados : ICONES_RPG).map(icone => <button key={icone.id} type="button" title={icone.nome}
               aria-label={'Usar ilustração ' + icone.nome} aria-pressed={it.iconeBiblioteca === icone.id}
               onClick={() => setIt({ ...it, iconeBiblioteca: icone.id, arte: undefined })}
               className={'flex min-w-0 flex-col items-center gap-1 rounded-lg border p-2 transition hover:bg-(--s-34294f) ' +
@@ -396,7 +404,20 @@ export function EditorItem({ s, inicial, salvar, fechar }: { s?: Sistema; inicia
             Ilustrações: <a href="https://game-icons.net" target="_blank" rel="noopener noreferrer" className="underline">Game-Icons.net</a>
             {' · '}autores Lorc e Delapouite{' · '}licença CC BY 3.0. Vetores adaptados (fundo removido e cores aplicadas).
           </p>
-          <Forja it={it} setIt={setIt} />
+          {dnd && <details className="rounded-lg border border-(--a-55456e) p-2">
+            <summary className="cursor-pointer text-xs text-(--a-d3adf0)">Ver todos os ícones Game-Icons ({iconesRestantes.length})</summary>
+            <div className="mt-2 grid grid-cols-3 gap-2 min-[400px]:grid-cols-4 sm:grid-cols-6">
+              {iconesRestantes.map(icone => <button type="button" key={icone.id} title={icone.nome}
+                aria-label={'Usar ilustração ' + icone.nome} aria-pressed={it.iconeBiblioteca === icone.id}
+                onClick={() => setIt({ ...it, iconeBiblioteca: icone.id, arte: undefined })}
+                className={'flex min-w-0 flex-col items-center gap-1 rounded-lg border p-2 hover:bg-(--s-34294f) ' +
+                  (it.iconeBiblioteca === icone.id ? 'border-(--a-ed9cd8)' : 'border-(--a-55456e)')}>
+                <ArteItem item={{ ...it, imagem: undefined, arte: undefined, iconeBiblioteca: icone.id }} tamanho={45} estiloDnd />
+                <span className="w-full truncate text-[10px]">{icone.nome}</span>
+              </button>)}
+            </div>
+          </details>}
+          {!dnd && <Forja it={it} setIt={setIt} />}
           <label className="block text-xs">Raridade
             <select value={it.raridade ?? ''} onChange={e => setIt({ ...it, raridade: e.target.value as Item['raridade'] || undefined })} className={input + ' mt-1'}>
               <option value="">Sem raridade</option>

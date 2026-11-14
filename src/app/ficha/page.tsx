@@ -12,7 +12,7 @@ import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { lerConfiguracaoProgressao, modoDaFicha, type ConfiguracaoProgressao, type ModoProgressao } from '@/lib/sistemas/modoProgressao'
 import { fontesLiberadas } from '@/lib/sistemas/dnd2024Fontes'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
-import { CAMPOS } from '@/lib/campanhas/permissoes'
+import { CAMPOS, podeDesbloquearArvore, type Regra } from '@/lib/campanhas/permissoes'
 import { toast } from 'sonner'
 import PassarItem from '@/components/fichas/PassarItem'
 import type { Item } from '@/lib/sistemas/inventario'
@@ -108,8 +108,10 @@ function Conteudo() {
           setConfig(cfg); setSouMestre(!!r.souMestre)
           setModoProgressao(modoDaFicha(cfg, nuvem))
           setPodeEditarArvore(!r.ficha.campanha_id || !!r.souMestre)
-          setPodeLiberarArvore(!r.ficha.campanha_id || !!r.souMestre ||
-            (r.podeEditar && !!r.regras && r.regras.efetivas.habilidades !== 'mestre'))
+          setPodeLiberarArvore(podeDesbloquearArvore(
+            !!r.ficha.campanha_id, r.podeEditar, !!r.souMestre,
+            r.regras?.efetivas.habilidades as Regra | undefined,
+          ))
           setAguardandoEntrada(r.ficha.status === 'pendente'); setEhNpc(!!r.ficha.npc)
           // O pedido que ainda espera o mestre aparece na ficha (senão, ao recarregar, parecia que não tinha salvo).
           const comPedido = r.pedido?.length ? aplicar(r.ficha.dados as unknown as Record<string, unknown>, r.pedido) as unknown as DadosFicha : r.ficha.dados

@@ -175,3 +175,46 @@ export function efeitosDnd2014(
   if (raca==='Anão'||raca==='Halfling'||raca==='Gnomo')v.dnd_desl_extra-=1.5
   return { vars:v,treino,bonus:{},meiaProficiencia: cls==='bardo'&&n>=2?Math.floor(prof/2):0 }
 }
+
+
+/** Validação pura usada tanto antes quanto depois das permissões do mestre.
+ * Dados históricos não são alterados nem rejeitados se o campo não mudou.
+ */
+export function validarAlteracoes2014(
+  antes: Partial<DadosFicha>, depois: Partial<DadosFicha>, edicao: 'phb2014' | 'phb2024',
+): string[] {
+  const erros: string[]=[]
+  const alterou=(k: 'dnd2014AtributosBase'|'dnd2014AtributosExtras'|'dnd2014PericiasClasse') =>
+    JSON.stringify(antes[k]??null)!==JSON.stringify(depois[k]??null)
+  const chaves=['dnd2014AtributosBase','dnd2014AtributosExtras','dnd2014PericiasClasse'] as const
+  if (edicao !== 'phb2014') {
+    if(chaves.some(alterou)) erros.push('As escolhas de criação 2014 não podem ser alteradas numa ficha com livro-base 2024.')
+    return erros
+  }
+  if (alterou('dnd2014AtributosBase') && depois.dnd2014AtributosBase !== undefined && !lerAtributosBase2014(depois.dnd2014AtributosBase))
+    erros.push('Os seis atributos-base de 2014 devem ser números inteiros de 1 a 20.')
+  if (alterou('dnd2014AtributosExtras')) {
+    const extras=depois.dnd2014AtributosExtras
+    if(!Array.isArray(extras) || extras.length>2 || extras.some(x=>typeof x!=='string'||!(ATRIBUTOS_DND as readonly string[]).includes(x)) || new Set(extras).size!==extras.length)
+      erros.push('Aumentos variáveis de atributos 2014 inválidos ou repetidos.')
+    else {
+      const r=String(depois.campos?.especie??'')
+      const v=String(depois.campos?.subraca2014??'')
+      if(extras.length && r!=='Meio-Elfo' && !(r==='Humano'&&v==='Humano Variante'))
+        erros.push('Esta raça não permite aumentos de atributo variáveis no PHB 2014.')
+      if(r==='Meio-Elfo'&&extras.includes('CAR'))
+        erros.push('Meio-Elfo 2014 deve escolher dois atributos diferentes de Carisma.')
+    }
+  }
+  if(alterou('dnd2014PericiasClasse')) {
+    const lista=depois.dnd2014PericiasClasse
+    const cls=periciasClasse2014(depois.campos?.classe)
+    const fundo=periciasAntecedente2014(depois.campos?.antecedente)
+    if(!Array.isArray(lista) || !cls || lista.length>cls.qtd ||
+       lista.some(x=>typeof x!=='string'||(x!==''&&!cls.opcoes.includes(x))) ||
+       new Set(lista.filter(Boolean)).size!==lista.filter(Boolean).length ||
+       lista.some(x=>x!==''&&fundo.includes(x)))
+      erros.push('Perícias da classe 2014: escolha sem repetições, somente da classe e diferentes das concedidas pelo antecedente.')
+  }
+  return erros
+}

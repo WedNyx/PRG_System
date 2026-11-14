@@ -156,8 +156,9 @@ export function efeitosDnd2014(
     v.dnd_foco=n>=2?n:0
     if(n>=2 && Number(vars.ca_base)<=10 && !(Number(vars.armadura)>0))
       v.dnd_desl_extra+= n>=18?9:n>=14?7.5:n>=10?6:n>=6?4.5:3
-    if(Number(vars.ca_base)<=10 && !(Number(vars.armadura)>0)) v.dnd_ca_extra=Math.max(0,Number(vars.mod_SAB)||0)
+    if(em('barbaro')===0 && Number(vars.ca_base)<=10 && !(Number(vars.armadura)>0)) v.dnd_ca_extra=Math.max(0,Number(vars.mod_SAB)||0)
   }
+  // Em multiclasse não se acumulam duas Defesas sem Armadura.
   if (em('barbaro')>0 && Number(vars.ca_base)<=10)
     v.dnd_ca_extra=Math.max(0,Number(vars.mod_CON)||0)
   if (em('paladino')>0) v.dnd_cura_maos=5*em('paladino')

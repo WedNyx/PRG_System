@@ -10,6 +10,7 @@ import { SUBRACAS_2014, RACAS_2014, ANTECEDENTES_2014 } from '@/lib/sistemas/dnd
 import { subclassesDaClasse2014, subclasseAtivaDnd2014 } from '@/lib/sistemas/dnd2014Subclasses'
 import { classesDaFicha2014 } from '@/lib/sistemas/dnd2014Multiclasse'
 import { TALENTOS_PHB_2014, limitesTalentos2014, avaliarRequisitoTalento2014 } from '@/lib/sistemas/dnd2014Talentos'
+import {OPCOES_TALENTOS_2014} from '@/lib/sistemas/dnd2014OpcoesTalentos'
 import { ATRIBUTOS_DND, aumentosRaciais2014, atributosEfetivos2014, lerAtributosBase2014,
   periciasAntecedente2014, periciasClasse2014 } from '@/lib/sistemas/dnd2014Regras'
 
@@ -51,7 +52,10 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
   })
   const adicionarTalento = (nome:string) => {
     if(!nome || talentosEscolhidos.includes(nome) || talentosEscolhidos.length>=limiteDisponivel || requisitoTalento(nome).estado==='inapto')return
-    onChange({...d,dnd2014Talentos:[...talentosEscolhidos,nome]})
+    const def=OPCOES_TALENTOS_2014[nome]
+    const opcoes={...d.dnd2014OpcoesTalentos}
+    if(def?.opcoes.length===1)opcoes[nome]=def.opcoes[0]
+    onChange({...d,dnd2014Talentos:[...talentosEscolhidos,nome],dnd2014OpcoesTalentos:opcoes})
   }
   const periciasClasse = periciasClasse2014(classe)
   const periciasEscolhidas = d.dnd2014PericiasClasse ?? []
@@ -195,8 +199,21 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
             {requisitoTalento(nome).motivo}
           </span>
         </span>
+        {OPCOES_TALENTOS_2014[nome]&&<label className="block min-w-48 w-full text-xs sm:w-auto">
+          {OPCOES_TALENTOS_2014[nome].titulo}
+          <select value={d.dnd2014OpcoesTalentos?.[nome]??''} disabled={somenteLeitura}
+            className={classInput} onChange={e=>{const opcoes={...d.dnd2014OpcoesTalentos};
+              if(e.target.value)opcoes[nome]=e.target.value;else delete opcoes[nome];
+              onChange({...d,dnd2014OpcoesTalentos:opcoes})}}>
+            <option value="">Escolha conforme o PHB...</option>
+            {OPCOES_TALENTOS_2014[nome].opcoes.map(x=><option key={x} value={x}>{x}</option>)}
+          </select>
+          {OPCOES_TALENTOS_2014[nome].bonusAtributo&&
+            <span className="mt-1 block text-(--a-c4b6d4)">+1 apenas após escolha, no máximo 20; calculado a partir dos atributos-base confirmados.</span>}
+        </label>}
         {!somenteLeitura&&<button type="button" className="rounded-lg border border-(--a-55456e) px-3 py-2 text-xs"
-          onClick={()=>onChange({...d,dnd2014Talentos:talentosEscolhidos.filter(x=>x!==nome)})}
+          onClick={()=>{const opcoes={...d.dnd2014OpcoesTalentos};delete opcoes[nome];
+            onChange({...d,dnd2014Talentos:talentosEscolhidos.filter(x=>x!==nome),dnd2014OpcoesTalentos:opcoes})}}
           aria-label={'Remover talento '+nome}>Remover</button>}
       </div>)}
       {!somenteLeitura && talentosEscolhidos.length<limiteDisponivel &&

@@ -45,6 +45,11 @@ try {
   const equipamento=page.locator('section[aria-label="Equipamento inicial D&D 2014"]').first()
   const antecedentes=page.locator('section[aria-label="Ferramentas e idiomas do antecedente 2014"]').first()
   const subclasses=page.locator('section[aria-label="Escolhas internas das subclasses D&D 2014"]').first()
+  // Regressão da captura da Kaelen: o cabeçalho antes mostrava 2024
+  // apesar de toda a ficha e a árvore estarem configuradas para 2014.
+  const tituloEdicao=page.locator('header.sticky').getByText(/D&D 2014 \(SRD 5\.1 \/ Livro do Jogador\)/)
+  await tituloEdicao.waitFor({state:'visible',timeout:45000})
+  assert.doesNotMatch(await page.locator('header.sticky').innerText(),/D&D 2024/)
   await guia.waitFor({state:'visible',timeout:45000})
   await equipamento.waitFor({state:'visible',timeout:12000})
   await antecedentes.waitFor({state:'visible',timeout:12000})

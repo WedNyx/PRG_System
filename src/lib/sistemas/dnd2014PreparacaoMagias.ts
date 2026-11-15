@@ -76,7 +76,7 @@ export function limiteTruques2014(classeId:string,nivel:number,subclasse?:string
  switch(classeId) {
   case 'bardo': return escalar(2,3,4)
   case 'clerigo': return escalar(3,4,5)
-  case 'druida': return escalar(2,3,4)
+  case 'druida': return escalar(2,3,4)+(subclasse==='terra'&&nivel>=2?1:0) // Círculo da Terra: truque extra no 2º nível
   case 'feiticeiro': return escalar(4,5,6)
   case 'bruxo': return escalar(2,3,4)
   case 'mago': return escalar(3,4,5)

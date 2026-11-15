@@ -37,6 +37,7 @@ export const VERSOES: Versao[] = [
       '📚 Magias: componentes V/S/M, materiais e custo, tempo de conjuração e magias do Círculo da Terra sempre preparadas sem consumir cota diária.',
       '🛡️ Todas as novas escolhas têm validação, persistência e categorias de permissão. Efeitos condicionais continuam exigindo o livro e decisão do mestre.',
       '🌳 Árvore de Constelações: manobras, totens, metamagia, pacto e atributos de talentos aparecem como referências a escolhas já registradas, nunca como poderes inventados.',
+      '⚔️ Mestre de Batalha: Dados de Superioridade com 4d8 iniciais, progressão até 6d12 e recuperação no descanso curto/longo; efeitos das manobras continuam interpretativos.',
     ],
   },
   {

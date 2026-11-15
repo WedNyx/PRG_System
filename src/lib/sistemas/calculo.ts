@@ -113,6 +113,8 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     ...(s.id === 'dnd5e-srd' && Array.isArray(d.dnd2014PericiasRaciais) ?
       { dnd2014PericiasRaciais: [...new Set(d.dnd2014PericiasRaciais.filter((x): x is string =>
         typeof x === 'string' && /^[a-z_]{3,30}$/.test(x)))].slice(0,2) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014OpcoesTalentos!==undefined ?
+      {dnd2014OpcoesTalentos:structuredClone(d.dnd2014OpcoesTalentos)} : {}),
     ...(s.id === 'dnd5e-srd' && Array.isArray(d.dnd2014Talentos) ?
       { dnd2014Talentos:[...new Set(d.dnd2014Talentos.filter((x):x is string=>
           typeof x==='string' && TALENTOS_PHB_2014.includes(x)))].slice(0,25) } : {}),

@@ -236,7 +236,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     </section>
     {s.id === 'dnd5e-srd' && <ProntidaoDnd d={d} edicao={edicaoDnd} irPara={ir} />}
     {s.id === 'dnd5e-srd' && !legado2014 && <ResumoEscolhasDnd2024 d={d} irPara={ir} modoManual={modoProgressao === 'manual'} />}
-    {legado2014 && <GuiaCriacaoLegadaDnd d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
+    {legado2014 && <GuiaCriacaoLegadaDnd d={d} onChange={onChange} somenteLeitura={somenteLeitura} irPara={ir} />}
     <Progressao s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} pontosAtributo={Number(c.vars.prog_atributos) || 0} irPara={ir} />
     {c.limites.some(l => l.excedido) && <section role="alert" className="rounded-2xl border border-[#c98b3a] bg-[#3a2a14] p-4 text-sm text-[#f6dca8]">
       <p className="flex items-center gap-2 font-semibold"><AlertTriangle size={18} /> Acima do limite das regras</p>
@@ -263,7 +263,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     </section>}
         </>}
         {secao === 'atributos' && <>
-    {legado2014 && <GuiaCriacaoLegadaDnd d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
+    {legado2014 && <GuiaCriacaoLegadaDnd d={d} onChange={onChange} somenteLeitura={somenteLeitura} irPara={ir} />}
     {s.id === 'dnd5e-srd' && !legado2014 && <GuiaAntecedenteDnd key={idDe(d.campos.antecedente)} d={d} onChange={onChange} somenteLeitura={somenteLeitura} fontes={fontesFicha} />}
     {c.limites.some(l => l.excedido) && <section role="alert" className="rounded-2xl border border-[#c98b3a] bg-[#3a2a14] p-4 text-sm text-[#f6dca8]">
       <p className="flex items-center gap-2 font-semibold"><AlertTriangle size={18} /> Acima do limite das regras</p>
@@ -415,7 +415,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
       {s.creditos && <p className="mt-2 border-t border-(--a-3d3152) pt-2 text-[11px] leading-relaxed text-(--a-9d8db0)">{s.creditos}</p>}
     </section>}
         </>}
-        {secao === 'guia' && (legado2014 ? <GuiaCriacaoLegadaDnd d={d} onChange={onChange} somenteLeitura={somenteLeitura} /> : <GuiaSistema sistemaId={s.id} dados={d} irPara={ir} />)}
+        {secao === 'guia' && (legado2014 ? <GuiaCriacaoLegadaDnd d={d} onChange={onChange} somenteLeitura={somenteLeitura} irPara={ir} /> : <GuiaSistema sistemaId={s.id} dados={d} irPara={ir} />)}
         {proxima && <button type="button" onClick={() => ir(proxima.id)} className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-(--a-62527e) bg-(--s-171325)/80 p-3 text-left text-sm transition hover:border-(--a-b99bff) hover:bg-(--s-2b2140)">
           <span className="text-xl" aria-hidden="true">{proxima.icone}</span><span className="min-w-0 flex-1"><span className="block text-xs text-(--a-a99bbb)">Próxima parte</span><span className="block font-semibold">{proxima.nome}</span></span><span aria-hidden="true" className="text-(--a-b99bff)">→</span></button>}
       </div>

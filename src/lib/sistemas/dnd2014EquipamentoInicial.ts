@@ -3,6 +3,7 @@
  */
 import type { DadosFicha } from './tipos'
 import { lerUso } from './inventario'
+import { escolhasKitClasse2014Validas } from './dnd2014EquipamentoOpcoes'
 
 const DADOS:Record<string,readonly [number,number]>={
   'Bárbaro':[2,10], 'Bardo':[5,10], 'Bruxo':[4,10], 'Clérigo':[5,10],
@@ -15,6 +16,8 @@ export type RegistroEquipamento2014 = {
   antecedente:string
   /** Confirmação de que os equipamentos de classe E de antecedente foram lançados no inventário. */
   conferido?:boolean
+  /** Escolhas por grupo de equipamento ofertadas pela classe. */
+  escolhas?:Record<string,string>
   /** Dados d4 efetivamente rolados quando escolheu ouro em vez dos kits. */
   dados?:number[]
 }
@@ -35,7 +38,7 @@ export function rolarRiquezaInicial2014(classe:string,aleatorio:()=>number=Math.
 }
 export function escolherKitInicial2014(d:DadosFicha):DadosFicha {
   return {...d,dnd2014EquipamentoInicial:{
-    modo:'kit',classe:String(d.campos.classe??''),antecedente:String(d.campos.antecedente??''),conferido:false,
+    modo:'kit',classe:String(d.campos.classe??''),antecedente:String(d.campos.antecedente??''),conferido:false,escolhas:{},
   }}
 }
 /** Rola ouro apenas após escolha explícita. A carteira preenchida nunca é sobrescrita. */
@@ -52,7 +55,8 @@ export function registroEquipamentoAtual2014(d:Partial<DadosFicha>):boolean {
   const r=d.dnd2014EquipamentoInicial
   if(!r||r.classe!==d.campos?.classe||r.antecedente!==d.campos?.antecedente)return false
   return r.modo==='ouro'?totalRiquezaInicial2014(r.classe,r.dados??[])!==null
-    :r.modo==='kit'&&r.conferido===true
+    :r.modo==='kit'&&r.conferido===true&&escolhasKitClasse2014Validas(r.classe,r.escolhas,true)
+      &&Array.isArray(d.itens)&&d.itens.length>0
 }
 export function validarEquipamentoInicial2014(antes:Partial<DadosFicha>,depois:Partial<DadosFicha>,edicao:'phb2014'|'phb2024'):string[] {
   const mudou=JSON.stringify(antes.dnd2014EquipamentoInicial)!==JSON.stringify(depois.dnd2014EquipamentoInicial)
@@ -67,6 +71,7 @@ export function validarEquipamentoInicial2014(antes:Partial<DadosFicha>,depois:P
   if(r.modo==='ouro' && totalRiquezaInicial2014(r.classe,r.dados??[])!==null) return []
   if(r.modo==='kit'&&typeof r.conferido==='boolean'
     &&r.dados===undefined
+    &&(r.escolhas===undefined||escolhasKitClasse2014Validas(r.classe,r.escolhas,r.conferido))
     &&(!r.conferido||(Array.isArray(depois.itens)&&depois.itens.length>0))) return []
   return ['Escolha equipamento de classe e antecedente no inventário ou uma rolagem válida de riqueza inicial.']
 }

@@ -128,7 +128,7 @@ export function atributosEfetivos2014(d: Pick<DadosFicha,'campos' | 'dnd2014Atri
 
 /** Regras abertas de 2014. A característica de classe particular e subclasse continuam manuais. */
 export function efeitosDnd2014(
-  d: Pick<DadosFicha,'campos' | 'dnd2014PericiasClasse' | 'dnd2014PericiasRaciais' | 'dnd2014Multiclasse' | 'dnd2014Subclasse' | 'dnd2014Subclasses'>,
+  d: Pick<DadosFicha,'campos' | 'dnd2014PericiasClasse' | 'dnd2014PericiasRaciais' | 'dnd2014Multiclasse' | 'dnd2014Subclasse' | 'dnd2014Subclasses' | 'dnd2014Talentos'>,
   vars: Record<string,number>,
 ): EfeitosDnd {
   const v: Record<string,number> = Object.fromEntries(VARS_DND.map(x=>[x,0]))
@@ -140,6 +140,13 @@ export function efeitosDnd2014(
   const em=(id:string)=>classes.find(c=>c.cls.id===id)?.nivel??0
   const prof = 2 + Math.floor((n-1)/4)
   v.dnd_nivel=n;v.dnd_prof=prof
+  // Bônus verificáveis de três talentos do PHB 2014. Sem duplicação:
+  // o motor 2024 não é invocado em fichas com livro-base 2014.
+  const talentos=new Set(d.dnd2014Talentos??[])
+  if(talentos.has('ALERTA'))v.dnd_ini_extra+=5
+  if(talentos.has('ROBUSTO'))v.dnd_pv_extra+=2*n
+  if(talentos.has('SORTUDO'))v.dnd_sorte=3
+
   const dar = (id:string,fonte:string) => {if (!treino[id]) treino[id]={treino:'proficiente',fonte}}
   if (classe) {
     for (const a of classe.salvaguardas) if (salvaguardas[a]) dar(salvaguardas[a],classe.nome+' (2014)')

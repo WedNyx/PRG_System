@@ -39,6 +39,18 @@ describe('Metamagia — gastos reais de pontos de Feitiçaria 2014',()=>{
   expect(usarMetamagia2014(segundo.ficha,'Magia Acelerada',1)).toBeNull()
   expect(aplicarDescanso(s,segundo.ficha,'longo').d.recursos.feiticaria.atual).toBe(5)
  })
+ it('Restauração Mística: Feiticeiro 20 recupera 4 PF por descanso curto, mas nível 19 não',()=>{
+  const d=feiticeiro(20)
+  d.recursos.feiticaria.atual=0
+  const primeiro=aplicarDescanso(s,d,'curto').d
+  expect(primeiro.recursos.feiticaria.atual).toBe(4)
+  const segundo=aplicarDescanso(s,primeiro,'curto').d
+  expect(segundo.recursos.feiticaria.atual).toBe(8)
+  const jovem=feiticeiro(19)
+  jovem.recursos.feiticaria.atual=0
+  expect(aplicarDescanso(s,jovem,'curto').d.recursos.feiticaria.atual).toBe(0)
+  expect(aplicarDescanso(s,jovem,'longo').d.recursos.feiticaria.atual).toBe(19)
+ })
  it('não permite gastar opção não escolhida, nível não elegível ou custo maior que saldo',()=>{
   expect(usarMetamagia2014(feiticeiro(2),'Magia Acelerada',1)).toBeNull()
   expect(usarMetamagia2014(feiticeiro(),'Magia Aumentada',1)).toBeNull()

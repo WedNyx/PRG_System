@@ -67,3 +67,10 @@ A plataforma oferece **escolhas orientadas e regras automáticas verificáveis**
 - **Dados de Superioridade (PHB p. 86–87):** Guerreiro 3–6 possui 4d8; 7–9, 5d8; 10–14, 5d10; 15–17, 6d10; 18–20, 6d12. Os dados gastos retornam após descanso curto ou longo. A ficha oferece botão de gasto e referência à característica Implacável do nível 15 sem automatizar ataques ou condições.
 - **Mobile automatizado:** GitHub Actions [43674229523](https://github.com/WedNyx/PRG_System/actions/runs/43674229523) verificou ficha fictícia de Guerreiro 3, Mestre de Batalha e duas manobras nos tamanhos 320, 375, 390 e 768 px. Todas as seções verificadas passaram sem transbordamento horizontal. Foram enviados screenshots como artefatos.
 - **Limites:** teste de navegador em desktop confirmou registro das manobras, mas não executou magia real em Mago; testes HTTP com mestre/jogador no banco isolado e aparelhos móveis físicos ainda pendentes. A implementação não garante automação completa de todas as descrições do PHB 2014.
+
+
+## Complemento 0.34.5 — Metamagia e o recurso de Feitiçaria
+
+O painel de escolhas do Feiticeiro (PHB 2014) agora permite gastar Pontos de Feitiçaria diretamente do recurso `feiticaria` já existente. Os valores de custo que o sistema calcula são factuais e verificáveis: Magia Acelerada = 2, Magia Aumentada = 3, Magia Duplicada = nível da magia (mínimo 1), as demais = 1. O botão não realiza a conjuração, não resolve alvo/alcance nem consome componentes; o jogador e o mestre confirmam o uso pela regra de 2014. Teste `dnd2014UsoMetamagia.test.ts` cobre saldo, opções válidas, níveis de magia e recuperação após descanso longo.
+
+Não há contador paralelo nem migração de banco necessária: o campo de recursos `feiticaria` já é parte da ficha. Continuam pendentes a homologação HTTP mestre/jogador em banco isolado e os efeitos condicionais especializados.

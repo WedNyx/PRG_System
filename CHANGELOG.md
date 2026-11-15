@@ -2,6 +2,17 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.34.4 — Expansão da Etapa 3: escolhas e conjuração 2014 (2026-11-15)
+
+- Escolhas internas de subclasses: Totem Espiritual/Aspecto/Sintonia, terreno de Druida, manobras do Mestre de Batalha e especializações do Caçador; validadas pelo nível de cada classe e sem conceder efeitos comerciais não implementados.
+- Opções de talentos: tipo de dano de Adepto Elemental, listas de classe de Iniciado em Magia e Conjurador de Ritual, atributos de talentos que concedem +1 e salvaguarda de Resiliente. Aumentos confirmados não ultrapassam 20, e fichas legadas sem base não são alteradas automaticamente.
+- Bruxo e Feiticeiro: Dádiva do Pacto e Metamagias selecionáveis, com limites por classe, mesmo em multiclasse.
+- Arcana Mística do Bruxo separada da Magia de Pacto, com escolhas de 6º ao 9º círculo, uso único e recuperação apenas no descanso longo.
+- Grimório 2014: componentes verbal/somático/material inseridos manualmente, custo e consumo de materiais, tempo de conjuração e avisos sem remoção automática de moedas.
+- Magias sempre preparadas do Círculo da Terra por 8 terrenos, sem contar na preparação diária; truque adicional ao selecionar o Círculo da Terra.
+- Novas escolhas validadas no servidor e preservadas na ficha. Testes de regressão específicos por regra. O código não reproduz descrições comerciais nem presume resultados das magias.
+- Ainda requer homologação visual e multiusuário; efeitos condicionais e automação integral de todas as subclasses/talentos/magias continuam fora do escopo seguro sem implementação individual.
+
 ## v0.34.3 — Etapa 3 (primeira entrega): talentos, subclasses e magias 2014 (2026-11-14)
 
 - Pré-requisitos de talentos verificados quando os atributos finais estão disponíveis; requisitos de armadura e conjuração racial continuam identificados para conferência manual.

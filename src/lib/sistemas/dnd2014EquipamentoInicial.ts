@@ -44,6 +44,10 @@ export function escolherKitInicial2014(d:DadosFicha):DadosFicha {
 /** Rola ouro apenas após escolha explícita. A carteira preenchida nunca é sobrescrita. */
 export function escolherOuroInicial2014(d:DadosFicha,aleatorio:()=>number=Math.random):DadosFicha|null {
   const classe=String(d.campos.classe??''),antecedente=String(d.campos.antecedente??'')
+  // Uma escolha já rolada permanece estável em cliques repetidos e após F5.
+  const existente=d.dnd2014EquipamentoInicial
+  if(existente?.modo==='ouro'&&existente.classe===classe&&existente.antecedente===antecedente&&
+    totalRiquezaInicial2014(classe,existente.dados??[])!==null)return d
   const resultado=rolarRiquezaInicial2014(classe,aleatorio)
   if(!resultado)return null
   const uso=lerUso(d.uso)

@@ -24,14 +24,14 @@ export default function EscolhasAntecedenteDnd2014({d,onChange,somenteLeitura}:{
     onChange({...d,dnd2014AntecedenteExtras:{...base,[campo]:lista}})
   }
   return <section aria-label="Ferramentas e idiomas do antecedente 2014"
-    className="space-y-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+    className="min-w-0 space-y-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
     <h4 className="font-semibold text-(--a-d3adf0)">🧰 Ferramentas e idiomas · {ref.nome} (2014)</h4>
     <p className="text-xs text-(--a-cfc0df)">O antecedente concede as perícias indicadas acima e estes benefícios adicionais.
       Registre escolhas livres sem repetir proficiências existentes. Não adicionamos itens ou bônus automaticamente.</p>
     {ref.ferramentasFixas.length>0&&<p className="text-xs">Proficiências fixas: {ref.ferramentasFixas.join(' · ')}.</p>}
     {ref.idiomas===0&&ref.ferramentasLivres===0
       ? <p className="text-xs text-(--a-c4b6d4)">Este antecedente não pede escolhas livres de idioma ou ferramenta.</p>
-      : <div className="grid gap-3 sm:grid-cols-2">
+      : <div className="grid min-w-0 gap-3 sm:grid-cols-2">
         {Array.from({length:ref.idiomas},(_,i)=><label key={'idioma'+i} className="text-xs">
           Idioma {i+1}/{ref.idiomas}
           <input className={input} value={idiomas[i]??''} placeholder="Ex.: Élfico" maxLength={80}
@@ -44,7 +44,7 @@ export default function EscolhasAntecedenteDnd2014({d,onChange,somenteLeitura}:{
         </label>)}
       </div>}
     {ref.ferramentasLivres===0&&ref.idiomas===0&&!atual&&!somenteLeitura&&
-      <button type="button" className="rounded-lg border border-(--a-62527e) px-3 py-2 text-xs"
+      <button type="button" className="min-h-11 w-full rounded-lg border border-(--a-62527e) px-3 py-2 text-sm sm:w-auto"
         onClick={()=>onChange({...d,dnd2014AntecedenteExtras:{antecedente:ref.nome,idiomas:[],ferramentas:[]}})}>
         Confirmar proficiências do antecedente
       </button>}

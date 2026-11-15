@@ -65,3 +65,23 @@ export function resumoPreparacaoMagias2014(d:DadosFicha,magias:{classe:string;ni
    return [{classe:c.cls.nome,tipo:limite.tipo,total,maximo:limite.maximo,descricao:limite.descricao}]
  })
 }
+
+/** Limite de truques 2014, separado das magias de 1º nível ou superiores.
+ * Guerreiros e Ladinos só recebem truques pela subclasse conjuradora.
+ */
+export function limiteTruques2014(classeId:string,nivel:number,subclasse?:string):number {
+ if(!Number.isInteger(nivel)||nivel<1||nivel>20)return 0
+ const escalar=(inicio:number,quatro:number,dez:number)=>
+   nivel>=10?dez:nivel>=4?quatro:inicio
+ switch(classeId) {
+  case 'bardo': return escalar(2,3,4)
+  case 'clerigo': return escalar(3,4,5)
+  case 'druida': return escalar(2,3,4)
+  case 'feiticeiro': return escalar(4,5,6)
+  case 'bruxo': return escalar(2,3,4)
+  case 'mago': return escalar(3,4,5)
+  case 'guerreiro': return subclasse==='cavaleiro-arcano'&&nivel>=3?(nivel>=10?3:2):0
+  case 'ladino': return subclasse==='trapaceiro-arcano'&&nivel>=3?(nivel>=10?4:3):0
+  default: return 0
+ }
+}

@@ -41,7 +41,7 @@ export type EscolhasAntecedente2014={
 }
 const validos=(itens:unknown,limite:number):itens is string[]=>
   Array.isArray(itens)&&itens.length<=limite&&itens.every(x=>typeof x==='string'&&
-    x.length<=80&&(!x||x.trim().length>=2))&&
+    x.length<=80)&&
   new Set(itens.filter(Boolean).map(x=>x.trim().toLowerCase())).size===itens.filter(Boolean).length
 
 export function diagnosticarEscolhasAntecedente2014(d:Partial<DadosFicha>):string[] {

@@ -19,6 +19,8 @@ export type RegistroMagiaDnd2014 = {
   notas?: string; expressao?: string
   /** Confirmado manualmente no texto da magia 2014; nunca derivado do catálogo 2024. */
   concentracao?: boolean
+  /** Arcana Mística de Bruxo, círculo 6–9, sem gastar espaço. */
+  arcanaMistica?: boolean
 }
 const classesConjuradoras = new Set(['bardo','clerigo','druida','feiticeiro','mago','paladino','patrulheiro','bruxo','guerreiro','ladino'])
 const formatoExpr = /^(?:\d{1,2}d(?:4|6|8|10|12|20|100)(?:[+-]\d{1,3})?)$/
@@ -57,6 +59,7 @@ export function lerMagias2014(raw:unknown):RegistroMagiaDnd2014[] {
       ...(typeof x.notas==='string'?{notas:x.notas.slice(0,500)}:{}),
       ...(expressaoMagia2014Valida(x.expressao)?{expressao:String(x.expressao).trim()}:{}),
       ...(x.concentracao===true?{concentracao:true}:{}),
+      ...(x.arcanaMistica===true?{arcanaMistica:true}:{}),
     })
   }
   return saida

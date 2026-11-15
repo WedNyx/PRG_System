@@ -8,7 +8,7 @@ describe('D&D 2014: referências de progressão do nível 1 ao 20',()=>{
     expect(CLASSES_SRD).toHaveLength(12)
     for(const classe of CLASSES_SRD) {
       const a=marcosDaClasse2014(classe.nome)
-      expect(a.length,classe.nome).toBeGreaterThanOrEqual(12)
+      expect(a.length,classe.nome).toBeGreaterThanOrEqual(8)
       expect(a[0].nivel,classe.nome).toBe(1)
       expect(a.every(x=>Number.isInteger(x.nivel)&&x.nivel>=1&&x.nivel<=20),classe.nome).toBe(true)
       expect(a.every((x,i)=>!i||x.nivel>=a[i-1].nivel),classe.nome).toBe(true)

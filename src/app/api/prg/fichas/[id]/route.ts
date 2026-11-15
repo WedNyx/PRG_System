@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { apelidoDe, ator, buscarFicha, linkCampanha, mestresDe, notificar, participantes, checarOrigem, lerJson, ok, papelNaCampanha, q, regrasDoJogador, registrar, rest, rpc, rota, ErroApi, type FichaRow } from '@/lib/nuvem/servidor'
 import { isUuid, normalizarPermissoes, normalizarExcecoes, podeAdministrar, validarFichaDados, isModelo } from '@/lib/nuvem/validacao'
 import { diferencas, aplicar, separarPorRegra, resumoMudanca, type Mudanca } from '@/lib/nuvem/categorias'
+import { agruparRiquezaInicial2014 } from '@/lib/nuvem/riquezaInicial2014Permissoes'
 import type { Campo } from '@/lib/campanhas/permissoes'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { normalizarFicha } from '@/lib/sistemas/calculo'
@@ -211,7 +212,8 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const antes = s ? normalizarFicha(s, f.dados as Partial<DadosFicha>) as unknown as Record<string, unknown> : (f.dados ?? {})
     if (s) v.valor.dados = normalizarFicha(s, v.valor.dados as Partial<DadosFicha>) as unknown as Record<string, unknown>
     f.dados = antes
-    const mudancas = diferencas(f.sistema, antes, v.valor.dados)
+    // Ouro de criação e método de equipamento precisam da MESMA autorização do mestre.
+    const mudancas = agruparRiquezaInicial2014(f.sistema, antes, v.valor.dados, diferencas(f.sistema, antes, v.valor.dados))
     if (admin) { salvas = mudancas; final = v.valor.dados }
     else {
       if (f.status === 'recusada') throw new ErroApi(403, 'Esta ficha foi recusada pelo mestre.')

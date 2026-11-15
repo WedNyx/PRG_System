@@ -22,11 +22,12 @@
 
 - Separação de magias **conhecidas** vs. **preparadas**. Tabelas de Bardo, Bruxo, Feiticeiro, Patrulheiro e arquétipos conjuradores Guerreiro/Ladino de 2014, sempre por nível da classe.
 - Clérigo, Druida, Paladino e Mago calculam limite de preparação a partir de nível da classe e modificador apropriado de atributo. Grimório do Mago não é artificialmente limitado ao número de magias preparadas.
-- Truques e magias extras (talento, item, mestre) não consomem o limite de magias de nível 1+.
+- Truques e magias extras (talento, item, mestre) não consomem o limite de magias de nível 1+. **Truques conhecidos** também possuem cotas por classe/subclasse (incluindo Cavaleiro Arcano e Trapaceiro Arcano).
+- Rituais com descritor no catálogo de 2014 podem ser conjurados por Bardo, Clérigo, Druida ou Mago quando possuírem a magia no modo correto, com aviso de 10 minutos adicionais e sem consumir espaço. Bruxo e Feiticeiro requerem benefício adicional, portanto não são habilitados automaticamente.
 - Concentração é um estado **manual e explícito**: uma magia de cada vez; trocar a concentração substitui a anterior. Mostra CD de Constituição, `max(10, piso(dano/2))`, sem inventar sucesso/falha nem duração.
 - Campos novos passam pela normalização da ficha e pelo servidor, com categoria de permissão `pv` para o estado de concentração. Os registros de magias continuam na categoria `habilidades`.
 - Os talentos registrados aparecem na árvore, com um cartão-resumo do grimório para evitar centenas de cartões.
-- **Pendentes:** limites de truques conhecidos, execução assistida de rituais e componentes, proficiências especiais, magia de domínio/círculo/juramento, Arcana Mística de Bruxo, contramágica, efeitos individualizados e recuperação especializada.
+- **Pendentes:** componentes materiais/verbal/somático, ritual de outras fontes especiais, proficiências especiais, magia de domínio/círculo/juramento, Arcana Mística de Bruxo, contramágica, efeitos individualizados e recuperação especializada.
 
 ## Critérios de segurança e compatibilidade
 
@@ -39,5 +40,5 @@
 
 1. Talentos: escolhas internas, bônus restantes verificáveis, resistências e recursos por descanso.
 2. Subclasses: decisões por marco (ex.: opções de Totem, Mestre de Batalha, Patronos), bibliotecas por fonte e ligação com pontos de uso.
-3. Magias: truques conhecidos, rituais, componentes, preparação e magia do patrono/domínio/círculo, custo de componentes e efeitos controlados.
+3. Magias: requisitos de componentes, preparação de magia por especialidade, magia do patrono/domínio/círculo, custo de componentes e efeitos controlados; aprofundar conjuração ritual por talentos específicos.
 4. Regressão 2014/2024 e homologação com mestre/jogador em banco isolado e viewport mobile.

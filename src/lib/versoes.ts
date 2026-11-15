@@ -27,6 +27,18 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao:'0.34.3', data:'2026-11-14',
+    titulo:'D&D 2014: Etapa 3 — talentos, arquétipos e grimório',
+    itens:[
+      '✨ Talentos 2014: pré-requisitos numéricos conferidos, alertas de proficiência/conjuração e bloqueio de uso simultâneo de talento e incremento no mesmo marco.',
+      '🌿 Subclasses do PHB 2014: árvore mostra marcos por nível de classe, inclusive opções comerciais, sem reproduzir texto do livro ou conceder efeitos não implementados.',
+      '📚 Magias: limites de preparação e conhecimento por classe em 2014, com separação de truques, magias extras e grimório do Mago.',
+      '🌀 Concentração: marque as magias que exigem concentração, mantenha uma concentração ativa, encerre manualmente e confira a CD após sofrer dano.',
+      '🛡️ Novos campos persistentes protegidos pelas permissões; magias e talentos aparecem como referências na Árvore de Constelações.',
+      '🧪 Esta é a primeira entrega da Etapa 3; efeitos situacionais específicos de talentos, subclasses comerciais e magias ainda são conferidos pelo mestre.',
+    ],
+  },
+  {
     versao:'0.34.2', data:'2026-11-14',
     titulo:'D&D 2014: homologação de criação e aprovação do ouro inicial',
     itens:[

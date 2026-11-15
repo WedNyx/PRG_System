@@ -71,7 +71,7 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
     p[pos]=pericia
     onChange({ ...d, dnd2014PericiasClasse: p })
   }
-  return <section aria-label="Regras de criação 2014" className="space-y-4 rounded-2xl border border-amber-500/35 bg-(--s-201a32) p-4 sm:p-5">
+  return <section aria-label="Regras de criação 2014" className="min-w-0 space-y-4 rounded-2xl border border-amber-500/35 bg-(--s-201a32) p-3 sm:p-5">
     <div>
       <h3 className="text-base font-semibold text-amber-100">📜 Criação D&D 5e · Livro do Jogador (2014)</h3>
       <p className="mt-1 text-xs text-(--a-c4b6d4)">

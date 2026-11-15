@@ -44,6 +44,7 @@ function categoriaGenerica(caminho: string): Campo {
   if (caminho === 'arvore') return 'habilidades'
   if (caminho === 'dndLivros') return 'identidade'
   if (caminho === 'dnd2014VidaRolada') return 'pv'
+  if (caminho === 'dnd2014EquipamentoInicial') return 'equipamentos'
   if (['dnd2014MetodoAtributos','dnd2014RolagensAtributos','dnd2014Incrementos'].includes(caminho)) return 'atributos'
   if (caminho === 'dnd2014AtributosBase' || caminho === 'dnd2014AtributosExtras') return 'atributos'
   if (caminho === 'dnd2014PericiasClasse') return 'pericias'

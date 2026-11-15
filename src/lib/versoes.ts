@@ -27,6 +27,18 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao:'0.34.4', data:'2026-11-15',
+    titulo:'D&D 2014: escolhas de subclasses, talentos e conjuração avançada',
+    itens:[
+      '🌳 Decisões internas de 2014: Totens do Bárbaro, manobras do Mestre de Batalha, Terrenos do Círculo da Terra e opções do Caçador por nível de classe.',
+      '✨ Talentos: escolhas de atributos e elementos, bônus verificáveis até 20 e proficiência em salvaguarda de Resiliente; sem somar bônus a fichas legadas não confirmadas.',
+      '🧙 Bruxo e Feiticeiro: Dádiva do Pacto e opções de Metamagia com limites próprios, inclusive multiclasse.',
+      '🔮 Arcana Mística de Bruxo: círculos 6º a 9º, uma conjuração por círculo sem espaços; usos recuperados no descanso longo.',
+      '📚 Magias: componentes V/S/M, materiais e custo, tempo de conjuração e magias do Círculo da Terra sempre preparadas sem consumir cota diária.',
+      '🛡️ Todas as novas escolhas têm validação, persistência e categorias de permissão. Efeitos condicionais continuam exigindo o livro e decisão do mestre.',
+    ],
+  },
+  {
     versao:'0.34.3', data:'2026-11-14',
     titulo:'D&D 2014: Etapa 3 — talentos, arquétipos e grimório',
     itens:[

@@ -8,6 +8,7 @@ Também aparece no site em /novidades. Ao atualizar: aumente a versão no packag
 - Custos verificáveis do PHB 2014: Acelerada (2), Aumentada (3), Duplicada (1 para truque ou nível da magia) e as demais opções (1).
 - Valida posse da opção, Feiticeiro nível 3+, nível da magia e saldo do recurso. A interface exige confirmação e informa condições manuais de alvo, alcance e componentes.
 - O recurso existente continua seguindo o descanso longo; um novo teste cobre a recuperação e impede gasto acima do saldo.
+- Restauração Mística (Feiticeiro de nível 20) recupera até 4 Pontos de Feitiçaria por descanso curto, sem estender essa recuperação a Feiticeiros abaixo do nível 20.
 - Ainda não automatiza efeitos situacionais de todas as magias e talentos comerciais, nem substitui teste autenticado de jogadores e mestres em banco isolado.
 
 ## v0.34.4 — Expansão da Etapa 3: escolhas e conjuração 2014 (2026-11-15)

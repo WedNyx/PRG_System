@@ -2,6 +2,15 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.34.6 — Árvore explicativa e edição correta (2026-11-15)
+
+- Cabeçalho da ficha passa a usar o livro-base efetivo (2014 ou 2024), corrigindo o nome genérico do catálogo que exibia SRD 5.2.1 mesmo com a Árvore em 2014.
+- Cartões de características antes rotulados "Consultar livro" passam a abrir "Ver detalhes". Em celulares, o conteúdo abre logo abaixo do cartão; no computador, no painel de detalhes.
+- A Árvore passa a apresentar explicações resumidas de classes e raças de 2014 e antecedentes, com benefícios e registros práticos para Inimigo Favorito, Explorador Natural, Tiferino e Forasteiro, além das descrições já existentes de 2024.
+- O guia do Patrulheiro permite registrar inimigo favorito e idioma sem conceder bônus automaticamente. O PDF fornecido inclui a variante Patrulheiro Revisado, com diferenças em relação ao SRD 5.1 clássico; a interface deixa a distinção explícita.
+- Regressão das duas edições: o isolamento usa identificadores internos e não nomes de características que podem existir em 2014 e 2024.
+- Informações dos livros comerciais continuam em forma de resumos próprios e não de transcrições integrais. Efeitos condicionais ainda não automatizados devem ser aplicados conforme a mesa.
+
 ## v0.34.5 — Metamagia 2014 e integração aos recursos (2026-11-15)
 
 - Metamagias escolhidas no guia agora podem registrar o gasto de Pontos de Feitiçaria na ficha, sem criar um contador paralelo.

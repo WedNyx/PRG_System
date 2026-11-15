@@ -1,6 +1,6 @@
 # Etapa 3 — Talentos, subclasses e magias de D&D 5e (2014)
 
-**Status:** primeira entrega implementada na PR #53, versão `0.34.3`. Baseada na `main` após o merge da Etapa 2; a PR não foi mesclada automaticamente.
+**Status:** Etapa 3 ampliada na PR #53, versões `0.34.3` e `0.34.4`. Baseada na `main` após o merge da Etapa 2; a PR não foi mesclada automaticamente.
 
 **Referência:** Livro do Jogador de D&D 5e (2014), tradução em português enviada pelo usuário. Capítulos 3 (classes, subclasses e evolução), 6 (talentos, pp. 165–172), 10 (regras de conjuração, pp. 201–205) e 11 (catálogo de magias, pp. 208–214). Conteúdo aberto do SRD 5.1 sob CC BY 4.0. Não reproduzir efeitos e descrições de regras comerciais.
 
@@ -27,7 +27,7 @@
 - Concentração é um estado **manual e explícito**: uma magia de cada vez; trocar a concentração substitui a anterior. Mostra CD de Constituição, `max(10, piso(dano/2))`, sem inventar sucesso/falha nem duração.
 - Campos novos passam pela normalização da ficha e pelo servidor, com categoria de permissão `pv` para o estado de concentração. Os registros de magias continuam na categoria `habilidades`.
 - Os talentos registrados aparecem na árvore, com um cartão-resumo do grimório para evitar centenas de cartões.
-- **Pendentes:** componentes materiais/verbal/somático, ritual de outras fontes especiais, proficiências especiais, magia de domínio/círculo/juramento, Arcana Mística de Bruxo, contramágica, efeitos individualizados e recuperação especializada.
+- **Pendentes:** automação de componentes com inventário, rituais de outras fontes especiais, magia de domínio/juramento e patronos, contramágica, efeitos individualizados e recuperação especializada.
 
 ## Critérios de segurança e compatibilidade
 
@@ -42,3 +42,16 @@
 2. Subclasses: decisões por marco (ex.: opções de Totem, Mestre de Batalha, Patronos), bibliotecas por fonte e ligação com pontos de uso.
 3. Magias: requisitos de componentes, preparação de magia por especialidade, magia do patrono/domínio/círculo, custo de componentes e efeitos controlados; aprofundar conjuração ritual por talentos específicos.
 4. Regressão 2014/2024 e homologação com mestre/jogador em banco isolado e viewport mobile.
+
+## Ampliação em 15/11/2026 — versão 0.34.4
+
+1. **Escolhas de subclasses registradas:** na ficha de 2014, Totens por níveis 3/6/14, Terreno do Círculo da Terra, manobras do Mestre de Batalha por níveis 3/7/10/15 e opções de Caçador por níveis 3/7/11/15. A validação recusa escolhas duplicadas ou antecipadas; trocar de subclasse limpa opções anteriores.
+2. **Talentos com escolha e efeitos objetivos:** quando a ficha possui atributos-base confirmados, atributos de talentos que dão +1 podem ser selecionados e refletidos no total com limite 20. Resiliente concede proficiência na salvaguarda escolhida, além do atributo. Iniciado em Magia, Conjurador de Ritual e Adepto Elemental registram a lista/elemento escolhidos; a aplicação de seus benefícios mais específicos continua guiada pelo livro.
+3. **Opções de classe:** Dádiva de Pacto do Bruxo a partir de nível 3; Metamagia do Feiticeiro (2 opções no nível 3, 3 no nível 10 e 4 no nível 17). Essas escolhas não são equivocadamente tratadas como subclasses.
+4. **Arcana Mística:** Bruxo registra uma magia de cada nível 6, 7, 8 e 9 após alcançar níveis 11, 13, 15 e 17 da própria classe. Uso independente de espaços de magia, uma vez por descanso longo; ao descansar longamente, todos os usos são recuperados.
+5. **Componentes e magias de Círculo:** o grimório agora registra V, S, M, material, valor e consumo após consulta ao PHB e avisa quando o componente merece conferência; **não** desconta dinheiro/itens automaticamente. Os oito terrenos do Círculo da Terra têm suas magias sempre preparadas indicadas e registradas como extras sem consumir cotas de preparação. O Druida da Terra ganha seu truque adicional no nível 2.
+6. **Testes:** `dnd2014EscolhasSubclasse.test.ts`, `dnd2014OpcoesTalentos.test.ts`, `dnd2014ArcanaMistica.test.ts`, `dnd2014Componentes.test.ts`, `dnd2014OpcoesClasse.test.ts` e `dnd2014MagiasCirculo.test.ts`, além da suíte existente.
+
+### Limites de conclusão
+
+A plataforma oferece **escolhas orientadas e regras automáticas verificáveis**. Ainda não representa 100% de automação de todos os talentos, subclasses e magias: faltam execução situacional de benefícios comerciais, magias concedidas por todos os domínios/juramentos/patronos, custos de material efetivamente descontados do inventário e E2E autenticado com mestre/jogador em banco de teste. Esses limites permanecem explícitos para não dar efeitos errados ou prometer uma fidelidade não comprovada.

@@ -1,4 +1,6 @@
 import { diagnosticoAtributos2014, marcosIncremento2014 } from './dnd2014Atributos'
+import { xpParaNivel2014 } from './dnd2014Experiencia'
+import { registroEquipamentoAtual2014 } from './dnd2014EquipamentoInicial'
 import { limitesTalentos2014 } from './dnd2014Talentos'
 /**
  * Checklist de preparação para jogar D&D. É diagnóstico não destrutivo:
@@ -41,6 +43,20 @@ export function avaliarProntidaoDnd(d: DadosFicha, edicao: LivroBaseDnd = lerLiv
     incluir('nivel', 'Nível', 'Informe um nível inteiro de 1 a 20.', 'pendente', 'principal')
 
   if (edicao === 'phb2014') {
+    const equipamento=d.dnd2014EquipamentoInicial
+    if(!equipamento)
+      incluir('equipamentoInicial2014','Equipamento inicial',
+        'Escolha o kit de classe e antecedente ou registre o ouro inicial na criação guiada.',
+        d.dnd2014AtributosBase?'pendente':'conferir','principal')
+    else if(!registroEquipamentoAtual2014(d))
+      incluir('equipamentoInicial2014','Revisar equipamento inicial',
+        'Confira itens da classe e do antecedente ou refaça a rolagem após mudar a classe.',
+        'pendente','principal')
+    const xp=Number(d.campos.xp??0)
+    if(Number.isFinite(xp)&&xp>=0&&xp<xpParaNivel2014(nivel))
+      incluir('xp2014','XP e nível',
+        'O XP está abaixo do mínimo para o nível. Isso é permitido em campanhas por marcos; confirme com o mestre.',
+        'conferir','principal')
     for(const [i,detalhe] of diagnosticoAtributos2014(d).entries())
       incluir('metodoAtributos2014-'+i,'Distribuição de atributos',detalhe,'pendente','atributos')
     const marcos=marcosIncremento2014(d)

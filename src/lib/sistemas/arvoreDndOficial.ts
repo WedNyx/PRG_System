@@ -12,6 +12,7 @@ import { ANTECEDENTES_2014, RACAS_2014, SUBRACAS_2014 } from './dnd2014Criacao'
 import { marcosDaClasse2014 } from './dnd2014Marcos'
 import { subclasseDaFicha2014 } from './dnd2014Subclasses'
 import {ESCOLHAS_SUBCLASSES_2014} from './dnd2014EscolhasSubclasse'
+import {limiteMetamagia2014} from './dnd2014OpcoesClasse'
 import { classesDaFicha2014 } from './dnd2014Multiclasse'
 import { lerLivrosDnd, type LivroBaseDnd } from './dndLivros'
 import { fontePermitida, FONTE_LEGADO_2014, FONTE_PHB } from './dnd2024Fontes'
@@ -89,14 +90,16 @@ export function hexagonosOficiaisDnd(
             livro:'Player’s Handbook (2014)',
           })))
     })
+    const bruxoNivel=lista.find(x=>x.cls.id==='bruxo')?.nivel??0
+    const feiticeiroNivel=lista.find(x=>x.cls.id==='feiticeiro')?.nivel??0
     const escolhasClasse:HexagonoDnd[]=[
-      ...(d.dnd2014OpcoesClasse?.pactoBruxo?[{
+      ...(bruxoNivel>=3&&d.dnd2014OpcoesClasse?.pactoBruxo?[{
         id:'2014-pacto-bruxo',titulo:d.dnd2014OpcoesClasse.pactoBruxo,
         descricao:'Dádiva do Pacto do Bruxo (2014). Benefícios e condições conforme o livro.',
         nivel:3,ramo:'classe' as const,estado:'referencia' as const,
         livro:'Player’s Handbook (2014)',
       }]:[]),
-      ...(d.dnd2014OpcoesClasse?.metamagicas??[]).map((nome,i)=>({
+      ...(feiticeiroNivel>=3?(d.dnd2014OpcoesClasse?.metamagicas??[]).slice(0,limiteMetamagia2014(feiticeiroNivel)):[]).map((nome,i)=>({
         id:'2014-metamagia-'+i,titulo:nome,
         descricao:'Metamagia de Feiticeiro 2014. Custo e efeito devem seguir o livro.',
         nivel:3,ramo:'classe' as const,estado:'referencia' as const,

@@ -8,7 +8,7 @@ import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { SUBRACAS_2014, RACAS_2014, ANTECEDENTES_2014 } from '@/lib/sistemas/dnd2014Criacao'
 import { subclassesDaClasse2014, subclasseAtivaDnd2014 } from '@/lib/sistemas/dnd2014Subclasses'
 import { classesDaFicha2014 } from '@/lib/sistemas/dnd2014Multiclasse'
-import { TALENTOS_PHB_2014, limitesTalentos2014 } from '@/lib/sistemas/dnd2014Talentos'
+import { TALENTOS_PHB_2014, limitesTalentos2014, avaliarRequisitoTalento2014 } from '@/lib/sistemas/dnd2014Talentos'
 import { ATRIBUTOS_DND, aumentosRaciais2014, atributosEfetivos2014, lerAtributosBase2014,
   periciasAntecedente2014, periciasClasse2014 } from '@/lib/sistemas/dnd2014Regras'
 
@@ -36,8 +36,20 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
   const limiteTalentos = limitesTalentos2014(d)
   const limiteDisponivel = Math.max(0,limiteTalentos.total-Object.keys(d.dnd2014Incrementos??{}).length)
   const talentosEscolhidos = d.dnd2014Talentos ?? []
+  const requisitoTalento=(nome:string)=>avaliarRequisitoTalento2014(nome,{
+    atributos:total??d.atributos,
+    // A existência de conjuração por raça/talento ainda pode precisar de mestre.
+    conjurador:classesDaFicha2014(d).lista.some(x=>
+      ['bardo','bruxo','clerigo','druida','feiticeiro','mago'].includes(x.cls.id)||
+      (['paladino','patrulheiro'].includes(x.cls.id)&&x.nivel>=2)||
+      (x.cls.id==='guerreiro'&&x.nivel>=3&&
+         (x.principal?d.dnd2014Subclasse:d.dnd2014Subclasses?.[x.cls.id])==='cavaleiro-arcano')||
+      (x.cls.id==='ladino'&&x.nivel>=3&&
+         (x.principal?d.dnd2014Subclasse:d.dnd2014Subclasses?.[x.cls.id])==='trapaceiro-arcano')
+    ),
+  })
   const adicionarTalento = (nome:string) => {
-    if(!nome || talentosEscolhidos.includes(nome) || talentosEscolhidos.length>=limiteDisponivel)return
+    if(!nome || talentosEscolhidos.includes(nome) || talentosEscolhidos.length>=limiteDisponivel || requisitoTalento(nome).estado==='inapto')return
     onChange({...d,dnd2014Talentos:[...talentosEscolhidos,nome]})
   }
   const periciasClasse = periciasClasse2014(classe)
@@ -165,16 +177,22 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
       className="space-y-2 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
       <h4 className="text-sm font-semibold text-(--a-d3adf0)">✨ Talentos · Livro do Jogador 2014</h4>
       <p className="text-xs text-(--a-c4b6d4)">
-        {talentosEscolhidos.length} de {limiteDisponivel} escolhas possíveis após os incrementos em atributos
+        {talentosEscolhidos.length} selecionado(s) · limite total {limiteDisponivel} após os incrementos em atributos
         ({limiteTalentos.aumentos} no lugar de Incremento de Atributo
         {limiteTalentos.variante>0?' + 1 do Humano Variante':''}).
         O mestre deve confirmar que a campanha usa a regra opcional de talentos.
-        Os pré-requisitos e efeitos devem ser conferidos no livro; esta escolha não
+        Pré-requisitos numéricos são avaliados; proficiências/efeitos condicionais precisam do livro. Esta escolha não
         acrescenta bônus automaticamente.
       </p>
       {talentosEscolhidos.map(nome=><div key={nome}
         className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-(--a-55456e) p-2">
-        <span className="text-xs font-semibold">{nome}</span>
+        <span className="min-w-0 text-xs font-semibold">{nome}
+          <span className="mt-1 block font-normal text-(--a-c4b6d4)">
+            {requisitoTalento(nome).estado==='inapto'?'⚠️ Requisito perdido: ':
+              requisitoTalento(nome).estado==='conferir'?'📖 Conferir com mestre: ':'✓ '}
+            {requisitoTalento(nome).motivo}
+          </span>
+        </span>
         {!somenteLeitura&&<button type="button" className="rounded-lg border border-(--a-55456e) px-3 py-2 text-xs"
           onClick={()=>onChange({...d,dnd2014Talentos:talentosEscolhidos.filter(x=>x!==nome)})}
           aria-label={'Remover talento '+nome}>Remover</button>}
@@ -184,7 +202,10 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
           <select value="" className={classInput} onChange={e=>adicionarTalento(e.target.value)}>
             <option value="">Escolha um dos 42 talentos do PHB 2014</option>
             {TALENTOS_PHB_2014.filter(x=>!talentosEscolhidos.includes(x)).map(nome=>
-              <option key={nome} value={nome}>{nome}</option>)}
+              <option key={nome} value={nome} disabled={requisitoTalento(nome).estado==='inapto'}>
+                {nome}{requisitoTalento(nome).estado==='inapto'?' — requisito não atendido':
+                  requisitoTalento(nome).estado==='conferir'?' — conferir requisito':''}
+              </option>)}
           </select>
         </label>}
     </section>}

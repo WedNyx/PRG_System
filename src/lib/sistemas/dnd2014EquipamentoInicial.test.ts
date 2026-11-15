@@ -48,6 +48,10 @@ describe('PHB 2014: equipamento inicial sem duplicação',()=>{
     expect(registrado.dnd2014EquipamentoInicial?.dados).toEqual([1,1,1,1,1])
     const vazio=escolherOuroInicial2014(d,()=>0)!
     expect(lerUso(vazio.uso).carteira).toBe('50 PO')
+    // Um clique repetido não pode gerar outro resultado para a mesma ficha.
+    const repetido=escolherOuroInicial2014(vazio,()=>0.9999)!
+    expect(repetido).toEqual(vazio)
+    expect(repetido.dnd2014EquipamentoInicial?.dados).toEqual([1,1,1,1,1])
     expect(vazio.itens).toEqual(d.itens)
     expect(registroEquipamentoAtual2014(vazio)).toBe(true)
     expect(normalizarFicha(s,vazio).dnd2014EquipamentoInicial).toEqual(vazio.dnd2014EquipamentoInicial)

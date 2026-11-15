@@ -33,6 +33,7 @@ export const VERSOES: Versao[] = [
       '✨ Talentos 2014: pré-requisitos numéricos conferidos, alertas de proficiência/conjuração e bloqueio de uso simultâneo de talento e incremento no mesmo marco.',
       '🌿 Subclasses do PHB 2014: árvore mostra marcos por nível de classe, inclusive opções comerciais, sem reproduzir texto do livro ou conceder efeitos não implementados.',
       '📚 Magias: limites de preparação e conhecimento por classe em 2014, com separação de truques, magias extras e grimório do Mago.',
+      '✨ Truques com limites por classe e rituais guiados para classes habilitadas, sem confundir os espaços de magia de 2014.',
       '🌀 Concentração: marque as magias que exigem concentração, mantenha uma concentração ativa, encerre manualmente e confira a CD após sofrer dano.',
       '🛡️ Novos campos persistentes protegidos pelas permissões; magias e talentos aparecem como referências na Árvore de Constelações.',
       '🧪 Esta é a primeira entrega da Etapa 3; efeitos situacionais específicos de talentos, subclasses comerciais e magias ainda são conferidos pelo mestre.',

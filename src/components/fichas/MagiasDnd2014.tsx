@@ -7,9 +7,9 @@ import type {Calculo} from '@/lib/sistemas/calculo'
 import {classesDaFicha2014} from '@/lib/sistemas/dnd2014Multiclasse'
 import {subclasseDaFicha2014} from '@/lib/sistemas/dnd2014Subclasses'
 import {lerLivrosDnd,suplementoDndPorId} from '@/lib/sistemas/dndLivros'
-import {lerMagias2014,maximoNivelMagiaClasse2014,expressaoMagia2014Valida,type RegistroMagiaDnd2014} from '@/lib/sistemas/dnd2014Magias'
+import {lerMagias2014,maximoNivelMagiaClasse2014,expressaoMagia2014Valida,podeConjurarRitualMagia2014,type RegistroMagiaDnd2014} from '@/lib/sistemas/dnd2014Magias'
 import {magiasDaClasse2014} from '@/lib/sistemas/dnd2014CatalogoMagias'
-import {resumoPreparacaoMagias2014} from '@/lib/sistemas/dnd2014PreparacaoMagias'
+import {resumoPreparacaoMagias2014, limiteTruques2014} from '@/lib/sistemas/dnd2014PreparacaoMagias'
 import {cdConcentracaoDano2014,encerrarConcentracao2014} from '@/lib/sistemas/dnd2014Concentracao'
 import {idDe} from '@/lib/sistemas/dnd2024Classes'
 const btn='inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-(--a-5e4b78) px-3 py-2 text-xs hover:bg-(--s-34294f) disabled:opacity-40'
@@ -107,6 +107,13 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
       onClick={()=>onChange(encerrarConcentracao2014(d))}>Encerrar concentração</button>}
     <p className="text-[11px] text-(--a-c4b6d4)">O mestre verifica interrupções, duração e efeito conforme o livro; o sistema não presume sucesso na resistência.</p>
   </div>}
+  {lista.length>0&&<p className="text-xs text-(--a-c4b6d4)">
+    Truques 2014: {lista.map(x=>{
+      const max=limiteTruques2014(x.cls.id,x.nivel,subclasseDaFicha2014(d,x.cls.id)?.id)
+      const total=magias.filter(m=>m.classe===x.cls.id&&m.nivel===0&&m.modo!=='extra').length
+      return x.cls.nome+' '+total+'/'+max
+    }).join(' · ')}. Truques não usam espaços de magia.
+  </p>}
   {lista.length>0&&<p className="text-xs text-(--a-d3adf0)">
     Classes: {lista.map(x=>x.cls.nome+' '+x.nivel).join(' · ')}.
     Espaços disponíveis: {[1,2,3,4,5,6,7,8,9].filter(n=>maxSlot(n)>0).map(n=>n+'º '+atualSlot(n)+'/'+maxSlot(n)).join(' · ')||'nenhum'}.
@@ -215,6 +222,13 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
           <Dice5 size={14}/> Gastar espaço {(espacosEscolhidos[m.id]??m.nivel)}º
         </button>
       </>}
+      {podeConjurarRitualMagia2014(m)&&<button type="button" className={btn} disabled={somenteLeitura}
+        onClick={()=>{
+          if(window.confirm('Este ritual leva 10 minutos adicionais e não consome espaço de magia. Confirma a conjuração?'))
+            gastar(0,m,false)
+        }}>
+        <Sparkles size={14}/> Ritual (+10 minutos, sem espaço)
+      </button>}
       {m.nivel>0&&Number(c.vars.dnd_pacto_nivel??0)>=m.nivel&&Number(c.recursosMax.pacto??0)>0&&<button type="button"
         className={btn} disabled={somenteLeitura||Number(d.recursos.pacto?.atual??0)<1}
         onClick={()=>gastar(Number(c.vars.dnd_pacto_nivel)||m.nivel,m,true)}>
@@ -225,7 +239,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
     </div>
   </article>)}</div>
   <p className="text-[11px] text-(--a-a998bd)">Fonte: SRD 5.1 (CC BY 4.0). O catálogo 2024 não é reutilizado.
-    Quantidades de magias conhecidas/preparadas são verificadas por classe; duração, componentes e magias de subclasse exigem conferência no livro escolhido.
+    Quantidades de magias conhecidas/preparadas e truques são verificadas por classe. Rituais simples dependem da característica da classe; componentes, duração e magias de subclasse ainda exigem conferência no livro escolhido.
     Para efeitos comerciais, use suas próprias anotações.</p>
  </section>
 }

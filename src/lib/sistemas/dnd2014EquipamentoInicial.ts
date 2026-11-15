@@ -22,10 +22,10 @@ export function formulaRiquezaInicial2014(classe:string) {
   const r=DADOS[classe]
   return r?{dados:r[0],multiplicador:r[1],expressao:r[0]+'d4'+(r[1]===1?'':' × '+r[1])+' PO'}:null
 }
-export function totalRiquezaInicial2014(classe:string,dados:readonly number[]):number|null {
+export function totalRiquezaInicial2014(classe:string,dados:unknown):number|null {
   const f=formulaRiquezaInicial2014(classe)
-  return f&&dados.length===f.dados&&dados.every(n=>Number.isInteger(n)&&n>=1&&n<=4)
-    ? dados.reduce((a,b)=>a+b,0)*f.multiplicador:null
+  return f&&Array.isArray(dados)&&dados.length===f.dados&&dados.every((n:unknown)=>typeof n==='number'&&Number.isInteger(n)&&n>=1&&n<=4)
+    ? (dados as number[]).reduce((a,b)=>a+b,0)*f.multiplicador:null
 }
 export function rolarRiquezaInicial2014(classe:string,aleatorio:()=>number=Math.random) {
   const f=formulaRiquezaInicial2014(classe)

@@ -11,6 +11,7 @@ import {lerMagias2014,maximoNivelMagiaClasse2014,expressaoMagia2014Valida,podeCo
 import {magiasDaClasse2014} from '@/lib/sistemas/dnd2014CatalogoMagias'
 import {resumoPreparacaoMagias2014, limiteTruques2014} from '@/lib/sistemas/dnd2014PreparacaoMagias'
 import {cdConcentracaoDano2014,encerrarConcentracao2014} from '@/lib/sistemas/dnd2014Concentracao'
+import {conjurarArcanaMistica2014,NIVEL_ARCANA_MISTICA_2014,nivelBruxoArcana2014} from '@/lib/sistemas/dnd2014ArcanaMistica'
 import {idDe} from '@/lib/sistemas/dnd2024Classes'
 const btn='inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-(--a-5e4b78) px-3 py-2 text-xs hover:bg-(--s-34294f) disabled:opacity-40'
 const campo='min-h-10 w-full min-w-0 rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-sm text-white'
@@ -27,6 +28,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
  const [notas,setNotas]=useState('')
  const [expressao,setExpressao]=useState('')
  const [exigeConcentracao,setExigeConcentracao]=useState(false)
+ const [arcanaMistica,setArcanaMistica]=useState(false)
  const [danoConcentracao,setDanoConcentracao]=useState(0)
  const [aberto,setAberto]=useState(false)
  const [erro,setErro]=useState('')
@@ -58,15 +60,20 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
  function adicionar(){
    const n=nome.trim()
    if(!n||!rclasse){setErro('Escreva o nome da magia e escolha sua classe.');return}
-   if(nivel>0&&modo!=='extra'&&nivel>permissao){setErro('A classe ainda não alcançou o nível dessa magia.');return}
-   if(nivel>0&&modo!=='extra'&&modo!==modoEsperado(rclasse)&&rclasse!=='mago'){
+   if(nivel>0&&modo!=='extra'&&!arcanaMistica&&nivel>permissao){setErro('A classe ainda não alcançou o nível dessa magia.');return}
+   if(nivel>0&&modo!=='extra'&&!arcanaMistica&&modo!==modoEsperado(rclasse)&&rclasse!=='mago'){
      setErro('Esta classe registra suas magias de 2014 como '+modoEsperado(rclasse)+'.');return
    }
+   if(arcanaMistica&&(rclasse!=='bruxo'||!NIVEL_ARCANA_MISTICA_2014[nivel]||
+      nivelBruxoArcana2014(d)<NIVEL_ARCANA_MISTICA_2014[nivel]||
+      magias.some(m=>m.arcanaMistica&&m.nivel===nivel))){
+     setErro('Arcana Mística exige nível de Bruxo adequado e apenas uma magia por círculo 6º a 9º.');return
+   }
    if(expressao.trim()&&!expressaoMagia2014Valida(expressao)){setErro('Rolagem inválida. Ex.: 2d6+3.');return}
-   const novo=lerMagias2014([{nome:n,nivel,classe:rclasse,fonte:refonte,modo,
-     notas:notas.trim(),expressao:expressao.trim(),concentracao:exigeConcentracao}])[0]
+   const novo=lerMagias2014([{nome:n,nivel,classe:rclasse,fonte:refonte,modo:arcanaMistica?'extra':modo,
+     notas:notas.trim(),expressao:expressao.trim(),concentracao:exigeConcentracao,arcanaMistica}])[0]
    if(!novo||magias.some(m=>m.id===novo.id)){setErro('Magia inválida ou já registrada.');return}
-   salvar([...magias,novo]);setErro('');setNome('');setNotas('');setExpressao('');setExigeConcentracao(false);setAberto(false)
+   salvar([...magias,novo]);setErro('');setNome('');setNotas('');setExpressao('');setExigeConcentracao(false);setArcanaMistica(false);setAberto(false)
  }
  function gastar(n:number,magia:RegistroMagiaDnd2014,pacto:boolean,ritual=false){
    if(n===0) {
@@ -185,6 +192,12 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
         onChange={e=>setExigeConcentracao(e.target.checked)}/>
       Esta magia exige concentração (confirmado no texto de 2014; não inferido do catálogo 2024).
     </label>
+    {rclasse==='bruxo'&&nivel>=6&&<label className="flex items-start gap-2 text-xs sm:col-span-2">
+       <input type="checkbox" checked={arcanaMistica} className="mt-0.5 h-5 w-5 shrink-0"
+        onChange={e=>{setArcanaMistica(e.target.checked);if(e.target.checked)setModo('extra')}}/>
+       Arcana Mística (Bruxo 2014): escolha uma magia do 6º ao 9º círculo conforme o nível da classe;
+       permite conjuração única sem espaço até o próximo descanso longo.
+     </label>}
     <label className="text-xs sm:col-span-2">Notas da magia (suas anotações)
       <textarea className={campo} rows={2} maxLength={500} value={notas} onChange={e=>setNotas(e.target.value)}
         placeholder="CD, tempo, componentes e condições conferidos com o mestre."/>
@@ -201,6 +214,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
       <span className="text-xs text-(--a-d3adf0)">{m.nivel===0?'Truque':m.nivel+'º nível'} · {m.modo}</span>
     </div>
     <p className="text-[11px] text-(--a-c4b6d4)">{m.classe} · {nomeLivro(m.fonte)}</p>
+    {m.arcanaMistica&&<p className="text-xs font-semibold text-sky-200">Arcana Mística · um uso por descanso longo</p>}
     {m.notas&&<p className="whitespace-pre-wrap text-xs">{m.notas}</p>}
     {m.expressao&&<p className="text-xs font-semibold text-(--a-ed9cd8)">{m.expressao}</p>}
     <label className="flex items-start gap-2 text-xs text-(--a-c4b6d4)">
@@ -211,8 +225,17 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
     </label>
     {d.dnd2014Concentracao?.magiaId===m.id&&<p className="text-xs text-sky-200">Concentração ativa</p>}
     <div className="flex flex-wrap gap-2">
+      {m.arcanaMistica&&<button type="button" className={btn}
+        disabled={somenteLeitura||d.dnd2014ArcanasUsadas?.includes(m.nivel)}
+        onClick={()=>{const nova=conjurarArcanaMistica2014(d,m.id);
+          if(!nova){setErro('Arcana Mística já usada ou nível da classe insuficiente.');return}
+          onChange(nova);setErro('');setAviso('Arcana Mística '+m.nome+' conjurada sem espaço. Recarrega no descanso longo.')
+          if(m.expressao)rolar(m.expressao,m.nome+' · Arcana Mística 2014')
+        }}>
+        <Sparkles size={14}/> {d.dnd2014ArcanasUsadas?.includes(m.nivel)?'Arcana usada':'Conjurar Arcana Mística'}
+      </button>}
       {m.nivel===0&&<button type="button" className={btn} disabled={somenteLeitura} onClick={()=>gastar(0,m,false)}><Sparkles size={14}/> Conjurar truque</button>}
-      {m.nivel>0&&<>
+      {m.nivel>0&&!m.arcanaMistica&&<>
         <label className="flex items-center gap-1 text-xs">
           Espaço
           <select className={campo+' max-w-24'} aria-label={'Nível do espaço para '+m.nome}
@@ -228,14 +251,14 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
           <Dice5 size={14}/> Gastar espaço {(espacosEscolhidos[m.id]??m.nivel)}º
         </button>
       </>}
-      {podeConjurarRitualMagia2014(m)&&<button type="button" className={btn} disabled={somenteLeitura}
+      {!m.arcanaMistica&&podeConjurarRitualMagia2014(m)&&<button type="button" className={btn} disabled={somenteLeitura}
         onClick={()=>{
           if(window.confirm('Este ritual leva 10 minutos adicionais e não consome espaço de magia. Confirma a conjuração?'))
             gastar(0,m,false,true)
         }}>
         <Sparkles size={14}/> Ritual (+10 minutos, sem espaço)
       </button>}
-      {m.nivel>0&&Number(c.vars.dnd_pacto_nivel??0)>=m.nivel&&Number(c.recursosMax.pacto??0)>0&&<button type="button"
+      {m.nivel>0&&!m.arcanaMistica&&Number(c.vars.dnd_pacto_nivel??0)>=m.nivel&&Number(c.recursosMax.pacto??0)>0&&<button type="button"
         className={btn} disabled={somenteLeitura||Number(d.recursos.pacto?.atual??0)<1}
         onClick={()=>gastar(Number(c.vars.dnd_pacto_nivel)||m.nivel,m,true)}>
         <Dice5 size={14}/> Conjurar com Pacto

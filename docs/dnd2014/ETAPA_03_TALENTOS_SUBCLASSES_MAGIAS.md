@@ -76,3 +76,14 @@ O painel de escolhas do Feiticeiro (PHB 2014) agora permite gastar Pontos de Fei
 Restauração Mística do Feiticeiro de nível 20 devolve até 4 PF por descanso curto. A validação permanece por nível da classe em multiclasses e não afeta níveis inferiores.
 
 Não há contador paralelo nem migração de banco necessária: o campo de recursos `feiticaria` já é parte da ficha. Continuam pendentes a homologação HTTP mestre/jogador em banco isolado e os efeitos condicionais especializados.
+
+### Complemento 0.34.6 — Árvore, leitura e edição por livro
+
+Correção motivada por testes reais em celular: o cabeçalho anterior mostrava o nome genérico "D&D 2024" apesar de o livro-base da ficha estar configurado para 2014. O cabeçalho agora usa a mesma edição efetiva que o esquema da ficha e a Árvore, respeitando também o livro fixado pelo mestre na campanha.
+
+Os nós da Árvore rotulados "Consultar livro" foram atualizados para **"Ver detalhes"** e incluem explicações funcionais no próprio cartão, com apresentação adaptada ao celular. O conteúdo usa resumos originais de regras do SRD 5.1/5.2.1 ou referências resumidas do material fornecido, sem copiar capítulos comerciais.
+
+Para as fichas de 2014, Inimigo Favorito e Explorador Natural do Patrulheiro, raça Tiferino e antecedente Forasteiro exibem dados úteis. O guia também permite registrar o inimigo favorito e o idioma pertinente. **Atenção:** o PDF do usuário apresenta a variante **Patrulheiro Revisado**, com benefícios diferentes do Patrulheiro clássico SRD 5.1. A plataforma mostra essa diferença em vez de adicionar automaticamente +2 de dano da variante à classe clássica.
+
+Testes de regressão em `dnd2014ArvoreConteudo.test.ts` e `dndArvoreConteudoIntegracao.test.ts` verificam a edição efetiva, os campos salvos, as explicações e a ausência de nós legados em 2024. Os efeitos condicionais não implementados permanecem indicados como tal.
+

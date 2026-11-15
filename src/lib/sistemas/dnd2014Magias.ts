@@ -8,6 +8,7 @@
 import type { DadosFicha } from './tipos'
 import { classesDaFicha2014 } from './dnd2014Multiclasse'
 import { subclasseDaFicha2014 } from './dnd2014Subclasses'
+import { limiteMagiasPorClasse2014 } from './dnd2014PreparacaoMagias'
 import { lerLivrosDnd } from './dndLivros'
 import { idDe } from './dnd2024Classes'
 
@@ -15,6 +16,8 @@ export type RegistroMagiaDnd2014 = {
   id: string; nome: string; nivel: number; classe: string; fonte: string
   modo: 'conhecida' | 'preparada' | 'extra'
   notas?: string; expressao?: string
+  /** Confirmado manualmente no texto da magia 2014; nunca derivado do catálogo 2024. */
+  concentracao?: boolean
 }
 const classesConjuradoras = new Set(['bardo','clerigo','druida','feiticeiro','mago','paladino','patrulheiro','bruxo','guerreiro','ladino'])
 const formatoExpr = /^(?:\d{1,2}d(?:4|6|8|10|12|20|100)(?:[+-]\d{1,3})?)$/
@@ -52,6 +55,7 @@ export function lerMagias2014(raw:unknown):RegistroMagiaDnd2014[] {
       modo:x.modo as RegistroMagiaDnd2014['modo'],
       ...(typeof x.notas==='string'?{notas:x.notas.slice(0,500)}:{}),
       ...(expressaoMagia2014Valida(x.expressao)?{expressao:String(x.expressao).trim()}:{}),
+      ...(x.concentracao===true?{concentracao:true}:{}),
     })
   }
   return saida
@@ -93,6 +97,29 @@ export function validarAlteracoesMagias2014(
     if(m.modo!=='extra' && m.nivel===0 &&
       (max===0 || m.classe==='paladino' || m.classe==='patrulheiro'))
       erros.push('Esta classe não recebe este truque por sua progressão normal em 2014: '+m.nome)
+  }
+  // PHB 2014: magias preparadas são diferentes das conhecidas.
+  // Truques e recursos extraordinários do mestre não entram nas cotas.
+  // Revisões de classe e nível também recalculam a tabela sem misturar 2024.
+  for (const classe of lista) {
+    const limite=limiteMagiasPorClasse2014(d,classe.cls.id)
+    if(!limite||limite.maximo===null)continue
+    const registradas=lerMagias2014(raw).filter(m=>m.classe===classe.cls.id&&m.nivel>0)
+    const preparadas=registradas.filter(m=>m.modo==='preparada').length
+    const conhecidas=registradas.filter(m=>m.modo==='conhecida').length
+    if(limite.tipo==='conhecidas'){
+      if(conhecidas>limite.maximo)erros.push(
+        classe.cls.nome+' possui '+conhecidas+' magias conhecidas; limite 2014: '+limite.maximo+'.')
+      // Para estas classes, registrar uma magia como preparada não permite
+      // contornar a cota de magias conhecidas da sua progressão.
+      if(preparadas>0)erros.push(
+        classe.cls.nome+' usa magias conhecidas, não preparação diária, em 2014.')
+    } else {
+      if(preparadas>limite.maximo)erros.push(
+        classe.cls.nome+' possui '+preparadas+' magias preparadas; limite 2014: '+limite.maximo+'.')
+      if(limite.tipo==='preparadas'&&conhecidas>0)erros.push(
+        classe.cls.nome+' deve registrar magias da classe como preparadas (ou extras), não como conhecidas, em 2014.')
+    }
   }
   return erros
 }

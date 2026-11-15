@@ -42,7 +42,7 @@ export function limiteMagiasPorClasse2014(
     const mod=typeof valor==='number'&&Number.isFinite(valor)?Math.floor((valor-10)/2):null
     const base=classeId==='paladino'?Math.floor(nivel/2):nivel
     return {classe:classeId,nivelClasse:nivel,tipo:classeId==='mago'?'grimorio':'preparadas',
-      maximo:mod===null?null:Math.max(1,base+mod),atributo:attr,
+      maximo:classeId==='paladino'&&nivel<2?0:mod===null?null:Math.max(1,base+mod),atributo:attr,
       descricao:classeId==='mago'?'Magias preparadas de Mago; o grimório pode conter mais magias.':
         'Magias preparadas por dia, sem contar magias extras sempre preparadas.'}
   }

@@ -4,6 +4,7 @@ import AtributosProgressaoDnd2014 from './AtributosProgressaoDnd2014'
 import EquipamentoInicialDnd2014 from './EquipamentoInicialDnd2014'
 import EscolhasAntecedenteDnd2014 from './EscolhasAntecedenteDnd2014'
 import EscolhasSubclasseDnd2014 from './EscolhasSubclasseDnd2014'
+import EscolhasPatrulheiroDnd2014 from './EscolhasPatrulheiroDnd2014'
 import OpcoesClasseDnd2014 from './OpcoesClasseDnd2014'
 import { CUSTOS_2014 } from '@/lib/sistemas/dnd2014Atributos'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
@@ -112,6 +113,7 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
     <AtributosProgressaoDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
     <EquipamentoInicialDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} irPara={irPara} />
     <EscolhasAntecedenteDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
+    <EscolhasPatrulheiroDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
     <EscolhasSubclasseDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
     <OpcoesClasseDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
     <div className="space-y-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">

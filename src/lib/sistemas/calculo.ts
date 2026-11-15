@@ -124,6 +124,8 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     ...(s.id === 'dnd5e-srd' && d.dnd2014Multiclasse !== undefined ?
       { dnd2014Multiclasse: lerMulticlasseDnd(d.dnd2014Multiclasse, idDe(d.campos?.classe)) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014Magias !== undefined ? {dnd2014Magias:lerMagias2014(d.dnd2014Magias)} : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014Concentracao !== undefined ?
+      {dnd2014Concentracao:structuredClone(d.dnd2014Concentracao)} : {}),
     ...(s.id === 'dnd5e-srd' && d.dndEscolhas !== undefined ? { dndEscolhas: lerEscolhasDnd(d.dndEscolhas) } : {}),
     ...(d.criacaoLivre !== undefined ? { criacaoLivre: d.criacaoLivre === true } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndAntecedente !== undefined && lerRegistroAntecedenteDnd(d.dndAntecedente) ? { dndAntecedente: lerRegistroAntecedenteDnd(d.dndAntecedente)! } : {}),

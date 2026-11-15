@@ -24,3 +24,15 @@ Basic Rules 2014, capítulos Step-by-Step Characters e Classes:
 https://www.dndbeyond.com/sources/dnd/basic-rules-2014/step-by-step-characters
 
 Testes de regressão: dnd2014Atributos.test.ts e dnd2014Vitalidade.test.ts, além da suíte geral e checagem TypeScript. Resultados finais de CI e build registrados na PR.
+
+
+## Complemento da Etapa 2 — XP e equipamentos (14/11/2026)
+
+- **XP de 2014:** nova tabela exata do Livro do Jogador (p. impressa 15) entre 0 e 355.000 XP; indicação de nível sugerido e pontos para próximo nível. Não muda o nível automaticamente para preservar avanço por marcos.
+- **Equipamento inicial:** escolha explícita entre equipamento de classe/antecedente ou ouro inicial segundo p. impressa 145. Foram cadastradas fórmulas de riqueza das 12 classes (Monge 5d4 PO, sem ×10) e alternativas de equipamentos por classe. O jogador seleciona os grupos, registra os itens de classe e antecedente no Inventário e confirma manualmente; o programa não cria cópias nem inventa benefícios. Se optar por ouro, os d4 são guardados e a carteira só é preenchida automaticamente se estava vazia.
+- **Persistência/segurança:** `dnd2014EquipamentoInicial` é opcional, preservado por `normalizarFicha`, e considerado na categoria `equipamentos` da campanha. Validação server-side na API de edição, inclusive após aplicar regras do mestre. Campos da edição 2014 não podem ser alterados dentro de fichas 2024.
+- **Testes:** `dnd2014Experiencia.test.ts`, `dnd2014EquipamentoInicial.test.ts`, além da suíte anterior.
+
+### Escopo não automatizado
+
+A seleção de grupos de equipamentos **não verifica item por item** se o inventário corresponde ao PHB; o registro é confirmado pelo jogador/mestre para não duplicar itens em fichas preexistentes. Equipamentos completos dos antecedentes, escolhas de ferramentas/idiomas, revisão detalhada das 12 tabelas e regras avançadas de talentos ainda exigem validação e/ou desenvolvimento. A homologação com perfis reais em banco e dispositivo móvel também permanece pendente antes do merge.

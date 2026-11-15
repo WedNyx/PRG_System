@@ -40,10 +40,10 @@ jobs:
         run: npm run lint
       - name: Build
         run: npm run build
-      # Somente esta PR: navegador Chromium com viewport móvel controlada;
+      # Etapas 2 e 3: navegador Chromium com viewport móvel controlada;
       # dados fictícios injetados no localStorage; sem usar API ou banco real.
       - name: Smoke mobile 2014 — 320/375/390/768px
-        if: github.event_name == 'pull_request' && github.head_ref == 'feat/fase2-arvores-unificadas-verticais'
+        if: github.event_name == 'pull_request' && (github.head_ref == 'feat/fase2-arvores-unificadas-verticais' || github.head_ref == 'feat/etapa3-dnd2014-talentos-subclasses-magias')
         run: |
           # Não tocar node_modules do projeto: npm install --no-save falha no
           # lockfile desta combinação npm/Next 16 em runners 2026.
@@ -55,7 +55,7 @@ jobs:
           trap 'kill $APP_PID || true' EXIT
           PRG_PLAYWRIGHT_MODULE="$RUNNER_TEMP/prg-playwright/node_modules/playwright/index.mjs" node scripts/mobileSmokeDnd2014.mjs
       - name: Screenshots do teste móvel
-        if: always() && github.event_name == 'pull_request' && github.head_ref == 'feat/fase2-arvores-unificadas-verticais'
+        if: always() && github.event_name == 'pull_request' && (github.head_ref == 'feat/fase2-arvores-unificadas-verticais' || github.head_ref == 'feat/etapa3-dnd2014-talentos-subclasses-magias')
         uses: actions/upload-artifact@v4
         with:
           name: dnd2014-mobile-${{ github.sha }}

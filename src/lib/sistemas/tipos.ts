@@ -126,6 +126,8 @@ export type DadosFicha = {
   dnd2014Multiclasse?: Record<string,number>
   /** Magias de D&D 2014, registradas separadamente do catálogo SRD 2024. */
   dnd2014Magias?: import('./dnd2014Magias').RegistroMagiaDnd2014[]
+  /** Círculos de Arcana Mística já conjurados; descanso longo limpa os usos. */
+  dnd2014ArcanasUsadas?: number[]
   /** Concentração ativa, sem aplicação automática de efeitos de magias comerciais. */
   dnd2014Concentracao?: import('./dnd2014Concentracao').ConcentracaoDnd2014
   /** Talentos do PHB 2014 adquiridos com Incrementos de Atributo ou Humano Variante. */

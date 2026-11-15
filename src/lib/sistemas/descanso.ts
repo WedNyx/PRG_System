@@ -109,8 +109,12 @@ export function aplicarDescanso(s: Sistema, bruto: Partial<DadosFicha>, tipo: Ti
   if (voltam.length) mudancas.push(voltam.length === 1 ? `Usos de ${voltam[0].nome} recuperados` : `Usos de ${voltam.length} poderes recuperados`)
 
   // Arcana Mística PHB 2014 se recupera APENAS no descanso longo.
+  const recuperarDadosSuperioridade=legado2014&&
+    d.dnd2014DadosSuperioridadeUsados!==undefined&&d.dnd2014DadosSuperioridadeUsados>0
+  if(recuperarDadosSuperioridade)mudancas.push('Mestre de Batalha: Dados de Superioridade recuperados')
   const limparArcana=legado2014&&tipo==='longo'&&(d.dnd2014ArcanasUsadas?.length??0)>0
   if(limparArcana)mudancas.push('Arcana Mística: usos diários recuperados')
   return { d: { ...d, recursos, uso: { ...uso, poderes: usoPoderes },
-    ...(limparArcana?{dnd2014ArcanasUsadas:[]}:{}) }, mudancas }
+    ...(limparArcana?{dnd2014ArcanasUsadas:[]}:{}) ,
+    ...(recuperarDadosSuperioridade?{dnd2014DadosSuperioridadeUsados:0}:{}) }, mudancas }
 }

@@ -9,6 +9,8 @@ import {subclasseDaFicha2014} from '@/lib/sistemas/dnd2014Subclasses'
 import {lerLivrosDnd,suplementoDndPorId} from '@/lib/sistemas/dndLivros'
 import {lerMagias2014,maximoNivelMagiaClasse2014,expressaoMagia2014Valida,type RegistroMagiaDnd2014} from '@/lib/sistemas/dnd2014Magias'
 import {magiasDaClasse2014} from '@/lib/sistemas/dnd2014CatalogoMagias'
+import {resumoPreparacaoMagias2014} from '@/lib/sistemas/dnd2014PreparacaoMagias'
+import {cdConcentracaoDano2014,encerrarConcentracao2014} from '@/lib/sistemas/dnd2014Concentracao'
 import {idDe} from '@/lib/sistemas/dnd2024Classes'
 const btn='inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-(--a-5e4b78) px-3 py-2 text-xs hover:bg-(--s-34294f) disabled:opacity-40'
 const campo='min-h-10 w-full min-w-0 rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-sm text-white'
@@ -24,12 +26,15 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
  const [modo,setModo]=useState<'conhecida'|'preparada'|'extra'>('conhecida')
  const [notas,setNotas]=useState('')
  const [expressao,setExpressao]=useState('')
+ const [exigeConcentracao,setExigeConcentracao]=useState(false)
+ const [danoConcentracao,setDanoConcentracao]=useState(0)
  const [aberto,setAberto]=useState(false)
  const [erro,setErro]=useState('')
  const livros=lerLivrosDnd(d.dndLivros,'phb2014')
  const fontes=[livros.base,...livros.suplementos]
  const {lista}=classesDaFicha2014(d)
  const magias=lerMagias2014(d.dnd2014Magias)
+ const resumos=resumoPreparacaoMagias2014(d,magias)
  const classeAtual=lista.find(x=>x.cls.id===classe)??lista[0]
  const permissao=classeAtual?maximoNivelMagiaClasse2014(classeAtual.cls.nome,classeAtual.nivel,
    subclasseDaFicha2014(d,classeAtual.cls.id)?.id):0
@@ -43,26 +48,32 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
  const rclasse=classe||classeAtual?.cls.id||''
  const maxSlot=(n:number)=>Math.max(0,Number(c.recursosMax['espacos_'+n]??0))
  const atualSlot=(n:number)=>Math.max(0,Number(d.recursos['espacos_'+n]?.atual??0))
- function salvar(itens:RegistroMagiaDnd2014[]) {onChange({...d,dnd2014Magias:itens})}
+ function salvar(itens:RegistroMagiaDnd2014[]) {
+   const ativa=d.dnd2014Concentracao
+   const valido=ativa&&itens.some(x=>x.id===ativa.magiaId&&x.concentracao)
+   onChange({...d,dnd2014Magias:itens,...(!valido?{dnd2014Concentracao:undefined}:{})})
+ }
  function adicionar(){
    const n=nome.trim()
    if(!n||!rclasse){setErro('Escreva o nome da magia e escolha sua classe.');return}
    if(nivel>0&&modo!=='extra'&&nivel>permissao){setErro('A classe ainda não alcançou o nível dessa magia.');return}
    if(expressao.trim()&&!expressaoMagia2014Valida(expressao)){setErro('Rolagem inválida. Ex.: 2d6+3.');return}
    const novo=lerMagias2014([{nome:n,nivel,classe:rclasse,fonte:refonte,modo,
-     notas:notas.trim(),expressao:expressao.trim()}])[0]
+     notas:notas.trim(),expressao:expressao.trim(),concentracao:exigeConcentracao}])[0]
    if(!novo||magias.some(m=>m.id===novo.id)){setErro('Magia inválida ou já registrada.');return}
-   salvar([...magias,novo]);setErro('');setNome('');setNotas('');setExpressao('');setAberto(false)
+   salvar([...magias,novo]);setErro('');setNome('');setNotas('');setExpressao('');setExigeConcentracao(false);setAberto(false)
  }
  function gastar(n:number,magia:RegistroMagiaDnd2014,pacto:boolean){
    if(n===0) {
+     if(magia.concentracao)onChange({...d,dnd2014Concentracao:{magiaId:magia.id,nome:magia.nome}})
      if(magia.expressao)rolar(magia.expressao,magia.nome+' · magia 2014')
      return
    }
    const id=pacto?'pacto':'espacos_'+n
    const atual=Math.max(0,Number(d.recursos[id]?.atual??0))
    if(atual<1){setErro('Sem espaço disponível. Registre um descanso antes de conjurar.');return}
-   onChange({...d,recursos:{...d.recursos,[id]:{...d.recursos[id],atual:atual-1}}})
+   onChange({...d,recursos:{...d.recursos,[id]:{...d.recursos[id],atual:atual-1}},
+     ...(magia.concentracao?{dnd2014Concentracao:{magiaId:magia.id,nome:magia.nome}}:{})})
    setErro('')
    if(magia.expressao)rolar(magia.expressao,magia.nome+' · magia 2014 (espaço '+n+'º)')
  }
@@ -71,6 +82,27 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
   <p className="text-xs text-(--a-c4b6d4)">Registre magias **conhecidas, preparadas ou extras** a partir do Livro do Jogador 2014 e dos suplementos liberados.
     A plataforma confere níveis e espaços da classe, mas não supõe que uma magia de mesmo nome tem efeito igual na edição 2024.
     Consulte o livro para dano, duração, componentes e regras; a expressão de dados é opcional.</p>
+  {resumos.length>0&&<div className="grid gap-2 sm:grid-cols-2">
+    {resumos.map(x=><div key={x.classe}
+      className="rounded-lg border border-(--a-55456e) bg-(--s-171325) p-2 text-xs">
+      <strong>{x.classe} · {x.tipo==='conhecidas'?'Magias conhecidas':'Magias preparadas'}</strong>
+      <p>{x.total}/{x.maximo===null?'conferir atributo':x.maximo} · nível da classe, não nível total</p>
+      <p className="mt-1 text-(--a-c4b6d4)">{x.descricao}</p>
+      {x.maximo!==null&&x.total>x.maximo&&<p role="alert" className="text-amber-200">Limite excedido.</p>}
+    </div>)}
+  </div>}
+  {d.dnd2014Concentracao&&<div role="status" className="space-y-2 rounded-xl border border-sky-500/40 p-3">
+    <strong className="text-sm text-sky-200">🌀 Concentração ativa: {d.dnd2014Concentracao.nome}</strong>
+    <p className="text-xs">Somente uma concentração por vez. Ao sofrer dano, teste de resistência de Constituição (CD 10 ou metade do dano, o maior).</p>
+    <label className="block text-xs">Dano recebido
+      <input type="number" min="0" step="1" className={campo} value={danoConcentracao}
+        onChange={e=>setDanoConcentracao(Math.max(0,Math.floor(Number(e.target.value)||0)))}/>
+    </label>
+    <strong className="text-xs">CD de concentração: {cdConcentracaoDano2014(danoConcentracao)}</strong>
+    {!somenteLeitura&&<button type="button" className={btn}
+      onClick={()=>onChange(encerrarConcentracao2014(d))}>Encerrar concentração</button>}
+    <p className="text-[11px] text-(--a-c4b6d4)">O mestre verifica interrupções, duração e efeito conforme o livro; o sistema não presume sucesso na resistência.</p>
+  </div>}
   {lista.length>0&&<p className="text-xs text-(--a-d3adf0)">
     Classes: {lista.map(x=>x.cls.nome+' '+x.nivel).join(' · ')}.
     Espaços disponíveis: {[1,2,3,4,5,6,7,8,9].filter(n=>maxSlot(n)>0).map(n=>n+'º '+atualSlot(n)+'/'+maxSlot(n)).join(' · ')||'nenhum'}.
@@ -129,6 +161,11 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
       <input className={campo} value={expressao} maxLength={25} onChange={e=>setExpressao(e.target.value)}
         placeholder="Ex.: 3d6+2"/>
     </label>
+    <label className="flex items-start gap-2 text-xs sm:col-span-2">
+      <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0" checked={exigeConcentracao}
+        onChange={e=>setExigeConcentracao(e.target.checked)}/>
+      Esta magia exige concentração (confirmado no texto de 2014; não inferido do catálogo 2024).
+    </label>
     <label className="text-xs sm:col-span-2">Notas da magia (suas anotações)
       <textarea className={campo} rows={2} maxLength={500} value={notas} onChange={e=>setNotas(e.target.value)}
         placeholder="CD, tempo, componentes e condições conferidos com o mestre."/>
@@ -146,8 +183,15 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
     <p className="text-[11px] text-(--a-c4b6d4)">{m.classe} · {nomeLivro(m.fonte)}</p>
     {m.notas&&<p className="whitespace-pre-wrap text-xs">{m.notas}</p>}
     {m.expressao&&<p className="text-xs font-semibold text-(--a-ed9cd8)">{m.expressao}</p>}
+    <label className="flex items-start gap-2 text-xs text-(--a-c4b6d4)">
+      <input type="checkbox" className="h-5 w-5 shrink-0" disabled={somenteLeitura}
+        checked={m.concentracao===true}
+        onChange={e=>salvar(magias.map(x=>x.id===m.id?{...x,concentracao:e.target.checked}:x))}/>
+      Exige concentração (conferir no livro de 2014).
+    </label>
+    {d.dnd2014Concentracao?.magiaId===m.id&&<p className="text-xs text-sky-200">Concentração ativa</p>}
     <div className="flex flex-wrap gap-2">
-      {m.nivel===0&&<button type="button" className={btn} onClick={()=>gastar(0,m,false)}><Sparkles size={14}/> Conjurar truque</button>}
+      {m.nivel===0&&<button type="button" className={btn} disabled={somenteLeitura} onClick={()=>gastar(0,m,false)}><Sparkles size={14}/> Conjurar truque</button>}
       {m.nivel>0&&<>
         <label className="flex items-center gap-1 text-xs">
           Espaço
@@ -174,7 +218,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
     </div>
   </article>)}</div>
   <p className="text-[11px] text-(--a-a998bd)">Fonte: SRD 5.1 (CC BY 4.0). O catálogo 2024 não é reutilizado.
-    Quantidade de magias conhecidas/preparadas, duração e componentes devem ser conferidos no livro escolhido.
+    Quantidades de magias conhecidas/preparadas são verificadas por classe; duração, componentes e magias de subclasse exigem conferência no livro escolhido.
     Para efeitos comerciais, use suas próprias anotações.</p>
  </section>
 }

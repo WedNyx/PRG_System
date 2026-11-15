@@ -21,7 +21,7 @@ import { idDe } from './dnd2024Classes'
 import { VARS_DND } from './dnd2024Efeitos'
 import { RACAS_2014, ANTECEDENTES_2014, SUBRACAS_2014 } from './dnd2014Criacao'
 import { validarSubclasseDnd2014 } from './dnd2014Subclasses'
-import { validarTalentos2014 } from './dnd2014Talentos'
+import { validarTalentos2014, avaliarRequisitoTalento2014 } from './dnd2014Talentos'
 import { classesDaFicha2014, espacosDeMagia2014 } from './dnd2014Multiclasse'
 import { lerMulticlasseDnd, requisitosMulticlasse } from './dnd2024Classes'
 
@@ -222,6 +222,17 @@ export function validarAlteracoes2014(
   const erros: string[]=[...validarProgressaoAtributos2014(antes,depois,edicao),...validarVida2014(antes,depois,edicao),
     ...validarExperiencia2014(antes,depois,edicao),...validarEquipamentoInicial2014(antes,depois,edicao),
     ...validarEscolhasAntecedente2014(antes,depois,edicao)]
+  // Novos talentos exigem os atributos finais do livro escolhido. Fichas
+  // antigas sem base usam seus valores já registrados como totais finais.
+  if(edicao==='phb2014'&&Array.isArray(depois.dnd2014Talentos)&&
+      JSON.stringify(antes.dnd2014Talentos??[])!==JSON.stringify(depois.dnd2014Talentos)) {
+    const atr=atributosEfetivos2014(depois as DadosFicha) ?? depois.atributos
+    for(const nome of depois.dnd2014Talentos.filter(x=>!antes.dnd2014Talentos?.includes(x))) {
+      const requisito=avaliarRequisitoTalento2014(nome,{atributos:atr})
+      if(requisito.estado==='inapto'&&!ignorarRequisitos)
+        erros.push('Talento '+nome+' indisponível: '+requisito.motivo)
+    }
+  }
   if (edicao === 'phb2014' && depois.dnd2014Incrementos && depois.dnd2014AtributosBase) {
     const bonus=bonusIncrementos2014(depois as DadosFicha)
     const raciais=aumentosRaciais2014(depois.campos?.especie,depois.campos?.subraca2014,depois.dnd2014AtributosExtras).bonus

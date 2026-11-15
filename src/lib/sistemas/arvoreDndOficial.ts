@@ -39,7 +39,7 @@ const fonteVisivel = (f: string, permitidas: Set<string> | null): boolean =>
  * devem alimentar os hexágonos próprios do personagem.
  */
 export function hexagonosOficiaisDnd(
-  d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndLivros' | 'dnd2014Subclasse' | 'dnd2014Subclasses' | 'dnd2014Multiclasse'>,
+  d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndLivros' | 'dnd2014Subclasse' | 'dnd2014Subclasses' | 'dnd2014Multiclasse'> & Partial<Pick<DadosFicha,'dnd2014Talentos'|'dnd2014Magias'>>,
   edicao: LivroBaseDnd = lerLivrosDnd(d.dndLivros).base,
   fontes: Set<string> | null = null,
   mostrarFuturos = false,
@@ -69,7 +69,7 @@ export function hexagonosOficiaisDnd(
         titulo:m.nome, descricao:c.cls.nome+' · característica pelo nível da classe, não pelo nível total.',
         nivel:m.nivel, ramo:'classe' as const,
         estado:m.nivel>c.nivel?'futuro' as const:'referencia' as const,
-        livro:'SRD 5.1 (2014)',
+        livro:subclasse.fonte==='srd51'?'SRD 5.1 (2014)':'Player’s Handbook (2014)',
       }))]
     })
     // PHB 2014 cap. 6: habilidades são recebidas pelo nível EM CADA CLASSE,
@@ -98,6 +98,20 @@ export function hexagonosOficiaisDnd(
           })),
       ]),
       ...subclassesDaFicha,
+      ...(d.dnd2014Talentos??[]).map((nome,i)=>({
+        id:'2014-talento-'+i+'-'+nome,
+        titulo:'Talento: '+nome,
+        descricao:'Talento opcional escolhido no Livro do Jogador 2014. Pré-requisitos numéricos verificados; efeitos condicionais exigem leitura do livro e validação do mestre.',
+        nivel:1,ramo:'classe' as const,estado:'referencia' as const,
+        livro:'Player’s Handbook (2014)',
+      })),
+      ...((d.dnd2014Magias?.length??0)>0?[{
+        id:'2014-grimorio',
+        titulo:'Grimório 2014 · '+d.dnd2014Magias!.length+' magia(s)',
+        descricao:'Conhecidas, preparadas e extras estão no grimório, com limites por classe e concentração ativa.',
+        nivel:1,ramo:'classe' as const,estado:'referencia' as const,
+        livro:'Player’s Handbook (2014)',
+      }]:[]),
       ...(racaMeta ? [{ id: '2014-raca', titulo: 'Raça: ' + raca, descricao: racaMeta.descricao ?? '',
         nivel: 1, ramo: 'especie' as const, estado: 'referencia' as const, livro: 'Player’s Handbook (2014)' }] : []),
       ...(sub ? [{ id: '2014-subraca', titulo: sub.nome, descricao: sub.detalhe,

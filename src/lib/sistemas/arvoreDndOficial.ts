@@ -11,6 +11,7 @@ import { progressaoVisivel } from './dnd2024Progressao'
 import { ANTECEDENTES_2014, RACAS_2014, SUBRACAS_2014 } from './dnd2014Criacao'
 import { marcosDaClasse2014 } from './dnd2014Marcos'
 import { subclasseDaFicha2014 } from './dnd2014Subclasses'
+import {ESCOLHAS_SUBCLASSES_2014} from './dnd2014EscolhasSubclasse'
 import { classesDaFicha2014 } from './dnd2014Multiclasse'
 import { lerLivrosDnd, type LivroBaseDnd } from './dndLivros'
 import { fontePermitida, FONTE_LEGADO_2014, FONTE_PHB } from './dnd2024Fontes'
@@ -39,7 +40,7 @@ const fonteVisivel = (f: string, permitidas: Set<string> | null): boolean =>
  * devem alimentar os hexágonos próprios do personagem.
  */
 export function hexagonosOficiaisDnd(
-  d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndLivros' | 'dnd2014Subclasse' | 'dnd2014Subclasses' | 'dnd2014Multiclasse'> & Partial<Pick<DadosFicha,'dnd2014Talentos'|'dnd2014Magias'>>,
+  d: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse' | 'dndLivros' | 'dnd2014Subclasse' | 'dnd2014Subclasses' | 'dnd2014Multiclasse'> & Partial<Pick<DadosFicha,'dnd2014Talentos'|'dnd2014Magias'|'dnd2014EscolhasSubclasse'|'dnd2014OpcoesTalentos'|'dnd2014OpcoesClasse'>>,
   edicao: LivroBaseDnd = lerLivrosDnd(d.dndLivros).base,
   fontes: Set<string> | null = null,
   mostrarFuturos = false,
@@ -72,6 +73,36 @@ export function hexagonosOficiaisDnd(
         livro:subclasse.fonte==='srd51'?'SRD 5.1 (2014)':'Player’s Handbook (2014)',
       }))]
     })
+    const escolhasArquetipo:HexagonoDnd[] = lista.flatMap(c=>{
+      const sub=subclasseDaFicha2014(d,c.cls.id)
+      const registro=d.dnd2014EscolhasSubclasse?.[c.cls.id]
+      if(!sub||!registro||registro.subclasse!==sub.id)return []
+      return (ESCOLHAS_SUBCLASSES_2014[sub.id]??[])
+        .filter(grupo=>grupo.nivel<=c.nivel)
+        .flatMap(grupo=>(registro.grupos[grupo.id]??[])
+          .filter(nome=>grupo.opcoes.includes(nome))
+          .map((nome,i)=>({
+            id:'2014-escolha-sub-'+c.cls.id+'-'+grupo.id+'-'+i,
+            titulo:nome,
+            descricao:sub.nome+' · '+grupo.titulo+'; escolha registrada no nível da classe '+grupo.nivel+'. Efeito conforme o livro e o mestre.',
+            nivel:grupo.nivel,ramo:'classe' as const,estado:'referencia' as const,
+            livro:'Player’s Handbook (2014)',
+          })))
+    })
+    const escolhasClasse:HexagonoDnd[]=[
+      ...(d.dnd2014OpcoesClasse?.pactoBruxo?[{
+        id:'2014-pacto-bruxo',titulo:d.dnd2014OpcoesClasse.pactoBruxo,
+        descricao:'Dádiva do Pacto do Bruxo (2014). Benefícios e condições conforme o livro.',
+        nivel:3,ramo:'classe' as const,estado:'referencia' as const,
+        livro:'Player’s Handbook (2014)',
+      }]:[]),
+      ...(d.dnd2014OpcoesClasse?.metamagicas??[]).map((nome,i)=>({
+        id:'2014-metamagia-'+i,titulo:nome,
+        descricao:'Metamagia de Feiticeiro 2014. Custo e efeito devem seguir o livro.',
+        nivel:3,ramo:'classe' as const,estado:'referencia' as const,
+        livro:'Player’s Handbook (2014)',
+      })),
+    ]
     // PHB 2014 cap. 6: habilidades são recebidas pelo nível EM CADA CLASSE,
     // nunca pelo nível total do personagem multiclasse.
     return [
@@ -98,10 +129,12 @@ export function hexagonosOficiaisDnd(
           })),
       ]),
       ...subclassesDaFicha,
+      ...escolhasArquetipo,
+      ...escolhasClasse,
       ...(d.dnd2014Talentos??[]).map((nome,i)=>({
         id:'2014-talento-'+i+'-'+nome,
         titulo:'Talento: '+nome,
-        descricao:'Talento opcional escolhido no Livro do Jogador 2014. Pré-requisitos numéricos verificados; efeitos condicionais exigem leitura do livro e validação do mestre.',
+        descricao:'Talento opcional escolhido no Livro do Jogador 2014. '+(d.dnd2014OpcoesTalentos?.[nome] ? 'Escolha registrada: '+d.dnd2014OpcoesTalentos[nome]+'. ' : '')+'Efeitos condicionais exigem leitura do livro e validação do mestre.',
         nivel:1,ramo:'classe' as const,estado:'referencia' as const,
         livro:'Player’s Handbook (2014)',
       })),

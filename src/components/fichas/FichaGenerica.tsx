@@ -76,12 +76,12 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
   const efeitosDnd = modoProgressao !== 'manual'
   const fontesFicha = useMemo(() => {
     if (s.id !== 'dnd5e-srd' || !d.dndLivros) return fontesDnd // fichas antigas preservam suas seleções
-    const escolhido = lerLivrosDnd(d.dndLivros)
-    const lista = [FONTE_SRD, escolhido.base === 'phb2024' ? FONTE_PHB : FONTE_LEGADO_2014,
+    const escolhido = lerLivrosDnd(d.dndLivros, edicaoDnd)
+    const lista = [FONTE_SRD, edicaoDnd === 'phb2024' ? FONTE_PHB : FONTE_LEGADO_2014,
       ...escolhido.suplementos]
     return new Set(lista.filter(id => id === FONTE_SRD || !fontesDnd || fontesDnd.has(id) ||
-      (edicaoDefinidaPeloMestre && id === (escolhido.base === 'phb2024' ? FONTE_PHB : FONTE_LEGADO_2014))))
-  }, [s.id, d.dndLivros, fontesDnd, edicaoDefinidaPeloMestre])
+      (edicaoDefinidaPeloMestre && id === (edicaoDnd === 'phb2024' ? FONTE_PHB : FONTE_LEGADO_2014))))
+  }, [s.id, d.dndLivros, fontesDnd, edicaoDefinidaPeloMestre, edicaoDnd])
   const c = useMemo(() => calcular(s, d, { efeitosDnd }), [s, d, efeitosDnd])
   const central = useRef<RolagemCentralHandle>(null)
   const naMesa = rolarNaCampanha ? 'Também foi para o chat da mesa' : null
@@ -225,7 +225,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
           ? onChange({ ...d, campos: { ...d.campos, [f.id]: v,
               ...(f.id === 'especie' ? { subraca2014: '' } : {}) },
               ...(f.id === 'especie' ? { dnd2014AtributosExtras: [] } : {}),
-              ...(f.id === 'classe' ? { dnd2014PericiasClasse: [], dnd2014Subclasse: undefined } : {}) })
+              ...(f.id === 'classe' ? { dnd2014PericiasClasse: [], dnd2014Subclasse: undefined, dnd2014InimigoFavorito: undefined, dnd2014IdiomaInimigo: undefined } : {}) })
           : set('campos', { ...d.campos, [f.id]: v })} /></div> : <label key={f.id} className={'flex flex-col justify-end text-sm text-(--a-d6c8e8) ' + (f.tipo === 'area' ? 'col-span-2 lg:col-span-3' : f.tipo === 'numero' ? '' : 'col-span-2 sm:col-span-1')}>{f.nome}
           {f.tipo === 'area'
             ? <textarea rows={3} value={String(d.campos[f.id] ?? '')} disabled={somenteLeitura} onChange={e => set('campos', { ...d.campos, [f.id]: e.target.value.slice(0, 4000) })} className={input + ' mt-1'} />

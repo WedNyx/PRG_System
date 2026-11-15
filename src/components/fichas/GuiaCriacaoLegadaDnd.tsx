@@ -1,6 +1,7 @@
 'use client'
 
 import AtributosProgressaoDnd2014 from './AtributosProgressaoDnd2014'
+import EquipamentoInicialDnd2014 from './EquipamentoInicialDnd2014'
 import { CUSTOS_2014 } from '@/lib/sistemas/dnd2014Atributos'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { SUBRACAS_2014, RACAS_2014, ANTECEDENTES_2014 } from '@/lib/sistemas/dnd2014Criacao'
@@ -10,12 +11,12 @@ import { TALENTOS_PHB_2014, limitesTalentos2014 } from '@/lib/sistemas/dnd2014Ta
 import { ATRIBUTOS_DND, aumentosRaciais2014, atributosEfetivos2014, lerAtributosBase2014,
   periciasAntecedente2014, periciasClasse2014 } from '@/lib/sistemas/dnd2014Regras'
 
-type Props = { d: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura: boolean }
+type Props = { d: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura: boolean; irPara?: (secao:string)=>void }
 const classInput = 'mt-1 min-w-0 w-full rounded-xl border border-(--a-62527e) bg-(--s-151123) p-2.5 text-sm text-white'
 const nomes: Record<string,string> = { FOR:'Força',DES:'Destreza',CON:'Constituição',INT:'Inteligência',SAB:'Sabedoria',CAR:'Carisma' }
 const nomePericia = (x:string) => x.replaceAll('_',' ').replace(/(^|\s)\p{L}/gu, c => c.toUpperCase())
 
-export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura }: Props) {
+export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPara }: Props) {
   const raca = String(d.campos.especie ?? '')
   const classe = String(d.campos.classe ?? '')
   const antecedente = String(d.campos.antecedente ?? '')
@@ -90,6 +91,7 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura }: Pr
     </label>}
     {antMeta && <p className="rounded-lg bg-(--s-171325) p-2 text-xs"><strong>Antecedente:</strong> {antMeta.descricao}</p>}
     <AtributosProgressaoDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
+    <EquipamentoInicialDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} irPara={irPara} />
     <div className="space-y-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
       <h4 className="text-sm font-semibold text-(--a-d3adf0)">Atributos de criação e bônus de raça (2014)</h4>
       {!base ? <>
@@ -223,7 +225,7 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura }: Pr
       </div>
     </div>}
     <p className="rounded-lg border border-amber-500/30 bg-amber-950/15 p-2 text-xs text-amber-200">
-      Resta conferir no livro: traços condicionais, proficiências de ferramentas, equipamentos iniciais,
+      Resta conferir no livro: traços condicionais, proficiências de ferramentas, escolhas de equipamentos por classe e antecedente,
       subclasses, escolhas especiais, talentos e magias não contempladas pela automação. A edição 2024 não concede
       nada a esta ficha 2014.
     </p>

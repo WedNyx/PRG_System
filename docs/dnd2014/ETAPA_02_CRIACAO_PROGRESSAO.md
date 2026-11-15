@@ -43,3 +43,12 @@ A seleção de grupos de equipamentos **não verifica item por item** se o inven
 - As árvores oficiais passaram a mostrar escolhas de Incremento no Valor de Habilidade nos níveis apropriados de todas as 12 classes, incluindo marcos extras relevantes; isso é representação visual e não concede recursos automaticamente.
 - Persistem conferência manual de equipamentos físicos no inventário, opções de talentos e condições situacionais. A homologação da PR #52 com banco multiusuário e celular real não está concluída.
 
+
+### Homologação adicional da Etapa 2 (2026-11-14; versão 0.34.2)
+
+- **Prévia local validada:** rolagem do Guerreiro `2+3+2+2+3 = 12`, multiplicada por dez = `120 PO`, carteira preenchida com 120 PO. Após F5, dados, modo ouro, carteira, idioma Élfico e instrumento Flauta do Forasteiro permaneceram.
+- **Banco conectado, teste sem resíduos:** criados em uma subtransação um mestre, um jogador, uma campanha e uma ficha temporária 2014. A RPC `prg_salvar_ficha` incrementou versão 1→2 e preservou os registros 2014; proprietário errado e versão defasada não escreveram. Tudo foi revertido por `ROLLBACK` controlado. A API HTTP do app com autenticação real de dois perfis não foi exercitada nesse teste.
+- **Correção importante de permissões:** no momento de escolha de ouro inicial, os campos `dnd2014EquipamentoInicial` e `uso` com alteração da carteira passam juntos pela área `equipamentos`. Isso evita liberar as moedas na área normalmente livre de PV antes que o mestre aprove o equipamento. Alterações normais posteriores em `uso` mantêm a classificação habitual. Testes dos modelos A, B, C e exceção individual cobrem esse cenário.
+- **Rerolagem:** após registrar resultado válido do ouro inicial para a mesma classe e antecedente, segundo clique não muda os dados; o botão fica indisponível até alteração de método e confirmação.
+- **Mobile:** layout responsivo e breakpoints continuam revisados, mas a ferramenta disponível não controlou a largura da viewport; não corresponde a homologação em smartphone real.
+- **Limites:** aprovação HTTP real, autenticação de perfis e layout em celular físico ainda dependem de ambiente/controle adequados; não confundir testes de SQL e funções puras com E2E autenticado.

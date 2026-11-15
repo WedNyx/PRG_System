@@ -6,10 +6,12 @@ Também aparece no site em /novidades. Ao atualizar: aumente a versão no packag
 
 - Revisão da Etapa 2: XP do nível 1 ao 20 conforme Livro do Jogador 2014, com indicador do próximo nível, sem forçar níveis em campanhas por marcos.
 - Equipamento inicial de 2014: alternativas por classe, itens fixos referenciados, conferência manual do kit junto ao antecedente e riqueza inicial com dados d4 por classe, Monge incluído.
+- Antecedentes 2014: catálogo das 13 opções com proficiências fixas, escolhas de idioma/ferramenta e referência aos itens iniciais, com salvamento e validação próprios.
+- Progressão visual das 12 classes: incrementos de atributos e marcos adicionais de referência por nível, sem aplicar habilidades apenas pela exibição.
 - Ouro rolado e seleção de kit são exclusivos; carteira e itens já existentes não são sobrescritos, itens não são adicionados ou duplicados implicitamente.
 - Novos registros passam pelas permissões da campanha, checklist de criação, validações de edição 2014/2024 e normalização não destrutiva.
 - Implementações anteriores nesta versão: conjunto padrão, 27 pontos, 4d6, incrementos por classe, PV por nível e Constituição retroativa.
-- Pendência de homologação: reabrir ficha com banco conectado e conferir dispositivos móveis reais; escolhas de talentos, ferramentas e idiomas avançadas permanecem referenciais quando não automatizadas.
+- Pendência de homologação: reabrir ficha com banco conectado e conferir dispositivos móveis reais; efeitos/pré-requisitos de talentos e aplicação automática de equipamentos seguem sob conferência manual.
 
 ## v0.34.0 — Fase 2: árvores D&D unificadas (2026-11-14)
 

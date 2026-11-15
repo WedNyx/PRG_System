@@ -9,6 +9,7 @@ import {subclasseDaFicha2014} from '@/lib/sistemas/dnd2014Subclasses'
 import {lerLivrosDnd,suplementoDndPorId} from '@/lib/sistemas/dndLivros'
 import {lerMagias2014,maximoNivelMagiaClasse2014,expressaoMagia2014Valida,podeConjurarRitualMagia2014,type RegistroMagiaDnd2014} from '@/lib/sistemas/dnd2014Magias'
 import {magiasDaClasse2014} from '@/lib/sistemas/dnd2014CatalogoMagias'
+import {magiasCirculoTerra2014} from '@/lib/sistemas/dnd2014MagiasCirculo'
 import {resumoPreparacaoMagias2014, limiteTruques2014} from '@/lib/sistemas/dnd2014PreparacaoMagias'
 import {cdConcentracaoDano2014,encerrarConcentracao2014} from '@/lib/sistemas/dnd2014Concentracao'
 import {conjurarArcanaMistica2014,NIVEL_ARCANA_MISTICA_2014,nivelBruxoArcana2014} from '@/lib/sistemas/dnd2014ArcanaMistica'
@@ -40,6 +41,10 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
  const {lista}=classesDaFicha2014(d)
  const magias=lerMagias2014(d.dnd2014Magias)
  const resumos=resumoPreparacaoMagias2014(d,magias)
+ const doCirculo=magiasCirculoTerra2014(d)
+ const faltamCirculo=doCirculo.filter(x=>!magias.some(m=>
+   m.classe==='druida'&&m.nivel===x.nivelMagia&&
+   m.nome.toLocaleLowerCase('pt-BR')===x.nome.toLocaleLowerCase('pt-BR')))
  const classeAtual=lista.find(x=>x.cls.id===classe)??lista[0]
  const permissao=classeAtual?maximoNivelMagiaClasse2014(classeAtual.cls.nome,classeAtual.nivel,
    subclasseDaFicha2014(d,classeAtual.cls.id)?.id):0
@@ -108,6 +113,20 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
   <p className="text-xs text-(--a-c4b6d4)">Registre magias **conhecidas, preparadas ou extras** a partir do Livro do Jogador 2014 e dos suplementos liberados.
     A plataforma confere níveis e espaços da classe, mas não supõe que uma magia de mesmo nome tem efeito igual na edição 2024.
     Consulte o livro para dano, duração, componentes e regras; a expressão de dados é opcional.</p>
+  {doCirculo.length>0&&<div className="space-y-2 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+    <h4 className="text-sm font-semibold">🌲 Magias do Círculo da Terra (2014)</h4>
+    <p className="text-xs text-(--a-c4b6d4)">Seu terreno concede estas magias sempre preparadas nos níveis de Druida indicados.
+      Elas não consomem a cota de preparação diária. Os efeitos devem ser conferidos no livro.</p>
+    <p className="text-xs">{doCirculo.map(x=>x.nome+' ('+x.nivelMagia+'º)').join(' · ')}</p>
+    {!somenteLeitura&&faltamCirculo.length>0&&<button className={btn} type="button"
+      onClick={()=>{
+        const registros=faltamCirculo.map(x=>({nome:x.nome,nivel:x.nivelMagia,classe:'druida',
+          fonte:'phb2014',modo:'extra' as const}))
+        salvar(lerMagias2014([...magias,...registros]))
+      }}>
+      <Plus size={14}/> Registrar {faltamCirculo.length} magia(s) sempre preparadas
+    </button>}
+  </div>}
   {resumos.length>0&&<div className="grid gap-2 sm:grid-cols-2">
     {resumos.map(x=><div key={x.classe}
       className="rounded-lg border border-(--a-55456e) bg-(--s-171325) p-2 text-xs">

@@ -12,6 +12,7 @@ Também aparece no site em /novidades. Ao atualizar: aumente a versão no packag
 - Magias sempre preparadas do Círculo da Terra por 8 terrenos, sem contar na preparação diária; truque adicional ao selecionar o Círculo da Terra.
 - Novas escolhas validadas no servidor e preservadas na ficha. Testes de regressão específicos por regra. O código não reproduz descrições comerciais nem presume resultados das magias.
 - Árvore de Constelações: registra como referências as manobras, totens, metamagia, Dádiva do Pacto e decisões internas de talentos escolhidas, respeitando nível de classe e sem criar bônus de combate fictícios.
+- Mestre de Batalha 2014: contador opcional de Dados de Superioridade por classe e nível, progressão d8→d10→d12, gastos controlados e restauração em descansos curto e longo. Implacável no nível 15 pode recuperar um dado quando rolar iniciativa sem nenhum restante. Testes de descanso, multiclasse e limites incluídos.
 - Ainda requer homologação visual e multiusuário; efeitos condicionais e automação integral de todas as subclasses/talentos/magias continuam fora do escopo seguro sem implementação individual.
 
 ## v0.34.3 — Etapa 3 (primeira entrega): talentos, subclasses e magias 2014 (2026-11-14)

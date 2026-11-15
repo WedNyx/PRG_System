@@ -20,6 +20,7 @@ import AjudaTela, { type PassoAjuda } from '@/components/AjudaTela'
 import { ArrowLeft, Download } from 'lucide-react'
 import { baixarArquivo, montarArquivo } from '@/lib/fichaArquivo'
 import { aplicar } from '@/lib/nuvem/categorias'
+import { tituloSistemaNaFicha } from '@/lib/sistemas/edicaoFichaDnd'
 
 const AREAS: Record<string, string> = Object.fromEntries(CAMPOS.map(c => [c.id, c.titulo]))
 
@@ -199,7 +200,7 @@ function Conteudo() {
         {!naMesa && <Link href="/central?secao=fichas" aria-label="Voltar para a Central" className="inline-flex shrink-0 items-center gap-1 rounded-lg p-1.5 text-sm text-(--a-b99bff) hover:bg-(--s-2b2140)"><ArrowLeft size={18} /><span className="hidden sm:inline">Central</span></Link>}
         <div className="min-w-0 flex-1">
           <h1 className="truncate font-bold leading-tight">{dados?.nome || (sistema ? 'Personagem sem nome' : 'Ficha')}</h1>
-          <p className="truncate text-xs text-(--a-b4aeca)">{sistema?.nome ?? '…'}{sistema && (campanhaId ? ' · 🏰 Ficha de campanha' : nuvem ? ' · 🧙 Ficha avulsa' : '')}{sistema?.autor && <span className="text-(--a-ed9cd8)"> · ✍️ {sistema.autor}</span>}</p>
+          <p className="truncate text-xs text-(--a-b4aeca)">{tituloSistemaNaFicha(sistema, dados, campanhaId && config ? config.baseLivro ?? 'phb2024' : null)}{sistema && (campanhaId ? ' · 🏰 Ficha de campanha' : nuvem ? ' · 🧙 Ficha avulsa' : '')}{sistema?.autor && <span className="text-(--a-ed9cd8)"> · ✍️ {sistema.autor}</span>}</p>
         </div>
         <span className={'shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium ' + (COR[estado] ?? 'border-(--a-62527e) text-(--a-b4aeca)')} aria-live="polite">{ROTULO[estado]}</span>
         {sistema && dados && <button type="button" onClick={() => { baixarArquivo(montarArquivo(sistema.id, dados as unknown as Record<string, unknown>, sistema.nome)); toast.success('Ficha baixada. Para trazer de volta: Central → Fichas → Importar ficha.') }}

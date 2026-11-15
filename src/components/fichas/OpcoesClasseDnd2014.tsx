@@ -1,0 +1,45 @@
+'use client'
+import type {DadosFicha} from '@/lib/sistemas/tipos'
+import {niveisConjuradores2014,limiteMetamagia2014,PACTOS_BRUXO_2014,METAMAGICAS_2014} from '@/lib/sistemas/dnd2014OpcoesClasse'
+const select='min-h-11 w-full min-w-0 rounded-lg border border-(--a-55456e) bg-(--s-151123) p-2 text-sm'
+export default function OpcoesClasseDnd2014({d,onChange,somenteLeitura}:{
+ d:DadosFicha;onChange:(d:DadosFicha)=>void;somenteLeitura:boolean
+}) {
+ const n=niveisConjuradores2014(d)
+ const op=d.dnd2014OpcoesClasse??{}
+ const max=limiteMetamagia2014(n.feiticeiro)
+ if(n.bruxo<3&&max===0)return null
+ return <section aria-label="Escolhas de classe do Bruxo e Feiticeiro 2014"
+   className="min-w-0 space-y-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+   <h4 className="font-semibold text-(--a-d3adf0)">🧙 Escolhas de classe · PHB 2014</h4>
+   {n.bruxo>=3&&<label className="block text-xs">
+     Dádiva do Pacto · Bruxo nível {n.bruxo}
+     <select className={select} value={op.pactoBruxo??''} disabled={somenteLeitura}
+      onChange={e=>onChange({...d,dnd2014OpcoesClasse:{...op,pactoBruxo:e.target.value||undefined}})}>
+      <option value="">Escolha uma dádiva...</option>
+      {PACTOS_BRUXO_2014.map(x=><option key={x} value={x}>{x}</option>)}
+     </select>
+     <span className="mt-1 block text-(--a-c4b6d4)">A dádiva e o patrono são escolhas diferentes; os benefícios exatos exigem conferência do livro.</span>
+   </label>}
+   {max>0&&<div className="space-y-2">
+     <p className="text-xs">Metamagia · Feiticeiro nível {n.feiticeiro} · {(op.metamagicas??[]).length}/{max}</p>
+     <div className="flex flex-wrap gap-2">
+      {(op.metamagicas??[]).map(x=><span key={x}
+       className="inline-flex items-center gap-2 rounded-lg border border-(--a-55456e) px-2 py-1 text-xs">
+       {x}
+       {!somenteLeitura&&<button type="button" aria-label={'Remover '+x}
+        className="min-h-8 min-w-8" onClick={()=>onChange({...d,dnd2014OpcoesClasse:{
+         ...op,metamagicas:(op.metamagicas??[]).filter(y=>y!==x)}})}>×</button>}
+      </span>)}
+     </div>
+     {(op.metamagicas??[]).length<max&&!somenteLeitura&&<select className={select} value=""
+       onChange={e=>{if(e.target.value)onChange({...d,dnd2014OpcoesClasse:{
+        ...op,metamagicas:[...(op.metamagicas??[]),e.target.value]}})}}>
+       <option value="">Escolha uma metamagia...</option>
+       {METAMAGICAS_2014.filter(x=>!(op.metamagicas??[]).includes(x))
+         .map(x=><option key={x} value={x}>{x}</option>)}
+      </select>}
+     <p className="text-xs text-(--a-c4b6d4)">Os custos em pontos de feitiçaria e as condições de cada metamagia seguem o texto de 2014.</p>
+   </div>}
+ </section>
+}

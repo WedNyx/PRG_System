@@ -2,6 +2,7 @@
 
 import AtributosProgressaoDnd2014 from './AtributosProgressaoDnd2014'
 import EquipamentoInicialDnd2014 from './EquipamentoInicialDnd2014'
+import EscolhasAntecedenteDnd2014 from './EscolhasAntecedenteDnd2014'
 import { CUSTOS_2014 } from '@/lib/sistemas/dnd2014Atributos'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { SUBRACAS_2014, RACAS_2014, ANTECEDENTES_2014 } from '@/lib/sistemas/dnd2014Criacao'
@@ -92,6 +93,7 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
     {antMeta && <p className="rounded-lg bg-(--s-171325) p-2 text-xs"><strong>Antecedente:</strong> {antMeta.descricao}</p>}
     <AtributosProgressaoDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
     <EquipamentoInicialDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} irPara={irPara} />
+    <EscolhasAntecedenteDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
     <div className="space-y-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
       <h4 className="text-sm font-semibold text-(--a-d3adf0)">Atributos de criação e bônus de raça (2014)</h4>
       {!base ? <>
@@ -225,7 +227,7 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
       </div>
     </div>}
     <p className="rounded-lg border border-amber-500/30 bg-amber-950/15 p-2 text-xs text-amber-200">
-      Resta conferir no livro: traços condicionais, proficiências de ferramentas, escolhas de equipamentos por classe e antecedente,
+      Resta conferir no livro: traços condicionais, adequação das ferramentas à campanha e escolhas específicas de equipamento por classe e antecedente,
       subclasses, escolhas especiais, talentos e magias não contempladas pela automação. A edição 2024 não concede
       nada a esta ficha 2014.
     </p>

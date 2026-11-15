@@ -2,12 +2,15 @@
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { ATRS_2014, CONJUNTO_2014, CUSTOS_2014, diagnosticoAtributos2014, marcosIncremento2014, rolarAtributos2014, totalRolagem2014, type MetodoAtributos2014 } from '@/lib/sistemas/dnd2014Atributos'
 import { niveisVida2014 } from '@/lib/sistemas/dnd2014Vitalidade'
+import { progressoXp2014, xpParaNivel2014 } from '@/lib/sistemas/dnd2014Experiencia'
 import { limitesTalentos2014 } from '@/lib/sistemas/dnd2014Talentos'
 const estilo='mt-1 w-full min-w-0 rounded-lg border border-(--a-62527e) bg-(--s-151123) p-2 text-sm'
 export default function AtributosProgressaoDnd2014({d,onChange,somenteLeitura}:{d:DadosFicha;onChange:(d:DadosFicha)=>void;somenteLeitura:boolean}) {
   const metodo=d.dnd2014MetodoAtributos??'manual'
   const marcos=marcosIncremento2014(d)
   const inc=d.dnd2014Incrementos??{}
+  const nivel=Math.max(1,Math.min(20,Number(d.campos.nivel)||1))
+  const xp=progressoXp2014(Number(d.campos.xp)||0,nivel)
   const usados=Object.keys(inc).length+Math.max(0,(d.dnd2014Talentos?.length??0)-limitesTalentos2014(d).variante)
   const diagnostico=diagnosticoAtributos2014(d)
   const trocarMetodo=(m:MetodoAtributos2014)=> {
@@ -31,6 +34,23 @@ export default function AtributosProgressaoDnd2014({d,onChange,somenteLeitura}:{
     {!somenteLeitura && metodo==='rolagem' && <button type="button" className={estilo} onClick={()=>{const r=rolarAtributos2014();aplicar(r.map(totalRolagem2014),r)}}>Rolar seis grupos de 4d6 e aplicar como base</button>}
     {metodo==='rolagem' && d.dnd2014RolagensAtributos?.map((r,i)=><p key={i} className="text-xs">Grupo {i+1}: {r.join(', ')} → {totalRolagem2014(r)} (menor descartado)</p>)}
     {diagnostico.length>0 && <p role="status" className="text-xs text-amber-200">{diagnostico.join(' ')}</p>}
+    <div className="space-y-2 rounded-lg border border-(--a-55456e) p-3">
+      <h4 className="text-sm font-semibold">📈 Experiência e nível (PHB 2014)</h4>
+      <p className="text-xs">Nível atual: {xp.nivel} · XP registrado: {xp.xp.toLocaleString('pt-BR')} · bônus de proficiência: +{Math.floor((xp.nivel-1)/4)+2}.</p>
+      <p className="text-xs">{xp.proximo===null?'Nível 20: progressão por XP concluída.':
+        'Próximo nível: '+xp.proximo.toLocaleString('pt-BR')+' XP (faltam '+xp.faltam.toLocaleString('pt-BR')+').'}</p>
+      {xp.nivelPeloXp!==xp.nivel&&<p className="text-xs text-amber-200">
+        XP sugere nível {xp.nivelPeloXp}; o nível informado é {xp.nivel}.
+        Se a campanha usa progressão por marcos, o nível pode ser ajustado manualmente pelo mestre.</p>}
+      <label className="block text-xs">XP total (não sobe de nível automaticamente)
+        <input type="number" min={0} step={1} className={estilo} value={d.campos.xp??0}
+          disabled={somenteLeitura} onChange={e=>onChange({...d,campos:{...d.campos,xp:Math.max(0,Math.floor(Number(e.target.value)||0))}})} />
+      </label>
+      {!somenteLeitura&&xp.xp===0&&xp.nivel>1&&<button type="button" className={estilo}
+        onClick={()=>onChange({...d,campos:{...d.campos,xp:xpParaNivel2014(xp.nivel)}})}>
+        Registrar XP mínimo do nível {xp.nivel} (opcional)
+      </button>}
+    </div>
     <details className="rounded-lg border border-(--a-55456e) p-2">
       <summary className="cursor-pointer text-sm font-semibold">Pontos de Vida por nível</summary>
       <p className="my-2 text-xs">Primeiro nível: dado máximo. Demais níveis: média fixa ou resultado rolado, mais Constituição (mínimo de 1 PV por nível). Alterações de Constituição são retroativas. Um máximo de PV digitado manualmente na ficha continua tendo prioridade.</p>

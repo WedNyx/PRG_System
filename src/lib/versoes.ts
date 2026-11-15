@@ -27,6 +27,17 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao:'0.34.6', data:'2026-11-15',
+    titulo:'D&D: edição correta e regras explicadas na Árvore',
+    itens:[
+      '📚 Cabeçalho da ficha mostra a edição do Livro do Jogador selecionada: 2014 (SRD 5.1) ou 2024 (SRD 5.2.1), inclusive quando a campanha determina a edição.',
+      '🌳 A Árvore substitui Consultar livro por Ver detalhes e apresenta explicações práticas diretamente no cartão, também no celular.',
+      '🏹 Patrulheiro 2014: escolha e idioma do Inimigo Favorito apresentados no guia, com aviso da variante de Patrulheiro Revisado encontrada no PDF fornecido e sem bônus de combate inventados.',
+      '🧬 Tiferino e 📜 Forasteiro: traços, equipamento, idiomas e escolhas registrados diretamente nos detalhes da Árvore.',
+      '🛡️ Regra de 2024 e regra de 2014 permanecem separadas; testes verificam a edição, as informações e a origem dos cartões.',
+    ],
+  },
+  {
     versao:'0.34.5', data:'2026-11-15',
     titulo:'D&D 2014: gasto assistido de Metamagia',
     itens:[

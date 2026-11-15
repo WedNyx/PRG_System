@@ -162,7 +162,11 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
       <label className="block text-xs">Escolha de subclasse
         <select className={classInput} value={selecionada?.id ?? ''}
           disabled={somenteLeitura || !subclasses.some(x=>classeNivel>=x.nivel)}
-          onChange={e=>onChange({...d,dnd2014Subclasse:e.target.value||undefined})}>
+          onChange={e=>{const escolhas={...d.dnd2014EscolhasSubclasse};
+            const cls=classesDaFicha2014(d).lista.find(x=>x.principal)?.cls.id;
+            if(cls)delete escolhas[cls]
+            onChange({...d,dnd2014Subclasse:e.target.value||undefined,
+              dnd2014EscolhasSubclasse:escolhas})}}>
           <option value="">{classeNivel<Math.min(...subclasses.map(x=>x.nivel))
             ? 'Aguardando nível '+Math.min(...subclasses.map(x=>x.nivel)) : 'Escolha a subclasse...'}</option>
           {subclasses.filter(x=>classeNivel>=x.nivel).map(x=>

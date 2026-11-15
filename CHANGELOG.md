@@ -2,6 +2,15 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.34.2 — Homologação da Etapa 2 e permissão de ouro (2026-11-14)
+
+- Rolagem de ouro inicial 2014 testada no navegador: 5d4 × 10 PO, moeda registrada e persistência após recarregamento.
+- Corrige nova rolagem por cliques repetidos: resultado inicial é estável.
+- Corrige autorização atômica da riqueza inicial: quando equipamentos exigem aprovação, a carteira preenchida junto com a escolha de ouro também aguarda o mestre.
+- Banco Supabase: teste transacional isolado com dois perfis temporários e campanha; gravação, versão otimista e proteção por proprietário aprovadas; rollback confirmado.
+- Testes de regras de permissão por modelos A/B/C e exceções individuais incluídos.
+- Homologação HTTP com dois perfis e celular físico ainda não confirmadas; PR não deve ser mesclada sem decisão explícita sobre esses riscos.
+
 ## v0.34.1 — Criação, progressão e equipamento D&D 2014 (2026-11-14)
 
 - Revisão da Etapa 2: XP do nível 1 ao 20 conforme Livro do Jogador 2014, com indicador do próximo nível, sem forçar níveis em campanhas por marcos.

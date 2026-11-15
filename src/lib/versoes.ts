@@ -34,6 +34,7 @@ export const VERSOES: Versao[] = [
       '🔢 Custos de 2014: Acelerada 2, Aumentada 3, Duplicada 1 por truque ou nível da magia, demais Metamagias 1; o jogador confirma as condições do livro.',
       '🛡️ Uso bloqueado sem a opção escolhida, nível de Feiticeiro adequado ou pontos suficientes; descanso longo recupera o recurso existente.',
       '🧪 Testes para custos, saldo, uso indevido e recuperação sem criar contadores duplicados.',
+      '🌙 Restauração Mística 2014: Feiticeiro de nível 20 recupera até 4 Pontos de Feitiçaria após cada descanso curto.',
     ],
   },
   {

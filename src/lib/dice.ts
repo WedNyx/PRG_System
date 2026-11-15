@@ -116,15 +116,56 @@ export function montarRolagem(formula: string, valor: number): string {
 }
 
 /**
- * Detecta crítico/falha crítica em uma rolagem já feita:
- * se a expressão envolve d20 e algum resultado foi 20 (crítico) ou 1 (falha).
+ * Crítico de d20 só considera a face que de fato entrou no teste.
+ * - vantagem / parada (kh1): maior dos dados;
+ * - desvantagem / parada de 0 dados (kl1): menor dos dados;
+ * - dado único: a face desse dado.
+ *
+ * Outros grupos (d4, d6 etc.) podem participar do teste, mas nunca
+ * concedem crítico por coincidirem com 20. Rolagens de múltiplos d20
+ * sem uma única face selecionada, explosões e pools de sucessos não
+ * recebem um "crítico universal": cada sistema deve interpretá-los.
  */
 export function detectarCritico(
   expressao: string,
   resultados: number[]
 ): 'critico' | 'falha' | null {
-  if (!/(?:^|[+\-])\d*d20(?:$|[!k+\-])?/.test(expressao.toLowerCase())) return null
-  if (resultados.includes(20)) return 'critico'
-  if (resultados.includes(1)) return 'falha'
+  const limpa = expressao.toLowerCase().replace(/\s+/g, '')
+  const termos = limpa.match(/[+-]?[^+-]+/g)
+  if (!termos || !resultados.length) return null
+
+  let cursor = 0
+  let faceEscolhida: number | null = null
+  let gruposD20 = 0
+
+  for (const termo of termos) {
+    const corpo = termo.replace(/^[+-]/, '')
+    if (/^\d+$/.test(corpo)) continue
+    // A saída do motor contém somente a face FINAL para r1.
+    // Explosões não têm uma face única; são responsabilidade da regra da mesa.
+    const dado = corpo.match(/^(\d*)d(\d+|f)(?:r1)?(?:k([hl])(\d+))?$/)
+    if (!dado) return null
+    const qtd = Number(dado[1] || 1)
+    if (!Number.isInteger(qtd) || qtd < 1 || cursor + qtd > resultados.length) return null
+    const faces = resultados.slice(cursor, cursor + qtd)
+    cursor += qtd
+
+    if (dado[2] !== '20') continue
+    gruposD20++
+    if (gruposD20 > 1) return null
+
+    let usadas = faces
+    if (dado[3]) {
+      const manter = Number(dado[4])
+      if (!Number.isInteger(manter) || manter < 1 || manter > qtd) return null
+      usadas = [...faces].sort((a, b) => dado[3] === 'h' ? b - a : a - b).slice(0, manter)
+    }
+    if (usadas.length !== 1) return null
+    faceEscolhida = usadas[0]
+  }
+
+  if (cursor !== resultados.length || gruposD20 !== 1) return null
+  if (faceEscolhida === 20) return 'critico'
+  if (faceEscolhida === 1) return 'falha'
   return null
 }

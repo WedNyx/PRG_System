@@ -74,6 +74,15 @@ describe('rolarExpressao', () => {
     expect(rolarExpressao('DROP TABLE')).toBeNull()
   })
 
+  it('aceita os principais tamanhos de dado usados nos sistemas', () => {
+    for (const lados of [2, 3, 4, 6, 8, 10, 12, 20, 30, 100]) {
+      const r = rolarExpressao('1d' + lados)
+      expect(r).not.toBeNull()
+      expect(r!.total).toBeGreaterThanOrEqual(1)
+      expect(r!.total).toBeLessThanOrEqual(lados)
+    }
+  })
+
   it('respeita limites de quantidade', () => {
     expect(rolarExpressao('100d6')).not.toBeNull()
     expect(rolarExpressao('101d6')).toBeNull()
@@ -96,6 +105,31 @@ describe('detectarCritico', () => {
 
   it('crítico vence falha quando ambos aparecem', () => {
     expect(detectarCritico('2d20kh1', [20, 1])).toBe('critico')
+  })
+  it('desvantagem considera o MENOR d20, não qualquer 20 na rolagem', () => {
+    expect(detectarCritico('2d20kl1', [20, 1])).toBe('falha')
+    expect(detectarCritico('2d20kl1', [20, 13])).toBeNull()
+    expect(detectarCritico('2d20kl1', [20, 20])).toBe('critico')
+  })
+
+  it('parada de Ordem usa o d20 mantido, inclusive quando o atributo é zero', () => {
+    expect(detectarCritico('3d20kh1+5', [1, 20, 8])).toBe('critico')
+    expect(detectarCritico('2d20kl1+5', [1, 18])).toBe('falha')
+    expect(detectarCritico('3d20kh1+5', [1, 8, 12])).toBeNull()
+  })
+
+  it('separa os dados de bônus dos d20 de ataque', () => {
+    expect(detectarCritico('1d20+1d100', [2, 20])).toBeNull()
+    expect(detectarCritico('1d20+2d4+1', [20, 1, 4])).toBe('critico')
+    expect(detectarCritico('1d20+2d4+1', [1, 1, 4])).toBe('falha')
+    expect(detectarCritico('2d20kh1+2d6', [9, 20, 2, 4])).toBe('critico')
+  })
+
+  it('não inventa críticos universais para pools e explosões', () => {
+    expect(detectarCritico('2d20', [20, 1])).toBeNull()
+    expect(detectarCritico('1d20!', [20, 3])).toBeNull()
+    expect(detectarCritico('6d6s5', [6, 6, 5, 3, 1, 4])).toBeNull()
+    expect(detectarCritico('1d20+1d20', [20, 1])).toBeNull()
   })
 })
 

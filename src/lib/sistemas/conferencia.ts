@@ -5,6 +5,7 @@
 import type { DadosFicha, Sistema } from './tipos'
 import type { Calculo } from './calculo'
 import { opcaoEscolhida } from './calculo'
+import { nexOrdemBasicoValido } from './ordemCriacao'
 
 export type ItemConferencia = { tipo: 'ok' | 'aviso' | 'erro'; texto: string; aba?: 'principal' | 'atributos' | 'habilidades' | 'arvore' | 'equipamentos' }
 /** Campos de escolha opcionais (não pedem preenchimento). */
@@ -17,6 +18,17 @@ export function conferirFichaGenerica(s: Sistema, d: DadosFicha, c: Pick<Calculo
     if (f.tipo !== 'escolha' || OPCIONAL.test(f.nome) || OPCIONAL.test(f.id) || f.opcoes?.some(o => /^(não|nenhum|sem)\b/i.test(o.nome))) continue
     const v = d.campos[f.id]
     if (!opcaoEscolhida(f, v) && !(typeof v === 'string' && v.trim())) out.push({ tipo: 'erro', texto: `Escolha: ${f.nome.split(' (')[0]}.`, aba: 'principal' })
+  }
+  // Ordem: valida as decisões obrigatórias do modelo básico sem apagar fichas antigas.
+  // Suplementos podem ter NEX e origens diferentes; a ficha apenas sinaliza.
+  if (s.id === 'ordem-paranormal') {
+    const nex = Number(d.campos.nex ?? 5)
+    if (!nexOrdemBasicoValido(nex))
+      out.push({ tipo: 'aviso', texto: 'NEX fora dos marcos do jogo básico (5%, 10%, …, 95% ou 99%). Confira o suplemento da mesa.', aba: 'principal' })
+    if (!String(d.campos.origem ?? '').trim())
+      out.push({ tipo: 'aviso', texto: 'Registre a origem do agente.', aba: 'principal' })
+    if (nex >= 10 && !String(d.campos.trilha ?? '').trim())
+      out.push({ tipo: 'aviso', texto: 'A partir de NEX 10%, registre a trilha da classe.', aba: 'principal' })
   }
   if (s.atributos.length && s.atributos.every(a => (Number(d.atributos[a.id]) || 0) === a.padrao))
     out.push({ tipo: 'aviso', texto: 'Os atributos ainda estão todos no valor inicial: distribua como o livro manda.', aba: 'atributos' })

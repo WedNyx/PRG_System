@@ -24,6 +24,7 @@ import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
 import { GUIAS } from '@/lib/sistemas/guias'
 import { expressaoParada, leituraBlades, leituraD100 } from '@/lib/sistemas/combate'
 import TesteAssimilacao from './TesteAssimilacao'
+import AtributosOrdem from './AtributosOrdem'
 import MagiasDnd2024 from './MagiasDnd2024'
 import MagiasDnd2014 from './MagiasDnd2014'
 import MagiasEspecieDnd2024 from './MagiasEspecieDnd2024'
@@ -271,6 +272,11 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     </section>}
     {s.atributos.length > 0 && <section className={card}>
       <h2 className="mb-3 font-bold text-(--a-ed9cd8)">{tituloAtr}</h2>
+      {s.id === 'ordem-paranormal' ? (
+        <AtributosOrdem atributos={s.atributos} valores={d.atributos} nex={Number(d.campos.nex ?? 5)}
+          somenteLeitura={somenteLeitura}
+          onChange={(id, valor) => set('atributos', { ...d.atributos, [id]: valor })} />
+      ) : (
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-8">
         {s.atributos.map(a => <div key={a.id} className="rounded-xl border border-(--a-5e4b78) bg-(--s-171325) p-2 text-center sm:p-3">
           <p className="text-xs uppercase tracking-wider text-(--a-c4b6d4)" title={a.nome}>{a.id}</p>
@@ -282,6 +288,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
           <p className="mt-1 truncate text-[10px] text-(--a-a998bd)">{a.nome}</p>
         </div>)}
       </div>
+      )}
     </section>}
     {s.rolagem === 'assimilacao' && <TesteAssimilacao s={s} d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolarNaCampanha={rolarNaCampanha} />}
     {(d20 || parada) && s.atributos.length > 0 && <section className={card}>

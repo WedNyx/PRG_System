@@ -27,6 +27,55 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao:'0.34.6', data:'2026-11-15',
+    titulo:'D&D: edição correta e regras explicadas na Árvore',
+    itens:[
+      '📚 Cabeçalho da ficha mostra a edição do Livro do Jogador selecionada: 2014 (SRD 5.1) ou 2024 (SRD 5.2.1), inclusive quando a campanha determina a edição.',
+      '🌳 A Árvore substitui Consultar livro por Ver detalhes e apresenta explicações práticas diretamente no cartão, também no celular.',
+      '🏹 Patrulheiro 2014: escolha e idioma do Inimigo Favorito apresentados no guia, com aviso da variante de Patrulheiro Revisado encontrada no PDF fornecido e sem bônus de combate inventados.',
+      '🧬 Tiferino e 📜 Forasteiro: traços, equipamento, idiomas e escolhas registrados diretamente nos detalhes da Árvore.',
+      '🛡️ Regra de 2024 e regra de 2014 permanecem separadas; testes verificam a edição, as informações e a origem dos cartões.',
+    ],
+  },
+  {
+    versao:'0.34.5', data:'2026-11-15',
+    titulo:'D&D 2014: gasto assistido de Metamagia',
+    itens:[
+      '🪄 Metamagia: as opções aprendidas podem descontar diretamente o recurso Pontos de Feitiçaria já existente na ficha.',
+      '🔢 Custos de 2014: Acelerada 2, Aumentada 3, Duplicada 1 por truque ou nível da magia, demais Metamagias 1; o jogador confirma as condições do livro.',
+      '🛡️ Uso bloqueado sem a opção escolhida, nível de Feiticeiro adequado ou pontos suficientes; descanso longo recupera o recurso existente.',
+      '🧪 Testes para custos, saldo, uso indevido e recuperação sem criar contadores duplicados.',
+      '🌙 Restauração Mística 2014: Feiticeiro de nível 20 recupera até 4 Pontos de Feitiçaria após cada descanso curto.',
+    ],
+  },
+  {
+    versao:'0.34.4', data:'2026-11-15',
+    titulo:'D&D 2014: escolhas de subclasses, talentos e conjuração avançada',
+    itens:[
+      '🌳 Decisões internas de 2014: Totens do Bárbaro, manobras do Mestre de Batalha, Terrenos do Círculo da Terra e opções do Caçador por nível de classe.',
+      '✨ Talentos: escolhas de atributos e elementos, bônus verificáveis até 20 e proficiência em salvaguarda de Resiliente; sem somar bônus a fichas legadas não confirmadas.',
+      '🧙 Bruxo e Feiticeiro: Dádiva do Pacto e opções de Metamagia com limites próprios, inclusive multiclasse.',
+      '🔮 Arcana Mística de Bruxo: círculos 6º a 9º, uma conjuração por círculo sem espaços; usos recuperados no descanso longo.',
+      '📚 Magias: componentes V/S/M, materiais e custo, tempo de conjuração e magias do Círculo da Terra sempre preparadas sem consumir cota diária.',
+      '🛡️ Todas as novas escolhas têm validação, persistência e categorias de permissão. Efeitos condicionais continuam exigindo o livro e decisão do mestre.',
+      '🌳 Árvore de Constelações: manobras, totens, metamagia, pacto e atributos de talentos aparecem como referências a escolhas já registradas, nunca como poderes inventados.',
+      '⚔️ Mestre de Batalha: Dados de Superioridade com 4d8 iniciais, progressão até 6d12 e recuperação no descanso curto/longo; efeitos das manobras continuam interpretativos.',
+    ],
+  },
+  {
+    versao:'0.34.3', data:'2026-11-14',
+    titulo:'D&D 2014: Etapa 3 — talentos, arquétipos e grimório',
+    itens:[
+      '✨ Talentos 2014: pré-requisitos numéricos conferidos, alertas de proficiência/conjuração e bloqueio de uso simultâneo de talento e incremento no mesmo marco.',
+      '🌿 Subclasses do PHB 2014: árvore mostra marcos por nível de classe, inclusive opções comerciais, sem reproduzir texto do livro ou conceder efeitos não implementados.',
+      '📚 Magias: limites de preparação e conhecimento por classe em 2014, com separação de truques, magias extras e grimório do Mago.',
+      '✨ Truques com limites por classe e rituais guiados para classes habilitadas, sem confundir os espaços de magia de 2014.',
+      '🌀 Concentração: marque as magias que exigem concentração, mantenha uma concentração ativa, encerre manualmente e confira a CD após sofrer dano.',
+      '🛡️ Novos campos persistentes protegidos pelas permissões; magias e talentos aparecem como referências na Árvore de Constelações.',
+      '🧪 Esta é a primeira entrega da Etapa 3; efeitos situacionais específicos de talentos, subclasses comerciais e magias ainda são conferidos pelo mestre.',
+    ],
+  },
+  {
     versao:'0.34.2', data:'2026-11-14',
     titulo:'D&D 2014: homologação de criação e aprovação do ouro inicial',
     itens:[

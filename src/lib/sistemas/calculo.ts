@@ -95,6 +95,10 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     ...(d.itens !== undefined ? { itens: lerItens(d.itens) } : {}), ...(d.uso !== undefined ? { uso: lerUso(d.uso) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndLivros !== undefined ? { dndLivros: lerLivrosDnd(d.dndLivros) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014VidaRolada !== undefined ? {dnd2014VidaRolada:structuredClone(d.dnd2014VidaRolada)} : {}),
+    ...(s.id === 'dnd5e-srd' && typeof d.dnd2014InimigoFavorito==='string' ?
+      {dnd2014InimigoFavorito:d.dnd2014InimigoFavorito.slice(0,80)}:{}),
+    ...(s.id === 'dnd5e-srd' && typeof d.dnd2014IdiomaInimigo==='string' ?
+      {dnd2014IdiomaInimigo:d.dnd2014IdiomaInimigo.slice(0,80)}:{}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014AntecedenteExtras !== undefined ?
       {dnd2014AntecedenteExtras:structuredClone(d.dnd2014AntecedenteExtras)} : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014EquipamentoInicial !== undefined ?
@@ -113,17 +117,29 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     ...(s.id === 'dnd5e-srd' && Array.isArray(d.dnd2014PericiasRaciais) ?
       { dnd2014PericiasRaciais: [...new Set(d.dnd2014PericiasRaciais.filter((x): x is string =>
         typeof x === 'string' && /^[a-z_]{3,30}$/.test(x)))].slice(0,2) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014OpcoesTalentos!==undefined ?
+      {dnd2014OpcoesTalentos:structuredClone(d.dnd2014OpcoesTalentos)} : {}),
     ...(s.id === 'dnd5e-srd' && Array.isArray(d.dnd2014Talentos) ?
       { dnd2014Talentos:[...new Set(d.dnd2014Talentos.filter((x):x is string=>
           typeof x==='string' && TALENTOS_PHB_2014.includes(x)))].slice(0,25) } : {}),
     ...(s.id === 'dnd5e-srd' && typeof d.dnd2014Subclasse === 'string' ?
       { dnd2014Subclasse: d.dnd2014Subclasse.slice(0,64) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014EscolhasSubclasse!==undefined ?
+      {dnd2014EscolhasSubclasse:structuredClone(d.dnd2014EscolhasSubclasse)} : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014Subclasses && typeof d.dnd2014Subclasses === 'object' && !Array.isArray(d.dnd2014Subclasses) ?
       { dnd2014Subclasses: Object.fromEntries(Object.entries(d.dnd2014Subclasses)
         .filter(([chave,valor]) => chave.length<=40 && typeof valor==='string' && valor.length<=64)) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014Multiclasse !== undefined ?
       { dnd2014Multiclasse: lerMulticlasseDnd(d.dnd2014Multiclasse, idDe(d.campos?.classe)) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014OpcoesClasse!==undefined ?
+      {dnd2014OpcoesClasse:structuredClone(d.dnd2014OpcoesClasse)} : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014DadosSuperioridadeUsados!==undefined ?
+      {dnd2014DadosSuperioridadeUsados:d.dnd2014DadosSuperioridadeUsados} : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014ArcanasUsadas!==undefined ?
+      {dnd2014ArcanasUsadas:structuredClone(d.dnd2014ArcanasUsadas)} : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014Magias !== undefined ? {dnd2014Magias:lerMagias2014(d.dnd2014Magias)} : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014Concentracao !== undefined ?
+      {dnd2014Concentracao:structuredClone(d.dnd2014Concentracao)} : {}),
     ...(s.id === 'dnd5e-srd' && d.dndEscolhas !== undefined ? { dndEscolhas: lerEscolhasDnd(d.dndEscolhas) } : {}),
     ...(d.criacaoLivre !== undefined ? { criacaoLivre: d.criacaoLivre === true } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndAntecedente !== undefined && lerRegistroAntecedenteDnd(d.dndAntecedente) ? { dndAntecedente: lerRegistroAntecedenteDnd(d.dndAntecedente)! } : {}),

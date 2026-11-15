@@ -8,6 +8,8 @@
 import type { DadosFicha } from './tipos'
 import { classesDaFicha2014 } from './dnd2014Multiclasse'
 import { subclasseDaFicha2014 } from './dnd2014Subclasses'
+import { limiteMagiasPorClasse2014, limiteTruques2014 } from './dnd2014PreparacaoMagias'
+import { magiaReferenciada2014 } from './dnd2014CatalogoMagias'
 import { lerLivrosDnd } from './dndLivros'
 import { idDe } from './dnd2024Classes'
 
@@ -15,6 +17,13 @@ export type RegistroMagiaDnd2014 = {
   id: string; nome: string; nivel: number; classe: string; fonte: string
   modo: 'conhecida' | 'preparada' | 'extra'
   notas?: string; expressao?: string
+  /** Confirmado manualmente no texto da magia 2014; nunca derivado do catálogo 2024. */
+  concentracao?: boolean
+  /** Arcana Mística de Bruxo, círculo 6–9, sem gastar espaço. */
+  arcanaMistica?: boolean
+  /** Componentes e tempo registrados após consulta ao texto da magia de 2014. */
+  componentes?:{verbal:boolean;somatico:boolean;material:boolean;descricao?:string;custoPo?:number;consumido?:boolean}
+  tempoConjuracao?:'ação'|'ação bônus'|'reação'|'especial'
 }
 const classesConjuradoras = new Set(['bardo','clerigo','druida','feiticeiro','mago','paladino','patrulheiro','bruxo','guerreiro','ladino'])
 const formatoExpr = /^(?:\d{1,2}d(?:4|6|8|10|12|20|100)(?:[+-]\d{1,3})?)$/
@@ -52,6 +61,22 @@ export function lerMagias2014(raw:unknown):RegistroMagiaDnd2014[] {
       modo:x.modo as RegistroMagiaDnd2014['modo'],
       ...(typeof x.notas==='string'?{notas:x.notas.slice(0,500)}:{}),
       ...(expressaoMagia2014Valida(x.expressao)?{expressao:String(x.expressao).trim()}:{}),
+      ...(x.concentracao===true?{concentracao:true}:{}),
+      ...(x.arcanaMistica===true?{arcanaMistica:true}:{}),
+      ...(x.componentes&&typeof x.componentes==='object'&&!Array.isArray(x.componentes)?{
+        componentes:{
+          verbal:(x.componentes as Record<string,unknown>).verbal===true,
+          somatico:(x.componentes as Record<string,unknown>).somatico===true,
+          material:(x.componentes as Record<string,unknown>).material===true,
+          ... (typeof (x.componentes as Record<string,unknown>).descricao==='string'
+            ?{descricao:String((x.componentes as Record<string,unknown>).descricao).slice(0,150)}:{}),
+          ... (typeof (x.componentes as Record<string,unknown>).custoPo==='number'
+            ?{custoPo:Number((x.componentes as Record<string,unknown>).custoPo)}:{}),
+          ... ((x.componentes as Record<string,unknown>).consumido===true?{consumido:true}:{}),
+        }
+      }:{}),
+      ... (['ação','ação bônus','reação','especial'].includes(String(x.tempoConjuracao))
+        ?{tempoConjuracao:x.tempoConjuracao as RegistroMagiaDnd2014['tempoConjuracao']}:{}),
     })
   }
   return saida
@@ -76,6 +101,20 @@ export function validarAlteracoesMagias2014(
   const raw=depois.dnd2014Magias
   if(!Array.isArray(raw)||raw.length>120||lerMagias2014(raw).length!==raw.length)
     return ['Magias de 2014 inválidas, repetidas ou acima do limite de registros.']
+  // Não registrar componentes ou custos inventados por valores malformados.
+  for(const original of raw as Record<string,unknown>[]){
+    if(original.componentes!==undefined){
+      const cp=original.componentes
+      if(!cp||typeof cp!=='object'||Array.isArray(cp))
+        return ['Os componentes de magia precisam ser um objeto de confirmação manual.']
+      const dados=cp as Record<string,unknown>
+      if(['verbal','somatico','material'].some(k=>typeof dados[k]!=='boolean')||
+        (dados.descricao!==undefined&&(typeof dados.descricao!=='string'||dados.descricao.length>150))||
+        (dados.custoPo!==undefined&&(!Number.isSafeInteger(dados.custoPo)||Number(dados.custoPo)<0||Number(dados.custoPo)>100000000))||
+        (dados.consumido!==undefined&&typeof dados.consumido!=='boolean'))
+        return ['Componentes ou custos da magia 2014 inválidos.']
+    }
+  }
   const d=depois as DadosFicha
   const {lista}=classesDaFicha2014(d)
   const classes=new Map(lista.map(c=>[c.cls.id,c.nivel]))
@@ -94,5 +133,48 @@ export function validarAlteracoesMagias2014(
       (max===0 || m.classe==='paladino' || m.classe==='patrulheiro'))
       erros.push('Esta classe não recebe este truque por sua progressão normal em 2014: '+m.nome)
   }
+  // Truques também têm número conhecido próprio, independente dos espaços.
+  for(const classe of lista){
+    const subclasse=subclasseDaFicha2014(d,classe.cls.id)
+    const max=limiteTruques2014(classe.cls.id,classe.nivel,subclasse?.id)
+    const truques=lerMagias2014(raw).filter(m=>m.classe===classe.cls.id&&m.nivel===0&&m.modo!=='extra').length
+    if(truques>max)erros.push(classe.cls.nome+' possui '+truques+' truques conhecidos; limite PHB 2014: '+max+'.')
+  }
+  // PHB 2014: magias preparadas são diferentes das conhecidas.
+  // Truques e recursos extraordinários do mestre não entram nas cotas.
+  // Revisões de classe e nível também recalculam a tabela sem misturar 2024.
+  for (const classe of lista) {
+    const limite=limiteMagiasPorClasse2014(d,classe.cls.id)
+    if(!limite||limite.maximo===null)continue
+    const registradas=lerMagias2014(raw).filter(m=>m.classe===classe.cls.id&&m.nivel>0)
+    const preparadas=registradas.filter(m=>m.modo==='preparada').length
+    const conhecidas=registradas.filter(m=>m.modo==='conhecida').length
+    if(limite.tipo==='conhecidas'){
+      if(conhecidas>limite.maximo)erros.push(
+        classe.cls.nome+' possui '+conhecidas+' magias conhecidas; limite 2014: '+limite.maximo+'.')
+      // Para estas classes, registrar uma magia como preparada não permite
+      // contornar a cota de magias conhecidas da sua progressão.
+      if(preparadas>0)erros.push(
+        classe.cls.nome+' usa magias conhecidas, não preparação diária, em 2014.')
+    } else {
+      if(preparadas>limite.maximo)erros.push(
+        classe.cls.nome+' possui '+preparadas+' magias preparadas; limite 2014: '+limite.maximo+'.')
+      if(limite.tipo==='preparadas'&&conhecidas>0)erros.push(
+        classe.cls.nome+' deve registrar magias da classe como preparadas (ou extras), não como conhecidas, em 2014.')
+    }
+  }
   return erros
+}
+
+/** Conjuração ritual sem espaço: apenas classes com Ritual em 2014.
+ * Bruxo e Feiticeiro precisam de característica/talento adicional e
+ * não são liberados implicitamente por este verificador.
+ */
+export function podeConjurarRitualMagia2014(m:RegistroMagiaDnd2014):boolean {
+ if(m.fonte!=='phb2014'||m.nivel===0)return false
+ if(!magiaReferenciada2014(m.classe,m.nome)?.ritual)return false
+ if(m.classe==='mago')return m.modo==='conhecida'||m.modo==='preparada'
+ if(m.classe==='bardo')return m.modo==='conhecida'
+ if(m.classe==='clerigo'||m.classe==='druida')return m.modo==='preparada'
+ return false
 }

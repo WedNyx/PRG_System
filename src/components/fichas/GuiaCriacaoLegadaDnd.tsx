@@ -3,12 +3,16 @@
 import AtributosProgressaoDnd2014 from './AtributosProgressaoDnd2014'
 import EquipamentoInicialDnd2014 from './EquipamentoInicialDnd2014'
 import EscolhasAntecedenteDnd2014 from './EscolhasAntecedenteDnd2014'
+import EscolhasSubclasseDnd2014 from './EscolhasSubclasseDnd2014'
+import EscolhasPatrulheiroDnd2014 from './EscolhasPatrulheiroDnd2014'
+import OpcoesClasseDnd2014 from './OpcoesClasseDnd2014'
 import { CUSTOS_2014 } from '@/lib/sistemas/dnd2014Atributos'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { SUBRACAS_2014, RACAS_2014, ANTECEDENTES_2014 } from '@/lib/sistemas/dnd2014Criacao'
 import { subclassesDaClasse2014, subclasseAtivaDnd2014 } from '@/lib/sistemas/dnd2014Subclasses'
 import { classesDaFicha2014 } from '@/lib/sistemas/dnd2014Multiclasse'
-import { TALENTOS_PHB_2014, limitesTalentos2014 } from '@/lib/sistemas/dnd2014Talentos'
+import { TALENTOS_PHB_2014, limitesTalentos2014, avaliarRequisitoTalento2014 } from '@/lib/sistemas/dnd2014Talentos'
+import {OPCOES_TALENTOS_2014} from '@/lib/sistemas/dnd2014OpcoesTalentos'
 import { ATRIBUTOS_DND, aumentosRaciais2014, atributosEfetivos2014, lerAtributosBase2014,
   periciasAntecedente2014, periciasClasse2014 } from '@/lib/sistemas/dnd2014Regras'
 
@@ -36,9 +40,24 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
   const limiteTalentos = limitesTalentos2014(d)
   const limiteDisponivel = Math.max(0,limiteTalentos.total-Object.keys(d.dnd2014Incrementos??{}).length)
   const talentosEscolhidos = d.dnd2014Talentos ?? []
+  const requisitoTalento=(nome:string)=>avaliarRequisitoTalento2014(nome,{
+    atributos:total??d.atributos,
+    // A existência de conjuração por raça/talento ainda pode precisar de mestre.
+    conjurador:classesDaFicha2014(d).lista.some(x=>
+      ['bardo','bruxo','clerigo','druida','feiticeiro','mago'].includes(x.cls.id)||
+      (['paladino','patrulheiro'].includes(x.cls.id)&&x.nivel>=2)||
+      (x.cls.id==='guerreiro'&&x.nivel>=3&&
+         (x.principal?d.dnd2014Subclasse:d.dnd2014Subclasses?.[x.cls.id])==='cavaleiro-arcano')||
+      (x.cls.id==='ladino'&&x.nivel>=3&&
+         (x.principal?d.dnd2014Subclasse:d.dnd2014Subclasses?.[x.cls.id])==='trapaceiro-arcano')
+    ),
+  })
   const adicionarTalento = (nome:string) => {
-    if(!nome || talentosEscolhidos.includes(nome) || talentosEscolhidos.length>=limiteDisponivel)return
-    onChange({...d,dnd2014Talentos:[...talentosEscolhidos,nome]})
+    if(!nome || talentosEscolhidos.includes(nome) || talentosEscolhidos.length>=limiteDisponivel || requisitoTalento(nome).estado==='inapto')return
+    const def=OPCOES_TALENTOS_2014[nome]
+    const opcoes={...d.dnd2014OpcoesTalentos}
+    if(def?.opcoes.length===1)opcoes[nome]=def.opcoes[0]
+    onChange({...d,dnd2014Talentos:[...talentosEscolhidos,nome],dnd2014OpcoesTalentos:opcoes})
   }
   const periciasClasse = periciasClasse2014(classe)
   const periciasEscolhidas = d.dnd2014PericiasClasse ?? []
@@ -94,6 +113,9 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
     <AtributosProgressaoDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
     <EquipamentoInicialDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} irPara={irPara} />
     <EscolhasAntecedenteDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
+    <EscolhasPatrulheiroDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
+    <EscolhasSubclasseDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
+    <OpcoesClasseDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
     <div className="space-y-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
       <h4 className="text-sm font-semibold text-(--a-d3adf0)">Atributos de criação e bônus de raça (2014)</h4>
       {!base ? <>
@@ -142,7 +164,12 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
       <label className="block text-xs">Escolha de subclasse
         <select className={classInput} value={selecionada?.id ?? ''}
           disabled={somenteLeitura || !subclasses.some(x=>classeNivel>=x.nivel)}
-          onChange={e=>onChange({...d,dnd2014Subclasse:e.target.value||undefined})}>
+          onChange={e=>{const escolhas={...d.dnd2014EscolhasSubclasse};
+            const cls=classesDaFicha2014(d).lista.find(x=>x.principal)?.cls.id;
+            if(cls)delete escolhas[cls]
+            onChange({...d,dnd2014Subclasse:e.target.value||undefined,
+              dnd2014EscolhasSubclasse:escolhas,
+              ...(cls==='guerreiro'&&e.target.value!=='mestre-batalha'?{dnd2014DadosSuperioridadeUsados:0}:{})})}}>
           <option value="">{classeNivel<Math.min(...subclasses.map(x=>x.nivel))
             ? 'Aguardando nível '+Math.min(...subclasses.map(x=>x.nivel)) : 'Escolha a subclasse...'}</option>
           {subclasses.filter(x=>classeNivel>=x.nivel).map(x=>
@@ -165,18 +192,37 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
       className="space-y-2 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
       <h4 className="text-sm font-semibold text-(--a-d3adf0)">✨ Talentos · Livro do Jogador 2014</h4>
       <p className="text-xs text-(--a-c4b6d4)">
-        {talentosEscolhidos.length} de {limiteDisponivel} escolhas possíveis após os incrementos em atributos
+        {talentosEscolhidos.length} selecionado(s) · limite total {limiteDisponivel} após os incrementos em atributos
         ({limiteTalentos.aumentos} no lugar de Incremento de Atributo
         {limiteTalentos.variante>0?' + 1 do Humano Variante':''}).
         O mestre deve confirmar que a campanha usa a regra opcional de talentos.
-        Os pré-requisitos e efeitos devem ser conferidos no livro; esta escolha não
+        Pré-requisitos numéricos são avaliados; proficiências/efeitos condicionais precisam do livro. Esta escolha não
         acrescenta bônus automaticamente.
       </p>
       {talentosEscolhidos.map(nome=><div key={nome}
         className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-(--a-55456e) p-2">
-        <span className="text-xs font-semibold">{nome}</span>
+        <span className="min-w-0 text-xs font-semibold">{nome}
+          <span className="mt-1 block font-normal text-(--a-c4b6d4)">
+            {requisitoTalento(nome).estado==='inapto'?'⚠️ Requisito perdido: ':
+              requisitoTalento(nome).estado==='conferir'?'📖 Conferir com mestre: ':'✓ '}
+            {requisitoTalento(nome).motivo}
+          </span>
+        </span>
+        {OPCOES_TALENTOS_2014[nome]&&<label className="block min-w-48 w-full text-xs sm:w-auto">
+          {OPCOES_TALENTOS_2014[nome].titulo}
+          <select value={d.dnd2014OpcoesTalentos?.[nome]??''} disabled={somenteLeitura}
+            className={classInput} onChange={e=>{const opcoes={...d.dnd2014OpcoesTalentos};
+              if(e.target.value)opcoes[nome]=e.target.value;else delete opcoes[nome];
+              onChange({...d,dnd2014OpcoesTalentos:opcoes})}}>
+            <option value="">Escolha conforme o PHB...</option>
+            {OPCOES_TALENTOS_2014[nome].opcoes.map(x=><option key={x} value={x}>{x}</option>)}
+          </select>
+          {OPCOES_TALENTOS_2014[nome].bonusAtributo&&
+            <span className="mt-1 block text-(--a-c4b6d4)">+1 apenas após escolha, no máximo 20; calculado a partir dos atributos-base confirmados.</span>}
+        </label>}
         {!somenteLeitura&&<button type="button" className="rounded-lg border border-(--a-55456e) px-3 py-2 text-xs"
-          onClick={()=>onChange({...d,dnd2014Talentos:talentosEscolhidos.filter(x=>x!==nome)})}
+          onClick={()=>{const opcoes={...d.dnd2014OpcoesTalentos};delete opcoes[nome];
+            onChange({...d,dnd2014Talentos:talentosEscolhidos.filter(x=>x!==nome),dnd2014OpcoesTalentos:opcoes})}}
           aria-label={'Remover talento '+nome}>Remover</button>}
       </div>)}
       {!somenteLeitura && talentosEscolhidos.length<limiteDisponivel &&
@@ -184,7 +230,10 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
           <select value="" className={classInput} onChange={e=>adicionarTalento(e.target.value)}>
             <option value="">Escolha um dos 42 talentos do PHB 2014</option>
             {TALENTOS_PHB_2014.filter(x=>!talentosEscolhidos.includes(x)).map(nome=>
-              <option key={nome} value={nome}>{nome}</option>)}
+              <option key={nome} value={nome} disabled={requisitoTalento(nome).estado==='inapto'}>
+                {nome}{requisitoTalento(nome).estado==='inapto'?' — requisito não atendido':
+                  requisitoTalento(nome).estado==='conferir'?' — conferir requisito':''}
+              </option>)}
           </select>
         </label>}
     </section>}

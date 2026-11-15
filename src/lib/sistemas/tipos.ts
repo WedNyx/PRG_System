@@ -106,6 +106,9 @@ export type DadosFicha = {
   dnd2014EquipamentoInicial?: import('./dnd2014EquipamentoInicial').RegistroEquipamento2014
   /** Proficiências selecionáveis de idioma e ferramenta do antecedente 2014. */
   dnd2014AntecedenteExtras?: import('./dnd2014AntecedentesDetalhes').EscolhasAntecedente2014
+  /** Variante do Patrulheiro do PDF fornecido: seleção de inimigo e idioma. */
+  dnd2014InimigoFavorito?: string
+  dnd2014IdiomaInimigo?: string
   dnd2014MetodoAtributos?: import('./dnd2014Atributos').MetodoAtributos2014
   dnd2014RolagensAtributos?: number[][]
   /** Cada marco classe:nível concede +2 ou +1/+1, no lugar de um talento. */
@@ -120,12 +123,24 @@ export type DadosFicha = {
   dnd2014Subclasse?: string
   /** Subclasses das classes secundárias em 2014, por id de classe; preserva o campo legado da classe inicial. */
   dnd2014Subclasses?: Record<string, string>
+  /** Decisões por subclass e classe, validadas pelos níveis do PHB 2014. */
+  dnd2014EscolhasSubclasse?: Record<string, import('./dnd2014EscolhasSubclasse').EscolhasSubclasse2014>
   /** Níveis em outras classes na multiclasse 2014 (não usa a tabela 2024). */
   dnd2014Multiclasse?: Record<string,number>
   /** Magias de D&D 2014, registradas separadamente do catálogo SRD 2024. */
   dnd2014Magias?: import('./dnd2014Magias').RegistroMagiaDnd2014[]
+  /** Círculos de Arcana Mística já conjurados; descanso longo limpa os usos. */
+  dnd2014ArcanasUsadas?: number[]
+  /** Dados de Superioridade gastos do Mestre de Batalha (2014). */
+  dnd2014DadosSuperioridadeUsados?: number
+  /** Dádiva do Pacto e Metamagia por níveis das classes de 2014. */
+  dnd2014OpcoesClasse?: import('./dnd2014OpcoesClasse').OpcoesClasseDnd2014
+  /** Concentração ativa, sem aplicação automática de efeitos de magias comerciais. */
+  dnd2014Concentracao?: import('./dnd2014Concentracao').ConcentracaoDnd2014
   /** Talentos do PHB 2014 adquiridos com Incrementos de Atributo ou Humano Variante. */
   dnd2014Talentos?: string[]
+  /** Decisões de atributo, lista mágica e elemento dos talentos de 2014. */
+  dnd2014OpcoesTalentos?: Record<string,string>
   /** Escolhas de marcos D&D. A progressão visual não concede bônus por si só. */
   dndEscolhas?: Record<string, string>
   /** Distribuição guiada de atributos de antecedente, aplicada explicitamente uma vez. */

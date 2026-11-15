@@ -7,6 +7,7 @@ import { hexagonosOficiaisDnd, RAMOS_HEX_DND, type RamoHexDnd, type EstadoHexDnd
 import type { LivroBaseDnd } from '@/lib/sistemas/dndLivros'
 import { lerArvore } from '@/lib/sistemas/arvore'
 import { ordenarNosVerticais } from '@/lib/sistemas/arvoreVisual'
+import {conteudoDetalheDnd} from '@/lib/sistemas/dndArvoreConteudo'
 
 type Props = {
   d: DadosFicha
@@ -19,7 +20,7 @@ type Props = {
 const estados: Record<EstadoHexDnd, { texto: string; classe: string; icone: string }> = {
   recebido: { texto: 'Recebido', classe: 'border-emerald-400/40 text-emerald-200', icone: '✓' },
   pendente: { texto: 'Escolha pendente', classe: 'border-amber-300/40 text-amber-200', icone: '?' },
-  referencia: { texto: 'Consultar livro', classe: 'border-violet-300/40 text-violet-200', icone: '📖' },
+  referencia: { texto: 'Ver detalhes', classe: 'border-violet-300/40 text-violet-200', icone: '📖' },
   futuro: { texto: 'Nível futuro', classe: 'border-(--a-62527e) text-(--a-c4b6d4)', icone: '◌' },
 }
 
@@ -28,6 +29,38 @@ const estados: Record<EstadoHexDnd, { texto: string; classe: string; icone: stri
  * Os três ramos oficiais são projeções somente de leitura de escolhas já salvas;
  * o quarto ramo é a árvore de poderes existente, sem converter ou duplicar bônus.
  */
+
+function ConteudoCartaoArvore({d,no,edicao,fechar}:{
+  d:DadosFicha; no:ReturnType<typeof hexagonosOficiaisDnd>[number];
+  edicao:LivroBaseDnd;fechar:()=>void
+}) {
+  const info=conteudoDetalheDnd(d,no,edicao)
+  return <>
+    <div className="flex items-start justify-between gap-2">
+      <h4 className="min-w-0 break-words font-semibold text-(--a-ed9cd8)">{info.titulo}</h4>
+      <button type="button" aria-label="Fechar detalhes" onClick={fechar}
+        className="min-h-10 min-w-10 shrink-0 rounded-lg border border-(--a-55456e) p-2"><X size={17}/></button>
+    </div>
+    <p className="mt-2 text-xs text-(--a-cfc0df)">Nível {no.nivel} · {estados[no.estado].texto}</p>
+    <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-(--a-cfc0df)">{info.resumo}</p>
+    {info.beneficios.length>0&&<div className="mt-3 space-y-2">
+      <p className="text-sm font-semibold text-(--a-ed9cd8)">Como funciona</p>
+      <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-(--a-cfc0df)">
+        {info.beneficios.map((beneficio,i)=><li key={i}>{beneficio}</li>)}
+      </ul>
+    </div>}
+    {info.registro&&<p className="mt-3 rounded-lg border border-sky-500/30 bg-sky-950/20 p-2 text-xs leading-relaxed text-sky-100">
+      <strong className="block">Na sua ficha</strong>{info.registro}
+    </p>}
+    {no.escolha&&<p className="mt-3 text-xs text-emerald-200">Escolha registrada: {no.escolha}</p>}
+    {no.estado==='pendente'&&<p className="mt-3 flex items-start gap-2 text-xs text-amber-200">
+      <CircleHelp size={15} className="shrink-0"/> Complete a escolha no Guia/Progressão da ficha.
+    </p>}
+    {info.atencao&&<p className="mt-3 text-xs leading-relaxed text-(--a-a998bd)">{info.atencao}</p>}
+    <p className="mt-3 flex items-start gap-2 text-xs text-(--a-c4b6d4)"><BookOpenCheck size={15} className="shrink-0"/>Fonte: {no.livro}</p>
+  </>
+}
+
 export default function ArvoreDndOficial({ d, edicao, fontes, children }: Props) {
   const [ramoAtivo, setRamoAtivo] = useState<RamoHexDnd>('classe')
   const [futuros, setFuturos] = useState(false)
@@ -63,7 +96,7 @@ export default function ArvoreDndOficial({ d, edicao, fontes, children }: Props)
         {' · '}{recebidos} recebido(s){pendentes ? ' · ' + pendentes + ' pendente(s)' : ''}
       </p>
       <p className="mt-1 text-xs text-(--a-a998bd)">
-        Consultar os ramos não concede poderes, não gasta pontos e não altera sua ficha. Conteúdos comerciais são apenas referências ao livro.
+        Consultar os ramos não concede poderes, não gasta pontos e não altera sua ficha. A ficha apresenta resumos das regras e as escolhas disponíveis; efeitos situacionais ainda exigem confirmação do mestre.
       </p>
     </header>
 
@@ -127,27 +160,20 @@ export default function ArvoreDndOficial({ d, edicao, fontes, children }: Props)
                       </span>
                       <span className={'shrink-0 rounded-lg border px-2 py-1 text-center text-[11px] font-medium ' + status.classe}>{status.texto}</span>
                     </button>
+                    {ativo&&<div className="mt-2 min-w-0 rounded-xl border border-(--a-62527e) bg-(--s-171325) p-4 lg:hidden">
+                      <ConteudoCartaoArvore d={d} no={n} edicao={edicao} fechar={()=>setSelecionado(null)}/>
+                    </div>}
                   </li>
                 })}
               </ol>}
           </div>
 
-          <aside aria-label="Detalhes da característica" className="min-w-0 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-4 lg:self-start">
-            {detalhe ? <>
-              <div className="flex items-start justify-between gap-2">
-                <h4 className="break-words font-semibold text-(--a-ed9cd8)">{detalhe.titulo}</h4>
-                <button type="button" aria-label="Fechar detalhes" onClick={() => setSelecionado(null)} className="rounded-lg border border-(--a-55456e) p-2"><X size={15} /></button>
-              </div>
-              <p className="mt-2 text-xs text-(--a-cfc0df)">Nível {detalhe.nivel} · {estados[detalhe.estado].texto}</p>
-              <p className="mt-3 whitespace-pre-wrap break-words text-sm text-(--a-cfc0df)">{detalhe.descricao || 'Descrição conforme o livro e as escolhas da ficha.'}</p>
-              {detalhe.escolha && <p className="mt-3 text-xs text-emerald-200">Escolha registrada: {detalhe.escolha}</p>}
-              {detalhe.estado === 'pendente' && <p className="mt-3 flex items-start gap-2 text-xs text-amber-200"><CircleHelp size={15} className="shrink-0" />
-                Complete esta escolha na seção Progressão / Origem da ficha.</p>}
-              <p className="mt-3 flex items-start gap-2 text-xs text-(--a-c4b6d4)"><BookOpenCheck size={15} className="shrink-0"/>Fonte: {detalhe.livro}</p>
-              {detalhe.estado === 'referencia' && <p className="mt-2 text-xs text-(--a-a998bd)">O efeito deste livro não é concedido automaticamente por este cartão.</p>}
-            </> : <div className="flex flex-col items-center gap-2 py-5 text-center text-(--a-c4b6d4)">
-              <Sparkles size={22}/><p className="text-sm">Selecione um cartão para ver a origem, os detalhes e o estado da característica.</p>
-            </div>}
+          <aside aria-label="Detalhes da característica" className="hidden min-w-0 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-4 lg:block lg:self-start">
+            {detalhe
+              ? <ConteudoCartaoArvore d={d} no={detalhe} edicao={edicao} fechar={()=>setSelecionado(null)}/>
+              : <div className="flex flex-col items-center gap-2 py-5 text-center text-(--a-c4b6d4)">
+                <Sparkles size={22}/><p className="text-sm">Selecione um cartão para ver sua explicação, benefícios e escolhas.</p>
+              </div>}
           </aside>
         </div>}
     </div>

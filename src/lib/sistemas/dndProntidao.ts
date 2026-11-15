@@ -3,6 +3,10 @@ import { xpParaNivel2014 } from './dnd2014Experiencia'
 import { registroEquipamentoAtual2014 } from './dnd2014EquipamentoInicial'
 import { detalhesAntecedente2014, diagnosticarEscolhasAntecedente2014 } from './dnd2014AntecedentesDetalhes'
 import { limitesTalentos2014 } from './dnd2014Talentos'
+import { OPCOES_TALENTOS_2014 } from './dnd2014OpcoesTalentos'
+import { gruposSubclasseDaFicha2014 } from './dnd2014EscolhasSubclasse'
+import {limiteMetamagia2014,niveisConjuradores2014} from './dnd2014OpcoesClasse'
+import {magiasCirculoTerra2014} from './dnd2014MagiasCirculo'
 /**
  * Checklist de preparação para jogar D&D. É diagnóstico não destrutivo:
  * não grava características, não concede bônus, não bloqueia rascunhos.
@@ -113,6 +117,40 @@ export function avaliarProntidaoDnd(d: DadosFicha, edicao: LivroBaseDnd = lerLiv
     }
     if (d.dnd2014Subclasse && principal && subclasseAtivaDnd2014(principal.cls.nome, d.dnd2014Subclasse, principal.nivel)?.fonte === 'phb2014')
       incluir('efeitosSubclasse2014', 'Regras da subclasse', 'Esta subclasse do livro comercial requer conferência dos efeitos com o mestre.', 'conferir', 'habilidades')
+    for(const c of classesDaFicha2014(d).lista) {
+      const atual=subclasseDaFicha2014(d,c.cls.id)
+      if(!atual)continue
+      for(const grupo of gruposSubclasseDaFicha2014(d,c.cls.id)){
+        const escolha=d.dnd2014EscolhasSubclasse?.[c.cls.id]
+        const feita=escolha?.subclasse===atual.id?escolha.grupos[grupo.id]??[]:[]
+        if(feita.length<grupo.quantidade)
+          incluir('decisao2014-'+c.cls.id+'-'+grupo.id,'Decisão de '+atual.nome,
+            grupo.titulo+': '+feita.length+'/'+grupo.quantidade+' escolha(s). Confira as alternativas no guia D&D 2014.',
+            'pendente','habilidades')
+      }
+    }
+    for(const nome of d.dnd2014Talentos??[]){
+      if(OPCOES_TALENTOS_2014[nome]&&!d.dnd2014OpcoesTalentos?.[nome])
+        incluir('opcaoTalento2014-'+nome,'Escolha do talento '+nome,
+          'Registre o atributo, elemento ou lista de magia exigidos por este talento no guia.',
+          'pendente','habilidades')
+    }
+    const conj=niveisConjuradores2014(d)
+    if(conj.bruxo>=3&&!d.dnd2014OpcoesClasse?.pactoBruxo)
+      incluir('pactoBruxo2014','Dádiva do Pacto do Bruxo',
+        'Escolha sua Dádiva do Pacto de 2014 no guia.', 'pendente','habilidades')
+    const maxMetamagias=limiteMetamagia2014(conj.feiticeiro)
+    if(maxMetamagias>0&&(d.dnd2014OpcoesClasse?.metamagicas?.length??0)<maxMetamagias)
+      incluir('metamagias2014','Metamagias do Feiticeiro',
+        'Selecione '+maxMetamagias+' opções disponíveis pelo nível de Feiticeiro.',
+        'pendente','habilidades')
+    const circular=magiasCirculoTerra2014(d)
+    const faltando=circular.filter(m=>!d.dnd2014Magias?.some(x=>x.classe==='druida'&&
+      x.nivel===m.nivelMagia&&x.nome.toLocaleLowerCase('pt-BR')===m.nome.toLocaleLowerCase('pt-BR')))
+    if(faltando.length>0)
+      incluir('magiasCirculo2014','Magias do Círculo da Terra',
+        'Existem '+faltando.length+' magias sempre preparadas para registrar no grimório.',
+        'pendente','habilidades')
     if ((d.dnd2014Talentos ?? []).length)
       incluir('talentos2014', 'Pré-requisitos dos talentos', 'Confirme os efeitos e pré-requisitos dos talentos escolhidos no Livro do Jogador 2014.', 'conferir', 'habilidades')
   } else {

@@ -2,6 +2,13 @@ import { validarVida2014 } from './dnd2014Vitalidade'
 import { validarExperiencia2014 } from './dnd2014Experiencia'
 import { validarEquipamentoInicial2014 } from './dnd2014EquipamentoInicial'
 import { validarEscolhasAntecedente2014 } from './dnd2014AntecedentesDetalhes'
+import {validarInimigoFavorito2014} from './dnd2014PatrulheiroEscolhas'
+import { validarConcentracao2014 } from './dnd2014Concentracao'
+import { validarEscolhasSubclasses2014 } from './dnd2014EscolhasSubclasse'
+import {validarOpcoesTalentos2014,bonusAtributosTalentos2014,OPCOES_TALENTOS_2014} from './dnd2014OpcoesTalentos'
+import {validarArcanasMisticas2014} from './dnd2014ArcanaMistica'
+import {validarOpcoesClasseDnd2014} from './dnd2014OpcoesClasse'
+import {validarSuperioridade2014} from './dnd2014Superioridade'
 import { bonusIncrementos2014, validarProgressaoAtributos2014 } from './dnd2014Atributos'
 /**
  * Regras abertas do D&D 5e original (2014), SRD 5.1 — CC BY 4.0.
@@ -21,7 +28,7 @@ import { idDe } from './dnd2024Classes'
 import { VARS_DND } from './dnd2024Efeitos'
 import { RACAS_2014, ANTECEDENTES_2014, SUBRACAS_2014 } from './dnd2014Criacao'
 import { validarSubclasseDnd2014 } from './dnd2014Subclasses'
-import { validarTalentos2014 } from './dnd2014Talentos'
+import { validarTalentos2014, avaliarRequisitoTalento2014 } from './dnd2014Talentos'
 import { classesDaFicha2014, espacosDeMagia2014 } from './dnd2014Multiclasse'
 import { lerMulticlasseDnd, requisitosMulticlasse } from './dnd2024Classes'
 
@@ -113,21 +120,23 @@ export function aumentosRaciais2014(
   }
   return { bonus: out, pendencias }
 }
-export function atributosEfetivos2014(d: Pick<DadosFicha,'campos' | 'dnd2014AtributosBase' | 'dnd2014AtributosExtras' | 'dnd2014Incrementos' | 'dnd2014Multiclasse'>): Record<AtributoDnd,number> | null {
+export function atributosEfetivos2014(d: Pick<DadosFicha,'campos' | 'dnd2014AtributosBase' | 'dnd2014AtributosExtras' | 'dnd2014Incrementos' | 'dnd2014Multiclasse'> & Partial<Pick<DadosFicha,'dnd2014Talentos'|'dnd2014OpcoesTalentos'>>): Record<AtributoDnd,number> | null {
   const base = lerAtributosBase2014(d.dnd2014AtributosBase)
   if (!base) return null // ficha antiga: os atributos registrados JÁ são o valor final
   const x = aumentosRaciais2014(d.campos.especie,d.campos.subraca2014,d.dnd2014AtributosExtras)
   const incrementos = bonusIncrementos2014(d)
   const campeaoPrimitivo=classesDaFicha2014(d).lista.some(c=>c.cls.id==='barbaro'&&c.nivel===20)
+  const talentosBonus=bonusAtributosTalentos2014(d)
   return Object.fromEntries(ATRIBUTOS_DND.map(a => {
     const valor=base[a]+x.bonus[a]+(incrementos[a]??0)
-    return [a,campeaoPrimitivo && (a==='FOR'||a==='CON') ? Math.min(24,valor+4) : Math.min(30,valor)]
+    const talento=valor<20?Math.min(talentosBonus[a]??0,20-valor):0
+    return [a,campeaoPrimitivo && (a==='FOR'||a==='CON') ? Math.min(24,valor+4+talento) : Math.min(30,valor+talento)]
   })) as Record<AtributoDnd,number>
 }
 
 /** Regras abertas de 2014. A característica de classe particular e subclasse continuam manuais. */
 export function efeitosDnd2014(
-  d: Pick<DadosFicha,'campos' | 'dnd2014PericiasClasse' | 'dnd2014PericiasRaciais' | 'dnd2014Multiclasse' | 'dnd2014Subclasse' | 'dnd2014Subclasses'>,
+  d: Pick<DadosFicha,'campos' | 'dnd2014PericiasClasse' | 'dnd2014PericiasRaciais' | 'dnd2014Multiclasse' | 'dnd2014Subclasse' | 'dnd2014Subclasses' | 'dnd2014Talentos' | 'dnd2014OpcoesTalentos'>,
   vars: Record<string,number>,
 ): EfeitosDnd {
   const v: Record<string,number> = Object.fromEntries(VARS_DND.map(x=>[x,0]))
@@ -139,6 +148,18 @@ export function efeitosDnd2014(
   const em=(id:string)=>classes.find(c=>c.cls.id===id)?.nivel??0
   const prof = 2 + Math.floor((n-1)/4)
   v.dnd_nivel=n;v.dnd_prof=prof
+  // Bônus verificáveis de três talentos do PHB 2014. Sem duplicação:
+  // o motor 2024 não é invocado em fichas com livro-base 2014.
+  const talentos=new Set(d.dnd2014Talentos??[])
+  if(talentos.has('ALERTA'))v.dnd_ini_extra+=5
+  if(talentos.has('ROBUSTO'))v.dnd_pv_extra+=2*n
+  if(talentos.has('SORTUDO'))v.dnd_sorte=3
+  const resiliente=d.dnd2014OpcoesTalentos?.RESILIENTE
+  if(talentos.has('RESILIENTE')&&resiliente&&
+    OPCOES_TALENTOS_2014.RESILIENTE.opcoes.includes(resiliente)&&salvaguardas[resiliente])
+    treino[salvaguardas[resiliente]]={treino:'proficiente',fonte:'Resiliente (PHB 2014)'}
+
+
   const dar = (id:string,fonte:string) => {if (!treino[id]) treino[id]={treino:'proficiente',fonte}}
   if (classe) {
     for (const a of classe.salvaguardas) if (salvaguardas[a]) dar(salvaguardas[a],classe.nome+' (2014)')
@@ -221,7 +242,20 @@ export function validarAlteracoes2014(
 ): string[] {
   const erros: string[]=[...validarProgressaoAtributos2014(antes,depois,edicao),...validarVida2014(antes,depois,edicao),
     ...validarExperiencia2014(antes,depois,edicao),...validarEquipamentoInicial2014(antes,depois,edicao),
-    ...validarEscolhasAntecedente2014(antes,depois,edicao)]
+    ...validarEscolhasAntecedente2014(antes,depois,edicao),...validarInimigoFavorito2014(antes,depois,edicao),...validarConcentracao2014(antes,depois,edicao),
+    ...validarEscolhasSubclasses2014(antes,depois,edicao),...validarOpcoesTalentos2014(antes,depois,edicao),
+    ...validarArcanasMisticas2014(antes,depois,edicao),...validarOpcoesClasseDnd2014(antes,depois,edicao),...validarSuperioridade2014(antes,depois,edicao)]
+  // Novos talentos exigem os atributos finais do livro escolhido. Fichas
+  // antigas sem base usam seus valores já registrados como totais finais.
+  if(edicao==='phb2014'&&Array.isArray(depois.dnd2014Talentos)&&
+      JSON.stringify(antes.dnd2014Talentos??[])!==JSON.stringify(depois.dnd2014Talentos)) {
+    const atr=atributosEfetivos2014(depois as DadosFicha) ?? depois.atributos
+    for(const nome of depois.dnd2014Talentos.filter(x=>!antes.dnd2014Talentos?.includes(x))) {
+      const requisito=avaliarRequisitoTalento2014(nome,{atributos:atr})
+      if(requisito.estado==='inapto'&&!ignorarRequisitos)
+        erros.push('Talento '+nome+' indisponível: '+requisito.motivo)
+    }
+  }
   if (edicao === 'phb2014' && depois.dnd2014Incrementos && depois.dnd2014AtributosBase) {
     const bonus=bonusIncrementos2014(depois as DadosFicha)
     const raciais=aumentosRaciais2014(depois.campos?.especie,depois.campos?.subraca2014,depois.dnd2014AtributosExtras).bonus

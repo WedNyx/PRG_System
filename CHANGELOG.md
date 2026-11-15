@@ -2,6 +2,48 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.34.6 — Árvore explicativa e edição correta (2026-11-15)
+
+- Cabeçalho da ficha passa a usar o livro-base efetivo (2014 ou 2024), corrigindo o nome genérico do catálogo que exibia SRD 5.2.1 mesmo com a Árvore em 2014.
+- Cartões de características antes rotulados "Consultar livro" passam a abrir "Ver detalhes". Em celulares, o conteúdo abre logo abaixo do cartão; no computador, no painel de detalhes.
+- A Árvore passa a apresentar explicações resumidas de classes e raças de 2014 e antecedentes, com benefícios e registros práticos para Inimigo Favorito, Explorador Natural, Tiferino e Forasteiro, além das descrições já existentes de 2024.
+- O guia do Patrulheiro permite registrar inimigo favorito e idioma sem conceder bônus automaticamente. O PDF fornecido inclui a variante Patrulheiro Revisado, com diferenças em relação ao SRD 5.1 clássico; a interface deixa a distinção explícita.
+- Regressão das duas edições: o isolamento usa identificadores internos e não nomes de características que podem existir em 2014 e 2024.
+- Informações dos livros comerciais continuam em forma de resumos próprios e não de transcrições integrais. Efeitos condicionais ainda não automatizados devem ser aplicados conforme a mesa.
+
+## v0.34.5 — Metamagia 2014 e integração aos recursos (2026-11-15)
+
+- Metamagias escolhidas no guia agora podem registrar o gasto de Pontos de Feitiçaria na ficha, sem criar um contador paralelo.
+- Custos verificáveis do PHB 2014: Acelerada (2), Aumentada (3), Duplicada (1 para truque ou nível da magia) e as demais opções (1).
+- Valida posse da opção, Feiticeiro nível 3+, nível da magia e saldo do recurso. A interface exige confirmação e informa condições manuais de alvo, alcance e componentes.
+- O recurso existente continua seguindo o descanso longo; um novo teste cobre a recuperação e impede gasto acima do saldo.
+- Restauração Mística (Feiticeiro de nível 20) recupera até 4 Pontos de Feitiçaria por descanso curto, sem estender essa recuperação a Feiticeiros abaixo do nível 20.
+- Ainda não automatiza efeitos situacionais de todas as magias e talentos comerciais, nem substitui teste autenticado de jogadores e mestres em banco isolado.
+
+## v0.34.4 — Expansão da Etapa 3: escolhas e conjuração 2014 (2026-11-15)
+
+- Escolhas internas de subclasses: Totem Espiritual/Aspecto/Sintonia, terreno de Druida, manobras do Mestre de Batalha e especializações do Caçador; validadas pelo nível de cada classe e sem conceder efeitos comerciais não implementados.
+- Opções de talentos: tipo de dano de Adepto Elemental, listas de classe de Iniciado em Magia e Conjurador de Ritual, atributos de talentos que concedem +1 e salvaguarda de Resiliente. Aumentos confirmados não ultrapassam 20, e fichas legadas sem base não são alteradas automaticamente.
+- Bruxo e Feiticeiro: Dádiva do Pacto e Metamagias selecionáveis, com limites por classe, mesmo em multiclasse.
+- Arcana Mística do Bruxo separada da Magia de Pacto, com escolhas de 6º ao 9º círculo, uso único e recuperação apenas no descanso longo.
+- Grimório 2014: componentes verbal/somático/material inseridos manualmente, custo e consumo de materiais, tempo de conjuração e avisos sem remoção automática de moedas.
+- Magias sempre preparadas do Círculo da Terra por 8 terrenos, sem contar na preparação diária; truque adicional ao selecionar o Círculo da Terra.
+- Novas escolhas validadas no servidor e preservadas na ficha. Testes de regressão específicos por regra. O código não reproduz descrições comerciais nem presume resultados das magias.
+- Árvore de Constelações: registra como referências as manobras, totens, metamagia, Dádiva do Pacto e decisões internas de talentos escolhidas, respeitando nível de classe e sem criar bônus de combate fictícios.
+- Mestre de Batalha 2014: contador opcional de Dados de Superioridade por classe e nível, progressão d8→d10→d12, gastos controlados e restauração em descansos curto e longo. Implacável no nível 15 pode recuperar um dado quando rolar iniciativa sem nenhum restante. Testes de descanso, multiclasse e limites incluídos.
+- Ainda requer homologação visual e multiusuário; efeitos condicionais e automação integral de todas as subclasses/talentos/magias continuam fora do escopo seguro sem implementação individual.
+
+## v0.34.3 — Etapa 3 (primeira entrega): talentos, subclasses e magias 2014 (2026-11-14)
+
+- Pré-requisitos de talentos verificados quando os atributos finais estão disponíveis; requisitos de armadura e conjuração racial continuam identificados para conferência manual.
+- Bloqueio no servidor contra acumular incrementos de atributo e talentos acima dos marcos permitidos, preservando a escolha bônus do Humano Variante.
+- As subclasses comerciais de 2014 agora apresentam os níveis de progressão na Árvore, como referências ao livro, sem conceder efeitos arbitrários.
+- Grimório de 2014 passa a conferir limites de magias preparadas/conhecidas por classe, sem confundir truques, magias extras ou cópias adicionais do grimório do Mago.
+- Catálogo de truques também segue limites próprios por classe e nível (inclusive Cavaleiro Arcano e Trapaceiro Arcano); execução ritual guiada sem gastar espaço e com 10 minutos extras para conjuradores com a característica de classe.
+- Concentração manual e persistente: uma magia ativa, substituição ao iniciar outra e CD do teste de resistência de Constituição conforme o dano sofrido.
+- A Árvore de Constelações inclui os talentos registrados e um resumo do grimório de 2014; os poderes de mestre continuam independentes.
+- Testes de regressão de talentos, subclasses, preparação e concentração adicionados; efeitos específicos ainda são escopo de próximas entregas da etapa.
+
 ## v0.34.2 — Homologação da Etapa 2 e permissão de ouro (2026-11-14)
 
 - Rolagem de ouro inicial 2014 testada no navegador: 5d4 × 10 PO, moeda registrada e persistência após recarregamento.

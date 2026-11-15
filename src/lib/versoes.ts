@@ -27,6 +27,16 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao:'0.34.5', data:'2026-11-15',
+    titulo:'D&D 2014: gasto assistido de Metamagia',
+    itens:[
+      '🪄 Metamagia: as opções aprendidas podem descontar diretamente o recurso Pontos de Feitiçaria já existente na ficha.',
+      '🔢 Custos de 2014: Acelerada 2, Aumentada 3, Duplicada 1 por truque ou nível da magia, demais Metamagias 1; o jogador confirma as condições do livro.',
+      '🛡️ Uso bloqueado sem a opção escolhida, nível de Feiticeiro adequado ou pontos suficientes; descanso longo recupera o recurso existente.',
+      '🧪 Testes para custos, saldo, uso indevido e recuperação sem criar contadores duplicados.',
+    ],
+  },
+  {
     versao:'0.34.4', data:'2026-11-15',
     titulo:'D&D 2014: escolhas de subclasses, talentos e conjuração avançada',
     itens:[

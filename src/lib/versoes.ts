@@ -27,6 +27,17 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao:'0.34.2', data:'2026-11-14',
+    titulo:'D&D 2014: homologação de criação e aprovação do ouro inicial',
+    itens:[
+      'Rolagem de ouro inicial confirmada na prévia: o resultado e a carteira permanecem após recarregar a ficha.',
+      'Nova rolagem do mesmo equipamento inicial não substitui os dados anteriores nem permite rerrolagens por clique repetido.',
+      'Em campanhas, a entrada de ouro inicial aguarda a mesma permissão do mestre aplicada à escolha de equipamentos.',
+      'Teste transacional com mestre, jogador, campanha e ficha temporários aprovou persistência, versão e dono sem deixar dados no Supabase.',
+      'Homologação em dispositivo móvel físico e fluxo HTTP em ambiente de testes seguem pendentes.',
+    ],
+  },
+  {
     versao: '0.34.1', data: '2026-11-14',
     titulo: 'D&D 2014: atributos guiados e progressão por classe',
     itens: [

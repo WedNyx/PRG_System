@@ -65,7 +65,8 @@ export default function MulticlasseDnd2014({d,onChange,somenteLeitura=false}:{
            disabled={somenteLeitura} value={subclasseDaFicha2014(d,c.cls.id)?.id??''}
            onChange={e=>{const extras={...d.dnd2014Subclasses};if(e.target.value)extras[c.cls.id]=e.target.value;else delete extras[c.cls.id];
              const escolhas={...d.dnd2014EscolhasSubclasse};delete escolhas[c.cls.id]
-             onChange({...d,dnd2014Subclasses:extras,dnd2014EscolhasSubclasse:escolhas})}}>
+             onChange({...d,dnd2014Subclasses:extras,dnd2014EscolhasSubclasse:escolhas,
+               ...(c.cls.id==='guerreiro'&&e.target.value!=='mestre-batalha'?{dnd2014DadosSuperioridadeUsados:0}:{})})}}>
            <option value="">Selecione o arquétipo...</option>
            {subclassesDaClasse2014(c.cls.nome).filter(s=>c.nivel>=s.nivel).map(s=>
              <option key={s.id} value={s.id}>{s.nome} · {s.fonte==='srd51'?'SRD 5.1':'PHB 2014'}</option>)}

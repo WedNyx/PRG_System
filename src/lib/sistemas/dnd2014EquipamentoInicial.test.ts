@@ -6,6 +6,7 @@ import { fichaVazia, normalizarFicha } from './calculo'
 import { avaliarProntidaoDnd } from './dndProntidao'
 import { sistemaPorId } from './catalogo'
 import { lerUso } from './inventario'
+import { KITS_CLASSES_2014, escolhasKitClasse2014Validas } from './dnd2014EquipamentoOpcoes'
 import { categoria } from '../nuvem/categorias'
 
 const s=sistemaPorId('dnd5e-srd')!
@@ -24,6 +25,8 @@ describe('PHB 2014: equipamento inicial sem duplicação',()=>{
       'Monge':'5d4 PO','Paladino':'5d4 × 10 PO','Patrulheiro':'5d4 × 10 PO',
     }
     expect(Object.keys(esperados)).toHaveLength(12)
+    expect(Object.keys(KITS_CLASSES_2014)).toHaveLength(12)
+    expect(Object.values(KITS_CLASSES_2014).every(x=>x.grupos.length>=2)).toBe(true)
     for(const [classe,expressao] of Object.entries(esperados))
       expect(formulaRiquezaInicial2014(classe)?.expressao).toBe(expressao)
     expect(rolarRiquezaInicial2014('Guerreiro',()=>0)?.ouro).toBe(50)
@@ -57,9 +60,12 @@ describe('PHB 2014: equipamento inicial sem duplicação',()=>{
     expect(registroEquipamentoAtual2014(selecionado)).toBe(false)
     expect(validarEquipamentoInicial2014(d,{...selecionado,dnd2014EquipamentoInicial:{...selecionado.dnd2014EquipamentoInicial!,conferido:true}},'phb2014')).toHaveLength(1)
     const comItens={...selecionado,itens:[{id:'a',nome:'Cota de malha',categoria:'armadura',peso:20,bonus:[]}]}
-    const confirmado={...comItens,dnd2014EquipamentoInicial:{...selecionado.dnd2014EquipamentoInicial!,conferido:true}}
+    const kit=KITS_CLASSES_2014['Guerreiro']
+    const escolhas=Object.fromEntries(kit.grupos.map(g=>[g.id,g.opcoes[0]]))
+    const confirmado={...comItens,dnd2014EquipamentoInicial:{...selecionado.dnd2014EquipamentoInicial!,escolhas,conferido:true}}
     expect(validarEquipamentoInicial2014(d,confirmado,'phb2014')).toEqual([])
     expect(registroEquipamentoAtual2014(confirmado)).toBe(true)
+    expect(escolhasKitClasse2014Validas('Guerreiro',{...escolhas,armadura:'inexistente'},true)).toBe(false)
   })
   it('revisa equipamento se classe/antecedente mudarem e não contamina 2024',()=>{
     const base=ficha()

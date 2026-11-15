@@ -40,7 +40,7 @@ import ProntidaoDnd from './ProntidaoDnd'
 import TracosEspecieDnd2024 from './TracosEspecieDnd2024'
 import { idDe } from '@/lib/sistemas/dnd2024Classes'
 import { fontePermitida, FONTE_PHB, FONTE_SRD, FONTE_LEGADO_2014 } from '@/lib/sistemas/dnd2024Fontes'
-import { lerLivrosDnd, type LivroBaseDnd } from '@/lib/sistemas/dndLivros'
+import { lerLivrosDnd, compativelLivroDnd, type LivroBaseDnd } from '@/lib/sistemas/dndLivros'
 import { esquemaFichaPorLivro } from '@/lib/sistemas/dnd2014Criacao'
 import LivrosPersonagemDnd from './LivrosPersonagemDnd'
 import GuiaCriacaoLegadaDnd from './GuiaCriacaoLegadaDnd'
@@ -78,7 +78,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     if (s.id !== 'dnd5e-srd' || !d.dndLivros) return fontesDnd // fichas antigas preservam suas seleções
     const escolhido = lerLivrosDnd(d.dndLivros, edicaoDnd)
     const lista = [FONTE_SRD, edicaoDnd === 'phb2024' ? FONTE_PHB : FONTE_LEGADO_2014,
-      ...escolhido.suplementos]
+      ...escolhido.suplementos.filter(id=>compativelLivroDnd(id,edicaoDnd))]
     return new Set(lista.filter(id => id === FONTE_SRD || !fontesDnd || fontesDnd.has(id) ||
       (edicaoDefinidaPeloMestre && id === (edicaoDnd === 'phb2024' ? FONTE_PHB : FONTE_LEGADO_2014))))
   }, [s.id, d.dndLivros, fontesDnd, edicaoDefinidaPeloMestre, edicaoDnd])

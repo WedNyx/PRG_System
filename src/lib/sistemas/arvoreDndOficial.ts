@@ -14,6 +14,7 @@ import { subclasseDaFicha2014 } from './dnd2014Subclasses'
 import {ESCOLHAS_SUBCLASSES_2014} from './dnd2014EscolhasSubclasse'
 import {limiteMetamagia2014} from './dnd2014OpcoesClasse'
 import { classesDaFicha2014 } from './dnd2014Multiclasse'
+import {resumoRaca2014,resumoAntecedente2014,resumoMarcoClasse2014} from './dnd2014TextosArvore'
 import { lerLivrosDnd, type LivroBaseDnd } from './dndLivros'
 import { fontePermitida, FONTE_LEGADO_2014, FONTE_PHB } from './dnd2024Fontes'
 
@@ -122,9 +123,12 @@ export function hexagonosOficiaisDnd(
           .filter(m => mostrarFuturos || m.nivel <= c.nivel)
           .map((m, i) => ({
             id: '2014-' + c.cls.id + '-' + m.nivel + '-' + i,
-            titulo: m.nome, descricao: m.automatico
-              ? c.cls.nome + ' · nível de classe ' + m.nivel + '. Recurso-base disponível somente quando esta classe atingir o nível indicado.'
-              : c.cls.nome + ' · nível de classe ' + m.nivel + '. Característica 2014; decisão ou efeito específico deve ser confirmado no livro.',
+            titulo: m.nome, descricao:
+              resumoMarcoClasse2014(c.cls.nome,m.nome,
+                c.cls.nome + ' · nível de classe ' + m.nivel +
+                (m.automatico
+                  ? '. Recurso-base disponível quando a classe atingir o nível indicado.'
+                  : '. Esta característica pode exigir uma escolha ou condição específica.')),
             escolha: c.cls.nome,
             nivel: m.nivel, ramo: 'classe' as const,
             estado: m.nivel > c.nivel ? 'futuro' as const : m.automatico ? 'recebido' as const : 'referencia' as const,
@@ -148,11 +152,11 @@ export function hexagonosOficiaisDnd(
         nivel:1,ramo:'classe' as const,estado:'referencia' as const,
         livro:'Player’s Handbook (2014)',
       }]:[]),
-      ...(racaMeta ? [{ id: '2014-raca', titulo: 'Raça: ' + raca, descricao: racaMeta.descricao ?? '',
+      ...(racaMeta ? [{ id: '2014-raca', titulo: 'Raça: ' + raca, descricao: resumoRaca2014(raca,racaMeta.descricao ?? ''),
         nivel: 1, ramo: 'especie' as const, estado: 'referencia' as const, livro: 'Player’s Handbook (2014)' }] : []),
       ...(sub ? [{ id: '2014-subraca', titulo: sub.nome, descricao: sub.detalhe,
         nivel: 1, ramo: 'especie' as const, estado: 'referencia' as const, livro: 'Player’s Handbook (2014)' }] : []),
-      ...(antMeta ? [{ id: '2014-antecedente', titulo: 'Antecedente: ' + antecedente, descricao: antMeta.descricao ?? '',
+      ...(antMeta ? [{ id: '2014-antecedente', titulo: 'Antecedente: ' + antecedente, descricao: resumoAntecedente2014(antecedente,antMeta.descricao ?? ''),
         nivel: 1, ramo: 'antecedente' as const, estado: 'referencia' as const, livro: 'Player’s Handbook (2014)' }] : []),
     ]
   }

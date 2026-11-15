@@ -33,7 +33,7 @@ export default function EquipamentoInicialDnd2014({d,onChange,somenteLeitura,irP
     <div className="flex flex-wrap gap-2">
       <button type="button" disabled={!podeEscolher} className={btn} aria-pressed={registro?.modo==='kit'&&atual}
         onClick={()=>{if(confirmarTroca())onChange(escolherKitInicial2014(d))}}>Usar equipamentos de classe + antecedente</button>
-      <button type="button" disabled={!podeEscolher} className={btn} aria-pressed={registro?.modo==='ouro'&&atual}
+      <button type="button" disabled={!podeEscolher||(registro?.modo==='ouro'&&atual)} className={btn} aria-pressed={registro?.modo==='ouro'&&atual}
         onClick={()=>{if(!confirmarTroca())return;const proximo=escolherOuroInicial2014(d);if(proximo)onChange(proximo)}}>
         Rolar ouro inicial da classe
       </button>
@@ -69,6 +69,7 @@ export default function EquipamentoInicialDnd2014({d,onChange,somenteLeitura,irP
     </div>}
     {registro?.modo==='ouro'&&<div className="space-y-2 rounded-lg border border-(--a-55456e) p-3">
       <p className="text-sm font-semibold text-amber-200">{ouro===null?'Rolagem inválida':ouro+' peças de ouro iniciais'}</p>
+      <p className="text-xs">Rolagem inicial registrada: esta escolha não pode ser rolada novamente por um segundo clique.</p>
       <p className="text-xs">Dados d4 registrados: {registro.dados?.join(' + ')??'—'}.
         A carteira só é preenchida automaticamente se estava vazia, sem apagar moedas existentes.</p>
       <p className="text-xs">Carteira atual: {carteira||'vazia'}. Use o Inventário para registrar compras e gastos;

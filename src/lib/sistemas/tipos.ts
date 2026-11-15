@@ -120,6 +120,8 @@ export type DadosFicha = {
   dnd2014Subclasse?: string
   /** Subclasses das classes secundárias em 2014, por id de classe; preserva o campo legado da classe inicial. */
   dnd2014Subclasses?: Record<string, string>
+  /** Decisões por subclass e classe, validadas pelos níveis do PHB 2014. */
+  dnd2014EscolhasSubclasse?: Record<string, import('./dnd2014EscolhasSubclasse').EscolhasSubclasse2014>
   /** Níveis em outras classes na multiclasse 2014 (não usa a tabela 2024). */
   dnd2014Multiclasse?: Record<string,number>
   /** Magias de D&D 2014, registradas separadamente do catálogo SRD 2024. */

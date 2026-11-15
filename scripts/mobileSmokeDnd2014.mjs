@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
-import { chromium } from 'playwright'
+const { chromium } = await import(process.env.PRG_PLAYWRIGHT_MODULE || 'playwright')
 
 const base=process.env.MOBILE_E2E_URL || 'http://127.0.0.1:3000'
 const local='qa-mobile-dnd2014'

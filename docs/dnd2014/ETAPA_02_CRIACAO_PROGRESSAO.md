@@ -35,4 +35,11 @@ Testes de regressão: dnd2014Atributos.test.ts e dnd2014Vitalidade.test.ts, alé
 
 ### Escopo não automatizado
 
-A seleção de grupos de equipamentos **não verifica item por item** se o inventário corresponde ao PHB; o registro é confirmado pelo jogador/mestre para não duplicar itens em fichas preexistentes. Equipamentos completos dos antecedentes, escolhas de ferramentas/idiomas, revisão detalhada das 12 tabelas e regras avançadas de talentos ainda exigem validação e/ou desenvolvimento. A homologação com perfis reais em banco e dispositivo móvel também permanece pendente antes do merge.
+A seleção de grupos de equipamentos **não verifica item por item** se o inventário corresponde ao PHB; o registro é confirmado pelo jogador/mestre para não duplicar itens em fichas preexistentes. Os kits dos antecedentes são apresentados como referências e devem ser registrados e conferidos no Inventário; escolhas de ferramentas/idiomas estão disponíveis, mas efeitos/proficiências situacionais, aplicação automática dos itens e regras avançadas de talentos ainda exigem validação ou desenvolvimento. A homologação com perfis reais em banco e dispositivo móvel também permanece pendente antes do merge.
+
+### Complemento: antecedentes e progressão das 12 classes
+
+- Foram catalogados os 13 antecedentes de 2014 quanto a idiomas, ferramentas fixas ou de livre escolha e resumo do kit de referência. O novo campo `dnd2014AntecedenteExtras` é opcional, validado no servidor e classificado como `pericias` nas permissões da campanha. O guia mostra ferramentas fixas sem gravá-las duas vezes.
+- As árvores oficiais passaram a mostrar escolhas de Incremento no Valor de Habilidade nos níveis apropriados de todas as 12 classes, incluindo marcos extras relevantes; isso é representação visual e não concede recursos automaticamente.
+- Persistem conferência manual de equipamentos físicos no inventário, opções de talentos e condições situacionais. A homologação da PR #52 com banco multiusuário e celular real não está concluída.
+

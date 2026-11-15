@@ -21,6 +21,9 @@ export type RegistroMagiaDnd2014 = {
   concentracao?: boolean
   /** Arcana Mística de Bruxo, círculo 6–9, sem gastar espaço. */
   arcanaMistica?: boolean
+  /** Componentes e tempo registrados após consulta ao texto da magia de 2014. */
+  componentes?:{verbal:boolean;somatico:boolean;material:boolean;descricao?:string;custoPo?:number;consumido?:boolean}
+  tempoConjuracao?:'ação'|'ação bônus'|'reação'|'especial'
 }
 const classesConjuradoras = new Set(['bardo','clerigo','druida','feiticeiro','mago','paladino','patrulheiro','bruxo','guerreiro','ladino'])
 const formatoExpr = /^(?:\d{1,2}d(?:4|6|8|10|12|20|100)(?:[+-]\d{1,3})?)$/
@@ -60,6 +63,20 @@ export function lerMagias2014(raw:unknown):RegistroMagiaDnd2014[] {
       ...(expressaoMagia2014Valida(x.expressao)?{expressao:String(x.expressao).trim()}:{}),
       ...(x.concentracao===true?{concentracao:true}:{}),
       ...(x.arcanaMistica===true?{arcanaMistica:true}:{}),
+      ...(x.componentes&&typeof x.componentes==='object'&&!Array.isArray(x.componentes)?{
+        componentes:{
+          verbal:(x.componentes as Record<string,unknown>).verbal===true,
+          somatico:(x.componentes as Record<string,unknown>).somatico===true,
+          material:(x.componentes as Record<string,unknown>).material===true,
+          ... (typeof (x.componentes as Record<string,unknown>).descricao==='string'
+            ?{descricao:String((x.componentes as Record<string,unknown>).descricao).slice(0,150)}:{}),
+          ... (typeof (x.componentes as Record<string,unknown>).custoPo==='number'
+            ?{custoPo:Number((x.componentes as Record<string,unknown>).custoPo)}:{}),
+          ... ((x.componentes as Record<string,unknown>).consumido===true?{consumido:true}:{}),
+        }
+      }:{}),
+      ... (['ação','ação bônus','reação','especial'].includes(String(x.tempoConjuracao))
+        ?{tempoConjuracao:x.tempoConjuracao as RegistroMagiaDnd2014['tempoConjuracao']}:{}),
     })
   }
   return saida
@@ -84,6 +101,20 @@ export function validarAlteracoesMagias2014(
   const raw=depois.dnd2014Magias
   if(!Array.isArray(raw)||raw.length>120||lerMagias2014(raw).length!==raw.length)
     return ['Magias de 2014 inválidas, repetidas ou acima do limite de registros.']
+  // Não registrar componentes ou custos inventados por valores malformados.
+  for(const original of raw as Record<string,unknown>[]){
+    if(original.componentes!==undefined){
+      const cp=original.componentes
+      if(!cp||typeof cp!=='object'||Array.isArray(cp))
+        return ['Os componentes de magia precisam ser um objeto de confirmação manual.']
+      const dados=cp as Record<string,unknown>
+      if(['verbal','somatico','material'].some(k=>typeof dados[k]!=='boolean')||
+        (dados.descricao!==undefined&&(typeof dados.descricao!=='string'||dados.descricao.length>150))||
+        (dados.custoPo!==undefined&&(!Number.isSafeInteger(dados.custoPo)||Number(dados.custoPo)<0||Number(dados.custoPo)>100000000))||
+        (dados.consumido!==undefined&&typeof dados.consumido!=='boolean'))
+        return ['Componentes ou custos da magia 2014 inválidos.']
+    }
+  }
   const d=depois as DadosFicha
   const {lista}=classesDaFicha2014(d)
   const classes=new Map(lista.map(c=>[c.cls.id,c.nivel]))

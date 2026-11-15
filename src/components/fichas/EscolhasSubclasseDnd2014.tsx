@@ -4,6 +4,7 @@ import type {DadosFicha} from '@/lib/sistemas/tipos'
 import {classesDaFicha2014} from '@/lib/sistemas/dnd2014Multiclasse'
 import {subclasseDaFicha2014} from '@/lib/sistemas/dnd2014Subclasses'
 import {gruposSubclasseDaFicha2014} from '@/lib/sistemas/dnd2014EscolhasSubclasse'
+import {dadosSuperioridade2014,gastarSuperioridade2014} from '@/lib/sistemas/dnd2014Superioridade'
 
 const input='min-h-11 min-w-0 w-full rounded-lg border border-(--a-55456e) bg-(--s-151123) p-2 text-sm'
 const btn='min-h-10 rounded-lg border border-(--a-55456e) px-3 py-2 text-xs hover:bg-(--s-34294f)'
@@ -12,6 +13,7 @@ export default function EscolhasSubclasseDnd2014({d,onChange,somenteLeitura}:{
  d:DadosFicha;onChange:(d:DadosFicha)=>void;somenteLeitura:boolean
 }) {
  const classes=classesDaFicha2014(d).lista
+ const superioridade=dadosSuperioridade2014(d)
  const ativas=classes.flatMap(c=>{
   const sub=subclasseDaFicha2014(d,c.cls.id)
   const grupos=gruposSubclasseDaFicha2014(d,c.cls.id)
@@ -34,6 +36,24 @@ export default function EscolhasSubclasseDnd2014({d,onChange,somenteLeitura}:{
      efeitos situacionais nem copia os textos comerciais; use o livro e confirme com o mestre.</p>
    {ativas.map(x=><div key={x.classe} className="space-y-3 rounded-xl border border-(--a-55456e) p-3">
      <h5 className="text-sm font-semibold">{x.classeNome} — {x.sub.nome}</h5>
+     {x.classe==='guerreiro'&&x.sub.id==='mestre-batalha'&&superioridade&&
+      <div className="space-y-2 rounded-lg border border-(--a-55456e) p-3">
+       <p className="text-xs font-semibold">⚔️ Dados de Superioridade: {superioridade.restantes}/{superioridade.maximo} · {superioridade.dado}</p>
+       <p className="text-xs text-(--a-c4b6d4)">Uma manobra pode gastar um dado. Os dados gastos retornam após descanso curto ou longo.</p>
+       {!somenteLeitura&&<div className="flex flex-wrap gap-2">
+         <button type="button" className={btn} disabled={superioridade.restantes===0}
+           onClick={()=>{const proxima=gastarSuperioridade2014(d);if(proxima)onChange(proxima)}}>
+           Gastar 1 {superioridade.dado}
+         </button>
+         {superioridade.nivelClasse>=15&&superioridade.restantes===0&&<button
+           type="button" className={btn}
+           onClick={()=>onChange({...d,dnd2014DadosSuperioridadeUsados:superioridade.usados-1})}>
+           Implacável: recuperar 1 ao rolar iniciativa
+         </button>}
+       </div>}
+       <p className="text-xs text-(--a-c4b6d4)">As condições e efeitos das manobras seguem o livro; o gasto do dado não resolve o ataque automaticamente.</p>
+      </div>}
+
      {x.grupos.map(grupo=>{
        const guardado=d.dnd2014EscolhasSubclasse?.[x.classe]
        const atual=guardado?.subclasse===x.sub.id?guardado.grupos[grupo.id]??[]:[]

@@ -3,6 +3,7 @@ import { validarExperiencia2014 } from './dnd2014Experiencia'
 import { validarEquipamentoInicial2014 } from './dnd2014EquipamentoInicial'
 import { validarEscolhasAntecedente2014 } from './dnd2014AntecedentesDetalhes'
 import { validarConcentracao2014 } from './dnd2014Concentracao'
+import { validarEscolhasSubclasses2014 } from './dnd2014EscolhasSubclasse'
 import { bonusIncrementos2014, validarProgressaoAtributos2014 } from './dnd2014Atributos'
 /**
  * Regras abertas do D&D 5e original (2014), SRD 5.1 — CC BY 4.0.
@@ -229,7 +230,8 @@ export function validarAlteracoes2014(
 ): string[] {
   const erros: string[]=[...validarProgressaoAtributos2014(antes,depois,edicao),...validarVida2014(antes,depois,edicao),
     ...validarExperiencia2014(antes,depois,edicao),...validarEquipamentoInicial2014(antes,depois,edicao),
-    ...validarEscolhasAntecedente2014(antes,depois,edicao),...validarConcentracao2014(antes,depois,edicao)]
+    ...validarEscolhasAntecedente2014(antes,depois,edicao),...validarConcentracao2014(antes,depois,edicao),
+    ...validarEscolhasSubclasses2014(antes,depois,edicao)]
   // Novos talentos exigem os atributos finais do livro escolhido. Fichas
   // antigas sem base usam seus valores já registrados como totais finais.
   if(edicao==='phb2014'&&Array.isArray(depois.dnd2014Talentos)&&

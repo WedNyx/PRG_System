@@ -36,6 +36,7 @@ export const VERSOES: Versao[] = [
       'Novos campos respeitam as permissões da campanha e são preservados ao salvar e reabrir a ficha. Homologação com banco e celular ainda pendente.',
       '📈 XP de D&D 2014 com tabela de avanço do nível 1 ao 20, progresso até o próximo nível e compatibilidade com avanço por marcos.',
       '🎒 Equipamento inicial 2014: alternativas de classe/antecedente e ouro rolado, sem duplicar inventário nem substituir a carteira do personagem.',
+      '🧰 Antecedentes: idiomas e ferramentas das 13 origens, com registro de escolhas; árvore de classes com incrementos e marcos complementares do nível 1 ao 20.',
     ],
   },
   {

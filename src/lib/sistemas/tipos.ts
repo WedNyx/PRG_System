@@ -155,4 +155,15 @@ export type DadosFicha = {
   criacaoLivre?: boolean
   /** Árvore de habilidades (ver arvore.ts). */
   arvore?: unknown
+  /**
+   * Ficha manual (v0.34.8): o jogador e o mestre digitam modificadores, valores e totais das perícias.
+   * Com isso, a plataforma não calcula nada; todo o resto (mesa, combate, descanso) usa estes números.
+   */
+  manual?: FichaManual
+}
+
+export type FichaManual = {
+  mods: Record<string, number>
+  derivados: Record<string, number | null>
+  pericias: Record<string, number | null>
 }

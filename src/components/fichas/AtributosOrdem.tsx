@@ -9,7 +9,9 @@ const HEXAGONO = 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)'
  * Cinco hexágonos em uma disposição circular, exclusiva de Ordem Paranormal.
  * Inputs reais e rotulados: navegação por teclado, leitor de tela e edição móvel.
  */
-export default function AtributosOrdem({ atributos, valores, nex, somenteLeitura, onChange }: {
+export default function AtributosOrdem({ atributos, valores, nex, somenteLeitura, onChange, semLimite = false }: {
+  /** Ficha manual: sem a conta de pontos por NEX. */
+  semLimite?: boolean
   atributos: AtributoDef[]
   valores: Record<string, number>
   nex: number
@@ -39,12 +41,12 @@ export default function AtributosOrdem({ atributos, valores, nex, somenteLeitura
         <span className="text-xs text-violet-100">NEX {nex}%</span>
       </div>
     </div>
-    <p role="status" aria-live="polite" className={`text-center text-xs ${soma > limite ? 'text-amber-300' : 'text-violet-200'}`}>
+    {!semLimite && <p role="status" aria-live="polite" className={`text-center text-xs ${soma > limite ? 'text-amber-300' : 'text-violet-200'}`}>
       Total de atributos: <strong>{soma}</strong> / {limite} (limite básico para este NEX).
       {soma > limite ? ' Revise a distribuição.' : ''}
-    </p>
-    <p className="text-center text-xs text-(--a-a998bd)">
+    </p>}
+    {!semLimite && <p className="text-center text-xs text-(--a-a998bd)">
       Os botões de rolagem e as perícias permanecem abaixo; alterar um hexágono atualiza a ficha normalmente.
-    </p>
+    </p>}
   </div>
 }

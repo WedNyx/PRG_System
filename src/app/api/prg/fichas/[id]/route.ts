@@ -5,7 +5,7 @@ import { diferencas, aplicar, separarPorRegra, resumoMudanca, type Mudanca } fro
 import { agruparRiquezaInicial2014 } from '@/lib/nuvem/riquezaInicial2014Permissoes'
 import type { Campo } from '@/lib/campanhas/permissoes'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
-import { normalizarFicha } from '@/lib/sistemas/calculo'
+import { normalizarFicha, tornarManual } from '@/lib/sistemas/calculo'
 import { lerArvore } from '@/lib/sistemas/arvore'
 import { alterouDefinicaoArvore, validarDesbloqueiosArvore } from '@/lib/sistemas/arvorePermissoes'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
@@ -98,6 +98,8 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
   if (!Number.isInteger(body.versao)) throw new ErroApi(400, 'Versão ausente.')
   const v = validarFichaDados(body.dados)
   if (!v.ok) throw new ErroApi(400, v.erro)
+  // Ficha manual (v0.34.8): o jogador e o mestre preenchem tudo; as conferências automáticas do D&D não valem mais.
+  const fichaManual = !!(v.valor.dados as Partial<DadosFicha>).manual
   // Livro-base e fontes liberadas pelo mestre. Revalidar também na gravação da ficha.
   let configLivros: ReturnType<typeof lerConfiguracaoProgressao> | null = null
   if (f.sistema === 'dnd5e-srd' && f.campanha_id) {
@@ -118,7 +120,7 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
   }
   // Valida mudanças em escolhas D&D ANTES da aplicação de permissão/aprovação.
   // Personagens antigos podem conservar escolhas históricas sem bloqueios retroativos.
-  if (f.sistema === 'dnd5e-srd') {
+  if (f.sistema === 'dnd5e-srd' && !fichaManual) {
     const antigo = f.dados as Partial<DadosFicha>
     const candidato = v.valor.dados as Partial<DadosFicha>
     const edicao = lerLivrosDnd(candidato.dndLivros, configLivros?.baseLivro ?? 'phb2024').base
@@ -209,8 +211,9 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     if (f.npc ? !admin : (!dono && !admin)) throw new ErroApi(403, 'Sem permissão para editar esta ficha.')
     // Fichas genéricas: completa as chaves que faltam com os valores iniciais do modelo antes de comparar.
     const s = await carregarSistema(f.sistema)
-    const antes = s ? normalizarFicha(s, f.dados as Partial<DadosFicha>) as unknown as Record<string, unknown> : (f.dados ?? {})
-    if (s) v.valor.dados = normalizarFicha(s, v.valor.dados as Partial<DadosFicha>) as unknown as Record<string, unknown>
+    // As duas versões viram manuais do mesmo jeito: a primeira foto dos números não conta como mudança.
+    const antes = s ? tornarManual(s, normalizarFicha(s, f.dados as Partial<DadosFicha>)) as unknown as Record<string, unknown> : (f.dados ?? {})
+    if (s) v.valor.dados = tornarManual(s, normalizarFicha(s, v.valor.dados as Partial<DadosFicha>)) as unknown as Record<string, unknown>
     f.dados = antes
     // Ouro de criação e método de equipamento precisam da MESMA autorização do mestre.
     const mudancas = agruparRiquezaInicial2014(f.sistema, antes, v.valor.dados, diferencas(f.sistema, antes, v.valor.dados))
@@ -227,7 +230,7 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
 
   // Revalida contra o estado EFETIVAMENTE autorizado depois da separação
   // livre/aprovação/bloqueado. Evita usar um nível rejeitado para liberar escolha.
-  if (f.sistema === 'dnd5e-srd') {
+  if (f.sistema === 'dnd5e-srd' && !fichaManual) {
     const anterior = f.dados as Partial<DadosFicha>
     const autorizado = final as Partial<DadosFicha>
     const edicao = lerLivrosDnd(autorizado.dndLivros, configLivros?.baseLivro ?? 'phb2024').base

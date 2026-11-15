@@ -11,11 +11,13 @@ let r=await call(M,'POST','campanhas',{nome:'Operação',sistema:'ordem-paranorm
 const mesa=b=>call(M,'POST','mesa/'+cid,b)
 await mesa({acao:'sessao',aberta:true})
 const ag=await ficha(cid,'ordem-paranormal','Agente',d=>({...d,campos:{...d.campos,classe:'Combatente',nex:10},atributos:{AGI:3,FOR:2,INT:1,PRE:1,VIG:2},
-  pericias:{...d.pericias,luta:'treinado',iniciativa:'veterano'},itens:[{id:'faca',nome:'Faca',categoria:'arma',peso:1,dano:'1d4',bonus:[]}]}))
+  pericias:{...d.pericias,luta:'treinado',iniciativa:'veterano'},
+  // Ficha manual (v0.34.8): PV, Defesa e totais das perícias são digitados.
+  recursos:{...d.recursos,pv:{atual:28,max:28}},manual:{...d.manual,derivados:{...d.manual.derivados,defesa:13},pericias:{...d.manual.pericias,luta:5,iniciativa:10}},itens:[{id:'faca',nome:'Faca',categoria:'arma',peso:1,dano:'1d4',bonus:[]}]}))
 const cr=await ficha(cid,'ordem-paranormal','Criatura',d=>({...d,campos:{...d.campos,classe:'Ocultista'}}))
 check('fichas de Ordem Paranormal salvam', ag.s===200 && cr.s===200, [ag,cr])
 r=await call(M,'GET',`mesa/${cid}?fichas=1`); const fa=r.d.fichas.find(f=>f.id===ag.id)
-check('combate lê PV pela classe e NEX (20+2+4+2 = 28) e Defesa 13', fa?.combate.vida.max===28 && fa.combate.defesa.valor===13, fa?.combate)
+check('combate lê o PV e a Defesa digitados (28 e 13)', fa?.combate.vida.max===28 && fa.combate.defesa.valor===13, fa?.combate)
 check('teste de Luta rola 2 dados (Força 2) com +5', fa?.combate.testes.find(t=>t.id==='pericia:luta')?.dados===2, fa?.combate.testes.find(t=>t.id==='pericia:luta'))
 r=await mesa({acao:'cena_criar',nome:'Sala',grid_cols:10,grid_rows:10}); let cena=r.d.cena?.id
 r=await call(M,'GET','mesa/'+cid); cena=r.d.cenaAtiva?.id ?? cena; if(!r.d.cenaAtiva) await mesa({acao:'cena_ativar',cenaId:cena})
@@ -27,15 +29,15 @@ r=await mesa({acao:'combate_preparar',tokens:[{tokenId:tA},{tokenId:tC}]})
 const rolA=r.d.rolagens?.find(o=>o.tokenId===tA)
 check('iniciativa rola a parada de Agilidade (3 dados) + 10', r.s===200 && rolA?.bonus===10 && rolA?.dados.length===3, r.d)
 
-// Tormenta20, D&D e Pathfinder: máximos sugeridos aparecem no combate
+// Tormenta20, D&D e Pathfinder: o máximo de PV digitado aparece no combate (ficha manual)
 for (const [sistema, nome, mudar, esperado] of [
-  ['tormenta20', 'Guerreira', d=>({...d,campos:{...d.campos,classe:'Guerreiro',nivel:2},atributos:{...d.atributos,CON:2}}), 20+2+5+2],
-  ['dnd5e-srd', 'Bárbaro', d=>({...d,campos:{...d.campos,classe:'Bárbaro',nivel:2},atributos:{...d.atributos,CON:14}}), 12+2+7+2],
-  ['pf2e', 'Anã', d=>({...d,campos:{...d.campos,ancestralidade:'Anão',classe:'Guerreiro',nivel:1},atributos:{...d.atributos,CON:2}}), 10+10+2],
+  ['tormenta20', 'Guerreira', d=>({...d,campos:{...d.campos,classe:'Guerreiro',nivel:2},atributos:{...d.atributos,CON:2},recursos:{...d.recursos,pv:{atual:29,max:29}}}), 29],
+  ['dnd5e-srd', 'Bárbaro', d=>({...d,campos:{...d.campos,classe:'Bárbaro',nivel:2},atributos:{...d.atributos,CON:14},recursos:{...d.recursos,pv:{atual:23,max:23}}}), 23],
+  ['pf2e', 'Anã', d=>({...d,campos:{...d.campos,ancestralidade:'Anão',classe:'Guerreiro',nivel:1},atributos:{...d.atributos,CON:2},recursos:{...d.recursos,pv:{atual:22,max:22}}}), 22],
 ]) {
   r=await call(M,'POST','campanhas',{nome:'Teste '+sistema,sistema,modeloPadrao:'C'}); const c2=r.d.campanha.id
   const f=await ficha(c2,sistema,nome,mudar)
   r=await call(M,'GET',`mesa/${c2}?fichas=1`); const vida=r.d.fichas?.find(x=>x.id===f.id)?.combate.vida
-  check(`${sistema}: PV máximo pela classe = ${esperado}`, f.s===200 && vida?.max===esperado, vida)
+  check(`${sistema}: PV máximo digitado = ${esperado}`, f.s===200 && vida?.max===esperado, vida)
 }
 console.log(falhas ? `\n${falhas} FALHA(S)` : '\nTudo certo!'); process.exit(falhas ? 1 : 0)

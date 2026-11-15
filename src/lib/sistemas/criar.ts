@@ -1,7 +1,7 @@
 'use client'
 import { api, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 import { SISTEMAS, SISTEMAS_VISIVEIS, SISTEMA_V8 } from './catalogo'
-import { fichaVazia } from './calculo'
+import { fichaVazia, tornarManual } from './calculo'
 import type { LivroBaseDnd } from './dndLivros'
 
 export type GrupoSistema = 'publicado' | 'autoral'
@@ -22,7 +22,7 @@ export const nomeDoSistema = (id: string) => OPCOES_SISTEMA.find(o => o.id === i
 export async function criarEAbrirFicha(sistema: string, aventureiroId: string, livroBase?: LivroBaseDnd) {
   const modelo = SISTEMAS.find(x => x.id === sistema)
   const dadosIniciais = sistema === 'dnd5e-srd' && livroBase && modelo
-    ? { ...fichaVazia(modelo), dndLivros: { base: livroBase, suplementos: [] } }
+    ? tornarManual(modelo, { ...fichaVazia(modelo), dndLivros: { base: livroBase, suplementos: [] } })
     : undefined
   if (NUVEM_ATIVA) {
     const r = await api<{ ficha: { id: string } }>('fichas', { method: 'POST', aventureiro: aventureiroId,
@@ -39,7 +39,7 @@ export async function criarEAbrirFicha(sistema: string, aventureiroId: string, l
     return
   }
   const s = SISTEMAS.find(x => x.id === sistema)!
-  localStorage.setItem('prg-ficha-gen-' + id, JSON.stringify(dadosIniciais ?? fichaVazia(s)))
+  localStorage.setItem('prg-ficha-gen-' + id, JSON.stringify(dadosIniciais ?? tornarManual(s, fichaVazia(s))))
   const k = 'prg-fichas-gen-lista-' + aventureiroId
   const lista = JSON.parse(localStorage.getItem(k) || '[]')
   localStorage.setItem(k, JSON.stringify([...lista, { id, sistema, criadaEm: new Date().toISOString() }]))

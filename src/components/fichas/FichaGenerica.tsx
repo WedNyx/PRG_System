@@ -431,7 +431,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
 }
 
 /** Imagem do personagem: aparece aqui e no cartão da ficha. */
-function Retrato({ url, nome, somenteLeitura, onChange }: { url?: string; nome: string; somenteLeitura: boolean; onChange: (u: string | null) => void }) {
+export function Retrato({ url, nome, somenteLeitura, onChange }: { url?: string; nome: string; somenteLeitura: boolean; onChange: (u: string | null) => void }) {
   const [enviando, setEnviando] = useState(false)
   const podeEnviar = !somenteLeitura && NUVEM_ATIVA
   async function escolher(f: File) {

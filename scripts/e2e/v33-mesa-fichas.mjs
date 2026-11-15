@@ -12,7 +12,7 @@ const RET='https://vzmytrafnpxvupjwlejl.supabase.co/storage/v1/object/public/prg
 r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sistema:'dnd5e-srd',nome:'Lyra'}); const fL=r.d.ficha.id
 let g=await call(M,'GET','fichas/'+fL); await call(M,'PUT','fichas/'+fL,{versao:g.d.ficha.versao,dados:{...g.d.ficha.dados,campos:{...g.d.ficha.dados.campos,classe:'Guerreiro',nivel:3},atributos:{...g.d.ficha.dados.atributos,DES:16},recursos:{...g.d.ficha.dados.recursos,pv:{atual:28,max:28}}}})
 r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'npc',sistema:'dnd5e-srd',nome:'Goblin'}); const fG=r.d.ficha.id
-g=await call(M,'GET','fichas/'+fG); await call(M,'PUT','fichas/'+fG,{versao:g.d.ficha.versao,dados:{...g.d.ficha.dados,retrato:RET,recursos:{...g.d.ficha.dados.recursos,pv:{atual:7,max:7}},atributos:{...g.d.ficha.dados.atributos,DES:14},
+g=await call(M,'GET','fichas/'+fG); await call(M,'PUT','fichas/'+fG,{versao:g.d.ficha.versao,dados:{...g.d.ficha.dados,retrato:RET,recursos:{...g.d.ficha.dados.recursos,pv:{atual:7,max:7}},atributos:{...g.d.ficha.dados.atributos,DES:14},manual:{...g.d.ficha.dados.manual,derivados:{...g.d.ficha.dados.manual.derivados,iniciativa:2}},
   itens:[{id:'cimitarra',nome:'Cimitarra',categoria:'arma',quantidade:1,dano:'1d6+2',equipado:true}]}})
 
 r=await call(J,'POST','mesa/'+cid,{acao:'token_criar',cenaId:cena,fichaId:fL}); const tL=r.d.token?.id; check('jogador põe o próprio personagem na mesa', r.s===201, r.d)
@@ -34,7 +34,7 @@ await call(M,'POST','mesa/'+cid,{acao:'token_mover',tokenId:copias[1].id,x:1,y:1
 r=await call(M,'POST','mesa/'+cid,{acao:'ataque',atacante:copias[1].id,alvo:tL,fonte:{tipo:arma.tipo,id:arma.id}})
 check('a cópia ataca com a arma da ficha-modelo', r.s===201 && r.d.evento.dados.arma==='Cimitarra', r.d)
 r=await call(M,'POST','mesa/'+cid,{acao:'combate_preparar',tokens:[{tokenId:copias[2].id},{tokenId:tL}]})
-const ini=r.d.rolagens?.find(o=>o.tokenId===copias[2].id); check('iniciativa da cópia usa o bônus da ficha (Des 14 → +2)', ini?.bonus===2, r.d)
+const ini=r.d.rolagens?.find(o=>o.tokenId===copias[2].id); check('iniciativa da cópia usa o bônus digitado na ficha (+2)', ini?.bonus===2, r.d)
 // Fichas na mesa
 r=await call(J,'GET','mesa/'+cid); check('jogador recebe só a própria ficha para abrir na mesa', r.d.fichas.length===1 && r.d.fichas[0].id===fL, r.d.fichas)
 r=await call(J,'GET','fichas/'+fL); check('e consegue abrir e editar a ficha', r.s===200 && r.d.podeEditar===true, r.d)

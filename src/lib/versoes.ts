@@ -27,6 +27,17 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.34.8', data: '2026-11-15',
+    titulo: 'Fichas manuais no modelo de cada sistema',
+    itens: [
+      'Todas as fichas agora são preenchidas pelo jogador e pelo mestre: atributos, modificadores, valores (CA, Defesa…), perícias e o máximo de cada recurso. A plataforma não calcula nem confere mais nada.',
+      'Os dados rolam com o número digitado; na campanha, a rolagem continua indo para o chat da mesa.',
+      'Saíram da ficha a criação guiada, a conferência, os avisos de limite, a Árvore de habilidades, o guia de criação e os catálogos obrigatórios do D&D.',
+      'Fichas que já existiam continuam mostrando os mesmos números: na primeira vez que abrem, guardam os valores que tinham e daí em diante só mudam quando alguém digitar.',
+      'Classe, espécie e outros campos de escolha viraram texto livre (com sugestões ao digitar).',
+    ],
+  },
+  {
     versao:'0.34.6', data:'2026-11-15',
     titulo:'D&D: edição correta e regras explicadas na Árvore',
     itens:[

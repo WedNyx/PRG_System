@@ -1,7 +1,7 @@
 import { pvPorNivel2014 } from './dnd2014Vitalidade'
 import { avaliarSeguro, type Variaveis } from './formula'
 import { imagemDaPlataforma } from '../nuvem/validacao'
-import type { DadosFicha, Sistema } from './tipos'
+import type { DadosFicha, FichaManual, Sistema } from './tipos'
 import { bonusEquipados, lerItens, lerPoderes, lerUso, pesoTotal } from './inventario'
 import { lerEscolhasDnd } from './dnd2024Ficha'
 import { lerTalentoMagiaHumano } from './dnd2024MagiaHumano'
@@ -36,7 +36,7 @@ export function fichaVazia(s: Sistema, nome = ''): DadosFicha {
   const base = fichaBase(s, nome)
   // Recursos começam cheios (vida, mana…) quando o máximo é calculado; senão, 0 até o jogador preencher.
   try {
-    const c = calcular(s, base), max = c.recursosMax
+    const c = calcularRegras(s, base), max = c.recursosMax
     for (const r of s.recursos) {
       if (r.contador) continue // marcadores começam em 0
       // Vida sem fórmula: usa o PV sugerido do sistema (igual ao combate da mesa).
@@ -83,7 +83,7 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     const { defesa: antiga, ...resto } = d.campos
     d = { ...d, campos: { ...resto, defesa_outros: Math.round(Number(antiga)) - 10 - agi } }
   }
-  return {
+  const out: DadosFicha = {
     sistema: s.id, nome: typeof d.nome === 'string' ? d.nome.slice(0, 90) : '',
     ...(imagemDaPlataforma(d.retrato) ? { retrato: d.retrato } : {}),
     campos: { ...base.campos, ...(d.campos ?? {}) },
@@ -150,6 +150,24 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     ...(d.arvore !== undefined ? { arvore: lerArvore(d.arvore), poderes: sincronizarPoderes(lerPoderes(d.poderes), lerArvore(d.arvore), { campos: { ...base.campos, ...(d.campos ?? {}) }, dndEscolhas: d.dndEscolhas, dndMulticlasse: d.dndMulticlasse }) }
       : d.poderes !== undefined ? { poderes: lerPoderes(d.poderes) } : {}),
   }
+  const manual = lerManual(s, d.manual)
+  return manual ? { ...out, manual } : out
+}
+
+/**
+ * Toda ficha da plataforma é manual (v0.34.8): quem abre, cria ou salva passa por aqui. A primeira vez, guarda os números que a regra dava (modificadores, valores,
+ * perícias e máximos dos recursos) para nada mudar na tela; daí em diante, só o que o jogador e o mestre digitam.
+ */
+export function tornarManual(s: Sistema, d: DadosFicha): DadosFicha {
+  const lido = lerManual(s, d.manual)
+  if (lido) return { ...d, manual: lido }
+  const c = calcularRegras(s, d)
+  const recursos = { ...d.recursos }
+  for (const r of s.recursos) {
+    const max = c.recursosMax[r.id]
+    if (recursos[r.id]?.max === undefined && max !== null && max !== undefined) recursos[r.id] = { ...recursos[r.id], atual: Number(recursos[r.id]?.atual ?? 0) || 0, max }
+  }
+  return { ...d, recursos, manual: fotoManual(c) }
 }
 
 /** Opção escolhida num campo “escolha” (pelo nome, sem diferenciar maiúsculas). */
@@ -186,7 +204,47 @@ export function bonusDasEscolhas(s: Sistema, d: Pick<DadosFicha, 'campos'>): Rec
   return out
 }
 
+const numOuNulo = (v: unknown) => v === null || v === undefined || v === '' ? null : Number.isFinite(Number(v)) ? Math.max(-9999, Math.min(9999, Math.round(Number(v)))) : null
+/** Lê os números digitados da ficha manual (limpos, só ids do sistema). */
+export function lerManual(s: Sistema, x: unknown): FichaManual | undefined {
+  if (!x || typeof x !== 'object' || Array.isArray(x)) return undefined
+  const o = x as Record<string, unknown>
+  const mapa = (v: unknown, ids: string[]) => { const m = v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {}
+    return Object.fromEntries(ids.map(id => [id, numOuNulo(m[id])])) }
+  const mods = mapa(o.mods, s.atributos.map(a => a.id))
+  return { mods: Object.fromEntries(Object.entries(mods).map(([k, v]) => [k, v ?? 0])),
+    derivados: mapa(o.derivados, s.derivados.map(x => x.id)), pericias: mapa(o.pericias, (s.pericias?.lista ?? []).map(p => p.id)) }
+}
+/** Foto dos números que a regra dava: fichas antigas viram manuais sem mudar nada do que o jogador via. */
+export function fotoManual(c: Calculo): FichaManual {
+  return { mods: { ...c.mods }, derivados: { ...c.derivados }, pericias: { ...c.pericias } }
+}
+
+/** Números da ficha. Ficha manual: devolve exatamente o que foi digitado, sem regra nenhuma. */
 export function calcular(s: Sistema, d: DadosFicha, opcoes: { efeitosDnd?: boolean } = {}): Calculo {
+  return d.manual ? calcularManual(s, d) : calcularRegras(s, d, opcoes)
+}
+
+function calcularManual(s: Sistema, d: DadosFicha): Calculo {
+  const m = d.manual!, vars: Variaveis = {}
+  for (const c of s.campos) if (c.tipo === 'numero') vars[c.id] = num(d.campos[c.id])
+  const mods: Record<string, number> = {}
+  for (const a of s.atributos) { vars[a.id] = num(d.atributos[a.id], a.padrao); mods[a.id] = s.formulaModificador ? num(m.mods[a.id]) : vars[a.id]; vars['mod_' + a.id] = mods[a.id] }
+  const derivados: Record<string, number | null> = {}
+  for (const x of s.derivados) { derivados[x.id] = m.derivados[x.id] ?? null; vars[x.id] = derivados[x.id] ?? 0 }
+  const pericias: Record<string, number | null> = {}
+  for (const p of s.pericias?.lista ?? []) {
+    pericias[p.id] = s.pericias!.modo === 'valor' ? num(d.pericias[p.id]) : m.pericias[p.id] ?? 0
+    vars['tot_' + p.id] = pericias[p.id] ?? 0
+  }
+  const recursosMax: Record<string, number | null> = {}
+  for (const r of s.recursos) { const x = d.recursos[r.id]?.max; recursosMax[r.id] = x === undefined || x === null ? null : num(x) }
+  const itens = lerItens(d.itens), uso = lerUso(d.uso)
+  vars.carga_total = pesoTotal(itens, uso)
+  return { vars, mods, derivados, pericias, recursosMax, limites: [], bonus: {}, carga: { total: vars.carga_total, max: null, unidade: s.carga?.unidade ?? 'kg' } }
+}
+
+function calcularRegras(s: Sistema, d: DadosFicha, opcoes: { efeitosDnd?: boolean } = {}): Calculo {
   const vars: Variaveis = {}
   const itens = lerItens(d.itens), uso = lerUso(d.uso)
   const bonus = somarBonus(bonusEquipados(itens, uso), bonusDaArvore(lerArvore(d.arvore), d), bonusDasEscolhas(s, d))

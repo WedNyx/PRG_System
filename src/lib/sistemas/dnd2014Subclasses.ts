@@ -13,8 +13,31 @@ export type SubclasseDnd2014 = {
 }
 const sr = (classe:string,id:string,nome:string,nivel:number,marcos:[number,string][]):SubclasseDnd2014 =>
   ({classe,id,nome,nivel,fonte:'srd51',marcos:marcos.map(([nivel,nome])=>({nivel,nome}))})
+/**
+ * Níveis dos benefícios de arquétipo no PHB 2014, por CLASSE.
+ * Não expõe textos comerciais nem concede atributos/recursos de forma fictícia.
+ */
+export const MARCOS_SUBCLASSES_COMERCIAIS_2014:Record<string,readonly number[]>={
+ 'Bárbaro':[3,6,10,14],
+ 'Bardo':[3,6,14],
+ 'Clérigo':[1,2,6,8,17],
+ 'Druida':[2,6,10,14],
+ 'Guerreiro':[3,7,10,15,18],
+ 'Monge':[3,6,11,17],
+ 'Paladino':[3,7,15,20],
+ 'Patrulheiro':[3,7,11,15],
+ 'Ladino':[3,9,13,17],
+ 'Feiticeiro':[1,6,14,18],
+ 'Bruxo':[1,6,10,14],
+ 'Mago':[2,6,10,14],
+}
 const phb = (classe:string,nivel:number,...opcoes:[string,string][]):SubclasseDnd2014[] =>
-  opcoes.map(([id,nome])=>({classe,id,nome,nivel,fonte:'phb2014'}))
+  opcoes.map(([id,nome])=>({
+    classe,id,nome,nivel,fonte:'phb2014',
+    marcos:(MARCOS_SUBCLASSES_COMERCIAIS_2014[classe]??[nivel]).map(n=>({
+      nivel:n,nome:'Característica de '+nome+' (conferir no PHB 2014)'
+    })),
+  }))
 
 export const SUBCLASSES_DND_2014: SubclasseDnd2014[] = [
   sr('Bárbaro','berserker','Caminho do Berserker',3,

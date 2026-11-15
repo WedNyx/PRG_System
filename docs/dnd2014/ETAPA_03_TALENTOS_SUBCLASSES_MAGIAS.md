@@ -55,3 +55,9 @@
 ### Limites de conclusão
 
 A plataforma oferece **escolhas orientadas e regras automáticas verificáveis**. Ainda não representa 100% de automação de todos os talentos, subclasses e magias: faltam execução situacional de benefícios comerciais, magias concedidas por todos os domínios/juramentos/patronos, custos de material efetivamente descontados do inventário e E2E autenticado com mestre/jogador em banco de teste. Esses limites permanecem explícitos para não dar efeitos errados ou prometer uma fidelidade não comprovada.
+
+### Conferência da interface e projeção na árvore
+
+- Preview da PR #53 `22f2af22`: navegador isolado criou ficha fictícia **Guerreiro nível 3** e selecionou **Mestre de Batalha**. Testou as manobras `Aparar` e `Ataque de Precisão`, contador 2/3, sem criação automática de poderes. Formulário de grimório exibiu V/S/M, tempo e concentração; não foi testada uma conjuração real nesse teste.
+- Escolhas internas foram acrescentadas à projeção oficial da **Árvore de Constelações**: manobras/totens/terrenos escolhidos, Dádiva do Pacto, Metamagia e opções de talentos aparecem como nós de referência **sem atribuir efeitos não implementados**. Incluído teste específico em `dnd2014ArvoreEscolhas.test.ts`.
+- Teste anterior de browser foi executado em desktop; viewport mobile de 2014 nesta PR, fluxo HTTP autenticado com mestre/jogador em banco de teste e efeitos condicionais comerciais ainda não estão homologados.

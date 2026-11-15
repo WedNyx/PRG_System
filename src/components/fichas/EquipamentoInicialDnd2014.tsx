@@ -6,7 +6,7 @@ import { KITS_CLASSES_2014, escolhasKitClasse2014Validas } from '@/lib/sistemas/
 import { escolherKitInicial2014, escolherOuroInicial2014, formulaRiquezaInicial2014,
   registroEquipamentoAtual2014, totalRiquezaInicial2014 } from '@/lib/sistemas/dnd2014EquipamentoInicial'
 
-const btn='min-h-10 rounded-lg border border-(--a-62527e) bg-(--s-251a38) px-3 py-2 text-xs font-semibold hover:bg-(--s-34294f) disabled:opacity-40'
+const btn='min-h-11 w-full sm:w-auto rounded-lg border border-(--a-62527e) bg-(--s-251a38) px-3 py-2 text-xs font-semibold hover:bg-(--s-34294f) disabled:opacity-40'
 
 export default function EquipamentoInicialDnd2014({d,onChange,somenteLeitura,irPara}:{
   d:DadosFicha;onChange:(d:DadosFicha)=>void;somenteLeitura:boolean;irPara?:(secao:string)=>void
@@ -22,7 +22,7 @@ export default function EquipamentoInicialDnd2014({d,onChange,somenteLeitura,irP
   const ouro=registro?.modo==='ouro' ? totalRiquezaInicial2014(registro.classe,registro.dados??[]) : null
   const podeEscolher=!!tabela&&!!antecedente&&!somenteLeitura
   const confirmarTroca=()=>!registro||confirm('Alterar o método de equipamento inicial? Itens e moedas já registrados no inventário não serão removidos.')
-  return <section aria-label="Equipamento inicial D&D 2014" className="space-y-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+  return <section aria-label="Equipamento inicial D&D 2014" className="min-w-0 space-y-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
     <h4 className="font-semibold text-(--a-d3adf0)">🎒 Equipamento inicial · PHB 2014</h4>
     <p className="text-xs text-(--a-cfc0df)">No Livro do Jogador (capítulos 1 e 5), escolha uma alternativa:
       registrar os equipamentos da classe <strong>e</strong> do antecedente no Inventário, ou começar com ouro da classe
@@ -50,7 +50,7 @@ export default function EquipamentoInicialDnd2014({d,onChange,somenteLeitura,irP
           <select value={registro.escolhas?.[grupo.id]??''} disabled={somenteLeitura}
             onChange={e=>{const escolhas={...registro.escolhas};if(e.target.value)escolhas[grupo.id]=e.target.value;else delete escolhas[grupo.id];
               onChange({...d,dnd2014EquipamentoInicial:{...registro,conferido:false,escolhas}})}}
-            className="mt-1 min-h-10 w-full rounded-lg border border-(--a-55456e) bg-(--s-151123) p-2 text-white">
+            className="mt-1 min-h-11 min-w-0 w-full rounded-lg border border-(--a-55456e) bg-(--s-151123) p-2 text-white">
             <option value="">Selecione a alternativa...</option>
             {grupo.opcoes.map(op=><option key={op} value={op}>{op}</option>)}
           </select>
@@ -62,7 +62,7 @@ export default function EquipamentoInicialDnd2014({d,onChange,somenteLeitura,irP
       </div>}
       <p className="text-xs text-(--a-cfc0df)">Itens no inventário: {inventario.length}.
         Selecionar uma alternativa aqui não adiciona nem duplica itens automaticamente.</p>
-      <label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={atual&&registro.conferido===true}
+      <label className="flex items-start gap-2 text-xs"><input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0" checked={atual&&registro.conferido===true}
         disabled={somenteLeitura||inventario.length===0||!kitCompleto||registro.classe!==classe||registro.antecedente!==antecedente}
         onChange={e=>onChange({...d,dnd2014EquipamentoInicial:{...registro,conferido:e.target.checked}})}/>
         Já registrei os equipamentos da classe e do antecedente no Inventário conforme o livro.</label>

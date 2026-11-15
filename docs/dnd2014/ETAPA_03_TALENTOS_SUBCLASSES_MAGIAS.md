@@ -61,3 +61,9 @@ A plataforma oferece **escolhas orientadas e regras automáticas verificáveis**
 - Preview da PR #53 `22f2af22`: navegador isolado criou ficha fictícia **Guerreiro nível 3** e selecionou **Mestre de Batalha**. Testou as manobras `Aparar` e `Ataque de Precisão`, contador 2/3, sem criação automática de poderes. Formulário de grimório exibiu V/S/M, tempo e concentração; não foi testada uma conjuração real nesse teste.
 - Escolhas internas foram acrescentadas à projeção oficial da **Árvore de Constelações**: manobras/totens/terrenos escolhidos, Dádiva do Pacto, Metamagia e opções de talentos aparecem como nós de referência **sem atribuir efeitos não implementados**. Incluído teste específico em `dnd2014ArvoreEscolhas.test.ts`.
 - Teste anterior de browser foi executado em desktop; viewport mobile de 2014 nesta PR, fluxo HTTP autenticado com mestre/jogador em banco de teste e efeitos condicionais comerciais ainda não estão homologados.
+
+### Recursos de Mestre de Batalha e QA mobile
+
+- **Dados de Superioridade (PHB p. 86–87):** Guerreiro 3–6 possui 4d8; 7–9, 5d8; 10–14, 5d10; 15–17, 6d10; 18–20, 6d12. Os dados gastos retornam após descanso curto ou longo. A ficha oferece botão de gasto e referência à característica Implacável do nível 15 sem automatizar ataques ou condições.
+- **Mobile automatizado:** GitHub Actions [43674229523](https://github.com/WedNyx/PRG_System/actions/runs/43674229523) verificou ficha fictícia de Guerreiro 3, Mestre de Batalha e duas manobras nos tamanhos 320, 375, 390 e 768 px. Todas as seções verificadas passaram sem transbordamento horizontal. Foram enviados screenshots como artefatos.
+- **Limites:** teste de navegador em desktop confirmou registro das manobras, mas não executou magia real em Mago; testes HTTP com mestre/jogador no banco isolado e aparelhos móveis físicos ainda pendentes. A implementação não garante automação completa de todas as descrições do PHB 2014.

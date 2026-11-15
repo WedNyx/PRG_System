@@ -34,6 +34,8 @@ export const VERSOES: Versao[] = [
       'Incrementos de Atributo por nível individual de classe, com limite de 20 e controle para não consumir o mesmo benefício com pontos e talentos.',
       'PV por nível com média fixa ou resultado rolado; Constituição retroativa, mínimo de 1 PV por nível e totais manuais preservados.',
       'Novos campos respeitam as permissões da campanha e são preservados ao salvar e reabrir a ficha. Homologação com banco e celular ainda pendente.',
+      '📈 XP de D&D 2014 com tabela de avanço do nível 1 ao 20, progresso até o próximo nível e compatibilidade com avanço por marcos.',
+      '🎒 Equipamento inicial 2014: alternativas de classe/antecedente e ouro rolado, sem duplicar inventário nem substituir a carteira do personagem.',
     ],
   },
   {

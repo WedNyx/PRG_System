@@ -29,6 +29,8 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
  const [expressao,setExpressao]=useState('')
  const [exigeConcentracao,setExigeConcentracao]=useState(false)
  const [arcanaMistica,setArcanaMistica]=useState(false)
+ const [componentes,setComponentes]=useState({verbal:false,somatico:false,material:false,descricao:'',custoPo:0,consumido:false})
+ const [tempoConjuracao,setTempoConjuracao]=useState<'ação'|'ação bônus'|'reação'|'especial'>('ação')
  const [danoConcentracao,setDanoConcentracao]=useState(0)
  const [aberto,setAberto]=useState(false)
  const [erro,setErro]=useState('')
@@ -71,11 +73,19 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
    }
    if(expressao.trim()&&!expressaoMagia2014Valida(expressao)){setErro('Rolagem inválida. Ex.: 2d6+3.');return}
    const novo=lerMagias2014([{nome:n,nivel,classe:rclasse,fonte:refonte,modo:arcanaMistica?'extra':modo,
-     notas:notas.trim(),expressao:expressao.trim(),concentracao:exigeConcentracao,arcanaMistica}])[0]
+     notas:notas.trim(),expressao:expressao.trim(),concentracao:exigeConcentracao,arcanaMistica,
+     componentes,tempoConjuracao}])[0]
    if(!novo||magias.some(m=>m.id===novo.id)){setErro('Magia inválida ou já registrada.');return}
-   salvar([...magias,novo]);setErro('');setNome('');setNotas('');setExpressao('');setExigeConcentracao(false);setArcanaMistica(false);setAberto(false)
+   salvar([...magias,novo]);setErro('');setNome('');setNotas('');setExpressao('');setExigeConcentracao(false);setArcanaMistica(false);setComponentes({verbal:false,somatico:false,material:false,descricao:'',custoPo:0,consumido:false});setTempoConjuracao('ação');setAberto(false)
  }
  function gastar(n:number,magia:RegistroMagiaDnd2014,pacto:boolean,ritual=false){
+   const componentes=magia.componentes
+   if(componentes?.material&&(componentes.custoPo||componentes.consumido)&&
+     !window.confirm('Confira que os componentes materiais foram usados: '+(componentes.descricao||'conforme o PHB 2014')+
+       (componentes.custoPo?' · custo '+componentes.custoPo+' PO':'')+
+       (componentes.consumido?' · consumidos':'')+'. A plataforma NÃO retira moedas/itens automaticamente. Continuar?'))return
+   if(magia.tempoConjuracao==='ação bônus'&&!ritual)
+     setAviso('Lembrete 2014: conjurar magia com ação bônus restringe a outra conjuração no turno a um truque de 1 ação.')
    if(n===0) {
      setAviso(ritual
        ? 'Ritual de '+magia.nome+': reserve o tempo normal +10 minutos; nenhum espaço foi gasto.'
@@ -187,6 +197,39 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
       <input className={campo} value={expressao} maxLength={25} onChange={e=>setExpressao(e.target.value)}
         placeholder="Ex.: 3d6+2"/>
     </label>
+    <div className="space-y-2 rounded-lg border border-(--a-55456e) p-3 sm:col-span-2">
+      <strong className="text-xs">Componentes e tempo (confirme no PHB 2014)</strong>
+      <label className="block text-xs">Tempo de conjuração
+        <select className={campo} value={tempoConjuracao}
+         onChange={e=>setTempoConjuracao(e.target.value as typeof tempoConjuracao)}>
+          {['ação','ação bônus','reação','especial'].map(x=><option key={x} value={x}>{x}</option>)}
+        </select>
+      </label>
+      <div className="flex flex-wrap gap-3 text-xs">
+        {(['verbal','somatico','material'] as const).map((campoTipo,i)=><label key={campoTipo}
+          className="flex min-h-10 items-center gap-2">
+          <input type="checkbox" checked={componentes[campoTipo]}
+            onChange={e=>setComponentes(x=>({...x,[campoTipo]:e.target.checked}))}/>
+          {['Verbal (V)','Somático (S)','Material (M)'][i]}
+        </label>)}
+      </div>
+      {componentes.material&&<div className="grid gap-2 sm:grid-cols-2">
+        <label className="text-xs sm:col-span-2">Descrição do material
+          <input className={campo} maxLength={150} value={componentes.descricao}
+           onChange={e=>setComponentes(x=>({...x,descricao:e.target.value}))}/>
+        </label>
+        <label className="text-xs">Custo do material (PO)
+          <input className={campo} type="number" min={0} max={100000000} step={1}
+           value={componentes.custoPo} onChange={e=>setComponentes(x=>({...x,custoPo:Math.max(0,Math.floor(Number(e.target.value)||0))}))}/>
+        </label>
+        <label className="flex items-center gap-2 text-xs">
+          <input type="checkbox" checked={componentes.consumido}
+            onChange={e=>setComponentes(x=>({...x,consumido:e.target.checked}))}/>
+          Material consumido pela magia
+        </label>
+      </div>}
+      <p className="text-xs text-(--a-c4b6d4)">Esses dados são inseridos manualmente. A plataforma avisa antes de gastar materiais, mas não concede componentes nem retira moedas automaticamente.</p>
+    </div>
     <label className="flex items-start gap-2 text-xs sm:col-span-2">
       <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0" checked={exigeConcentracao}
         onChange={e=>setExigeConcentracao(e.target.checked)}/>
@@ -215,6 +258,13 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
     </div>
     <p className="text-[11px] text-(--a-c4b6d4)">{m.classe} · {nomeLivro(m.fonte)}</p>
     {m.arcanaMistica&&<p className="text-xs font-semibold text-sky-200">Arcana Mística · um uso por descanso longo</p>}
+    {m.componentes&&<p className="text-xs text-(--a-c4b6d4)">
+      Componentes: {m.componentes.verbal?'V ':''}{m.componentes.somatico?'S ':''}{m.componentes.material?'M':''}
+      {m.componentes.material&&m.componentes.descricao?' · '+m.componentes.descricao:''}
+      {m.componentes.custoPo?' · '+m.componentes.custoPo+' PO':''}
+      {m.componentes.consumido?' · consumido':''}
+      {m.tempoConjuracao?' · '+m.tempoConjuracao:''}
+    </p>}
     {m.notas&&<p className="whitespace-pre-wrap text-xs">{m.notas}</p>}
     {m.expressao&&<p className="text-xs font-semibold text-(--a-ed9cd8)">{m.expressao}</p>}
     <label className="flex items-start gap-2 text-xs text-(--a-c4b6d4)">

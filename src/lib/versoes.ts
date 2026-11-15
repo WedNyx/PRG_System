@@ -36,6 +36,7 @@ export const VERSOES: Versao[] = [
       '🔮 Arcana Mística de Bruxo: círculos 6º a 9º, uma conjuração por círculo sem espaços; usos recuperados no descanso longo.',
       '📚 Magias: componentes V/S/M, materiais e custo, tempo de conjuração e magias do Círculo da Terra sempre preparadas sem consumir cota diária.',
       '🛡️ Todas as novas escolhas têm validação, persistência e categorias de permissão. Efeitos condicionais continuam exigindo o livro e decisão do mestre.',
+      '🌳 Árvore de Constelações: manobras, totens, metamagia, pacto e atributos de talentos aparecem como referências a escolhas já registradas, nunca como poderes inventados.',
     ],
   },
   {

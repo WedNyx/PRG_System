@@ -35,6 +35,7 @@ export function aplicarDescanso(s: Sistema, bruto: Partial<DadosFicha>, tipo: Ti
   const max = maximosDosRecursos(s, d)
   const legado2014 = s.id === 'dnd5e-srd' && (s.regraLivroDnd ?? lerLivrosDnd(d.dndLivros).base) === 'phb2014'
   const nivelBardo2014 = legado2014 ? classesDaFicha2014(d).lista.find(c => c.cls.id === 'bardo')?.nivel ?? 0 : 0
+  const nivelFeiticeiro2014 = legado2014 ? classesDaFicha2014(d).lista.find(c => c.cls.id === 'feiticeiro')?.nivel ?? 0 : 0
   const recursos = { ...d.recursos }, mudancas: string[] = []
   const uso = lerUso(d.uso), poderes = lerPoderes(d.poderes)
 
@@ -73,6 +74,21 @@ export function aplicarDescanso(s: Sistema, bruto: Partial<DadosFicha>, tipo: Ti
       if (m !== null && m > 0 && atual < m) { recursos[r.id] = { ...recursos[r.id], atual: m }; mudancas.push(`${r.nome}: ${atual} → ${m}`) }
     }
   }
+  // PHB 2014: Restauração Mística de Feiticeiro nível 20 devolve até
+  // 4 Pontos de Feitiçaria ao fim de CADA descanso curto.
+  // Não completa o recurso antes do nível 20 nem substitui o descanso longo.
+  if (tipo === 'curto' && legado2014 && nivelFeiticeiro2014 >= 20) {
+    const m = max.feiticaria
+    if (m !== null && m > 0) {
+      const atual = Number(recursos.feiticaria?.atual ?? 0) || 0
+      const novo = Math.min(m, Math.max(0, atual) + 4)
+      if (novo > atual) {
+        recursos.feiticaria = { ...recursos.feiticaria, atual: novo }
+        mudancas.push('Restauração Mística (Feiticeiro 20): +'+(novo-atual)+' Pontos de Feitiçaria')
+      }
+    }
+  }
+
   // No D&D 2014, a cura do descanso curto consome Dados de Vida reais.
   // Multiclasse possui dados diferentes; o jogador rola os dados da classe
   // correspondente e informa a cura, sem um d8 fictício automático.

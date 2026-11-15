@@ -16,6 +16,7 @@ export const REQUISITOS_TALENTOS_2014:Record<string,{
   atributo?:string;minimo?:number;alternativa?:string;
   conjurar?:boolean;proficienciaArmadura?:'leve'|'media'|'pesada';
 }> = {
+  'ADEPTO ELEMENTAL':{conjurar:true},
   'ATIRADOR DE MAGIA':{conjurar:true},
   'CONJURADOR DE GUERRA':{conjurar:true},
   'CONJURADOR DE RITUAL':{atributo:'INT',alternativa:'SAB',minimo:13},

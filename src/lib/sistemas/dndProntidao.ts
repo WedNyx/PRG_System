@@ -1,6 +1,7 @@
 import { diagnosticoAtributos2014, marcosIncremento2014 } from './dnd2014Atributos'
 import { xpParaNivel2014 } from './dnd2014Experiencia'
 import { registroEquipamentoAtual2014 } from './dnd2014EquipamentoInicial'
+import { detalhesAntecedente2014, diagnosticarEscolhasAntecedente2014 } from './dnd2014AntecedentesDetalhes'
 import { limitesTalentos2014 } from './dnd2014Talentos'
 /**
  * Checklist de preparação para jogar D&D. É diagnóstico não destrutivo:
@@ -43,6 +44,12 @@ export function avaliarProntidaoDnd(d: DadosFicha, edicao: LivroBaseDnd = lerLiv
     incluir('nivel', 'Nível', 'Informe um nível inteiro de 1 a 20.', 'pendente', 'principal')
 
   if (edicao === 'phb2014') {
+    const det=detalhesAntecedente2014(antecedente)
+    if(det && det.idiomas+det.ferramentasLivres>0) {
+      const pendencias=diagnosticarEscolhasAntecedente2014(d)
+      if(pendencias.length>0)incluir('antecedenteExtras2014','Idiomas e ferramentas do antecedente',
+        pendencias.join(' '),d.dnd2014AtributosBase?'pendente':'conferir','principal')
+    }
     const equipamento=d.dnd2014EquipamentoInicial
     if(!equipamento)
       incluir('equipamentoInicial2014','Equipamento inicial',

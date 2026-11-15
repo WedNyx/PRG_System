@@ -35,6 +35,8 @@ export function validarSuperioridade2014(
    antes.campos?.nivel===depois.campos?.nivel && antes.campos?.classe===depois.campos?.classe)return []
  if(edicao!=='phb2014')return a===b?[]:['Dados de Superioridade 2014 não são editáveis em fichas 2024.']
  if(b===undefined)return []
+ // Valor zerado pode permanecer em uma ficha depois de mudar de arquétipo.
+ if(b===0)return []
  if(!Number.isInteger(b)||b<0)return ['Dados de Superioridade gastos precisam ser inteiros não negativos.']
  const dados=dadosSuperioridade2014(depois as DadosFicha)
  if(!dados||b>dados.maximo)return ['Dados de Superioridade gastos excedem os disponíveis para este Mestre de Batalha.']

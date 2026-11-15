@@ -2,6 +2,7 @@ import { validarVida2014 } from './dnd2014Vitalidade'
 import { validarExperiencia2014 } from './dnd2014Experiencia'
 import { validarEquipamentoInicial2014 } from './dnd2014EquipamentoInicial'
 import { validarEscolhasAntecedente2014 } from './dnd2014AntecedentesDetalhes'
+import {validarInimigoFavorito2014} from './dnd2014PatrulheiroEscolhas'
 import { validarConcentracao2014 } from './dnd2014Concentracao'
 import { validarEscolhasSubclasses2014 } from './dnd2014EscolhasSubclasse'
 import {validarOpcoesTalentos2014,bonusAtributosTalentos2014,OPCOES_TALENTOS_2014} from './dnd2014OpcoesTalentos'
@@ -241,7 +242,7 @@ export function validarAlteracoes2014(
 ): string[] {
   const erros: string[]=[...validarProgressaoAtributos2014(antes,depois,edicao),...validarVida2014(antes,depois,edicao),
     ...validarExperiencia2014(antes,depois,edicao),...validarEquipamentoInicial2014(antes,depois,edicao),
-    ...validarEscolhasAntecedente2014(antes,depois,edicao),...validarConcentracao2014(antes,depois,edicao),
+    ...validarEscolhasAntecedente2014(antes,depois,edicao),...validarInimigoFavorito2014(antes,depois,edicao),...validarConcentracao2014(antes,depois,edicao),
     ...validarEscolhasSubclasses2014(antes,depois,edicao),...validarOpcoesTalentos2014(antes,depois,edicao),
     ...validarArcanasMisticas2014(antes,depois,edicao),...validarOpcoesClasseDnd2014(antes,depois,edicao),...validarSuperioridade2014(antes,depois,edicao)]
   // Novos talentos exigem os atributos finais do livro escolhido. Fichas

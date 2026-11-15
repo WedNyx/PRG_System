@@ -1,5 +1,7 @@
 'use client'
 
+import AtributosProgressaoDnd2014 from './AtributosProgressaoDnd2014'
+import { CUSTOS_2014 } from '@/lib/sistemas/dnd2014Atributos'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { SUBRACAS_2014, RACAS_2014, ANTECEDENTES_2014 } from '@/lib/sistemas/dnd2014Criacao'
 import { subclassesDaClasse2014, subclasseAtivaDnd2014 } from '@/lib/sistemas/dnd2014Subclasses'
@@ -30,9 +32,10 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura }: Pr
   const classeNivel = classesDaFicha2014(d).lista.find(c => c.principal)?.nivel ?? 1
   const selecionada = subclasseAtivaDnd2014(classe, d.dnd2014Subclasse, classeNivel)
   const limiteTalentos = limitesTalentos2014(d)
+  const limiteDisponivel = Math.max(0,limiteTalentos.total-Object.keys(d.dnd2014Incrementos??{}).length)
   const talentosEscolhidos = d.dnd2014Talentos ?? []
   const adicionarTalento = (nome:string) => {
-    if(!nome || talentosEscolhidos.includes(nome) || talentosEscolhidos.length>=limiteTalentos.total)return
+    if(!nome || talentosEscolhidos.includes(nome) || talentosEscolhidos.length>=limiteDisponivel)return
     onChange({...d,dnd2014Talentos:[...talentosEscolhidos,nome]})
   }
   const periciasClasse = periciasClasse2014(classe)
@@ -49,7 +52,12 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura }: Pr
   const precisaEscolher = raca === 'Meio-Elfo' || raca === 'Humano' && escolha === 'Humano Variante'
   const mudarBase = (atr: string, valor: number) => {
     if (!base) return
-    onChange({ ...d, dnd2014AtributosBase: { ...base, [atr]: Math.max(1,Math.min(20,Number.isFinite(valor) ? Math.floor(valor) : 10)) } })
+    const novo=Math.max(1,Math.min(20,Number.isFinite(valor)?Math.floor(valor):10))
+    if(d.dnd2014MetodoAtributos==='pontos') {
+      const valores={...base,[atr]:novo}
+      if(!Object.hasOwn(CUSTOS_2014,novo)||Object.values(valores).reduce((s,v)=>s+(CUSTOS_2014[v]??0),0)>27)return
+    }
+    onChange({ ...d, dnd2014AtributosBase: { ...base, [atr]: novo } })
   }
   const mudarExtras = (pos:number, atr:string) => {
     const x = [...escolhasExtras]
@@ -81,6 +89,7 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura }: Pr
       {sub && <span className="mt-1 block rounded-lg bg-(--s-171325) p-2 text-xs text-(--a-d3adf0)">{sub.detalhe}</span>}
     </label>}
     {antMeta && <p className="rounded-lg bg-(--s-171325) p-2 text-xs"><strong>Antecedente:</strong> {antMeta.descricao}</p>}
+    <AtributosProgressaoDnd2014 d={d} onChange={onChange} somenteLeitura={somenteLeitura} />
     <div className="space-y-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
       <h4 className="text-sm font-semibold text-(--a-d3adf0)">Atributos de criação e bônus de raça (2014)</h4>
       {!base ? <>
@@ -94,7 +103,7 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura }: Pr
           tratados como valores ANTES dos bônus. Para uma ficha antiga com atributos finais, mantenha o modo manual.</p>
       </> : <>
         <p className="text-xs text-(--a-c4b6d4)">Edite os valores antes da raça. A tabela mostra bônus e total
-          automaticamente. Os mesmos bônus não serão somados outra vez na ficha.</p>
+          automaticamente, incluindo incrementos registrados e Campeão Primitivo no nível 20 de Bárbaro. Os mesmos bônus não serão somados outra vez na ficha.</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           {ATRIBUTOS_DND.map(a => <label key={a} className="rounded-lg border border-(--a-55456e) p-2 text-center text-xs">
             <span className="block font-semibold">{nomes[a]}</span>
@@ -152,7 +161,7 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura }: Pr
       className="space-y-2 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
       <h4 className="text-sm font-semibold text-(--a-d3adf0)">✨ Talentos · Livro do Jogador 2014</h4>
       <p className="text-xs text-(--a-c4b6d4)">
-        {talentosEscolhidos.length} de {limiteTalentos.total} escolhas possíveis
+        {talentosEscolhidos.length} de {limiteDisponivel} escolhas possíveis após os incrementos em atributos
         ({limiteTalentos.aumentos} no lugar de Incremento de Atributo
         {limiteTalentos.variante>0?' + 1 do Humano Variante':''}).
         O mestre deve confirmar que a campanha usa a regra opcional de talentos.
@@ -166,7 +175,7 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura }: Pr
           onClick={()=>onChange({...d,dnd2014Talentos:talentosEscolhidos.filter(x=>x!==nome)})}
           aria-label={'Remover talento '+nome}>Remover</button>}
       </div>)}
-      {!somenteLeitura && talentosEscolhidos.length<limiteTalentos.total &&
+      {!somenteLeitura && talentosEscolhidos.length<limiteDisponivel &&
         <label className="block text-xs">Adicionar talento permitido
           <select value="" className={classInput} onChange={e=>adicionarTalento(e.target.value)}>
             <option value="">Escolha um dos 42 talentos do PHB 2014</option>

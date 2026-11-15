@@ -100,6 +100,12 @@ export type DadosFicha = {
   dndLivros?: import('./dndLivros').SelecaoLivrosDnd
   /** Atributos antes dos bônus raciais na criação 2014. Ausência = ficha antiga com totais manuais. */
   dnd2014AtributosBase?: Record<string, number>
+  /** Resultado bruto do Dado de Vida por classe:nível; ausência = média fixa. */
+  dnd2014VidaRolada?: Record<string,number>
+  dnd2014MetodoAtributos?: import('./dnd2014Atributos').MetodoAtributos2014
+  dnd2014RolagensAtributos?: number[][]
+  /** Cada marco classe:nível concede +2 ou +1/+1, no lugar de um talento. */
+  dnd2014Incrementos?: Record<string, import('./dnd2014Atributos').Incremento2014>
   /** Aumentos variáveis de atributo 2014 (Meio-Elfo / Humano Variante). */
   dnd2014AtributosExtras?: string[]
   /** Perícias selecionadas na classe inicial do SRD 5.1. */

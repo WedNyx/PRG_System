@@ -1,3 +1,5 @@
+import { validarVida2014 } from './dnd2014Vitalidade'
+import { bonusIncrementos2014, validarProgressaoAtributos2014 } from './dnd2014Atributos'
 /**
  * Regras abertas do D&D 5e original (2014), SRD 5.1 — CC BY 4.0.
  * https://www.dndbeyond.com/srd
@@ -108,11 +110,16 @@ export function aumentosRaciais2014(
   }
   return { bonus: out, pendencias }
 }
-export function atributosEfetivos2014(d: Pick<DadosFicha,'campos' | 'dnd2014AtributosBase' | 'dnd2014AtributosExtras'>): Record<AtributoDnd,number> | null {
+export function atributosEfetivos2014(d: Pick<DadosFicha,'campos' | 'dnd2014AtributosBase' | 'dnd2014AtributosExtras' | 'dnd2014Incrementos' | 'dnd2014Multiclasse'>): Record<AtributoDnd,number> | null {
   const base = lerAtributosBase2014(d.dnd2014AtributosBase)
   if (!base) return null // ficha antiga: os atributos registrados JÁ são o valor final
   const x = aumentosRaciais2014(d.campos.especie,d.campos.subraca2014,d.dnd2014AtributosExtras)
-  return Object.fromEntries(ATRIBUTOS_DND.map(a => [a,Math.min(30,base[a] + x.bonus[a])])) as Record<AtributoDnd,number>
+  const incrementos = bonusIncrementos2014(d)
+  const campeaoPrimitivo=classesDaFicha2014(d).lista.some(c=>c.cls.id==='barbaro'&&c.nivel===20)
+  return Object.fromEntries(ATRIBUTOS_DND.map(a => {
+    const valor=base[a]+x.bonus[a]+(incrementos[a]??0)
+    return [a,campeaoPrimitivo && (a==='FOR'||a==='CON') ? Math.min(24,valor+4) : Math.min(30,valor)]
+  })) as Record<AtributoDnd,number>
 }
 
 /** Regras abertas de 2014. A característica de classe particular e subclasse continuam manuais. */
@@ -209,7 +216,13 @@ export function validarAlteracoes2014(
   antes: Partial<DadosFicha>, depois: Partial<DadosFicha>, edicao: 'phb2014' | 'phb2024',
   ignorarRequisitos=false,
 ): string[] {
-  const erros: string[]=[]
+  const erros: string[]=[...validarProgressaoAtributos2014(antes,depois,edicao),...validarVida2014(antes,depois,edicao)]
+  if (edicao === 'phb2014' && depois.dnd2014Incrementos && depois.dnd2014AtributosBase) {
+    const bonus=bonusIncrementos2014(depois as DadosFicha)
+    const raciais=aumentosRaciais2014(depois.campos?.especie,depois.campos?.subraca2014,depois.dnd2014AtributosExtras).bonus
+    if (ATRIBUTOS_DND.some(a=>(bonus[a]??0)>0 && depois.dnd2014AtributosBase![a]+raciais[a]+bonus[a]>20))
+      erros.push('Incrementos de Atributo não podem elevar um atributo acima de 20.')
+  }
   const alterou=(k: 'dnd2014AtributosBase'|'dnd2014AtributosExtras'|'dnd2014PericiasClasse'|'dnd2014PericiasRaciais') =>
     JSON.stringify(antes[k]??null)!==JSON.stringify(depois[k]??null)
   const chaves=['dnd2014AtributosBase','dnd2014AtributosExtras','dnd2014PericiasClasse','dnd2014PericiasRaciais','dnd2014Subclasse','dnd2014Subclasses','dnd2014Multiclasse'] as const

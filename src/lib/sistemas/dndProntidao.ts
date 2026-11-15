@@ -1,3 +1,5 @@
+import { diagnosticoAtributos2014, marcosIncremento2014 } from './dnd2014Atributos'
+import { limitesTalentos2014 } from './dnd2014Talentos'
 /**
  * Checklist de preparação para jogar D&D. É diagnóstico não destrutivo:
  * não grava características, não concede bônus, não bloqueia rascunhos.
@@ -39,6 +41,14 @@ export function avaliarProntidaoDnd(d: DadosFicha, edicao: LivroBaseDnd = lerLiv
     incluir('nivel', 'Nível', 'Informe um nível inteiro de 1 a 20.', 'pendente', 'principal')
 
   if (edicao === 'phb2014') {
+    for(const [i,detalhe] of diagnosticoAtributos2014(d).entries())
+      incluir('metodoAtributos2014-'+i,'Distribuição de atributos',detalhe,'pendente','atributos')
+    const marcos=marcosIncremento2014(d)
+    const usados=Object.keys(d.dnd2014Incrementos??{}).filter(id=>marcos.some(m=>m.id===id)).length+
+      Math.max(0,(d.dnd2014Talentos?.length??0)-limitesTalentos2014(d).variante)
+    if(usados<marcos.length) incluir('incrementos2014','Incrementos de Atributo',
+      `${marcos.length-usados} escolha(s) de incremento ou talento ainda sem registro. Fichas antigas: confira se os totais manuais já incluem esses benefícios antes de automatizar.`,
+      d.dnd2014AtributosBase?'pendente':'conferir','atributos')
     if (especie && !RACAS_2014.some(x => x.nome === especie))
       incluir('raca2014', 'Raça incompatível', 'Esta raça não consta no Livro do Jogador 2014 selecionado.', 'pendente', 'principal')
     if (antecedente && !ANTECEDENTES_2014.some(x => x.nome === antecedente))

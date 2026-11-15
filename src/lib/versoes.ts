@@ -27,6 +27,16 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.34.1', data: '2026-11-14',
+    titulo: 'D&D 2014: atributos guiados e progressão por classe',
+    itens: [
+      'Criação com conjunto padrão, compra de 27 pontos e seis rolagens de 4d6 com descarte do menor; distribuição incompleta sinalizada no checklist.',
+      'Incrementos de Atributo por nível individual de classe, com limite de 20 e controle para não consumir o mesmo benefício com pontos e talentos.',
+      'PV por nível com média fixa ou resultado rolado; Constituição retroativa, mínimo de 1 PV por nível e totais manuais preservados.',
+      'Novos campos respeitam as permissões da campanha e são preservados ao salvar e reabrir a ficha. Homologação com banco e celular ainda pendente.',
+    ],
+  },
+  {
     versao: '0.34.0', data: '2026-11-14',
     titulo: 'Fase 2: quatro árvores verticais integradas de D&D',
     itens: [

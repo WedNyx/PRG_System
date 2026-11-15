@@ -2,6 +2,7 @@
 
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { lerItens, lerUso } from '@/lib/sistemas/inventario'
+import { KITS_CLASSES_2014, escolhasKitClasse2014Validas } from '@/lib/sistemas/dnd2014EquipamentoOpcoes'
 import { escolherKitInicial2014, escolherOuroInicial2014, formulaRiquezaInicial2014,
   registroEquipamentoAtual2014, totalRiquezaInicial2014 } from '@/lib/sistemas/dnd2014EquipamentoInicial'
 
@@ -16,6 +17,8 @@ export default function EquipamentoInicialDnd2014({d,onChange,somenteLeitura,irP
   const atual=registroEquipamentoAtual2014(d)
   const inventario=lerItens(d.itens)
   const carteira=lerUso(d.uso).carteira
+  const kit=KITS_CLASSES_2014[classe]
+  const kitCompleto=escolhasKitClasse2014Validas(classe,registro?.escolhas,true)
   const ouro=registro?.modo==='ouro' ? totalRiquezaInicial2014(registro.classe,registro.dados??[]) : null
   const podeEscolher=!!tabela&&!!antecedente&&!somenteLeitura
   const confirmarTroca=()=>!registro||confirm('Alterar o método de equipamento inicial? Itens e moedas já registrados no inventário não serão removidos.')
@@ -41,9 +44,26 @@ export default function EquipamentoInicialDnd2014({d,onChange,somenteLeitura,irP
       <p className="text-xs">Método: equipamentos do <strong>{registro.classe}</strong> + antecedente <strong>{registro.antecedente}</strong>.
         Confira as escolhas oferecidas em cada capítulo e lance cada arma, armadura, ferramenta e kit no Inventário.
         Não adicionamos automaticamente itens presumidos ou duplicados.</p>
-      <p className="text-xs text-(--a-cfc0df)">Itens no inventário: {inventario.length}. O registro não é uma concessão automática de itens.</p>
+      {kit&&registro.classe===classe&&<div className="space-y-2">
+        <p className="text-xs font-semibold">Opções de equipamento de {classe} (capítulo 3)</p>
+        {kit.grupos.map(grupo=><label key={grupo.id} className="block text-xs">{grupo.titulo}
+          <select value={registro.escolhas?.[grupo.id]??''} disabled={somenteLeitura}
+            onChange={e=>onChange({...d,dnd2014EquipamentoInicial:{
+              ...registro,conferido:false,escolhas:{...registro.escolhas,[grupo.id]:e.target.value}}})}
+            className="mt-1 min-h-10 w-full rounded-lg border border-(--a-55456e) bg-(--s-151123) p-2 text-white">
+            <option value="">Selecione a alternativa...</option>
+            {grupo.opcoes.map(op=><option key={op} value={op}>{op}</option>)}
+          </select>
+        </label>)}
+        {kit.fixos.length>0&&<p className="text-xs">Itens fixos da classe: {kit.fixos.join(' · ')}.</p>}
+        <p className="text-xs text-(--a-cfc0df)">
+          Confira ainda os itens concedidos pelo antecedente <strong>{antecedente}</strong> na seção dele no livro.
+          Opções genéricas de arma ou instrumento precisam ser especificadas no Inventário.</p>
+      </div>}
+      <p className="text-xs text-(--a-cfc0df)">Itens no inventário: {inventario.length}.
+        Selecionar uma alternativa aqui não adiciona nem duplica itens automaticamente.</p>
       <label className="flex items-start gap-2 text-xs"><input type="checkbox" checked={atual&&registro.conferido===true}
-        disabled={somenteLeitura||inventario.length===0||registro.classe!==classe||registro.antecedente!==antecedente}
+        disabled={somenteLeitura||inventario.length===0||!kitCompleto||registro.classe!==classe||registro.antecedente!==antecedente}
         onChange={e=>onChange({...d,dnd2014EquipamentoInicial:{...registro,conferido:e.target.checked}})}/>
         Já registrei os equipamentos da classe e do antecedente no Inventário conforme o livro.</label>
     </div>}

@@ -34,7 +34,7 @@ describe('Regressão edição correta da ficha e árvore',()=>{
    expect(antigos.some(x=>x.titulo==='Raça: Tiferino')).toBe(true)
    expect(antigos.some(x=>x.titulo==='Antecedente: Forasteiro')).toBe(true)
    const novos=hexagonosOficiaisDnd(d,'phb2024')
-   expect(novos.some(x=>x.id==='2014-raca'||x.titulo.startsWith('Inimigo Favorito'))).toBe(false)
+   expect(novos.some(x=>x.id.startsWith('2014-'))).toBe(false) // 2024 pode ter característica homônima, mas não o nó da edição legada
  })
  it('mostra dentro da ficha as explicações do Patrulheiro, Tiferino e Forasteiro',()=>{
    const d=ranger()

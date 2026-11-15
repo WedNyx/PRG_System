@@ -46,6 +46,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
    normalizar(m.nome).includes(normalizar(buscaCatalogo))).slice(0,100)
 
  const rclasse=classe||classeAtual?.cls.id||''
+ const modoEsperado=(id:string)=>['mago','clerigo','druida','paladino'].includes(id)?'preparada':'conhecida'
  const maxSlot=(n:number)=>Math.max(0,Number(c.recursosMax['espacos_'+n]??0))
  const atualSlot=(n:number)=>Math.max(0,Number(d.recursos['espacos_'+n]?.atual??0))
  function salvar(itens:RegistroMagiaDnd2014[]) {
@@ -57,6 +58,9 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
    const n=nome.trim()
    if(!n||!rclasse){setErro('Escreva o nome da magia e escolha sua classe.');return}
    if(nivel>0&&modo!=='extra'&&nivel>permissao){setErro('A classe ainda não alcançou o nível dessa magia.');return}
+   if(nivel>0&&modo!=='extra'&&modo!==modoEsperado(rclasse)&&rclasse!=='mago'){
+     setErro('Esta classe registra suas magias de 2014 como '+modoEsperado(rclasse)+'.');return
+   }
    if(expressao.trim()&&!expressaoMagia2014Valida(expressao)){setErro('Rolagem inválida. Ex.: 2d6+3.');return}
    const novo=lerMagias2014([{nome:n,nivel,classe:rclasse,fonte:refonte,modo,
      notas:notas.trim(),expressao:expressao.trim(),concentracao:exigeConcentracao}])[0]
@@ -136,7 +140,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
       <input className={campo} value={nome} maxLength={100} onChange={e=>setNome(e.target.value)} placeholder="Ex.: Mísseis Mágicos"/>
     </label>
     <label className="text-xs">Classe
-      <select className={campo} value={rclasse} onChange={e=>setClasse(e.target.value)}>
+      <select className={campo} value={rclasse} onChange={e=>{setClasse(e.target.value);setModo(modoEsperado(e.target.value))}}>
         {lista.map(x=><option key={x.cls.id} value={x.cls.id}>{x.cls.nome} · nível {x.nivel}</option>)}
       </select>
     </label>
@@ -145,6 +149,9 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
         {Array.from({length:10},(_,i)=><option key={i} value={i}>{i===0?'Truque':i+'º nível'}</option>)}
       </select>
     </label>
+    <p className="text-xs sm:col-span-2 text-(--a-c4b6d4)">Classe {classeAtual?.cls.nome??'não selecionada'}:
+      magias de nível 1+ usam {modoEsperado(rclasse)==='preparada'?'preparação diária':'lista de conhecidas'}.
+      No Mago, magias conhecidas ficam no grimório e as preparadas têm limite diário.</p>
     <label className="text-xs">Como foi recebida
       <select className={campo} value={modo} onChange={e=>setModo(e.target.value as typeof modo)}>
         <option value="conhecida">Conhecida pela classe</option>

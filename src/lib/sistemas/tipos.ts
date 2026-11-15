@@ -128,6 +128,8 @@ export type DadosFicha = {
   dnd2014Magias?: import('./dnd2014Magias').RegistroMagiaDnd2014[]
   /** Círculos de Arcana Mística já conjurados; descanso longo limpa os usos. */
   dnd2014ArcanasUsadas?: number[]
+  /** Dados de Superioridade gastos do Mestre de Batalha (2014). */
+  dnd2014DadosSuperioridadeUsados?: number
   /** Dádiva do Pacto e Metamagia por níveis das classes de 2014. */
   dnd2014OpcoesClasse?: import('./dnd2014OpcoesClasse').OpcoesClasseDnd2014
   /** Concentração ativa, sem aplicação automática de efeitos de magias comerciais. */

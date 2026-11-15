@@ -100,6 +100,16 @@ export type DadosFicha = {
   dndLivros?: import('./dndLivros').SelecaoLivrosDnd
   /** Atributos antes dos bônus raciais na criação 2014. Ausência = ficha antiga com totais manuais. */
   dnd2014AtributosBase?: Record<string, number>
+  /** Resultado bruto do Dado de Vida por classe:nível; ausência = média fixa. */
+  dnd2014VidaRolada?: Record<string,number>
+  /** Alternativa de equipamento inicial de 2014: kits de classe/antecedente ou ouro da classe. */
+  dnd2014EquipamentoInicial?: import('./dnd2014EquipamentoInicial').RegistroEquipamento2014
+  /** Proficiências selecionáveis de idioma e ferramenta do antecedente 2014. */
+  dnd2014AntecedenteExtras?: import('./dnd2014AntecedentesDetalhes').EscolhasAntecedente2014
+  dnd2014MetodoAtributos?: import('./dnd2014Atributos').MetodoAtributos2014
+  dnd2014RolagensAtributos?: number[][]
+  /** Cada marco classe:nível concede +2 ou +1/+1, no lugar de um talento. */
+  dnd2014Incrementos?: Record<string, import('./dnd2014Atributos').Incremento2014>
   /** Aumentos variáveis de atributo 2014 (Meio-Elfo / Humano Variante). */
   dnd2014AtributosExtras?: string[]
   /** Perícias selecionadas na classe inicial do SRD 5.1. */
@@ -108,6 +118,8 @@ export type DadosFicha = {
   dnd2014PericiasRaciais?: string[]
   /** Arquétipo/subclasse do Livro do Jogador 2014, escolhido no nível correto. */
   dnd2014Subclasse?: string
+  /** Subclasses das classes secundárias em 2014, por id de classe; preserva o campo legado da classe inicial. */
+  dnd2014Subclasses?: Record<string, string>
   /** Níveis em outras classes na multiclasse 2014 (não usa a tabela 2024). */
   dnd2014Multiclasse?: Record<string,number>
   /** Magias de D&D 2014, registradas separadamente do catálogo SRD 2024. */

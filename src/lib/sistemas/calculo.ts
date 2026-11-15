@@ -1,3 +1,4 @@
+import { pvPorNivel2014 } from './dnd2014Vitalidade'
 import { avaliarSeguro, type Variaveis } from './formula'
 import { imagemDaPlataforma } from '../nuvem/validacao'
 import type { DadosFicha, Sistema } from './tipos'
@@ -93,6 +94,14 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     // Inventário só entra quando existe (fichas antigas continuam iguais) e sempre limpo/validado.
     ...(d.itens !== undefined ? { itens: lerItens(d.itens) } : {}), ...(d.uso !== undefined ? { uso: lerUso(d.uso) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndLivros !== undefined ? { dndLivros: lerLivrosDnd(d.dndLivros) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014VidaRolada !== undefined ? {dnd2014VidaRolada:structuredClone(d.dnd2014VidaRolada)} : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014AntecedenteExtras !== undefined ?
+      {dnd2014AntecedenteExtras:structuredClone(d.dnd2014AntecedenteExtras)} : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014EquipamentoInicial !== undefined ?
+      {dnd2014EquipamentoInicial:structuredClone(d.dnd2014EquipamentoInicial)} : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014MetodoAtributos !== undefined ? { dnd2014MetodoAtributos:d.dnd2014MetodoAtributos } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014RolagensAtributos !== undefined ? { dnd2014RolagensAtributos:structuredClone(d.dnd2014RolagensAtributos) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014Incrementos !== undefined ? { dnd2014Incrementos:structuredClone(d.dnd2014Incrementos) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014AtributosBase !== undefined && lerAtributosBase2014(d.dnd2014AtributosBase)
       ? { dnd2014AtributosBase: lerAtributosBase2014(d.dnd2014AtributosBase)! } : {}),
     ...(s.id === 'dnd5e-srd' && Array.isArray(d.dnd2014AtributosExtras) ?
@@ -109,6 +118,9 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
           typeof x==='string' && TALENTOS_PHB_2014.includes(x)))].slice(0,25) } : {}),
     ...(s.id === 'dnd5e-srd' && typeof d.dnd2014Subclasse === 'string' ?
       { dnd2014Subclasse: d.dnd2014Subclasse.slice(0,64) } : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014Subclasses && typeof d.dnd2014Subclasses === 'object' && !Array.isArray(d.dnd2014Subclasses) ?
+      { dnd2014Subclasses: Object.fromEntries(Object.entries(d.dnd2014Subclasses)
+        .filter(([chave,valor]) => chave.length<=40 && typeof valor==='string' && valor.length<=64)) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014Multiclasse !== undefined ?
       { dnd2014Multiclasse: lerMulticlasseDnd(d.dnd2014Multiclasse, idDe(d.campos?.classe)) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014Magias !== undefined ? {dnd2014Magias:lerMagias2014(d.dnd2014Magias)} : {}),
@@ -213,18 +225,9 @@ export function calcular(s: Sistema, d: DadosFicha, opcoes: { efeitosDnd?: boole
   const derivados: Record<string, number | null> = {}
   const pvMulticlasse2014 = (): number | null => {
     if (s.id !== 'dnd5e-srd' || edicao !== 'phb2014') return null
-    const { lista, total } = classesDaFicha2014(d)
-    if (lista.length < 2) return null
-    const inicial = lista.find(c => c.principal)
-    if (!inicial) return null
-    const mod = mods.CON ?? 0
-    const media = (dv: number) => Math.floor(dv / 2) + 1
-    const extras = lista.reduce((acc, c) => acc + (c.principal
-      ? Math.max(0, c.nivel - 1) * media(c.cls.dv) : c.nivel * media(c.cls.dv)), 0)
-    // Nível 1: dado cheio da classe inicial. Demais níveis: média do dado da classe
-    // que ganhou o nível. CON por nível + bônus racial confirmado (Anão da Colina).
-    return inicial.cls.dv + extras + total * mod +
-      (vars.dnd_pv_extra ?? 0) + (vars.robusto ?? 0) * total
+    const {lista,total}=classesDaFicha2014(d)
+    if(!lista.length)return null
+    return pvPorNivel2014(d,mods.CON??0,(vars.dnd_pv_extra??0)+(vars.robusto??0)*total)
   }
   const calcDerivados = () => {
     for (const x of s.derivados) {

@@ -2,10 +2,12 @@ import { NextRequest } from 'next/server'
 import { apelidoDe, ator, buscarFicha, linkCampanha, mestresDe, notificar, participantes, checarOrigem, lerJson, ok, papelNaCampanha, q, regrasDoJogador, registrar, rest, rpc, rota, ErroApi, type FichaRow } from '@/lib/nuvem/servidor'
 import { isUuid, normalizarPermissoes, normalizarExcecoes, podeAdministrar, validarFichaDados, isModelo } from '@/lib/nuvem/validacao'
 import { diferencas, aplicar, separarPorRegra, resumoMudanca, type Mudanca } from '@/lib/nuvem/categorias'
+import { agruparRiquezaInicial2014 } from '@/lib/nuvem/riquezaInicial2014Permissoes'
 import type { Campo } from '@/lib/campanhas/permissoes'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { normalizarFicha } from '@/lib/sistemas/calculo'
 import { lerArvore } from '@/lib/sistemas/arvore'
+import { alterouDefinicaoArvore, validarDesbloqueiosArvore } from '@/lib/sistemas/arvorePermissoes'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { lerConfiguracaoProgressao } from '@/lib/sistemas/modoProgressao'
 import { lerEscolhasDnd, validarAlteracoesEscolhasDnd } from '@/lib/sistemas/dnd2024Ficha'
@@ -55,7 +57,7 @@ function semAprovacao<T extends Record<string, string>>(r: T): T {
 
 /** Dono vê sempre; mestre/co-mestre vê todas as fichas da campanha (NPCs só eles). */
 export const GET = rota<Ctx>(async (req, { params }) => {
-  const { f, eu, dono, admin } = await carregar(req, (await params).id)
+  const { f, eu, dono, admin, espectador } = await carregar(req, (await params).id)
   if (f.npc ? !admin : (!dono && !admin)) throw new ErroApi(404, 'Ficha não encontrada.')
   let regras = null, pendentes: string[] = [], pedido: Pick<Mudanca, 'caminho' | 'depois'>[] = []
   if (f.campanha_id && !admin) {
@@ -66,7 +68,8 @@ export const GET = rota<Ctx>(async (req, { params }) => {
     // O que o jogador pediu e ainda espera o mestre: a ficha mostra esses valores (sem isso, ao recarregar parecia que não tinha salvo).
     pedido = (p?.mudancas ?? []).map(m => ({ caminho: m.caminho, depois: m.depois }))
   }
-  const podeEditar = f.campanha_id ? (admin || (dono && f.status !== 'recusada' && !f.bloqueada)) : dono
+  // Um espectador que ainda seja dono de uma ficha antiga vê, mas não edita.
+  const podeEditar = f.campanha_id ? (admin || (dono && !espectador && f.status !== 'recusada' && !f.bloqueada)) : dono
   const [configCampanha] = f.campanha_id && f.sistema === 'dnd5e-srd'
     ? await rest<{ config_progressao?: unknown }[]>(`prg_campanhas?select=config_progressao&id=eq.${q(f.campanha_id)}&limit=1`).catch(() => [])
     : []
@@ -182,6 +185,13 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     if (antes.length !== depois.length || antes.some(x => !depois.includes(x))) throw new ErroApi(403, 'Só o mestre concede ou retira hexágonos sem custo.')
   }
 
+  // Mesmo com permissão livre para "habilidades", a definição dos nós, pontos e
+  // concessões da árvore de campanha D&D só pode ser alterada pelo mestre.
+  if (f.sistema === 'dnd5e-srd' && f.campanha_id && !admin &&
+      alterouDefinicaoArvore((f.dados as Partial<DadosFicha>)?.arvore, (v.valor.dados as Partial<DadosFicha>)?.arvore)) {
+    throw new ErroApi(403, 'Somente o mestre pode criar, editar ou excluir habilidades da árvore, conceder pontos e mudar concessões.')
+  }
+
   // Criação livre: só o mestre liga; o dono pode desligar (“Terminei a criação”).
   if (f.campanha_id && !admin) {
     const antes = (f.dados as Partial<DadosFicha> | null)?.criacaoLivre === true
@@ -202,7 +212,8 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
     const antes = s ? normalizarFicha(s, f.dados as Partial<DadosFicha>) as unknown as Record<string, unknown> : (f.dados ?? {})
     if (s) v.valor.dados = normalizarFicha(s, v.valor.dados as Partial<DadosFicha>) as unknown as Record<string, unknown>
     f.dados = antes
-    const mudancas = diferencas(f.sistema, antes, v.valor.dados)
+    // Ouro de criação e método de equipamento precisam da MESMA autorização do mestre.
+    const mudancas = agruparRiquezaInicial2014(f.sistema, antes, v.valor.dados, diferencas(f.sistema, antes, v.valor.dados))
     if (admin) { salvas = mudancas; final = v.valor.dados }
     else {
       if (f.status === 'recusada') throw new ErroApi(403, 'Esta ficha foi recusada pelo mestre.')
@@ -261,6 +272,19 @@ export const PUT = rota<Ctx>(async (req, { params }) => {
 
     }
     if (erros.length) throw new ErroApi(400, 'A escolha não foi liberada no nível autorizado: ' + erros.join(' '))
+  }
+
+  // O jogador pode desbloquear nós previamente criados, mas não pode
+  // forçar requisitos, nível, pontos ou concessões por meio de JSON manual.
+  // A validação usa apenas a versão EFETIVAMENTE autorizada após aplicar
+  // permissões; mudanças que aguardam aprovação não contam como liberadas.
+  if (f.sistema === 'dnd5e-srd' && f.campanha_id && !admin) {
+    const autorizado = final as Partial<DadosFicha>
+    const erroArvore = validarDesbloqueiosArvore(
+      (f.dados as Partial<DadosFicha>).arvore, autorizado.arvore,
+      { campos: autorizado.campos ?? {}, dndEscolhas: autorizado.dndEscolhas, dndMulticlasse: autorizado.dndMulticlasse },
+    )
+    if (erroArvore) throw new ErroApi(403, erroArvore)
   }
 
   let versao = f.versao

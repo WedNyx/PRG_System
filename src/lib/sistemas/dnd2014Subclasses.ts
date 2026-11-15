@@ -76,22 +76,52 @@ export function subclasseAtivaDnd2014(classe:unknown,id:unknown,nivel:unknown):S
   const n=Number(nivel)
   return sub && Number.isInteger(n) && n>=sub.nivel ? sub : null
 }
+/** Identifica a subclasse pertencente a cada classe real do personagem 2014.
+ * `dnd2014Subclasse` continua sendo a escolha da classe inicial para
+ * preservar fichas anteriores à estrutura por classe.
+ */
+export function subclasseDaFicha2014(
+  d: {campos:Record<string,string|number>; dnd2014Subclasse?:string;
+    dnd2014Subclasses?:Record<string,string>; dnd2014Multiclasse?:Record<string,number>},
+  classeId: string,
+): SubclasseDnd2014 | null {
+  const c=classesDaFicha2014(d).lista.find(x=>x.cls.id===classeId)
+  if(!c)return null
+  const id=c.principal ? d.dnd2014Subclasse : d.dnd2014Subclasses?.[classeId]
+  return subclasseAtivaDnd2014(c.cls.nome,id,c.nivel)
+}
+
 export function validarSubclasseDnd2014(
-  antes: {campos?:Record<string,string|number>;dnd2014Subclasse?:string;dnd2014Multiclasse?:Record<string,number>},
-  depois: {campos?:Record<string,string|number>;dnd2014Subclasse?:string;dnd2014Multiclasse?:Record<string,number>},
+  antes: {campos?:Record<string,string|number>;dnd2014Subclasse?:string;
+    dnd2014Subclasses?:Record<string,string>;dnd2014Multiclasse?:Record<string,number>},
+  depois: {campos?:Record<string,string|number>;dnd2014Subclasse?:string;
+    dnd2014Subclasses?:Record<string,string>;dnd2014Multiclasse?:Record<string,number>},
 ):string[] {
   if(antes.dnd2014Subclasse===depois.dnd2014Subclasse &&
+    JSON.stringify(antes.dnd2014Subclasses??{})===JSON.stringify(depois.dnd2014Subclasses??{}) &&
     antes.campos?.classe===depois.campos?.classe &&
     antes.campos?.nivel===depois.campos?.nivel &&
     JSON.stringify(antes.dnd2014Multiclasse??{})===JSON.stringify(depois.dnd2014Multiclasse??{})) return []
-  const id=depois.dnd2014Subclasse
-  if(!id)return []
+
   // PHB 2014, capítulo 6: uma subclasse é liberada por nível NA CLASSE,
-  // não pelo nível total da personagem multiclasse.
-  const nivelInicial=classesDaFicha2014({
+  // nunca pelo nível total do personagem multiclasse.
+  const classes=classesDaFicha2014({
     campos: depois.campos ?? {},
     dnd2014Multiclasse: depois.dnd2014Multiclasse,
-  }).lista.find(c=>c.principal)?.nivel ?? 0
-  return subclasseAtivaDnd2014(depois.campos?.classe,id,nivelInicial)?[]
-    : ['A subclasse escolhida não existe para esta classe ou ainda não está disponível no nível da classe inicial do D&D 2014.']
+  }).lista
+  const principal=classes.find(c=>c.principal)
+  const erros:string[]=[]
+  if (depois.dnd2014Subclasse && (!principal ||
+    !subclasseAtivaDnd2014(principal.cls.nome,depois.dnd2014Subclasse,principal.nivel)))
+    erros.push('A subclasse inicial não existe para esta classe ou ainda não está disponível no nível da classe inicial do D&D 2014.')
+
+  const extras=depois.dnd2014Subclasses
+  if(extras!==undefined && (!extras||typeof extras!=='object'||Array.isArray(extras)))
+    return [...erros,'As subclasses secundárias de D&D 2014 devem ser registradas por classe.']
+  for(const [id,sub] of Object.entries(extras??{})) {
+    const c=classes.find(x=>x.cls.id===id&&!x.principal)
+    if(!c || typeof sub!=='string' || !subclasseAtivaDnd2014(c.cls.nome,sub,c.nivel))
+      erros.push('Subclasse secundária incompatível com a classe ou com o nível: '+id+'.')
+  }
+  return erros
 }

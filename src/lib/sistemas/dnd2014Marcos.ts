@@ -74,5 +74,48 @@ export const MARCOS_CLASSES_2014: Record<string, MarcoClasse2014[]> = {
   [18,'Maestria em Magia'],[20,'Magias de Assinatura'],
  ]),
 }
-export const marcosDaClasse2014 = (classe: unknown): MarcoClasse2014[] =>
-  typeof classe === 'string' ? MARCOS_CLASSES_2014[classe] ?? [] : []
+/** Incrementos são escolhas a cada nível DE CLASSE (cap. 3 e 6), não pelo nível
+ * total do personagem. São apenas referências — bônus reais em dnd2014Atributos.
+ */
+export const NIVEIS_INCREMENTO_CLASSES_2014:Record<string,readonly number[]>={
+  'Guerreiro':[4,6,8,12,14,16,19],
+  'Ladino':[4,8,10,12,16,19],
+}
+const GERAL_INCREMENTO_2014=[4,8,12,16,19]
+
+/** Marcos adicionais relevantes das tabelas de progressão do Livro do Jogador
+ * 2014 que antes não apareciam na Árvore. Regras e efeitos não são concedidos
+ * por simples exibição; perícias e recursos automáticos seguem seu motor.
+ */
+const COMPLEMENTOS_2014:Record<string,Entrada[]>={
+  'Bárbaro':[[13,'Crítico Brutal aprimorado'],[17,'Crítico Brutal superior']],
+  'Bardo':[[9,'Canção de Descanso aprimorada'],[10,'Especialização adicional'],[13,'Canção de Descanso aprimorada (d10)'],
+    [14,'Segredos Mágicos adicionais'],[17,'Canção de Descanso aprimorada (d12)'],[18,'Segredos Mágicos adicionais']],
+  'Clérigo':[[6,'Canalizar Divindade (2 usos)'],[8,'Destruir Mortos-Vivos aprimorado'],
+    [11,'Destruir Mortos-Vivos aprimorado'],[14,'Destruir Mortos-Vivos aprimorado'],
+    [17,'Destruir Mortos-Vivos aprimorado'],[18,'Canalizar Divindade (3 usos)']],
+  'Druida':[[4,'Forma Selvagem (natação)'],[8,'Forma Selvagem (voo)']],
+  'Guerreiro':[[13,'Indomável (2 usos)'],[17,'Indomável (3 usos)']],
+  'Monge':[[4,'Queda Lenta'],[6,'Ataques de Ki com armas'],[7,'Quietude da Mente'],
+    [10,'Pureza Corporal'],[13,'Língua do Sol e da Lua'],[15,'Corpo Atemporal'],[18,'Corpo Vazio']],
+  'Paladino':[[3,'Saúde Divina'],[18,'Aura de Proteção e Coragem ampliada']],
+  'Patrulheiro':[[6,'Inimigo Favorito e Explorador Natural adicionais'],[10,'Explorador Natural adicional'],
+    [14,'Inimigo Favorito adicional']],
+  'Ladino':[[6,'Especialização adicional']],
+  'Feiticeiro':[[10,'Metamagia adicional'],[17,'Metamagia adicional']],
+  'Bruxo':[[5,'Invocações Místicas adicionais'],[7,'Invocações Místicas adicionais'],[9,'Invocações Místicas adicionais'],
+    [12,'Invocações Místicas adicionais'],[13,'Arcana Mística (7º nível)'],
+    [15,'Arcana Mística (8º nível) e Invocações adicionais'],
+    [17,'Arcana Mística (9º nível)'],[18,'Invocações Místicas adicionais']],
+  'Mago':[],
+}
+
+export const marcosDaClasse2014 = (classe: unknown): MarcoClasse2014[] => {
+  if(typeof classe!=='string')return []
+  const base=MARCOS_CLASSES_2014[classe]
+  if(!base)return []
+  const incrementos=NIVEIS_INCREMENTO_CLASSES_2014[classe]??GERAL_INCREMENTO_2014
+  return [...base,...lista(COMPLEMENTOS_2014[classe]??[]),
+    ...incrementos.map(n=>({nivel:n,nome:'Incremento no Valor de Habilidade (ou talento opcional)'}))]
+    .sort((a,b)=>a.nivel-b.nivel)
+}

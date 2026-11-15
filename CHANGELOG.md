@@ -2,6 +2,39 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.34.2 — Homologação da Etapa 2 e permissão de ouro (2026-11-14)
+
+- Rolagem de ouro inicial 2014 testada no navegador: 5d4 × 10 PO, moeda registrada e persistência após recarregamento.
+- Corrige nova rolagem por cliques repetidos: resultado inicial é estável.
+- Corrige autorização atômica da riqueza inicial: quando equipamentos exigem aprovação, a carteira preenchida junto com a escolha de ouro também aguarda o mestre.
+- Banco Supabase: teste transacional isolado com dois perfis temporários e campanha; gravação, versão otimista e proteção por proprietário aprovadas; rollback confirmado.
+- Testes de regras de permissão por modelos A/B/C e exceções individuais incluídos.
+- Homologação HTTP com dois perfis e celular físico ainda não confirmadas; PR não deve ser mesclada sem decisão explícita sobre esses riscos.
+
+## v0.34.1 — Criação, progressão e equipamento D&D 2014 (2026-11-14)
+
+- Revisão da Etapa 2: XP do nível 1 ao 20 conforme Livro do Jogador 2014, com indicador do próximo nível, sem forçar níveis em campanhas por marcos.
+- Equipamento inicial de 2014: alternativas por classe, itens fixos referenciados, conferência manual do kit junto ao antecedente e riqueza inicial com dados d4 por classe, Monge incluído.
+- Antecedentes 2014: catálogo das 13 opções com proficiências fixas, escolhas de idioma/ferramenta e referência aos itens iniciais, com salvamento e validação próprios.
+- Progressão visual das 12 classes: incrementos de atributos e marcos adicionais de referência por nível, sem aplicar habilidades apenas pela exibição.
+- Ouro rolado e seleção de kit são exclusivos; carteira e itens já existentes não são sobrescritos, itens não são adicionados ou duplicados implicitamente.
+- Novos registros passam pelas permissões da campanha, checklist de criação, validações de edição 2014/2024 e normalização não destrutiva.
+- Implementações anteriores nesta versão: conjunto padrão, 27 pontos, 4d6, incrementos por classe, PV por nível e Constituição retroativa.
+- Pendência de homologação: reabrir ficha com banco conectado e conferir dispositivos móveis reais; efeitos/pré-requisitos de talentos e aplicação automática de equipamentos seguem sob conferência manual.
+
+## v0.34.0 — Fase 2: árvores D&D unificadas (2026-11-14)
+
+- **Etapa 1 — fidelidade D&D 2014:** Clava Grande com Pesada, Lança Longa com peso conforme tradução auditada (4 kg), Forasteiro com característica Andarilho e validação de sub-raça ao trocar a raça.
+- Subclasses de classes secundárias de D&D 2014 agora possuem escolhas e validações próprias por nível de classe, refletidas no grimório, nos cálculos de conjuração, na árvore e no checklist de criação. Campo opcional mantém compatibilidade com fichas antigas.
+
+
+- A ficha D&D passa a exibir um único painel com quatro ramos: Classe/Subclasse, Raça/Espécie, Antecedente/Origem e poderes extras do mestre.
+- Interface vertical com cartões arredondados e detalhes de cada nó; remove a duplicação visual de mapas de hexágonos na aba Árvore.
+- Os ramos oficiais são projetados a partir das escolhas e edição 2014/2024 sem salvar ou conceder bônus pela visualização.
+- O ramo do mestre reutiliza a árvore editável existente, respeitando autorizações, pontos, requisitos, poderes vinculados, concessões e histórico.
+- A ordenação vertical é determinística, considera dependências e não modifica posições antigas; os demais sistemas não são alterados nesta etapa.
+- A fase de homologação requer verificar fichas antigas, edição do mestre, reabertura e responsividade antes do merge.
+
 ## v0.33.10 — Correção do build de produção (2026-11-14)
 
 - Remove a dependência de download das fontes do Google na compilação Next.js, que estava falhando em `src/app/layout.tsx` depois do merge da PR #50.

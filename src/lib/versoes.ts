@@ -27,6 +27,42 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao:'0.34.2', data:'2026-11-14',
+    titulo:'D&D 2014: homologação de criação e aprovação do ouro inicial',
+    itens:[
+      'Rolagem de ouro inicial confirmada na prévia: o resultado e a carteira permanecem após recarregar a ficha.',
+      'Nova rolagem do mesmo equipamento inicial não substitui os dados anteriores nem permite rerrolagens por clique repetido.',
+      'Em campanhas, a entrada de ouro inicial aguarda a mesma permissão do mestre aplicada à escolha de equipamentos.',
+      'Teste transacional com mestre, jogador, campanha e ficha temporários aprovou persistência, versão e dono sem deixar dados no Supabase.',
+      'Homologação em dispositivo móvel físico e fluxo HTTP em ambiente de testes seguem pendentes.',
+    ],
+  },
+  {
+    versao: '0.34.1', data: '2026-11-14',
+    titulo: 'D&D 2014: atributos guiados e progressão por classe',
+    itens: [
+      'Criação com conjunto padrão, compra de 27 pontos e seis rolagens de 4d6 com descarte do menor; distribuição incompleta sinalizada no checklist.',
+      'Incrementos de Atributo por nível individual de classe, com limite de 20 e controle para não consumir o mesmo benefício com pontos e talentos.',
+      'PV por nível com média fixa ou resultado rolado; Constituição retroativa, mínimo de 1 PV por nível e totais manuais preservados.',
+      'Novos campos respeitam as permissões da campanha e são preservados ao salvar e reabrir a ficha. Homologação com banco e celular ainda pendente.',
+      '📈 XP de D&D 2014 com tabela de avanço do nível 1 ao 20, progresso até o próximo nível e compatibilidade com avanço por marcos.',
+      '🎒 Equipamento inicial 2014: alternativas de classe/antecedente e ouro rolado, sem duplicar inventário nem substituir a carteira do personagem.',
+      '🧰 Antecedentes: idiomas e ferramentas das 13 origens, com registro de escolhas; árvore de classes com incrementos e marcos complementares do nível 1 ao 20.',
+    ],
+  },
+  {
+    versao: '0.34.0', data: '2026-11-14',
+    titulo: 'Fase 2: quatro árvores verticais integradas de D&D',
+    itens: [
+      '🌳 A ficha D&D agora apresenta quatro árvores por abas: Classe/Subclasse, Raça/Espécie, Antecedente/Origem e habilidades adicionais do Mestre.',
+      '📜 Cartões arredondados com progressão vertical, detalhes do livro e estado da característica substituem os dois mapas de hexágonos da ficha D&D.',
+      '✨ A árvore do mestre preserva pontos, requisitos, concessões, poderes e histórico antigos. Os ramos oficiais são calculados pelas escolhas 2014 ou 2024 sem serem gravados ou concedidos novamente.',
+      '📱 Cada ramo é exibido separadamente no celular e no computador, com cartões legíveis; outros sistemas mantêm seu visual atual nesta etapa.',
+      '📖 Livro 2014 revisado: Clava Grande, peso traduzido da Lança Longa e característica Andarilho do Forasteiro.',
+      '🛡️ Sub-raças incompatíveis bloqueadas na troca de raça; subclasses secundárias da multiclasse recebem escolha, validação por nível e referência na árvore.',
+    ],
+  },
+  {
     versao: '0.33.10', data: '2026-11-14',
     titulo: 'Correção da publicação após a Fase 1',
     itens: [

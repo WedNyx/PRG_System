@@ -26,3 +26,19 @@ export function permissoesPadrao(modelo: Modelo): Permissoes {
 export function regraEfetiva(padrao: Permissoes, excecao: Partial<Permissoes> | undefined, campo: Campo): Regra {
   return excecao?.[campo] ?? padrao[campo]
 }
+
+/**
+ * Separação UI entre desbloquear uma habilidade existente e montar sua árvore.
+ * A API de campanhas aplica as regras efetivas no servidor ao salvar a ficha.
+ * Sem resposta de permissões numa ficha de campanha, falha de forma segura.
+ */
+export function podeDesbloquearArvore(
+  emCampanha: boolean,
+  podeEditarFicha: boolean,
+  administrador: boolean,
+  regraHabilidades?: Regra,
+): boolean {
+  if (!podeEditarFicha) return false
+  if (!emCampanha || administrador) return true
+  return regraHabilidades === 'livre' || regraHabilidades === 'aprovacao'
+}

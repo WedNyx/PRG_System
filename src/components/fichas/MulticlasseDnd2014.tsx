@@ -6,6 +6,7 @@ import type {DadosFicha} from '@/lib/sistemas/tipos'
 import {CLASSES_SRD} from '@/lib/sistemas/dnd2024Srd'
 import {atributosEfetivos2014} from '@/lib/sistemas/dnd2014Regras'
 import {classesDaFicha2014, espacosDeMagia2014} from '@/lib/sistemas/dnd2014Multiclasse'
+import {subclassesDaClasse2014,subclasseDaFicha2014} from '@/lib/sistemas/dnd2014Subclasses'
 import {requisitosMulticlasse} from '@/lib/sistemas/dnd2024Classes'
 const btn='inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-(--a-5e4b78) px-3 py-2 text-sm disabled:opacity-40 hover:bg-(--s-34294f)'
 
@@ -15,7 +16,7 @@ export default function MulticlasseDnd2014({d,onChange,somenteLeitura=false}:{
  const {total,lista,outras}=classesDaFicha2014(d)
  const [nova,setNova]=useState('')
  const [erro,setErro]=useState('')
- const esp=espacosDeMagia2014(lista,d.dnd2014Subclasse)
+ const esp=espacosDeMagia2014(lista,d.dnd2014Subclasse,d.dnd2014Subclasses)
  const disponíveis=CLASSES_SRD.filter(c=>!lista.some(x=>x.cls.id===c.id))
  const atributos=atributosEfetivos2014(d)??d.atributos
  const faltas=nova?requisitosMulticlasse(atributos,[...lista.map(x=>x.cls.id),nova]):[]
@@ -30,7 +31,17 @@ export default function MulticlasseDnd2014({d,onChange,somenteLeitura=false}:{
      return
    }
    setErro('')
-   onChange({...d,campos:{...d.campos,nivel:novoTotal},dnd2014Multiclasse:proximas})
+   // Quando uma classe secundária é removida ou perde o nível necessário,
+   // sua escolha específica deixa de ser válida sem mexer na classe inicial.
+   const extras={...d.dnd2014Subclasses}
+   for(const [key,value] of Object.entries(extras)) {
+     const cls=CLASSES_SRD.find(c=>c.id===key)
+     const nivel=proximas[key]??0
+     const sub=cls ? subclassesDaClasse2014(cls.nome).find(s=>s.id===value) : undefined
+     if(!sub || nivel<sub.nivel)delete extras[key]
+   }
+   onChange({...d,campos:{...d.campos,nivel:novoTotal},dnd2014Multiclasse:proximas,
+     ...(Object.keys(extras).length || d.dnd2014Subclasses ? {dnd2014Subclasses:extras} : {})})
  }
  return <section aria-label="Multiclasse de D&D 2014" className="space-y-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4">
    <h3 className="flex items-center gap-2 font-semibold text-(--a-ed9cd8)"><Users size={18}/> Multiclasse · D&D 2014 · nível total {total}</h3>
@@ -48,6 +59,18 @@ export default function MulticlasseDnd2014({d,onChange,somenteLeitura=false}:{
        <button type="button" className={btn} disabled={total>=20}
          aria-label={'Subir um nível de '+c.cls.nome} onClick={()=>mudar(c.principal?null:c.cls.id,1)}><Plus size={16}/></button>
      </>}
+     {!c.principal && subclassesDaClasse2014(c.cls.nome).some(s=>c.nivel>=s.nivel) && (
+       <label className="w-full text-xs text-(--a-d3adf0)">Subclasse de {c.cls.nome} (nível da classe: {c.nivel})
+         <select className="mt-1 min-h-10 w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white"
+           disabled={somenteLeitura} value={subclasseDaFicha2014(d,c.cls.id)?.id??''}
+           onChange={e=>{const extras={...d.dnd2014Subclasses};if(e.target.value)extras[c.cls.id]=e.target.value;else delete extras[c.cls.id];
+             onChange({...d,dnd2014Subclasses:extras})}}>
+           <option value="">Selecione o arquétipo...</option>
+           {subclassesDaClasse2014(c.cls.nome).filter(s=>c.nivel>=s.nivel).map(s=>
+             <option key={s.id} value={s.id}>{s.nome} · {s.fonte==='srd51'?'SRD 5.1':'PHB 2014'}</option>)}
+         </select>
+       </label>
+     )}
    </li>)}</ul>
    {(esp.conjuradores.length>0||esp.pacto>0)&&<p className="text-xs text-(--a-d3adf0)">
      Conjurador nível {esp.nivelConjurador}: {esp.espacos.slice(1).map((v,i)=>v?`${v}×${i+1}º`:'').filter(Boolean).join(', ')||'sem espaços'}.

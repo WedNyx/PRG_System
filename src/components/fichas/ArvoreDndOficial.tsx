@@ -1,132 +1,155 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { BookOpenCheck, ChevronDown, CircleHelp, GitBranch, X } from 'lucide-react'
+import { useMemo, useState, type ReactNode } from 'react'
+import { BookOpenCheck, CircleHelp, GitBranch, Sparkles, X } from 'lucide-react'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
-import { hexagonosOficiaisDnd, RAMOS_HEX_DND, type EstadoHexDnd, type HexagonoDnd } from '@/lib/sistemas/arvoreDndOficial'
+import { hexagonosOficiaisDnd, RAMOS_HEX_DND, type RamoHexDnd, type EstadoHexDnd } from '@/lib/sistemas/arvoreDndOficial'
 import type { LivroBaseDnd } from '@/lib/sistemas/dndLivros'
-import { lerArvore, noAtivo } from '@/lib/sistemas/arvore'
+import { lerArvore } from '@/lib/sistemas/arvore'
+import { ordenarNosVerticais } from '@/lib/sistemas/arvoreVisual'
 
-type Props = { d: DadosFicha; edicao: LivroBaseDnd; fontes: Set<string> | null }
-const estados: Record<EstadoHexDnd, { texto: string; fundo: string }> = {
-  recebido: { texto: 'Recebido pela ficha', fundo: '#276f60' },
-  pendente: { texto: 'Escolha pendente', fundo: '#9a6428' },
-  referencia: { texto: 'Conferir no livro', fundo: '#514a75' },
-  futuro: { texto: 'Futuro / bloqueado', fundo: '#302b41' },
+type Props = {
+  d: DadosFicha
+  edicao: LivroBaseDnd
+  fontes: Set<string> | null
+  /** Editor existente dos poderes do mestre, mostrado somente no quarto ramo. */
+  children?: ReactNode
 }
-const resumo = (n: HexagonoDnd) => n.titulo.length > 30 ? n.titulo.slice(0, 28) + '…' : n.titulo
 
-/** Árvore visual oficial, separada do estado editável de hexágonos do mestre.
- * Derivada da classe/nível/espécie/antecedente, sem precisar salvar ou comprar nós.
+const estados: Record<EstadoHexDnd, { texto: string; classe: string; icone: string }> = {
+  recebido: { texto: 'Recebido', classe: 'border-emerald-400/40 text-emerald-200', icone: '✓' },
+  pendente: { texto: 'Escolha pendente', classe: 'border-amber-300/40 text-amber-200', icone: '?' },
+  referencia: { texto: 'Consultar livro', classe: 'border-violet-300/40 text-violet-200', icone: '📖' },
+  futuro: { texto: 'Nível futuro', classe: 'border-(--a-62527e) text-(--a-c4b6d4)', icone: '◌' },
+}
+
+/**
+ * Único painel de habilidades D&D (2014 e 2024).
+ * Os três ramos oficiais são projeções somente de leitura de escolhas já salvas;
+ * o quarto ramo é a árvore de poderes existente, sem converter ou duplicar bônus.
  */
-export default function ArvoreDndOficial({ d, edicao, fontes }: Props) {
+export default function ArvoreDndOficial({ d, edicao, fontes, children }: Props) {
+  const [ramoAtivo, setRamoAtivo] = useState<RamoHexDnd>('classe')
   const [futuros, setFuturos] = useState(false)
   const [selecionado, setSelecionado] = useState<string | null>(null)
-  const [ramoAtivo, setRamoAtivo] = useState<'todos' | 'classe' | 'especie' | 'antecedente' | 'mestre'>('todos')
-  const nos = useMemo(() => {
-    const oficiais = hexagonosOficiaisDnd(d, edicao, fontes, futuros)
-    const a = lerArvore(d.arvore)
-    const nv = Math.max(1, Math.floor(Number(d.campos.nivel) || 1))
-    const extras: HexagonoDnd[] = a.nos.filter(n => futuros || !(n.nivel && n.nivel > nv)).map(n => ({
-      id: 'mestre-' + n.id, titulo: n.nome, descricao: n.descricao || 'Hexágono criado na árvore personalizada; veja os requisitos e efeitos no editor abaixo.',
-      nivel: n.nivel ?? 1, ramo: 'mestre' as const,
-      estado: n.nivel && n.nivel > nv ? 'futuro' : noAtivo(a, n, d) ? 'recebido' : 'pendente',
-      livro: 'Personalizado pelo mestre (não é regra oficial)',
-    }))
-    return [...oficiais, ...extras]
-  }, [d, edicao, fontes, futuros])
-  const visiveis = nos.filter(n => ramoAtivo === 'todos' || n.ramo === ramoAtivo)
-  const detalhe = nos.find(n => n.id === selecionado) ?? null
-  const recebidos = nos.filter(n => n.estado === 'recebido').length
-  const pendentes = nos.filter(n => n.estado === 'pendente').length
+  const oficiais = useMemo(
+    () => hexagonosOficiaisDnd(d, edicao, fontes, futuros),
+    [d, edicao, fontes, futuros],
+  )
+  const extras = useMemo(() => lerArvore(d.arvore), [d.arvore])
+  const ramo = RAMOS_HEX_DND.find(r => r.id === ramoAtivo)!
+  const grupo = useMemo(
+    () => ordenarNosVerticais(oficiais.filter(n => n.ramo === ramoAtivo)),
+    [oficiais, ramoAtivo],
+  )
+  const detalhe = grupo.find(n => n.id === selecionado) ?? null
+  const quantidade = (id: RamoHexDnd) => id === 'mestre'
+    ? extras.nos.length : oficiais.filter(n => n.ramo === id).length
+  const recebidos = oficiais.filter(n => n.estado === 'recebido').length
+  const pendentes = oficiais.filter(n => n.estado === 'pendente').length
 
-  return <section aria-label="Árvore de características oficiais D&D"
+  return <section aria-label="Árvore de habilidades D&D por ramos"
     className="overflow-hidden rounded-2xl border border-(--a-62527e) bg-(--s-0c0a16)">
-    <div className="border-b border-(--a-55456e) bg-(--s-171325) p-4 sm:p-5">
+    <header className="border-b border-(--a-55456e) bg-(--s-171325) p-4 sm:p-5">
       <h2 className="flex items-center gap-2 font-serif text-lg font-bold text-(--a-ed9cd8)">
-        <GitBranch size={19} /> Árvore de origem e características
+        <GitBranch size={20} /> Árvores de habilidades
       </h2>
-      <p className="mt-1 text-xs text-(--a-c4b6d4)">
-        Hexágonos gerados automaticamente a partir da <strong>classe, espécie/raça, origem, antecedente,
-        nível e escolhas da ficha</strong>. Atualizam quando essas informações mudam.
+      <p className="mt-1 text-sm text-(--a-cfc0df)">
+        Quatro ramos, uma árvore por vez. Os cartões seguem suas escolhas, nível e livro; basta abrir um para ver detalhes.
       </p>
       <p className="mt-2 text-xs text-(--a-d3adf0)">
-        {edicao === 'phb2014' ? 'D&D 5e · Player’s Handbook (2014) — conferência manual' :
-          'D&D revisado · Player’s Handbook (2024) / SRD 5.2.1'}.
-        {' '}{recebidos} característica(s) adquirida(s){pendentes ? ` · ${pendentes} escolha(s) pendente(s)` : ''}.
+        {edicao === 'phb2014' ? 'D&D 2014 · SRD 5.1 / Livro do Jogador (5e)' :
+          'D&D 2024 · SRD 5.2.1 / Livro do Jogador (5.5e)'}
+        {' · '}{recebidos} recebido(s){pendentes ? ' · ' + pendentes + ' pendente(s)' : ''}
       </p>
-      <p className="mt-1 text-[11px] text-(--a-a998bd)">
-        Os hexágonos oficiais não custam pontos nem duplicam benefícios. Os hexágonos personalizados do mestre aparecem no mesmo mapa, mas sua edição e liberação permanecem na área abaixo.
+      <p className="mt-1 text-xs text-(--a-a998bd)">
+        Consultar os ramos não concede poderes, não gasta pontos e não altera sua ficha. Conteúdos comerciais são apenas referências ao livro.
       </p>
-    </div>
-    <div className="flex flex-wrap items-center gap-2 border-b border-(--a-55456e) px-3 py-3 sm:px-4">
-      {[{ id: 'todos', titulo: 'Todos os ramos' }, ...RAMOS_HEX_DND.map(r => ({ id: r.id, titulo: r.titulo }))].map(r =>
-        <button key={r.id} type="button" aria-pressed={ramoAtivo === r.id}
-          onClick={() => { setRamoAtivo(r.id as typeof ramoAtivo); setSelecionado(null) }}
-          className={'rounded-lg border px-3 py-2 text-xs ' +
-            (ramoAtivo === r.id ? 'border-(--a-b99bff) bg-(--s-34294f) font-semibold' : 'border-(--a-55456e) hover:bg-(--s-34294f)')}>
-          {r.titulo}
-        </button>)}
-      <label className="ml-auto flex items-center gap-2 text-xs text-(--a-c4b6d4)">
-        <input type="checkbox" checked={futuros} onChange={e => setFuturos(e.target.checked)} /> Mostrar níveis futuros
-      </label>
-    </div>
-    {!visiveis.length && <p className="p-5 text-sm text-(--a-c4b6d4)">
-      Escolha a classe, a espécie/raça e o antecedente na aba Principal para formar os ramos da árvore.
-    </p>}
-    <div className="grid gap-4 bg-[radial-gradient(ellipse_at_50%_30%,#241840_0%,#0b0814_70%)] p-3 sm:p-5">
-      {RAMOS_HEX_DND.filter(r => ramoAtivo === 'todos' || r.id === ramoAtivo).map(r => {
-        const grupo = visiveis.filter(n => n.ramo === r.id)
-        return grupo.length ? <div key={r.id} className="rounded-xl border border-(--a-55456e)/70 bg-(--s-171325)/75 p-2 sm:p-4">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-bold" style={{ color: r.cor }}>
-            <span aria-hidden>{r.icone}</span>{r.titulo}
-            <span className="rounded-full border border-(--a-55456e) px-2 text-[10px] text-(--a-c4b6d4)">{grupo.length}</span>
-          </h3>
-          <div className="flex flex-wrap justify-center gap-x-2 gap-y-4 sm:justify-start">
-            {grupo.map(n => {
-              const selecionou = detalhe?.id === n.id
-              const cor = estados[n.estado].fundo
-              return <button key={n.id} type="button" aria-pressed={selecionou}
-                aria-label={n.titulo + ' · ' + estados[n.estado].texto + ' · nível ' + n.nivel}
-                title={n.titulo} onClick={() => setSelecionado(selecionou ? null : n.id)}
-                className="group flex w-[118px] flex-col items-center gap-1.5 text-center sm:w-[133px]">
-                <span className="relative flex h-[100px] w-[100px] items-center justify-center p-[3px] transition-transform group-hover:scale-105 sm:h-[112px] sm:w-[112px]"
-                  style={{ clipPath: 'polygon(50% 0%,95% 25%,95% 75%,50% 100%,5% 75%,5% 25%)',
-                    background: selecionou ? '#fff' : r.cor, opacity: n.estado === 'futuro' ? 0.5 : 1 }}>
-                  <span className="flex h-full w-full flex-col items-center justify-center gap-1 px-2"
-                    style={{ clipPath: 'polygon(50% 0%,95% 25%,95% 75%,50% 100%,5% 75%,5% 25%)',
-                      background: `linear-gradient(160deg, ${cor}, #181126)` }}>
-                    <strong className="line-clamp-2 text-[10px] leading-tight text-white sm:text-[11px]">
-                      {n.titulo.length > 38 ? n.titulo.slice(0, 35) + '…' : n.titulo}
-                    </strong>
-                    <span className="text-[9px] font-bold text-amber-100">Nv. {n.nivel} {n.estado === 'recebido' ? '✓' : n.estado === 'pendente' ? '?' : ''}</span>
-                  </span>
-                </span>
-                <span className="line-clamp-1 w-full text-[10px] text-(--a-cfc0df)">{resumo(n)}</span>
-              </button>
-            })}
-          </div>
-        </div> : null
-      })}
-    </div>
-    {detalhe ? <div className="border-t border-(--a-62527e) bg-(--s-201a32) p-4" role="region" aria-label="Detalhes do hexágono">
-      <div className="flex items-start justify-between gap-3">
-        <div><h3 className="font-semibold text-(--a-ed9cd8)">{detalhe.titulo}</h3>
-          <p className="text-xs text-(--a-c4b6d4)">
-            {RAMOS_HEX_DND.find(x => x.id === detalhe.ramo)?.titulo} · Nível {detalhe.nivel} · {estados[detalhe.estado].texto}
-          </p></div>
-        <button type="button" onClick={() => setSelecionado(null)} aria-label="Fechar detalhes" className="rounded-lg border border-(--a-55456e) p-2"><X size={15}/></button>
+    </header>
+
+    <nav className="grid grid-cols-2 gap-2 border-b border-(--a-55456e) bg-(--s-14111f) p-3 sm:grid-cols-4" aria-label="Selecionar ramo da árvore">
+      {RAMOS_HEX_DND.map(r => <button key={r.id} type="button"
+        aria-current={ramoAtivo === r.id ? 'page' : undefined}
+        aria-pressed={ramoAtivo === r.id}
+        onClick={() => { setRamoAtivo(r.id); setSelecionado(null) }}
+        className={'flex min-h-16 items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--a-b99bff) ' +
+          (ramoAtivo === r.id ? 'border-(--a-b99bff) bg-(--s-34294f) text-white' : 'border-(--a-55456e) bg-(--s-201a32) text-(--a-cfc0df) hover:bg-(--s-34294f)')}>
+        <span aria-hidden className="text-xl">{r.icone}</span>
+        <span className="min-w-0 flex-1">
+          <strong className="block break-words text-xs leading-snug">{r.titulo}</strong>
+          <span className="mt-1 block text-[11px] text-(--a-c4b6d4)">{quantidade(r.id)} característica(s)</span>
+        </span>
+      </button>)}
+    </nav>
+
+    <div className="bg-[radial-gradient(ellipse_at_50%_0%,#241840_0%,#0b0814_75%)] p-3 sm:p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 text-base font-semibold" style={{ color: ramo.cor }}>
+          <span aria-hidden>{ramo.icone}</span>{ramo.titulo}
+        </h3>
+        {ramoAtivo !== 'mestre' && <label className="inline-flex items-center gap-2 rounded-lg border border-(--a-55456e) px-3 py-2 text-xs text-(--a-cfc0df)">
+          <input type="checkbox" checked={futuros} onChange={e => setFuturos(e.target.checked)} />
+          Mostrar níveis futuros
+        </label>}
       </div>
-      <p className="mt-2 whitespace-pre-wrap text-sm text-(--a-cfc0df)">{detalhe.descricao}</p>
-      {detalhe.escolha && <p className="mt-2 text-xs text-emerald-200">Escolha registrada: {detalhe.escolha}</p>}
-      {detalhe.estado === 'pendente' && <p className="mt-2 flex items-center gap-1.5 text-xs text-amber-200">
-        <CircleHelp size={14}/> {detalhe.ramo === 'mestre' ? 'Hexágono personalizado ainda não liberado: o mestre controla sua liberação na árvore editável abaixo.' : 'Registre esta escolha no painel de Progressão / Origem abaixo.'}
-      </p>}
-      <p className="mt-2 flex items-center gap-1.5 text-[11px] text-(--a-c4b6d4)">
-        <BookOpenCheck size={13}/> Fonte: {detalhe.livro}. {detalhe.estado === 'referencia' ? 'Efeitos comerciais não concedidos automaticamente.' : ''}
-      </p>
-    </div> : <p className="flex items-center gap-1 px-4 py-3 text-xs text-(--a-c4b6d4)">
-      <ChevronDown size={14}/> Toque num hexágono para ver a descrição, a origem e se já foi adquirido.
-    </p>}
+
+      {ramoAtivo === 'mestre'
+        ? <div aria-label="Editor das habilidades adicionais do mestre" className="min-w-0">
+          <p className="mb-3 text-xs text-(--a-cfc0df)">
+            Aqui ficam as habilidades criadas pelo mestre, inclusive as que já existiam antes desta atualização. Concessões, pontos, requisitos e histórico continuam os mesmos.
+          </p>
+          {children ?? <p className="rounded-xl border border-(--a-55456e) p-4 text-sm">Não há editor de poderes nesta ficha.</p>}
+        </div>
+        : <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,19rem)]">
+          <div>
+            {grupo.length === 0
+              ? <p className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-5 text-sm text-(--a-cfc0df)">
+                {ramoAtivo === 'classe' ? 'Escolha uma classe e um nível na aba Principal para formar este ramo.' :
+                  ramoAtivo === 'especie' ? 'Escolha sua espécie ou raça para mostrar os traços dela.' :
+                    'Escolha seu antecedente ou origem na aba Principal para formar este ramo.'}
+              </p>
+              : <ol className="mx-auto max-w-3xl" aria-label={'Progressão vertical de ' + ramo.titulo}>
+                {grupo.map((n, i) => {
+                  const status = estados[n.estado]
+                  const ativo = selecionado === n.id
+                  return <li key={n.id}>
+                    {i > 0 && <div aria-hidden className="mx-auto h-5 w-px bg-(--a-70588c)" />}
+                    <button type="button" aria-pressed={ativo} onClick={() => setSelecionado(ativo ? null : n.id)}
+                      className={'flex min-h-20 w-full items-center gap-3 rounded-xl border border-l-4 p-3 text-left transition hover:bg-(--s-34294f) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--a-b99bff) sm:p-4 ' +
+                        (ativo ? 'border-(--a-b99bff) bg-(--s-34294f)' : 'border-(--a-55456e) bg-(--s-201a32)')}
+                      style={{ borderLeftColor: ramo.cor, opacity: n.estado === 'futuro' ? 0.75 : 1 }}>
+                      <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-(--s-34294f) text-lg" style={{ color: ramo.cor }}>
+                        {status.icone}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <strong className="block break-words text-sm leading-snug text-(--a-f2ebff) sm:text-base">{n.titulo}</strong>
+                        <span className="mt-1 block text-xs text-(--a-c4b6d4)">Nível {n.nivel}{n.escolha ? ' · ' + n.escolha : ''}</span>
+                      </span>
+                      <span className={'shrink-0 rounded-lg border px-2 py-1 text-center text-[11px] font-medium ' + status.classe}>{status.texto}</span>
+                    </button>
+                  </li>
+                })}
+              </ol>}
+          </div>
+
+          <aside aria-label="Detalhes da característica" className="min-w-0 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-4 lg:self-start">
+            {detalhe ? <>
+              <div className="flex items-start justify-between gap-2">
+                <h4 className="break-words font-semibold text-(--a-ed9cd8)">{detalhe.titulo}</h4>
+                <button type="button" aria-label="Fechar detalhes" onClick={() => setSelecionado(null)} className="rounded-lg border border-(--a-55456e) p-2"><X size={15} /></button>
+              </div>
+              <p className="mt-2 text-xs text-(--a-cfc0df)">Nível {detalhe.nivel} · {estados[detalhe.estado].texto}</p>
+              <p className="mt-3 whitespace-pre-wrap break-words text-sm text-(--a-cfc0df)">{detalhe.descricao || 'Descrição conforme o livro e as escolhas da ficha.'}</p>
+              {detalhe.escolha && <p className="mt-3 text-xs text-emerald-200">Escolha registrada: {detalhe.escolha}</p>}
+              {detalhe.estado === 'pendente' && <p className="mt-3 flex items-start gap-2 text-xs text-amber-200"><CircleHelp size={15} className="shrink-0" />
+                Complete esta escolha na seção Progressão / Origem da ficha.</p>}
+              <p className="mt-3 flex items-start gap-2 text-xs text-(--a-c4b6d4)"><BookOpenCheck size={15} className="shrink-0"/>Fonte: {detalhe.livro}</p>
+              {detalhe.estado === 'referencia' && <p className="mt-2 text-xs text-(--a-a998bd)">O efeito deste livro não é concedido automaticamente por este cartão.</p>}
+            </> : <div className="flex flex-col items-center gap-2 py-5 text-center text-(--a-c4b6d4)">
+              <Sparkles size={22}/><p className="text-sm">Selecione um cartão para ver a origem, os detalhes e o estado da característica.</p>
+            </div>}
+          </aside>
+        </div>}
+    </div>
   </section>
 }

@@ -28,7 +28,7 @@ export const ANTECEDENTES_2014: OpcaoCampo[] = [
   op('Artesão de Guilda', 'PHB 2014: Intuição, Persuasão; Associação a Guilda.'),
   op('Eremita', 'PHB 2014: Medicina, Religião; Descoberta.'),
   op('Nobre', 'PHB 2014: História, Persuasão; Posição de Privilégio.'),
-  op('Forasteiro', 'PHB 2014: Atletismo, Sobrevivência; Viajante.'),
+  op('Forasteiro', 'PHB 2014: Atletismo, Sobrevivência; Andarilho.'),
   op('Sábio', 'PHB 2014: Arcanismo, História; Pesquisador.'),
   op('Marinheiro', 'PHB 2014: Atletismo, Percepção; Passagem de Navio.'),
   op('Soldado', 'PHB 2014: Atletismo, Intimidação; Patente Militar.'),

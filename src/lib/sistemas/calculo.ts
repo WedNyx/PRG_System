@@ -95,6 +95,8 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     ...(d.itens !== undefined ? { itens: lerItens(d.itens) } : {}), ...(d.uso !== undefined ? { uso: lerUso(d.uso) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndLivros !== undefined ? { dndLivros: lerLivrosDnd(d.dndLivros) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014VidaRolada !== undefined ? {dnd2014VidaRolada:structuredClone(d.dnd2014VidaRolada)} : {}),
+    ...(s.id === 'dnd5e-srd' && d.dnd2014EquipamentoInicial !== undefined ?
+      {dnd2014EquipamentoInicial:structuredClone(d.dnd2014EquipamentoInicial)} : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014MetodoAtributos !== undefined ? { dnd2014MetodoAtributos:d.dnd2014MetodoAtributos } : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014RolagensAtributos !== undefined ? { dnd2014RolagensAtributos:structuredClone(d.dnd2014RolagensAtributos) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dnd2014Incrementos !== undefined ? { dnd2014Incrementos:structuredClone(d.dnd2014Incrementos) } : {}),

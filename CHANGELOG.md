@@ -2,6 +2,14 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.34.5 — Metamagia 2014 e integração aos recursos (2026-11-15)
+
+- Metamagias escolhidas no guia agora podem registrar o gasto de Pontos de Feitiçaria na ficha, sem criar um contador paralelo.
+- Custos verificáveis do PHB 2014: Acelerada (2), Aumentada (3), Duplicada (1 para truque ou nível da magia) e as demais opções (1).
+- Valida posse da opção, Feiticeiro nível 3+, nível da magia e saldo do recurso. A interface exige confirmação e informa condições manuais de alvo, alcance e componentes.
+- O recurso existente continua seguindo o descanso longo; um novo teste cobre a recuperação e impede gasto acima do saldo.
+- Ainda não automatiza efeitos situacionais de todas as magias e talentos comerciais, nem substitui teste autenticado de jogadores e mestres em banco isolado.
+
 ## v0.34.4 — Expansão da Etapa 3: escolhas e conjuração 2014 (2026-11-15)
 
 - Escolhas internas de subclasses: Totem Espiritual/Aspecto/Sintonia, terreno de Druida, manobras do Mestre de Batalha e especializações do Caçador; validadas pelo nível de cada classe e sem conceder efeitos comerciais não implementados.

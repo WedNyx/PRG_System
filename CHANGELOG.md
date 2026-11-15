@@ -2,6 +2,16 @@
 
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
+## v0.34.3 — Etapa 3 (primeira entrega): talentos, subclasses e magias 2014 (2026-11-14)
+
+- Pré-requisitos de talentos verificados quando os atributos finais estão disponíveis; requisitos de armadura e conjuração racial continuam identificados para conferência manual.
+- Bloqueio no servidor contra acumular incrementos de atributo e talentos acima dos marcos permitidos, preservando a escolha bônus do Humano Variante.
+- As subclasses comerciais de 2014 agora apresentam os níveis de progressão na Árvore, como referências ao livro, sem conceder efeitos arbitrários.
+- Grimório de 2014 passa a conferir limites de magias preparadas/conhecidas por classe, sem confundir truques, magias extras ou cópias adicionais do grimório do Mago.
+- Concentração manual e persistente: uma magia ativa, substituição ao iniciar outra e CD do teste de resistência de Constituição conforme o dano sofrido.
+- A Árvore de Constelações inclui os talentos registrados e um resumo do grimório de 2014; os poderes de mestre continuam independentes.
+- Testes de regressão de talentos, subclasses, preparação e concentração adicionados; efeitos específicos ainda são escopo de próximas entregas da etapa.
+
 ## v0.34.2 — Homologação da Etapa 2 e permissão de ouro (2026-11-14)
 
 - Rolagem de ouro inicial 2014 testada no navegador: 5d4 × 10 PO, moeda registrada e persistência após recarregamento.

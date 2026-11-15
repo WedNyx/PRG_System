@@ -20,7 +20,7 @@ export default function AtributosProgressaoDnd2014({d,onChange,somenteLeitura}:{
   const aplicar=(valores:number[],rolagens?:number[][])=>onChange({...d,
     dnd2014AtributosBase:Object.fromEntries(ATRS_2014.map((a,i)=>[a,valores[i]])),
     ...(rolagens?{dnd2014RolagensAtributos:rolagens}:{})})
-  return <section aria-label="Método de atributos e progressão 2014" className="space-y-3 rounded-xl border border-(--a-55456e) p-3">
+  return <section aria-label="Método de atributos e progressão 2014" className="min-w-0 space-y-3 rounded-xl border border-(--a-55456e) p-3">
     <label className="block text-sm font-semibold">Método dos atributos-base
       <select value={metodo} disabled={somenteLeitura} className={estilo} onChange={e=>trocarMetodo(e.target.value as MetodoAtributos2014)}>
         <option value="manual">Manual / ficha existente</option><option value="padrao">Conjunto padrão</option>
@@ -70,7 +70,7 @@ export default function AtributosProgressaoDnd2014({d,onChange,somenteLeitura}:{
         <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={!!inc[m.id]}
           disabled={somenteLeitura || !d.dnd2014AtributosBase || (!inc[m.id] && usados>=marcos.length)}
           onChange={e=>{const novo={...inc};if(e.target.checked)novo[m.id]={atributos:['FOR','FOR']};else delete novo[m.id];onChange({...d,dnd2014Incrementos:novo})}} />{m.nome}: aplicar pontos</label>
-        {inc[m.id] && <div className="grid grid-cols-2 gap-2">{[0,1].map(i=><label key={i} className="text-xs">Ponto {i+1}
+        {inc[m.id] && <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">{[0,1].map(i=><label key={i} className="text-xs">Ponto {i+1}
           <select className={estilo} disabled={somenteLeitura} value={inc[m.id].atributos[i]} onChange={e=>{const atributos=[...inc[m.id].atributos];atributos[i]=e.target.value;onChange({...d,dnd2014Incrementos:{...inc,[m.id]:{atributos}}})}}>
             {ATRS_2014.map(a=><option key={a}>{a}</option>)}
           </select></label>)}</div>}

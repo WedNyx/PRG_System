@@ -166,7 +166,8 @@ export default function GuiaCriacaoLegadaDnd({ d, onChange, somenteLeitura, irPa
             const cls=classesDaFicha2014(d).lista.find(x=>x.principal)?.cls.id;
             if(cls)delete escolhas[cls]
             onChange({...d,dnd2014Subclasse:e.target.value||undefined,
-              dnd2014EscolhasSubclasse:escolhas})}}>
+              dnd2014EscolhasSubclasse:escolhas,
+              ...(cls==='guerreiro'&&e.target.value!=='mestre-batalha'?{dnd2014DadosSuperioridadeUsados:0}:{})})}}>
           <option value="">{classeNivel<Math.min(...subclasses.map(x=>x.nivel))
             ? 'Aguardando nível '+Math.min(...subclasses.map(x=>x.nivel)) : 'Escolha a subclasse...'}</option>
           {subclasses.filter(x=>classeNivel>=x.nivel).map(x=>

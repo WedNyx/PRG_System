@@ -73,4 +73,6 @@ A plataforma oferece **escolhas orientadas e regras automáticas verificáveis**
 
 O painel de escolhas do Feiticeiro (PHB 2014) agora permite gastar Pontos de Feitiçaria diretamente do recurso `feiticaria` já existente. Os valores de custo que o sistema calcula são factuais e verificáveis: Magia Acelerada = 2, Magia Aumentada = 3, Magia Duplicada = nível da magia (mínimo 1), as demais = 1. O botão não realiza a conjuração, não resolve alvo/alcance nem consome componentes; o jogador e o mestre confirmam o uso pela regra de 2014. Teste `dnd2014UsoMetamagia.test.ts` cobre saldo, opções válidas, níveis de magia e recuperação após descanso longo.
 
+Restauração Mística do Feiticeiro de nível 20 devolve até 4 PF por descanso curto. A validação permanece por nível da classe em multiclasses e não afeta níveis inferiores.
+
 Não há contador paralelo nem migração de banco necessária: o campo de recursos `feiticaria` já é parte da ficha. Continuam pendentes a homologação HTTP mestre/jogador em banco isolado e os efeitos condicionais especializados.

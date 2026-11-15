@@ -8,7 +8,8 @@
 import type { DadosFicha } from './tipos'
 import { classesDaFicha2014 } from './dnd2014Multiclasse'
 import { subclasseDaFicha2014 } from './dnd2014Subclasses'
-import { limiteMagiasPorClasse2014 } from './dnd2014PreparacaoMagias'
+import { limiteMagiasPorClasse2014, limiteTruques2014 } from './dnd2014PreparacaoMagias'
+import { magiaReferenciada2014 } from './dnd2014CatalogoMagias'
 import { lerLivrosDnd } from './dndLivros'
 import { idDe } from './dnd2024Classes'
 
@@ -98,6 +99,13 @@ export function validarAlteracoesMagias2014(
       (max===0 || m.classe==='paladino' || m.classe==='patrulheiro'))
       erros.push('Esta classe não recebe este truque por sua progressão normal em 2014: '+m.nome)
   }
+  // Truques também têm número conhecido próprio, independente dos espaços.
+  for(const classe of lista){
+    const subclasse=subclasseDaFicha2014(d,classe.cls.id)
+    const max=limiteTruques2014(classe.cls.id,classe.nivel,subclasse?.id)
+    const truques=lerMagias2014(raw).filter(m=>m.classe===classe.cls.id&&m.nivel===0&&m.modo!=='extra').length
+    if(truques>max)erros.push(classe.cls.nome+' possui '+truques+' truques conhecidos; limite PHB 2014: '+max+'.')
+  }
   // PHB 2014: magias preparadas são diferentes das conhecidas.
   // Truques e recursos extraordinários do mestre não entram nas cotas.
   // Revisões de classe e nível também recalculam a tabela sem misturar 2024.
@@ -122,4 +130,17 @@ export function validarAlteracoesMagias2014(
     }
   }
   return erros
+}
+
+/** Conjuração ritual sem espaço: apenas classes com Ritual em 2014.
+ * Bruxo e Feiticeiro precisam de característica/talento adicional e
+ * não são liberados implicitamente por este verificador.
+ */
+export function podeConjurarRitualMagia2014(m:RegistroMagiaDnd2014):boolean {
+ if(m.fonte!=='phb2014'||m.nivel===0)return false
+ if(!magiaReferenciada2014(m.classe,m.nome)?.ritual)return false
+ if(m.classe==='mago')return m.modo==='conhecida'||m.modo==='preparada'
+ if(m.classe==='bardo')return m.modo==='conhecida'
+ if(m.classe==='clerigo'||m.classe==='druida')return m.modo==='preparada'
+ return false
 }

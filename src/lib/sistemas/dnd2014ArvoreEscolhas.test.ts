@@ -21,7 +21,8 @@ describe('Árvore de Constelações — escolhas específicas do PHB 2014',()=>{
  })
  it('Bruxo e Feiticeiro apresentam escolhas somente como referências 2014',()=>{
   const d=fichaVazia(s)
-  d.campos={...d.campos,classe:'Bruxo',nivel:3}
+  d.campos={...d.campos,classe:'Bruxo',nivel:6}
+  d.dnd2014Multiclasse={feiticeiro:3}
   d.dnd2014OpcoesClasse={pactoBruxo:'Pacto do Tomo',metamagicas:['Magia Sutil']}
   d.dnd2014Talentos=['RESILIENTE']
   d.dnd2014OpcoesTalentos={RESILIENTE:'CON'}

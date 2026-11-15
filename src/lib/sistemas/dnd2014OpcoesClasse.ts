@@ -37,3 +37,32 @@ export function validarOpcoesClasseDnd2014(
    erros.push('Metamagia excede a quantidade de opções do nível de Feiticeiro ou usa opções inválidas.')
  return erros
 }
+
+/** Custo de Metamagia do PHB 2014. Custos fixos ou por círculo da magia.
+ * Verifica apenas o custo; alvo, alcance, ação e duração dependem da mesa.
+ */
+export function custoMetamagia2014(nome:string,nivelMagia:number):number|null {
+ if(!METAMAGICAS_2014.some(x=>x===nome) || !Number.isInteger(nivelMagia) ||
+    nivelMagia<0 || nivelMagia>9)return null
+ if(nome==='Magia Acelerada')return 2
+ if(nome==='Magia Aumentada')return 3
+ if(nome==='Magia Duplicada')return Math.max(1,nivelMagia)
+ return 1
+}
+export function usarMetamagia2014(
+ d:DadosFicha,nome:string,nivelMagia:number,
+):{ficha:DadosFicha;custo:number}|null {
+ if(!d.dnd2014OpcoesClasse?.metamagicas?.includes(nome)||
+    niveisConjuradores2014(d).feiticeiro<3)return null
+ const custo=custoMetamagia2014(nome,nivelMagia)
+ if(custo===null)return null
+ const cap=niveisConjuradores2014(d).feiticeiro
+ const recurso=d.recursos?.feiticaria
+ // Uma ficha recém-criada pode ainda não ter inicializado o recurso.
+ // Ausência não significa zero; recurso existente com zero nunca é recarregado aqui.
+ const atual=recurso?.atual===undefined?cap:Number(recurso.atual)
+ if(!Number.isFinite(atual)||atual<custo||atual>cap||atual<0)return null
+ return {ficha:{...d,recursos:{...d.recursos,feiticaria:{
+   ...(recurso??{}),atual:atual-custo,
+ }}},custo}
+}

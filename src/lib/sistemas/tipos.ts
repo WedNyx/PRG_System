@@ -106,6 +106,9 @@ export type DadosFicha = {
   dnd2014EquipamentoInicial?: import('./dnd2014EquipamentoInicial').RegistroEquipamento2014
   /** Proficiências selecionáveis de idioma e ferramenta do antecedente 2014. */
   dnd2014AntecedenteExtras?: import('./dnd2014AntecedentesDetalhes').EscolhasAntecedente2014
+  /** Variante do Patrulheiro do PDF fornecido: seleção de inimigo e idioma. */
+  dnd2014InimigoFavorito?: string
+  dnd2014IdiomaInimigo?: string
   dnd2014MetodoAtributos?: import('./dnd2014Atributos').MetodoAtributos2014
   dnd2014RolagensAtributos?: number[][]
   /** Cada marco classe:nível concede +2 ou +1/+1, no lugar de um talento. */

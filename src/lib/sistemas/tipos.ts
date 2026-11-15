@@ -130,6 +130,8 @@ export type DadosFicha = {
   dnd2014Concentracao?: import('./dnd2014Concentracao').ConcentracaoDnd2014
   /** Talentos do PHB 2014 adquiridos com Incrementos de Atributo ou Humano Variante. */
   dnd2014Talentos?: string[]
+  /** Decisões de atributo, lista mágica e elemento dos talentos de 2014. */
+  dnd2014OpcoesTalentos?: Record<string,string>
   /** Escolhas de marcos D&D. A progressão visual não concede bônus por si só. */
   dndEscolhas?: Record<string, string>
   /** Distribuição guiada de atributos de antecedente, aplicada explicitamente uma vez. */

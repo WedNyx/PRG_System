@@ -8,6 +8,7 @@ Também aparece no site em /novidades. Ao atualizar: aumente a versão no packag
 - Bloqueio no servidor contra acumular incrementos de atributo e talentos acima dos marcos permitidos, preservando a escolha bônus do Humano Variante.
 - As subclasses comerciais de 2014 agora apresentam os níveis de progressão na Árvore, como referências ao livro, sem conceder efeitos arbitrários.
 - Grimório de 2014 passa a conferir limites de magias preparadas/conhecidas por classe, sem confundir truques, magias extras ou cópias adicionais do grimório do Mago.
+- Catálogo de truques também segue limites próprios por classe e nível (inclusive Cavaleiro Arcano e Trapaceiro Arcano); execução ritual guiada sem gastar espaço e com 10 minutos extras para conjuradores com a característica de classe.
 - Concentração manual e persistente: uma magia ativa, substituição ao iniciar outra e CD do teste de resistência de Constituição conforme o dano sofrido.
 - A Árvore de Constelações inclui os talentos registrados e um resumo do grimório de 2014; os poderes de mestre continuam independentes.
 - Testes de regressão de talentos, subclasses, preparação e concentração adicionados; efeitos específicos ainda são escopo de próximas entregas da etapa.

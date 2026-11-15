@@ -30,6 +30,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
  const [danoConcentracao,setDanoConcentracao]=useState(0)
  const [aberto,setAberto]=useState(false)
  const [erro,setErro]=useState('')
+ const [aviso,setAviso]=useState('')
  const livros=lerLivrosDnd(d.dndLivros,'phb2014')
  const fontes=[livros.base,...livros.suplementos]
  const {lista}=classesDaFicha2014(d)
@@ -67,8 +68,11 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
    if(!novo||magias.some(m=>m.id===novo.id)){setErro('Magia inválida ou já registrada.');return}
    salvar([...magias,novo]);setErro('');setNome('');setNotas('');setExpressao('');setExigeConcentracao(false);setAberto(false)
  }
- function gastar(n:number,magia:RegistroMagiaDnd2014,pacto:boolean){
+ function gastar(n:number,magia:RegistroMagiaDnd2014,pacto:boolean,ritual=false){
    if(n===0) {
+     setAviso(ritual
+       ? 'Ritual de '+magia.nome+': reserve o tempo normal +10 minutos; nenhum espaço foi gasto.'
+       : 'Truque '+magia.nome+' ativado; não houve gasto de espaço.')
      if(magia.concentracao)onChange({...d,dnd2014Concentracao:{magiaId:magia.id,nome:magia.nome}})
      if(magia.expressao)rolar(magia.expressao,magia.nome+' · magia 2014')
      return
@@ -79,6 +83,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
    onChange({...d,recursos:{...d.recursos,[id]:{...d.recursos[id],atual:atual-1}},
      ...(magia.concentracao?{dnd2014Concentracao:{magiaId:magia.id,nome:magia.nome}}:{})})
    setErro('')
+   setAviso('Magia '+magia.nome+' conjurada com '+(pacto?'Magia de Pacto':'espaço')+' de '+n+'º nível.')
    if(magia.expressao)rolar(magia.expressao,magia.nome+' · magia 2014 (espaço '+n+'º)')
  }
  return <section aria-label="Grimório do Livro do Jogador 2014" className="space-y-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5">
@@ -187,6 +192,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
     <button type="button" className={btn+' sm:col-span-2 justify-center'} onClick={adicionar}>Salvar magia</button>
   </div>}
   {erro&&<p role="alert" className="text-xs text-amber-200">{erro}</p>}
+  {aviso&&<p role="status" className="rounded-lg border border-sky-500/30 p-2 text-xs text-sky-200">{aviso}</p>}
   {magias.length===0&&<p className="text-xs text-(--a-c4b6d4)">Nenhuma magia de 2014 registrada nesta ficha.</p>}
   <div className="grid gap-2 sm:grid-cols-2">{magias.map(m=><article key={m.id}
     className="space-y-2 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
@@ -225,7 +231,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
       {podeConjurarRitualMagia2014(m)&&<button type="button" className={btn} disabled={somenteLeitura}
         onClick={()=>{
           if(window.confirm('Este ritual leva 10 minutos adicionais e não consome espaço de magia. Confirma a conjuração?'))
-            gastar(0,m,false)
+            gastar(0,m,false,true)
         }}>
         <Sparkles size={14}/> Ritual (+10 minutos, sem espaço)
       </button>}

@@ -48,8 +48,8 @@ export default function EquipamentoInicialDnd2014({d,onChange,somenteLeitura,irP
         <p className="text-xs font-semibold">Opções de equipamento de {classe} (capítulo 3)</p>
         {kit.grupos.map(grupo=><label key={grupo.id} className="block text-xs">{grupo.titulo}
           <select value={registro.escolhas?.[grupo.id]??''} disabled={somenteLeitura}
-            onChange={e=>onChange({...d,dnd2014EquipamentoInicial:{
-              ...registro,conferido:false,escolhas:{...registro.escolhas,[grupo.id]:e.target.value}}})}
+            onChange={e=>{const escolhas={...registro.escolhas};if(e.target.value)escolhas[grupo.id]=e.target.value;else delete escolhas[grupo.id];
+              onChange({...d,dnd2014EquipamentoInicial:{...registro,conferido:false,escolhas}})}}
             className="mt-1 min-h-10 w-full rounded-lg border border-(--a-55456e) bg-(--s-151123) p-2 text-white">
             <option value="">Selecione a alternativa...</option>
             {grupo.opcoes.map(op=><option key={op} value={op}>{op}</option>)}

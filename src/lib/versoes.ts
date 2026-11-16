@@ -27,6 +27,16 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.35.0', data: '2026-11-16',
+    titulo: 'Mesa: visão dos personagens e luz que para nas paredes',
+    itens: [
+      'Nova opção da cena 👁️ Visão dos personagens (Mestre › Controles): a névoa se abre sozinha pelo que os personagens dos jogadores enxergam. Paredes e portas fechadas bloqueiam; janelas e portas abertas deixam ver.',
+      'O que o grupo já viu continua aparecendo, mais escuro; o que nunca viu fica na névoa. Inimigos e NPCs só aparecem para os jogadores quando estão à vista de algum personagem.',
+      'O mestre escolhe até onde os personagens enxergam (sem limite, 9 m, 18 m…).',
+      'A luz dos tokens agora para nas paredes e nas portas fechadas (e passa pelas janelas), para todo mundo.',
+    ],
+  },
+  {
     versao: '0.34.10', data: '2026-11-16',
     titulo: 'Mesa: paredes, portas e névoa melhor',
     itens: [

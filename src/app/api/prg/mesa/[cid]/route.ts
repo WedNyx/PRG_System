@@ -16,11 +16,13 @@ import { adiarNaOrdem, entrarNaOrdem, moverNaOrdem, mudarValor, sairDaOrdem } fr
 import { ehV8 } from '@/lib/nuvem/categorias'
 import { lerAreasEfeito, MAX_AREAS_POR_CENA, normalizarAreaEfeito } from '@/lib/mesa/areasEfeito'
 import { caminhoLivre, lerParedes, MAX_PAREDES, normalizarParede } from '@/lib/mesa/paredes'
+import { alcanceCelulas, celulasVisiveis, revelarNaNevoa, segmentosVisao } from '@/lib/mesa/visao'
 import { condicoesDisponiveis, emojiCondicao, nomeCondicao, normalizarDanos, normalizarRodadas, passarRodada } from '@/lib/condicoes'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ cid: string }> }
-type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; tokens_travados: boolean }
+type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; tokens_travados: boolean
+  paredes?: unknown; visao_dinamica?: boolean | null; visao_alcance?: number | null }
 type Token = { id: string; cena_id: string; ficha_id: string | null; dono_id: string | null; visivel: boolean; npc: boolean; movimento: Movimento }
 const EVENTO = 'id,tipo,visibilidade,autor_id,destinatario_id,personagem,texto,expressao,resultados,total,dados,criado_em,autor:prg_public_adventurers!prg_mesa_eventos_autor_id_fkey(apelido)'
 
@@ -36,6 +38,22 @@ async function exigirSessaoAberta(cid: string, admin: boolean) {
   if (admin) return
   const [c] = await rest<{ sessao_aberta: boolean }[]>(`prg_campanhas?select=sessao_aberta&id=eq.${q(cid)}`)
   if (!c?.sessao_aberta) throw new ErroApi(423, 'A sessão está fechada. Aguarde o mestre abrir a mesa.')
+}
+/**
+ * Visão dos personagens (v0.35.0): com a opção ligada na cena, a névoa se abre pelo que os tokens dos jogadores
+ * enxergam (paredes e portas fechadas bloqueiam). O que já foi visto fica revelado. Erros aqui não atrapalham a ação.
+ */
+async function revelarPelaVisao(cid: string, cenaId: string) {
+  try {
+    const [c] = await rest<Cena[]>(`prg_cenas?select=*&id=eq.${q(cenaId)}&campanha_id=eq.${q(cid)}`)
+    if (!c?.visao_dinamica || !c.fog_ativo) return
+    const tokens = await rest<{ x: number; y: number; tamanho: number | null; npc: boolean; dono_id: string | null }[]>(`prg_tokens?select=x,y,tamanho,npc,dono_id&cena_id=eq.${q(cenaId)}&npc=eq.false&dono_id=not.is.null&limit=40`)
+    if (!tokens.length) return
+    const segs = segmentosVisao(lerParedes(c.paredes, c.grid_cols, c.grid_rows)), raio = alcanceCelulas(c.visao_alcance)
+    const celulas = tokens.flatMap(t => { const m = (t.tamanho ?? 1) / 2; return celulasVisiveis(t.x + m, t.y + m, segs, c.grid_cols, c.grid_rows, raio + m - 0.5) })
+    const r = revelarNaNevoa(c.fog_revelado, celulas, c.grid_cols, c.grid_rows)
+    if (r.mudou) await rest(`prg_cenas?id=eq.${q(c.id)}`, { method: 'PATCH', body: JSON.stringify({ fog_revelado: r.nevoa }) })
+  } catch { /* a visão é um extra: se falhar, a mesa segue */ }
 }
 const exigirAdmin = (admin: boolean) => { if (!admin) throw new ErroApi(403, 'Apenas o mestre pode fazer isso.') }
 async function cenaDaCampanha(cid: string, cenaId: unknown): Promise<Cena> {
@@ -296,6 +314,9 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       if (b.escuridao !== undefined) m.escuridao = inteiro(b.escuridao, 0, 100) ?? 0
       if (typeof b.luz_revela_nevoa === 'boolean') m.luz_revela_nevoa = b.luz_revela_nevoa
       if (typeof b.tokens_travados === 'boolean') m.tokens_travados = b.tokens_travados
+      // Visão dos personagens (v0.35.0): liga a névoa junto.
+      if (typeof b.visao_dinamica === 'boolean') { m.visao_dinamica = b.visao_dinamica; if (b.visao_dinamica) m.fog_ativo = true }
+      if (b.visao_alcance !== undefined) m.visao_alcance = inteiro(b.visao_alcance, 0, 300) ?? 0
       if (b.camadas !== undefined) {
         const camadas = normalizarCamadas(b.camadas, (m.grid_cols as number) ?? c.grid_cols, (m.grid_rows as number) ?? c.grid_rows)
         if (!camadas) throw new ErroApi(400, 'Imagens do mapa inválidas (máximo 30, só links https).')
@@ -304,9 +325,11 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       if (!Object.keys(m).length) throw new ErroApi(400, 'Nada para alterar.')
       await rest(`prg_cenas?id=eq.${q(c.id)}`, { method: 'PATCH', body: JSON.stringify(m) }).catch(er => {
         // Sem a migração 028: mapa acima de 100 ou névoa por partes/luz ainda não existem no banco.
+        if (m.visao_dinamica !== undefined || m.visao_alcance !== undefined) throw new ErroApi(409, 'Esta função precisa da atualização do banco (migração 032). Avise o administrador.')
         if (m.fog_areas !== undefined || m.escuridao !== undefined || m.luz_revela_nevoa !== undefined || (m.grid_cols as number) > 100 || (m.grid_rows as number) > 100) throw new ErroApi(409, 'Esta função precisa da atualização do banco (migração 028). Avise o administrador.')
         throw er
       })
+      await revelarPelaVisao(cid, c.id)
       return ok({ ok: true })
     }
     case 'cena_ativar': {
@@ -375,6 +398,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         const [casa] = await rpc<{ x: number; y: number }[]>('prg_token_casa_livre', { p_token: (t as { id: string }).id }).catch(() => [])
         if (casa) Object.assign(t as object, casa)
       }
+      if (c.visao_dinamica && dono) await revelarPelaVisao(cid, c.id)
       return ok({ token: t }, 201)
     }
     case 'token_mover': {
@@ -391,6 +415,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         }
       }
       await rest(`prg_tokens?id=eq.${q(t.id)}`, { method: 'PATCH', body: JSON.stringify({ x: nx, y: ny }) })
+      if (c?.visao_dinamica && !t.npc && t.dono_id) await revelarPelaVisao(cid, t.cena_id)
       return ok({ ok: true })
     }
     case 'token_editar': {
@@ -505,6 +530,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       await rest(`prg_cenas?id=eq.${q(c.id)}`, { method: 'PATCH', body: JSON.stringify({ paredes: novas }) }).catch(() => {
         throw new ErroApi(409, 'Esta função precisa da atualização do banco (migração 031). Avise o administrador.')
       })
+      await revelarPelaVisao(cid, c.id)
       return ok({ paredes: novas })
     }
     case 'tabelas_salvar': {

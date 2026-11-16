@@ -33,6 +33,8 @@ const DISPOSITIVOS = [
   await call(M, 'POST', 'mesa/' + cid, { acao: 'cena_editar', cenaId: cena, escuridao: 60 })
   // v0.34.10: uma sala com porta.
   await call(M, 'POST', 'mesa/' + cid, { acao: 'parede_criar', cenaId: cena, paredes: [{ x1: 6, y1: 6, x2: 10, y2: 6 }, { x1: 6, y1: 6, x2: 6, y2: 10 }, { x1: 10, y1: 6, x2: 10, y2: 7, tipo: 'porta' }] })
+  // v0.35.0: visão dos personagens ligada.
+  await call(M, 'POST', 'mesa/' + cid, { acao: 'cena_editar', cenaId: cena, visao_dinamica: true })
   // v0.34.9: uma área de efeito no mapa.
   await call(M, 'POST', 'mesa/' + cid, { acao: 'area_criar', cenaId: cena, area: { forma: 'cone', x: 3.5, y: 3.5, angulo: 45, metros: 9, nome: 'Sopro' } })
   r = await call(J, 'POST', 'mesa/' + cid, { acao: 'token_criar', cenaId: cena, fichaId: fL }); const tL = r.d.token?.id

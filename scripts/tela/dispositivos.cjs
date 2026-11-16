@@ -43,7 +43,6 @@ const DISPOSITIVOS = [
     ['campanhas', M, '/central?secao=campanhas&campanha=' + cid],
     ['ficha-dnd', J, '/ficha?nuvem=' + fL],
     ['ficha-dnd-magias', J, '/ficha?nuvem=' + fL, /Poderes e habilidades/],
-    ['ficha-dnd-arvore', J, '/ficha?nuvem=' + fL, /Árvore de habilidades/],
     ['ficha-t20', J, '/ficha?nuvem=' + fT, /Atributos e perícias/],
     ['mesa', M, '/mesa?campanha=' + cid],
     ['mesa-combate', M, '/mesa?campanha=' + cid, /^Jogo$/],

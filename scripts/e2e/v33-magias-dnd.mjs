@@ -28,5 +28,5 @@ r=await call(M,'PUT','fichas/'+fc,{versao:g.d.ficha.versao,dados:{...g.d.ficha.d
 check('mestre dá Rajada Mística e Arcana Mística de 6º ao Bruxo 11', r.s===200, r)
 const g2=await call(M,'GET','fichas/'+fc)
 r=await call(M,'PUT','fichas/'+fc,{versao:g2.d.ficha.versao,dados:{...g2.d.ficha.dados,dndMagias:{...g2.d.ficha.dados.dndMagias,'eyebite':'preparada'}}})
-check('segunda Arcana Mística de 6º é recusada', r.s===400 && /Arcana/.test(r.d.erro), r)
+check('ficha manual: segunda Arcana Mística de 6º é aceita (sem conferência automática)', r.s===200, r)
 console.log(falhas?`\n${falhas} falha(s)`:'\nTudo certo!'); process.exit(falhas?1:0)

@@ -67,6 +67,10 @@ function categoriaGenerica(caminho: string): Campo {
   if (caminho === 'dndMagias') return 'habilidades'
   if (caminho === 'dndMulticlasse') return 'nivel'
   if (caminho === 'uso') return 'pv'
+  // Ficha manual: modificadores com os atributos, totais com as perícias, valores (CA, Defesa…) com PV e recursos.
+  if (caminho === 'manual.mods') return 'atributos'
+  if (caminho === 'manual.pericias') return 'pericias'
+  if (caminho.startsWith('manual.')) return 'pv'
   if (caminho.startsWith('campos.')) {
     const k = caminho.slice(7)
     if (/^(nivel|xp)$|^nivel_|nex/.test(k)) return 'nivel'
@@ -86,8 +90,9 @@ export const ehV8 = (sistema: string) => sistema === 'lunethernnyis-v8'
 /** Lista os caminhos de uma ficha: 'fields.name', 'portrait', 'campos.classe', 'atributos'... */
 export function caminhos(sistema: string, d: Dados): string[] {
   if (ehV8(sistema)) return [...Object.keys(obj(d.fields)).map(k => 'fields.' + k), ...Object.keys(d).filter(k => k !== 'fields')]
-  return [...Object.keys(d).filter(k => k !== 'campos' && k !== 'listas' && k !== 'sistema'),
-    ...Object.keys(obj(d.campos)).map(k => 'campos.' + k), ...Object.keys(obj(d.listas)).map(k => 'listas.' + k)]
+  return [...Object.keys(d).filter(k => k !== 'campos' && k !== 'listas' && k !== 'sistema' && k !== 'manual'),
+    ...Object.keys(obj(d.campos)).map(k => 'campos.' + k), ...Object.keys(obj(d.listas)).map(k => 'listas.' + k),
+    ...Object.keys(obj(d.manual)).map(k => 'manual.' + k)]
 }
 export const categoria = (sistema: string, caminho: string): Campo => ehV8(sistema) ? categoriaV8(caminho) : categoriaGenerica(caminho)
 

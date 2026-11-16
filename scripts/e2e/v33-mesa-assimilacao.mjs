@@ -6,14 +6,14 @@ function check(n,c,e){ console.log((c?'✔':'✘')+' '+n+(c?'':'  '+JSON.stringi
 let r=await call(M,'POST','campanhas',{nome:'Rio Comprido',sistema:'assimilacao',modeloPadrao:'C'}); const cid=r.d.campanha.id
 const mesa=(b)=>call(M,'POST','mesa/'+cid,b)
 await mesa({acao:'sessao',aberta:true})
-const cheio=n=>Object.fromEntries([1,2,3,4,5,6].map(i=>['saude'+i,{atual:n}]))
+const cheio=n=>Object.fromEntries([1,2,3,4,5,6].map(i=>['saude'+i,{atual:n,max:7}]))
 async function npc(nome, extra){ r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'npc',sistema:'assimilacao',nome}); const id=r.d.ficha.id
   r=await call(M,'GET','fichas/'+id); const d=r.d.ficha.dados
   r=await call(M,'PUT','fichas/'+id,{versao:r.d.ficha.versao,dados:{...d,...extra}}); return id }
 const fH=await npc('Hugo',{atributos:{INF:1,PER:2,POT:2,REA:3,RSL:1,SAG:1},pericias:{armas:3},recursos:cheio(4),itens:[{id:'faca',nome:'Faca',categoria:'arma',peso:1,dano:'2d10',bonus:[]}]})
 const fB=await npc('Bicho',{atributos:{INF:1,PER:1,POT:3,REA:1,RSL:3,SAG:1},recursos:cheio(7)})
 r=await call(M,'GET',`mesa/${cid}?fichas=1`); const ch=r.d.fichas?.find(f=>f.id===fH)?.combate, cb=r.d.fichas?.find(f=>f.id===fB)?.combate
-check('a vida é a soma dos 6 níveis de Saúde', ch?.vida?.id==='saude' && ch.vida.atual===24 && cb?.vida?.max===42, {ch, cb})
+check('a vida é a soma dos 6 níveis de Saúde (máximos digitados)', ch?.vida?.id==='saude' && ch.vida.atual===24 && cb?.vida?.max===42, {ch, cb})
 check('testes juntam Instinto (d6) e aptidão (d10)', ch?.testes.some(t=>t.id==='combo:REA:armas' && t.assim.d6===3 && t.assim.d10===3) && ch.testePadrao==='combo:REA:armas', ch?.testes)
 r=await mesa({acao:'cena_criar',nome:'Ruínas',grid_cols:20,grid_rows:12}); let cena=r.d.cena?.id
 r=await call(M,'GET','mesa/'+cid); cena=r.d.cenaAtiva?.id ?? cena; if(!r.d.cenaAtiva) await mesa({acao:'cena_ativar',cenaId:cena})

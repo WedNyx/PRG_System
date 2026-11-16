@@ -9,12 +9,12 @@ r=await call(M,'POST',`campanhas/${cid}/convites`,{}); await call(J,'POST','conv
 r=await call(M,'GET','campanhas/'+cid); await call(M,'POST',`campanhas/${cid}/solicitacoes/${r.d.solicitacoes[0].id}`,{decisao:'aceitar'})
 await mesa(M,{acao:'sessao',aberta:true})
 r=await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sistema:'dnd5e-srd',nome:'Lyra'}); const fL=r.d.ficha.id
-r=await call(M,'GET','fichas/'+fL); await call(M,'PUT','fichas/'+fL,{versao:r.d.ficha.versao,dados:{...r.d.ficha.dados,atributos:{...r.d.ficha.dados.atributos,DES:18}}})
+r=await call(M,'GET','fichas/'+fL); await call(M,'PUT','fichas/'+fL,{versao:r.d.ficha.versao,dados:{...r.d.ficha.dados,atributos:{...r.d.ficha.dados.atributos,DES:18},manual:{...r.d.ficha.dados.manual,derivados:{...r.d.ficha.dados.manual.derivados,iniciativa:4}}}}) // ficha manual: a iniciativa é digitada
 r=await mesa(M,{acao:'cena_criar',nome:'Ponte',grid_cols:12,grid_rows:8}); r=await call(M,'GET','mesa/'+cid); const cena=r.d.cenaAtiva?.id ?? r.d.cenas[0].id; if(!r.d.cenaAtiva) await mesa(M,{acao:'cena_ativar',cenaId:cena})
 r=await mesa(J,{acao:'token_criar',cenaId:cena,fichaId:fL}); const tL=r.d.token.id
 r=await mesa(M,{acao:'token_criar',cenaId:cena,nome:'Ogro',hp_max:30}); const tO=r.d.token.id
 r=await mesa(M,{acao:'token_criar',cenaId:cena,nome:'Rato',hp_max:3}); const tR=r.d.token.id
-r=await call(M,'GET',`mesa/${cid}?fichas=1`); check('bônus de iniciativa vem da ficha (DES 18 → +4)', r.d.fichas.find(f=>f.id===fL)?.combate?.iniciativa===4, r.d.fichas)
+r=await call(M,'GET',`mesa/${cid}?fichas=1`); check('bônus de iniciativa digitado na ficha (+4)', r.d.fichas.find(f=>f.id===fL)?.combate?.iniciativa===4, r.d.fichas)
 r=await mesa(J,{acao:'combate_preparar',tokens:[{tokenId:tL}]}); check('jogador não prepara combate', r.s===403, r)
 r=await mesa(M,{acao:'combate_preparar',tokens:[]}); check('precisa escolher alguém', r.s===400, r)
 r=await mesa(M,{acao:'combate_preparar',tokens:[{tokenId:tL},{tokenId:tO,bonus:-30}]})

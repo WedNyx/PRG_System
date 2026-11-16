@@ -4,15 +4,14 @@ import { mesclarFicha } from '@/lib/nuvem/mesclar'
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import FichaGenerica from '@/components/fichas/FichaGenerica'
+import FichaManual from '@/components/fichas/FichaManual'
 import { sistemaPorId } from '@/lib/sistemas/catalogo'
 import { obterSistema } from '@/lib/sistemas/cliente'
-import { normalizarFicha } from '@/lib/sistemas/calculo'
+import { normalizarFicha, tornarManual } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
-import { lerConfiguracaoProgressao, modoDaFicha, type ConfiguracaoProgressao, type ModoProgressao } from '@/lib/sistemas/modoProgressao'
-import { fontesLiberadas } from '@/lib/sistemas/dnd2024Fontes'
+import { lerConfiguracaoProgressao, type ConfiguracaoProgressao } from '@/lib/sistemas/modoProgressao'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
-import { CAMPOS, podeDesbloquearArvore, type Regra } from '@/lib/campanhas/permissoes'
+import { CAMPOS } from '@/lib/campanhas/permissoes'
 import { toast } from 'sonner'
 import PassarItem from '@/components/fichas/PassarItem'
 import type { Item } from '@/lib/sistemas/inventario'
@@ -47,11 +46,11 @@ const COR: Partial<Record<Estado, string>> = {
 
 function passosFicha(campanha: boolean, leitura: boolean): PassoAjuda[] {
   return [
-    { icone: '🧭', titulo: 'Menu da ficha', texto: 'A ficha é dividida em partes: Principal, Atributos, Poderes, Inventário, Anotações e o Guia do sistema. No celular, deslize a fileira de botões; no computador, use o menu à esquerda.' },
+    { icone: '🧭', titulo: 'Menu da ficha', texto: 'A ficha segue o modelo do sistema e é dividida em partes: Principal, Atributos, Poderes, Inventário e Anotações. Nada é calculado: você e o mestre preenchem tudo. No celular, deslize a fileira de botões; no computador, use o menu à esquerda.' },
     { icone: '⬇️', titulo: 'Baixar a ficha', texto: 'O botão “Baixar” no topo salva uma cópia do personagem num arquivo. Para trazer de volta: Central → Fichas → Importar ficha.' },
     { icone: '☁️', titulo: 'Salva sozinha', texto: 'Tudo o que você muda é salvo em poucos segundos. O selo no topo mostra se já salvou (verde) ou se ainda falta (amarelo).' },
-    { icone: '🎲', titulo: 'Rolar dados', texto: campanha ? 'Toque no valor de um atributo, perícia, arma ou poder. Como a ficha é de campanha, o resultado também aparece no chat da mesa para todos.' : 'Toque no valor de um atributo, perícia, arma ou poder. Esta ficha é avulsa: a rolagem aparece só para você e não fica salva.' },
-    { icone: '❤️', titulo: 'Vida e recursos', texto: 'Na parte Principal, use − e + nas barras (PV, mana etc.). O botão 🌙 Descansar recupera o que as regras mandam.' },
+    { icone: '🎲', titulo: 'Rolar dados', texto: campanha ? 'Toque no botão de um atributo, perícia, arma ou poder: rola com o número que está digitado. Como a ficha é de campanha, o resultado também aparece no chat da mesa para todos.' : 'Toque no botão de um atributo, perícia, arma ou poder: rola com o número que está digitado. Esta ficha é avulsa: a rolagem aparece só para você e não fica salva.' },
+    { icone: '❤️', titulo: 'Vida e recursos', texto: 'Na parte Principal, use − e + nas barras (PV, mana etc.). O máximo de cada barra é você quem digita. O botão 🌙 Descanso enche as barras até o máximo digitado.' },
     { icone: '🎒', titulo: 'Inventário', texto: campanha ? 'Adicione itens com foto ou desenho, marque os mágicos e use 🎁 Passar para entregar um item a outro personagem da campanha.' : 'Adicione itens com foto ou desenho e marque os mágicos. Para passar itens a outros personagens, a ficha precisa estar numa campanha.' },
     ...(campanha ? [{ icone: '👑', titulo: 'O mestre acompanha', texto: 'Dependendo das regras da campanha, algumas mudanças vão para aprovação do mestre antes de valer. O aviso no topo diz quais.' }] : [{ icone: '🏰', titulo: 'Levar para uma campanha', texto: 'Na Central → Fichas → Avulsas, use “Enviar para campanha”.' }]),
     ...(leitura ? [{ icone: '👁️', titulo: 'Somente leitura', texto: 'Você pode ver esta ficha, mas não editar (ela é de outra pessoa ou o mestre travou).' }] : []),
@@ -77,11 +76,8 @@ function Conteudo() {
   const salvando = useRef(false)
   const [aviso, setAviso] = useState<{ texto: string; desfazer: boolean } | null>(null)
   const [campanhaId, setCampanhaId] = useState<string | null>(null)
-  const [modoProgressao, setModoProgressao] = useState<ModoProgressao>('hibrido')
   // Alterar a ESTRUTURA da árvore é exclusivo do mestre; liberar habilidades
   // existentes segue a permissão "habilidades" configurada na campanha.
-  const [podeEditarArvore, setPodeEditarArvore] = useState(true)
-  const [podeLiberarArvore, setPodeLiberarArvore] = useState(true)
   /** Mestre numa campanha de D&D: modo da campanha e a exceção desta ficha (v0.33.6). */
   const [config, setConfig] = useState<ConfiguracaoProgressao | null>(null)
   const [souMestre, setSouMestre] = useState(false)
@@ -104,26 +100,17 @@ function Conteudo() {
           if (!ativo) return
           versao.current = r.ficha.versao
           setCampanhaId(r.ficha.campanha_id ?? null)
-          // A exceção desta ficha (se o mestre deu uma) vale no lugar do modo da campanha.
-          const cfg = lerConfiguracaoProgressao(r.configProgressao)
-          setConfig(cfg); setSouMestre(!!r.souMestre)
-          setModoProgressao(modoDaFicha(cfg, nuvem))
-          setPodeEditarArvore(!r.ficha.campanha_id || !!r.souMestre)
-          setPodeLiberarArvore(podeDesbloquearArvore(
-            !!r.ficha.campanha_id, r.podeEditar, !!r.souMestre,
-            r.regras?.efetivas.habilidades as Regra | undefined,
-          ))
+          setConfig(lerConfiguracaoProgressao(r.configProgressao)); setSouMestre(!!r.souMestre)
           setAguardandoEntrada(r.ficha.status === 'pendente'); setEhNpc(!!r.ficha.npc)
           // O pedido que ainda espera o mestre aparece na ficha (senão, ao recarregar, parecia que não tinha salvo).
           const comPedido = r.pedido?.length ? aplicar(r.ficha.dados as unknown as Record<string, unknown>, r.pedido) as unknown as DadosFicha : r.ficha.dados
-          base.current = normalizarFicha(s, comPedido)
+          base.current = tornarManual(s, normalizarFicha(s, comPedido))
           setSistema(s); setDados(base.current); setEstado(r.podeEditar ? 'salvo' : 'leitura')
         } else if (local) {
           const salvo = JSON.parse(localStorage.getItem(LOCAL + local) || 'null')
           const s = sistemaPorId(salvo?.sistema ?? q.get('sistema') ?? '')
           if (!s) throw new ErroNuvem(404, 'Ficha não encontrada neste navegador.')
-          setModoProgressao('hibrido'); setPodeEditarArvore(true); setPodeLiberarArvore(true)
-          setSistema(s); setDados(normalizarFicha(s, salvo)); setEstado('local')
+          setSistema(s); setDados(tornarManual(s, normalizarFicha(s, salvo))); setEstado('local')
         } else throw new ErroNuvem(404, 'Ficha não encontrada.')
       } catch (e) { if (ativo) { setErro(e instanceof ErroNuvem ? e.message : 'Falha de conexão.'); setEstado('erro') } }
     })()
@@ -220,21 +207,7 @@ function Conteudo() {
             {!aguardandoEntrada && <button type="button" onClick={() => { if (confirm('Terminar a criação? Depois disso, mudanças em atributos, perícias e outras áreas podem precisar da aprovação do mestre.')) mudar({ ...dados, criacaoLivre: false }) }} className="rounded-lg border border-emerald-400/60 px-3 py-1">Terminei a criação</button>}</p>)}
       {aviso && <p role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-(--a-62527e) bg-(--s-1f2a40) p-3 text-sm">
         <span className="flex-1">{aviso.texto}</span>{aviso.desfazer && <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-(--a-b99bff) px-3 py-1">Desfazer (voltar ao salvo)</button>}</p>}
-      {sistema && dados ? <FichaGenerica sistema={sistema} dados={dados} onChange={mudar} somenteLeitura={estado === 'leitura'} modoProgressao={modoProgressao} podeEditarArvore={podeEditarArvore} podeLiberarArvore={podeLiberarArvore}
-        fontesDnd={campanhaId && config ? fontesLiberadas(config.fontes) : null}
-        livroBaseCampanha={campanhaId && config ? config.baseLivro ?? 'phb2024' : null}
-        edicaoDefinidaPeloMestre={!!(campanhaId && config?.baseLivro)}
-        excecaoModo={campanhaId && nuvem && souMestre && config && sistema.id === 'dnd5e-srd' ? {
-          campanha: config.modo, atual: config.excecoesPorFicha?.[nuvem] ?? null,
-          mudar: async modo => {
-            try {
-              const r = await api<{ campanha: { config_progressao?: unknown } }>('campanhas/' + campanhaId, { method: 'PATCH', body: { excecaoFicha: { fichaId: nuvem, modo } } })
-              const cfg = lerConfiguracaoProgressao(r.campanha.config_progressao)
-              setConfig(cfg); setModoProgressao(modoDaFicha(cfg, nuvem))
-              toast.success(modo ? 'Esta ficha agora tem um modo próprio.' : 'Esta ficha voltou a seguir a campanha.')
-            } catch (e) { toast.error(e instanceof ErroNuvem ? e.message : 'Falha ao salvar o modo.') }
-          },
-        } : undefined}
+      {sistema && dados ? <FichaManual sistema={sistema} dados={dados} onChange={mudar} somenteLeitura={estado === 'leitura'}
         rolarNaCampanha={campanhaId ? async (expressao, rotulo, extra) => {
           try { const r = await api<{ evento: { resultados: number[]; total: number } }>('mesa/' + campanhaId, { method: 'POST', body: { acao: 'evento', tipo: 'rolagem', expressao, personagem: dados.nome, texto: rotulo, ...extra } }); avisarMesaPai({ tipo: 'rolagem', evento: r.evento }); return r.evento }
           catch (e) { setErro(e instanceof ErroNuvem ? e.message : 'Falha ao rolar.'); return null }
@@ -250,7 +223,7 @@ function Conteudo() {
       {passando && campanhaId && nuvem && sistema && <PassarItem campanhaId={campanhaId} fichaId={nuvem} item={passando.item} tem={passando.tem} fechar={() => setPassando(null)}
         feito={r => {
           versao.current = r.de.versao
-          setDados(normalizarFicha(sistema, r.de.dados as Partial<DadosFicha>)); setEstado('salvo'); setPassando(null)
+          setDados(tornarManual(sistema, normalizarFicha(sistema, r.de.dados as Partial<DadosFicha>))); setEstado('salvo'); setPassando(null)
           toast.success(`🎁 ${r.qtd > 1 ? r.qtd + '× ' : ''}${r.item} foi para ${r.para}.`)
         }} />}
     </div>

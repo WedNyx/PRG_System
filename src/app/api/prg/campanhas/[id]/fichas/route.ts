@@ -1,7 +1,7 @@
 import { ator, lerJson, ok, papelNaCampanha, q, registrar, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar } from '@/lib/nuvem/validacao'
 import { carregarSistema, sistemaPermitido } from '@/lib/nuvem/sistemasServidor'
-import { fichaVazia } from '@/lib/sistemas/calculo'
+import { fichaVazia, tornarManual } from '@/lib/sistemas/calculo'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string }> }
@@ -36,7 +36,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
   }
   const s = await carregarSistema(sistema as string)
   // Ficha de jogador criada pelo mestre começa em criação livre: o jogador monta sem pedir aprovação a cada mudança (v0.33.7).
-  const dados = s ? { ...fichaVazia(s), nome, ...(npc ? {} : { criacaoLivre: true }) } : { version: 2, fields: { name: nome } }
+  const dados = s ? { ...tornarManual(s, fichaVazia(s)), nome, ...(npc ? {} : { criacaoLivre: true }) } : { version: 2, fields: { name: nome } }
   const [f] = await rest<{ id: string }[]>('prg_fichas', {
     method: 'POST', prefer: 'return=representation',
     body: JSON.stringify({ dono_id: dono, campanha_id: id, sistema, nome, dados, npc, status: 'ativa', oculta: npc }),

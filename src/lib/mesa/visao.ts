@@ -12,6 +12,30 @@ export const segmentosVisao = (paredes: Parede[]): Segmento[] => paredes.filter(
 export const SEM_LIMITE_CELULAS = 60
 export const alcanceCelulas = (metros: number | null | undefined) => metros && metros > 0 ? metros / METROS_POR_CELULA_MESA : SEM_LIMITE_CELULAS
 
+/**
+ * Visão de cada personagem (v0.35.2): até onde enxerga (0 = o que a cena define) e até onde enxerga no escuro
+ * (visão no escuro de elfo, anão etc.; 0 = não tem). Em metros.
+ */
+export type VisaoToken = { alcance: number; escuro: number }
+export function normalizarVisao(v: unknown): VisaoToken | null {
+  if (!v || typeof v !== 'object') return null
+  const o = v as Record<string, unknown>
+  const m = (k: string) => { const n = Number(o[k]); return Number.isFinite(n) ? Math.round(Math.max(0, Math.min(300, n)) * 2) / 2 : 0 }
+  const alcance = m('alcance'), escuro = m('escuro')
+  return alcance || escuro ? { alcance, escuro } : null
+}
+/** A partir desta escuridão (0–100), só se enxerga o que está iluminado ou dentro da visão no escuro. */
+export const ESCURO_A_PARTIR_DE = 50
+export const estaEscuro = (escuridao: number | null | undefined) => (escuridao ?? 0) >= ESCURO_A_PARTIR_DE
+/** Luz em células: centro e raio total (luz plena + penumbra). */
+export type LuzCelulas = { x: number; y: number; raio: number }
+/** O ponto está iluminado por alguma luz (dentro do raio e sem parede no caminho)? */
+export function iluminado(px: number, py: number, luzes: LuzCelulas[], segs: Segmento[]): boolean {
+  return luzes.some(l => (px - l.x) ** 2 + (py - l.y) ** 2 <= l.raio * l.raio && temLinhaDeVisao(l.x, l.y, px, py, segs))
+}
+/** Alcance da visão de um personagem em células: o dele, ou o da cena. */
+export const alcanceDoToken = (v: VisaoToken | null | undefined, metrosCena: number | null | undefined) => alcanceCelulas(v?.alcance ? v.alcance : metrosCena)
+
 /** Nada bloqueia a linha entre A e B? */
 export function temLinhaDeVisao(ax: number, ay: number, bx: number, by: number, segs: Segmento[]): boolean {
   for (const s of segs) if (cruzam(ax, ay, bx, by, s[0], s[1], s[2], s[3])) return false
@@ -22,7 +46,9 @@ export function temLinhaDeVisao(ax: number, ay: number, bx: number, by: number, 
  * Células que o personagem enxerga: dentro do alcance e com linha de visão até o centro da célula
  * (ou até perto de um dos cantos, para a célula junto da parede também aparecer).
  */
-export function celulasVisiveis(ox: number, oy: number, segs: Segmento[], cols: number, rows: number, raio: number): string[] {
+export function celulasVisiveis(ox: number, oy: number, segs: Segmento[], cols: number, rows: number, raio: number,
+  /** No escuro (v0.35.2): só conta a célula iluminada ou dentro da visão no escuro (em células). */
+  escuro?: { visao: number; luzes: LuzCelulas[] }): string[] {
   const out: string[] = []
   const r = Math.min(raio, SEM_LIMITE_CELULAS)
   // Só as paredes que podem estar no caminho (dentro do quadrado do alcance).
@@ -31,7 +57,9 @@ export function celulasVisiveis(ox: number, oy: number, segs: Segmento[], cols: 
   for (let y = Math.max(0, Math.floor(oy - r)); y <= Math.min(rows - 1, Math.floor(oy + r)); y++)
     for (let x = Math.max(0, Math.floor(ox - r)); x <= Math.min(cols - 1, Math.floor(ox + r)); x++) {
       if ((x + 0.5 - ox) ** 2 + (y + 0.5 - oy) ** 2 > r * r) continue
-      if (pts.some(([dx, dy]) => temLinhaDeVisao(ox, oy, x + dx, y + dy, perto))) out.push(`${x},${y}`)
+      if (!pts.some(([dx, dy]) => temLinhaDeVisao(ox, oy, x + dx, y + dy, perto))) continue
+      if (escuro && (x + 0.5 - ox) ** 2 + (y + 0.5 - oy) ** 2 > escuro.visao * escuro.visao && !iluminado(x + 0.5, y + 0.5, escuro.luzes, segs)) continue
+      out.push(`${x},${y}`)
     }
   return out
 }

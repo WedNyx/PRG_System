@@ -27,6 +27,15 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.35.2', data: '2026-11-16',
+    titulo: 'Mesa: visão de cada personagem e visão no escuro',
+    itens: [
+      'Cada token pode ter a própria visão: até onde enxerga e visão no escuro (elfo, anão, criaturas da noite…). Toque no token › Visão do personagem.',
+      'Com a escuridão da cena em 50 ou mais e a “Visão dos personagens” ligada, cada um só vê o que alguma luz ilumina ou o que está dentro da visão no escuro dele.',
+      'A luz de qualquer token (tocha, fogueira, magia) revela o que ilumina, e para nas paredes.',
+    ],
+  },
+  {
     versao: '0.35.1', data: '2026-11-16',
     titulo: 'Cada sistema com a sua cara',
     itens: [

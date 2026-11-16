@@ -7,6 +7,7 @@ import { calcular } from '@/lib/sistemas/calculo'
 import type { DadosFicha, FichaManual as Manual, Sistema } from '@/lib/sistemas/tipos'
 import { montarRolagem, rolarExpressao } from '@/lib/dice'
 import AcoesRapidas from './AcoesRapidas'
+import { AtributosGraus, PericiasGraus, RegrasDoSistema, TabelasDoSistema } from './FichaGraus'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import { InventarioFicha, PoderesFicha } from './Inventario'
 import JanelaDescanso from './Descanso'
@@ -60,6 +61,8 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const d20 = !regra && (s.rolagem ? s.rolagem === 'd20' : s.dados.startsWith('d20'))
   const d100 = s.id === 'brp' || s.rolagem === 'd100'
   const parada = s.rolagem === 'parada' ? s.parada?.lados ?? 20 : null
+  // Graus de dado (v0.35.6): atributos e perícias valem d4, d6, d8…
+  const graus = s.rolagem === 'graus' && !!s.graus
   const podeRolar = d20 || d100 || !!regra || !!parada
   const comMod = !!s.formulaModificador
   const dadosDe = (atributo?: string) => Math.max(0, ...(atributo ? atributo.split('/') : []).map(a => Number(d.atributos[a]) || 0))
@@ -100,11 +103,11 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const tituloAtr = s.tituloAtributos?.trim() || 'Atributos', tituloPer = s.pericias?.titulo?.trim() || 'Perícias'
   const SECOES = ([
     { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade, valores e recursos', ajuda: 'Preencha os dados do personagem, os valores (CA, Defesa…) e o máximo de cada recurso. Nada é calculado: o que você digita é o que vale. Embaixo ficam as ações rápidas: armas equipadas e poderes, para rolar com um toque.', ok: true },
-    { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? `${tituloAtr} e ${tituloPer[0].toLowerCase()}${tituloPer.slice(1)}` : tituloPer) : tituloAtr, sub: 'Testes e rolagens', ajuda: `Digite os valores${comMod ? ', os modificadores' : ''}${s.pericias ? ' e o total de cada perícia' : ''}. Toque no botão ao lado para rolar com o número digitado.`, ok: s.atributos.length > 0 || !!s.pericias },
+    { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? `${tituloAtr} e ${tituloPer[0].toLowerCase()}${tituloPer.slice(1)}` : tituloPer) : tituloAtr, sub: 'Testes e rolagens', ajuda: graus ? `Escolha o dado de cada atributo${s.pericias ? ' e de cada ' + (s.pericias.titulo?.trim() || 'perícia').toLowerCase().replace(/s$/, '') : ''}. Em “Teste”, os dois dados rolam juntos e somam.` : `Digite os valores${comMod ? ', os modificadores' : ''}${s.pericias ? ' e o total de cada perícia' : ''}. Toque no botão ao lado para rolar com o número digitado.`, ok: s.atributos.length > 0 || !!s.pericias },
     { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ajuda: 'Adicione poderes, magias, talentos e habilidades do personagem. O jogador e o mestre escrevem tudo.', ok: true },
     { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou ícone, ou pegue prontos no 📦 Arsenal. Itens equipados com rolagem aparecem nas ações rápidas.', ok: true },
     { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ajuda: 'Espaço livre para a história do personagem, aliados, segredos e lembretes.', ok: true },
-  ] as const).filter(x => x.ok)
+  ] as const).filter(x => x.ok).map(x => s.nomesSecoes?.[x.id] ? { ...x, nome: s.nomesSecoes[x.id]! } : x)
   const [secao, setSecao] = useState<string>('principal')
   const ir = (id: string) => { setSecao(id); window.scrollTo({ top: 0, behavior: 'smooth' }) }
   const menu = useRef<HTMLDivElement>(null)
@@ -162,6 +165,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
                     list={f.tipo === 'escolha' && f.opcoes?.length ? 'sugestoes-' + f.id : undefined}
                     onChange={e => set('campos', { ...d.campos, [f.id]: f.tipo === 'numero' ? Number(e.target.value) : e.target.value })} className={input + ' mt-1'} />}
                 {f.tipo === 'escolha' && !!f.opcoes?.length && <datalist id={'sugestoes-' + f.id}>{f.opcoes.map(o => <option key={o.nome} value={o.nome} />)}</datalist>}
+                {f.dica && <span className="mt-1 text-[11px] leading-snug text-(--a-a998bd)">{f.dica}</span>}
               </label>)}
             </div>
           </section>
@@ -178,9 +182,10 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
             {s.recursos.length > 0 && <div className="mt-3 grid gap-3 lg:grid-cols-2">
               {s.recursos.map(r => {
                 const atual = Number(d.recursos[r.id]?.atual ?? 0) || 0
-                return <BarraRecurso key={r.id} nome={r.nome} cor={corDoRecurso(r.id, r.nome)} atual={atual} max={maxDe(r.id)} maxEditavel somenteLeitura={somenteLeitura} contador={!!r.contador}
+                return <div key={r.id}><BarraRecurso nome={r.nome} cor={corDoRecurso(r.id, r.nome)} atual={atual} max={maxDe(r.id)} maxEditavel somenteLeitura={somenteLeitura} contador={!!r.contador}
                   mudar={v => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual: v } })}
                   mudarMax={v => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual, max: v } })} />
+                  {r.dica && <p className="mt-1 px-1 text-[11px] leading-snug text-(--a-a998bd)">{r.dica}</p>}</div>
               })}
             </div>}
           </section>}
@@ -188,7 +193,12 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
         </>}
 
         {secao === 'atributos' && <>
-          {s.atributos.length > 0 && <section className={card}>
+          {graus && s.atributos.length > 0 && <section className={card}>
+            <h2 className="mb-3 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">{tituloAtr}</h2>
+            <AtributosGraus s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} mostrar={mostrar} />
+          </section>}
+          {graus && s.pericias && <PericiasGraus s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} mostrar={mostrar} />}
+          {!graus && s.atributos.length > 0 && <section className={card}>
             <h2 className="mb-3 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">{tituloAtr}</h2>
             {s.id === 'ordem-paranormal'
               ? <AtributosOrdem atributos={s.atributos} valores={d.atributos} nex={Number(d.campos.nex ?? 5)} somenteLeitura={somenteLeitura} semLimite
@@ -229,7 +239,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
             <div className="flex flex-wrap gap-2">{s.resistencias.map(id => { const x = s.derivados.find(y => y.id === id); if (!x) return null; const n = Number(m.derivados[id]) || 0
               return <button key={id} type="button" onClick={() => rolar(x.nome.split(' (')[0], 0, n, true)} className="rounded-lg border border-(--a-5e4b78) px-3 py-2 text-sm hover:bg-(--s-34294f)">{x.nome.split(' (')[0]} ({n || 2}d{parada})</button> })}</div>
           </section>}
-          {s.pericias && <section className={card}>
+          {!graus && s.pericias && <section className={card}>
             <h2 className="mb-1 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">{tituloPer}</h2>
             {visual.pericias === 'piramide' ? <>
               <p className="mb-3 text-xs text-(--a-a998bd)">Cada degrau mostra as perícias daquele nível. Toque numa perícia para rolar 4dF + o nível.</p>
@@ -283,6 +293,8 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
         </>}
         {secao === 'anotacoes' && <>
           <section className="grid gap-4">{listasDe('anotacoes').map(l => lista(l))}</section>
+          <TabelasDoSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolarNaCampanha={rolarNaCampanha} />
+          <RegrasDoSistema s={s} />
           {s.autor && <section className={card + ' text-sm'}><p>✍️ <strong className="text-(--a-ed9cd8)">{s.nome}</strong> é um sistema autoral criado por <strong className="text-(--a-e4d3ff)">{s.autor}</strong>.</p></section>}
           {(s.observacoes?.length || s.creditos) && <section className={card + ' text-xs text-(--a-bfb2cf)'}>
             {s.observacoes?.map(o => <p key={o} className="mb-2 flex gap-2"><Info size={14} className="mt-0.5 shrink-0" /> {o}</p>)}

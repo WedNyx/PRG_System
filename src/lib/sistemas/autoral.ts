@@ -11,13 +11,14 @@ import { avaliar, variaveisDaFormula } from './formula'
 import type { Sistema } from './tipos'
 import { imagemDaPlataforma } from '../imagens'
 import { VARS_DND } from './dnd2024Efeitos'
+import { grauValido, lerGraus, lerNomesSecoes, lerRegras, lerTabelas, opcoesDeGrau } from './graus'
 
 export const PREFIXO_AUTORAL = 'autoral-'
 export const ehAutoral = (id: unknown): id is string => typeof id === 'string' && /^autoral-[0-9a-f]{32}$/.test(id)
 export const idAutoral = (uuid: string) => PREFIXO_AUTORAL + uuid.replace(/-/g, '').toLowerCase()
 export const uuidDoAutoral = (id: string) => { const h = id.slice(PREFIXO_AUTORAL.length); return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}` }
 
-export const LIMITES = { campos: 30, atributos: 20, derivados: 30, pericias: 80, treinos: 8, recursos: 12, listas: 12, limites: 12, observacoes: 12, formula: 600, nome: 60, classes: 6, colunas: 12, opcoes: 30, bonusOpcao: 6 }
+export const LIMITES = { campos: 40, atributos: 20, derivados: 30, pericias: 80, treinos: 8, recursos: 20, listas: 20, limites: 12, observacoes: 30, formula: 600, nome: 60, classes: 6, colunas: 12, opcoes: 30, bonusOpcao: 6 }
 const RESERVADO = /^(mod_|per_|tot_|qtd_|prog_)|^(soma_atributos|atributos_zero|maior_atributo|custo_pericias|maior_valor_pericia|soma_valor_pericias|carga_total|dnd_[a-z0-9_]+|nivel_total|X|MOD|ATR|TREINO|VALOR)$/
 
 /** Transforma um nome em identificador de fórmula: "Pontos de Mana" → pontos_de_mana. */
@@ -75,12 +76,20 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
       return [{ nome: on, ...(descricao ? { descricao } : {}), ...(bonus.length ? { bonus } : {}), ...(progressao ? { progressao } : {}), ...(Object.keys(vars).length ? { vars } : {}) }]
     }) : []
     if (tipo === 'escolha' && !opcoes.length) erros.push(`Campo “${n}”: adicione pelo menos uma opção para escolher.`)
-    return [{ id: pegarId(c.id, n), nome: n, tipo: tipo as 'texto' | 'numero' | 'area' | 'escolha', ...(tipo === 'numero' ? { padrao: num(c.padrao, -99999, 99999, 0) } : {}), ...(tipo === 'escolha' ? { opcoes, ...(typeof c.nivel === 'string' && c.nivel ? { nivel: c.nivel.slice(0, 40) } : {}) } : {}) }]
+    const dicaC = txt(c.dica, 300)
+    return [{ id: pegarId(c.id, n), nome: n, tipo: tipo as 'texto' | 'numero' | 'area' | 'escolha', ...(dicaC ? { dica: dicaC } : {}), ...(tipo === 'numero' ? { padrao: num(c.padrao, -99999, 99999, 0) } : {}), ...(tipo === 'escolha' ? { opcoes, ...(typeof c.nivel === 'string' && c.nivel ? { nivel: c.nivel.slice(0, 40) } : {}) } : {}) }]
   })
+  // Graus de dado (v0.35.6): atributos e perícias valem d4, d6, d8…; o mínimo, o máximo e o começo viram graus que existem.
+  const graus = e.rolagem === 'graus' ? lerGraus(e.graus) : undefined
   const atributos = lista(e.atributos, LIMITES.atributos).flatMap(a => {
     const n = txt(a.nome, LIMITES.nome); if (!n) return []
+    const dica = txt(a.dica, 400)
+    if (graus) {
+      const ops = opcoesDeGrau(graus), min = grauValido(a.min ?? ops[0], graus), max = Math.max(min, grauValido(a.max ?? ops.at(-1), graus))
+      return [{ id: pegarId(a.id, n, true), nome: n, min, max, padrao: Math.max(min, Math.min(max, grauValido(a.padrao ?? min, graus))), ...(dica ? { dica } : {}) }]
+    }
     const min = num(a.min, -100, 1000, 0), max = Math.max(min, num(a.max, -100, 1000, 10))
-    return [{ id: pegarId(a.id, n, true), nome: n, min, max, padrao: num(a.padrao, min, max, min) }]
+    return [{ id: pegarId(a.id, n, true), nome: n, min, max, padrao: num(a.padrao, min, max, min), ...(dica ? { dica } : {}) }]
   })
   usados = usadosVars
   const derivados = lista(e.derivados, LIMITES.derivados).flatMap(d => {
@@ -105,11 +114,15 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
       const atr = typeof x.atributo === 'string' ? x.atributo.split('/').filter(a => idsAtr.has(a)).slice(0, 2).join('/') : ''
       const grupo = txt(x.grupo, 50)
       // Valor inicial (perícias em %, ex.: BRP): só pode usar os atributos, que é tudo que fichaVazia tem na hora de calcular.
-      const base = modo === 'valor' ? txt(x.base, LIMITES.formula) : ''
-      return [{ id: pegarId(x.id, n), nome: n, ...(atr ? { atributo: atr } : {}), ...(grupo ? { grupo } : {}), ...(base ? { base } : {}) }]
+      const base = modo === 'valor' && !graus ? txt(x.base, LIMITES.formula) : ''
+      const dica = txt(x.dica, 300)
+      return [{ id: pegarId(x.id, n), nome: n, ...(atr ? { atributo: atr } : {}), ...(grupo ? { grupo } : {}), ...(base ? { base } : {}), ...(dica ? { dica } : {}) }]
     })
     if (modo === 'treino' && !treinos?.length) erros.push('Perícias por treino precisam de pelo menos um grau (ex.: Destreinado +0).')
-    if (listaP.length) pericias = { titulo: txt(p.titulo, 40) || undefined, modo, lista: listaP, ...(treinos ? { treinos } : {}), total: txt(p.total, LIMITES.formula) || (modo === 'valor' ? 'VALOR' : 'MOD + TREINO') }
+    // Perícias livres (v0.35.6): o jogador acrescenta as dele; aí a lista do sistema pode até ficar vazia.
+    const livres = p.livres === true
+    if (graus && modo !== 'valor') erros.push('Com graus de dado, as perícias são “por número” (o grau de cada uma).')
+    if (listaP.length || livres) pericias = { titulo: txt(p.titulo, 40) || undefined, modo, lista: listaP, ...(livres ? { livres: true } : {}), ...(treinos ? { treinos } : {}), total: txt(p.total, LIMITES.formula) || (modo === 'valor' ? 'VALOR' : 'MOD + TREINO') }
   }
   usados = usadosRec
   const recursos = lista(e.recursos, LIMITES.recursos).flatMap(r => {
@@ -118,7 +131,8 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
     const maxFixo = !formula && Number(r.maxFixo) > 0 ? num(r.maxFixo, 1, 99999, 1) : undefined
     const sugerido = !formula && typeof r.sugerido === 'string' && /^[a-z][a-z0-9_]{0,40}$/.test(r.sugerido) ? r.sugerido : ''
     const baixa = r.contador === true ? num(r.baixaNoDescanso, 0, 999, 0) : 0
-    return [{ id: pegarId(r.id, n), nome: n, ...(formula ? { formula } : {}), ...(maxFixo ? { maxFixo } : {}), ...(sugerido ? { sugerido } : {}), ...(r.contador === true ? { contador: true } : {}), ...(baixa ? { baixaNoDescanso: baixa } : {}) }]
+    const dica = txt(r.dica, 300)
+    return [{ id: pegarId(r.id, n), nome: n, ...(dica ? { dica } : {}), ...(formula ? { formula } : {}), ...(maxFixo ? { maxFixo } : {}), ...(sugerido ? { sugerido } : {}), ...(r.contador === true ? { contador: true } : {}), ...(baixa ? { baixaNoDescanso: baixa } : {}) }]
   })
   usados = usadosListas
   const listas = lista(e.listas, LIMITES.listas).flatMap(l => {
@@ -131,7 +145,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   })
   const observacoes = (Array.isArray(e.observacoes) ? e.observacoes : []).map(o => txt(o, 300)).filter(Boolean).slice(0, LIMITES.observacoes)
   const formulaModificador = txt(e.formulaModificador, LIMITES.formula) || undefined
-  let rolagem: Sistema['rolagem'] = e.rolagem === 'd100' || e.rolagem === 'nenhuma' || e.rolagem === 'personalizada' || e.rolagem === 'parada' ? e.rolagem : 'd20'
+  let rolagem: Sistema['rolagem'] = e.rolagem === 'd100' || e.rolagem === 'nenhuma' || e.rolagem === 'personalizada' || e.rolagem === 'parada' || e.rolagem === 'graus' ? e.rolagem : 'd20'
   let regraRolagem: Sistema['regraRolagem']
   let parada: Sistema['parada']
   if (rolagem === 'personalizada') {
@@ -151,6 +165,9 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   const cargaF = e.carga && typeof e.carga === 'object' ? e.carga as Record<string, unknown> : null
   const carga = cargaF && txt(cargaF.formula, LIMITES.formula) ? { formula: txt(cargaF.formula, LIMITES.formula), unidade: txt(cargaF.unidade, 16) || 'kg' } : undefined
   const creditos = txt(e.creditos, 1500) || undefined
+  const tabelas = lerTabelas(e.tabelas, new Set(campos.filter(c => c.tipo === 'texto' || c.tipo === 'area').map(c => c.id)))
+  const regras = lerRegras(e.regras)
+  const nomesSecoes = lerNomesSecoes(e.nomesSecoes)
 
   // ---- Progressão por nível (tabelas por classe): cada coluna vira a variável prog_<coluna> ----
   let progressoes: Sistema['progressoes']
@@ -195,7 +212,8 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
   const sistema: Sistema = {
     id: meta.id, nome, resumo: txt(e.resumo, 400), tipo: 'autoral', ...(imagemDaPlataforma(e.capa) ? { capa: e.capa } : {}),
     licenca: 'Sistema autoral' + (meta.autor ? ' de ' + meta.autor : ''), ...(creditos ? { creditos } : {}),
-    dados: txt(e.dados, 40) || (rolagem === 'd100' ? 'd100' : rolagem === 'd20' ? 'd20' : parada ? `Parada de d${parada.lados}` : regraRolagem ? regraRolagem.formula.replace(/VALOR/gi, 'X') : 'Livre'), rolagem, ...(regraRolagem ? { regraRolagem } : {}), ...(parada ? { parada } : {}), ...(resistencias.length ? { resistencias } : {}),
+    dados: txt(e.dados, 40) || (rolagem === 'd100' ? 'd100' : rolagem === 'd20' ? 'd20' : parada ? `Parada de d${parada.lados}` : regraRolagem ? regraRolagem.formula.replace(/VALOR/gi, 'X') : graus ? `Graus de dado (d${graus.lados[0]}–d${graus.lados.at(-1)})` : 'Livre'), rolagem, ...(regraRolagem ? { regraRolagem } : {}), ...(graus ? { graus } : {}),
+    ...(tabelas.length ? { tabelas } : {}), ...(regras.length ? { regras } : {}), ...(nomesSecoes ? { nomesSecoes } : {}), ...(parada ? { parada } : {}), ...(resistencias.length ? { resistencias } : {}),
     campos, atributos, ...(txt(e.tituloAtributos, 40).trim() ? { tituloAtributos: txt(e.tituloAtributos, 40).trim() } : {}), ...(formulaModificador ? { formulaModificador } : {}), derivados, ...(pericias ? { pericias } : {}),
     recursos, ...(limites.length ? { limites } : {}), listas: listas.length ? listas : [{ id: 'anotacoes', nome: 'Anotações' }],
     ...(observacoes.length ? { observacoes } : {}), ...(carga ? { carga } : {}), ...(progressoes ? { progressoes } : {}),

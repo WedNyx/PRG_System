@@ -8,13 +8,15 @@ import { lerItens, lerPoderes } from './inventario'
 import { montarRolagem, rolarExpressao } from '../dice'
 import type { DadosFicha, Sistema } from './tipos'
 import { danoAssim } from './assimilacao'
+import { expressaoGraus, grauValido } from './graus'
 
 export const METROS_POR_CELULA = 1.5
 export const ALCANCE_CORPO = 1.5
 
 export type OpcaoAtaque = { tipo: 'item' | 'poder'; id: string; nome: string; dano: string; alcance: number; recurso?: string; custo?: number; categoria?: string; arte?: unknown; raridade?: string; imagem?: string; magico?: boolean }
 /** `dados`: nos sistemas de parada (Ordem Paranormal, Blades), quantos dados o teste rola (o valor do atributo). */
-export type Teste = { id: string; nome: string; valor: number; dados?: number; /** Assimilação: quantos d6 (Instinto) e d10 (Conhecimento/Prática). */ assim?: { d6: number; d10: number } }
+export type Teste = { id: string; nome: string; valor: number; dados?: number; /** Assimilação: quantos d6 (Instinto) e d10 (Conhecimento/Prática). */ assim?: { d6: number; d10: number }
+  /** Graus de dado (v0.35.6): o grau do atributo e o da perícia (null = só o atributo). */ graus?: { atr: number; per: number | null } }
 export type ResumoCombate = {
   vida: { id: string; nome: string; atual: number; max: number | null } | null
   defesa: { nome: string; valor: number } | null
@@ -69,6 +71,20 @@ export function resumoCombate(s: Sistema, bruto: unknown): ResumoCombate {
     const luta = testes.filter(t => /:(armas|atletismo)$/.test(t.id)).sort((a, b) => forca(b) - forca(a))[0]
     const melhor = luta ?? testes.filter(t => t.id.startsWith('atributo:')).sort((a, b) => forca(b) - forca(a))[0]
     return { vida, defesa: null, ataques, testes, testePadrao: melhor?.id ?? null, recursos, iniciativa: 0, iniciativaDados: Math.max(1, v('REA')) }
+  }
+  // Graus de dado (v0.35.6): atributo + perícia (cada um com o seu dado), como no teste da ficha.
+  if (s.rolagem === 'graus' && s.graus) {
+    const g = s.graus
+    const pericias = [...(s.pericias?.lista ?? []), ...(d.periciasExtras ?? [])].filter(p => (Number(d.pericias[p.id]) || 0) > 0)
+    const atr = (id: string, padrao: number) => grauValido(d.atributos[id] ?? padrao, g)
+    const testes: Teste[] = [
+      ...s.atributos.flatMap(a => pericias.map(p => ({ id: `combo:${a.id}:${p.id}`, nome: `${a.nome} + ${p.nome}`, valor: 0, graus: { atr: atr(a.id, a.padrao), per: Number(d.pericias[p.id]) || 0 } }))),
+      ...s.atributos.map(a => ({ id: 'atributo:' + a.id, nome: a.nome, valor: 0, graus: { atr: atr(a.id, a.padrao), per: null } })),
+    ]
+    const forca = (t: Teste) => (t.graus?.atr ?? 0) + (t.graus?.per ?? 0)
+    const luta = testes.filter(t => ATAQUE.test(t.nome)).sort((a, b) => forca(b) - forca(a))[0]
+    const melhor = luta ?? testes.filter(t => t.id.startsWith('atributo:')).sort((a, b) => forca(b) - forca(a))[0]
+    return { vida, defesa, ataques, testes, testePadrao: melhor?.id ?? null, recursos, iniciativa: 0 }
   }
   const parada = s.rolagem === 'parada'
   const testes: Teste[] = [
@@ -155,8 +171,9 @@ export function leituraD100(valor: number, rolado: number): string {
 
 export type RegraAtaque = { expressao: string; comparar: 'maior_igual' | 'menor_igual' | 'sucessos' | 'blades' | 'assimilacao' }
 /** Como rolar o ataque neste sistema, com o bônus do teste escolhido. */
-export function regraDeAtaque(s: Sistema | undefined, bonus: number, dados?: number, assim?: Teste['assim']): RegraAtaque {
+export function regraDeAtaque(s: Sistema | undefined, bonus: number, dados?: number, assim?: Teste['assim'], graus?: Teste['graus']): RegraAtaque {
   const b = Math.round(bonus) || 0
+  if (s?.rolagem === 'graus' && s.graus) return { expressao: expressaoGraus(graus?.atr ?? s.graus.lados[1] ?? s.graus.lados[0], graus?.per ?? null, b, s.graus) ?? '1d6', comparar: 'maior_igual' }
   if (s?.rolagem === 'assimilacao') {
     // Instinto em d6 + aptidão em d10; mantém o melhor dado. Acerta com pelo menos 1 Sucesso.
     const d6 = Math.max(0, Math.min(20, assim?.d6 ?? dados ?? 1)), d10 = Math.max(0, Math.min(20, assim?.d10 ?? 0))
@@ -233,6 +250,7 @@ export function gastarCusto(d: Record<string, unknown>, recurso: string, custo: 
 export function regraDeIniciativa(s: Sistema | undefined, bonus: number, dados?: number): string {
   const b = Math.round(bonus) || 0
   if (s?.rolagem === 'parada') return expressaoParada(s.parada?.lados ?? 20, dados ?? 1, b)
+  if (s?.rolagem === 'graus' && s.graus) return '1d' + (s.graus.lados[1] ?? s.graus.lados[0]) + (b ? (b > 0 ? '+' : '') + b : '')
   if (s?.rolagem === 'assimilacao') return `${Math.max(1, Math.min(20, dados ?? 1))}d6` // ordem da mesa: Reação em d6 (o livro não tem iniciativa)
   if (s?.rolagem === 'personalizada' && s.regraRolagem) return montarRolagem(s.regraRolagem.formula, b)
   if (s && (s.rolagem === 'd100' || s.id === 'brp')) return '1d100'

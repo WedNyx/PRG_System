@@ -1,0 +1,229 @@
+{
+ "nome": "Projeto N.O.V.A",
+ "resumo": "RPG misto de investigação e combate em que as escolhas e as ações mudam os caminhos. Atributos e vivências em graus de dado (d4 a d12). Sistema em construção.",
+ "dados": "Graus de dado (d4–d12)",
+ "rolagem": "graus",
+ "graus": {
+  "lados": [
+   4,
+   6,
+   8,
+   10,
+   12
+  ],
+  "zero": 4,
+  "maxPericia": 10
+ },
+ "tituloAtributos": "Atributos",
+ "nomesSecoes": {
+  "atributos": "Atributos e vivências"
+ },
+ "campos": [
+  {
+   "id": "quem_foi",
+   "nome": "Quem você foi…?",
+   "tipo": "area",
+   "dica": "O passado do personagem é livre: escreva quem ele foi e quem é hoje. O passado dá duas ou mais vivências (o mestre decide quais)."
+  },
+  {
+   "id": "destaque",
+   "nome": "Atributo que se destaca",
+   "tipo": "escolha",
+   "dica": "Um atributo (menos Clarividência) que se sobressai: ele pode ir de d6 para d8 e ganha o dado especial.",
+   "opcoes": [
+    {
+     "nome": "Físico",
+     "descricao": "Força, capacidade física e energia do corpo."
+    },
+    {
+     "nome": "Psicológico",
+     "descricao": "Raciocínio, intelecto e resolução de problemas."
+    },
+    {
+     "nome": "Alma",
+     "descricao": "O que você sente: resistência espiritual e intuição."
+    }
+   ]
+  },
+  {
+   "id": "efeito_especial",
+   "nome": "Efeito do dado especial",
+   "tipo": "texto",
+   "dica": "Role a Tabela do dado especial (1d10) uma vez e guarde aqui o efeito."
+  }
+ ],
+ "atributos": [
+  {
+   "id": "FIS",
+   "nome": "Físico",
+   "min": 0,
+   "max": 12,
+   "padrao": 6,
+   "dica": "Sua força, capacidade física e energia corporal para continuar. Dita a resistência e a força física."
+  },
+  {
+   "id": "PSI",
+   "nome": "Psicológico",
+   "min": 0,
+   "max": 12,
+   "padrao": 6,
+   "dica": "Raciocínio, capacidade de pensar e intelecto geral para resolver problemas."
+  },
+  {
+   "id": "ALM",
+   "nome": "Alma",
+   "min": 0,
+   "max": 12,
+   "padrao": 6,
+   "dica": "Aquilo que você sente: resistência espiritual e capacidade de intuição."
+  },
+  {
+   "id": "CLA",
+   "nome": "Clarividência",
+   "min": 0,
+   "max": 12,
+   "padrao": 0,
+   "dica": "O impossível, improvável e incalculável. Uma nova capacidade humana de se sobressair e criar coisas: algo místico, mas real. Um paradoxo entre o poder e o declínio."
+  }
+ ],
+ "formulaModificador": "",
+ "derivados": [],
+ "pericias": {
+  "titulo": "Vivências",
+  "modo": "valor",
+  "total": "VALOR",
+  "livres": true,
+  "lista": [
+   {
+    "id": "fortitude",
+    "nome": "Fortitude",
+    "dica": "Exemplo do livro: entra na Vida."
+   }
+  ]
+ },
+ "recursos": [
+  {
+   "id": "vida",
+   "nome": "Vida",
+   "dica": "Role Físico + Fortitude + Clarividência (os dados da ficha) e anote o total como máximo. Ex.: Físico d6, Fortitude d4 e Clarividência 0 → 1d6+1d4."
+  },
+  {
+   "id": "horror",
+   "nome": "Horror",
+   "dica": "O quão são o personagem está. Role Psicológico + Alma + uma vivência e anote o total. Cai com traumas e visões perturbadoras."
+  },
+  {
+   "id": "clareza",
+   "nome": "Clareza",
+   "dica": "O impossível: gaste para ganhar força extra ou mais ações. Quanto mais usa algo que não é seu, mais o corpo sofre."
+  }
+ ],
+ "listas": [
+  {
+   "id": "pistas",
+   "nome": "Pistas e investigação"
+  },
+  {
+   "id": "caminhos",
+   "nome": "Escolhas e caminhos"
+  },
+  {
+   "id": "anotacoes",
+   "nome": "Anotações"
+  }
+ ],
+ "tabelas": [
+  {
+   "id": "dado_especial",
+   "nome": "Tabela do dado especial",
+   "dado": "1d10",
+   "campo": "efeito_especial",
+   "linhas": [
+    {
+     "de": 1,
+     "ate": 1,
+     "texto": "Re-rola o dado."
+    },
+    {
+     "de": 2,
+     "ate": 2,
+     "texto": "Rola o dado de novo e dobra o valor."
+    },
+    {
+     "de": 3,
+     "ate": 3,
+     "texto": "Escolhe um aliado para ajudar num teste desse atributo com +3."
+    },
+    {
+     "de": 4,
+     "ate": 4,
+     "texto": "Rola de novo e soma os valores."
+    },
+    {
+     "de": 5,
+     "ate": 5,
+     "texto": "Soma +5 no teste."
+    },
+    {
+     "de": 6,
+     "ate": 6,
+     "texto": "Pode aumentar ou diminuir em até 2 pontos o valor do segundo dado jogado."
+    },
+    {
+     "de": 7,
+     "ate": 7,
+     "texto": "O próximo teste com esse atributo vira d14."
+    },
+    {
+     "de": 8,
+     "ate": 8,
+     "texto": "Diminui 4 da DT do teste."
+    },
+    {
+     "de": 9,
+     "ate": 9,
+     "texto": "Aumenta em um grau o dado (seu ou de um aliado) até o fim da cena."
+    },
+    {
+     "de": 10,
+     "ate": 10,
+     "texto": "Crítico absoluto."
+    }
+   ]
+  }
+ ],
+ "regras": [
+  {
+   "titulo": "O que é o Projeto N.O.V.A",
+   "texto": "Um RPG misto, com investigações e combates, em que os caminhos mudam de acordo com as escolhas e as ações dos personagens."
+  },
+  {
+   "titulo": "Atributos",
+   "texto": "São quatro: Físico, Psicológico, Alma e Clarividência.\n\nFísico é a força, a capacidade física e a energia corporal para continuar. Dita a resistência e a força física.\n\nPsicológico é tudo o que tem a ver com raciocínio, capacidade de pensar e intelecto geral para resolver problemas.\n\nAlma é aquilo que você sente: sua resistência espiritual e sua capacidade de intuição.\n\nClarividência é algo impossível, improvável e incalculável. Tudo sobre ela é um mistério, mas foi descoberta como uma nova capacidade humana de se sobressair e criar coisas: algo místico, mas real. Um paradoxo sobre o poder e o declínio.\n\nTodos os seres humanos têm capacidades, e sabem que têm: alguns menos, outros mais, mas nunca é inexistente. Todos os atributos (exceto Clarividência) começam em d6 e podem aumentar com as experiências da vida.\n\nTodo personagem tem pelo menos um atributo que se sobressai sobre os outros (a não ser que o mestre troque isso por coisas extras): o jogador pode transformar um dos dados de d6 em d8."
+  },
+  {
+   "titulo": "Vivências",
+   "texto": "Aqui as perícias funcionam de outro jeito: são vivências. Elas dizem o que o personagem já passou, aprendeu e aprimorou.\n\nCada um pode escolher uma vivência, que já traz benefícios quando usada. Num teste ligado a uma vivência escolhida, o jogador ganha 1d4 extra na rolagem. Esse dado pode aumentar até 1d10."
+  },
+  {
+   "titulo": "Quem você foi…?",
+   "texto": "O passado não é pré-definido: os jogadores escolhem livremente o que foram e o que são hoje, e o mestre dita quais vivências o personagem ganha como recompensa.\n\nNo começo, o jogador escolhe uma vivência independente, e o passado dele dá outras duas ou mais."
+  },
+  {
+   "titulo": "Vida, Horror e Clareza",
+   "texto": "Vida é o quanto o personagem aguenta de dano físico: cortes, socos, tudo o que machuca o corpo. É medida por Físico + Fortitude + Clarividência. Ex.: Físico d6, vivência Fortitude e Clarividência 0 → rola 1d6 + 1d4.\n\nHorror é o quão são o personagem está. Pode ser perdido por traumas ou visões perturbadoras. É medido por Psicológico + Alma + uma das vivências.\n\nClareza é o impossível: uma força que surge como um sopro, mas que pode trazer consequências. Gastar pontos de Clareza pode dar força extra ou até mais ações; porém, quanto mais você se esforça com algo que não é seu, mais prejudicial é para o corpo."
+  },
+  {
+   "titulo": "Dados especiais",
+   "texto": "Todo jogador escolhe um atributo (exceto Clarividência) para ser o que mais se destaca. Os dados desse atributo têm efeitos exclusivos nos testes feitos com ele.\n\nDepois de escolher o atributo principal, o jogador rola 1d10: o resultado na Tabela do dado especial vira o efeito especial do dado.\n\n1 — re-rola o dado.\n2 — rola de novo e dobra o valor.\n3 — escolhe um aliado para ajudar num teste daquele atributo com +3.\n4 — rola de novo e soma os valores.\n5 — soma +5 no teste.\n6 — pode aumentar ou diminuir o valor do segundo dado jogado em até 2 pontos.\n7 — o próximo teste com o atributo vira d14.\n8 — diminui 4 da DT do teste.\n9 — aumenta em um grau o dado (seu ou de um aliado) até o fim da cena.\n10 — crítico absoluto."
+  },
+  {
+   "titulo": "Graus dos dados",
+   "texto": "Os graus vão de d4 até d12 (ou mais, se alguma habilidade aumentar).\n\nd4 — grau base de todas as vivências; também é o dado usado quando se tem 0 num atributo.\nd6 — grau base dos atributos.\nd8, d10 e d12 — graus maiores."
+  }
+ ],
+ "observacoes": [
+  "Sistema em construção: o autor ainda está escrevendo as regras."
+ ],
+ "limites": []
+}

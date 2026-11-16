@@ -5,18 +5,30 @@
 export type OpcaoCampo = { nome: string; descricao?: string; bonus?: { alvo: string; valor: number }[]; progressao?: string; vars?: Record<string, number>
   /** D&D: opção de livro comercial (id em dnd2024Fontes) — só aparece se o mestre liberar a fonte. */
   fonte?: string }
-export type CampoDef = { id: string; nome: string; tipo: 'texto' | 'numero' | 'area' | 'escolha'; padrao?: string | number; opcoes?: OpcaoCampo[]; /** Escolha de classe: campo de número com o nível dela (multiclasse). */ nivel?: string }
-export type AtributoDef = { id: string; nome: string; min: number; max: number; padrao: number }
+export type CampoDef = { id: string; nome: string; tipo: 'texto' | 'numero' | 'area' | 'escolha'; padrao?: string | number; opcoes?: OpcaoCampo[]; /** Escolha de classe: campo de número com o nível dela (multiclasse). */ nivel?: string
+  /** Explicação curta que aparece na ficha (v0.35.6). */ dica?: string }
+export type AtributoDef = { id: string; nome: string; min: number; max: number; padrao: number; /** Explicação do atributo (v0.35.6). */ dica?: string }
 export type TreinoDef = { id: string; nome: string; formula: string; custo?: number }
 /** atributo pode ser 'FOR/DES': usa o melhor modificador dos dois. */
 /** `base`: valor inicial das perícias em porcentagem (fórmula, ex.: '25' ou 'DES * 2'): fichas novas já começam com ele. */
-export type PericiaDef = { id: string; nome: string; atributo?: string; grupo?: string; base?: string }
+export type PericiaDef = { id: string; nome: string; atributo?: string; grupo?: string; base?: string; dica?: string }
 export type DerivadoDef = { id: string; nome: string; formula: string; dica?: string }
 /** `sugerido`: id de um valor calculado usado como máximo enquanto a pessoa não digitar outro (ex.: PV pela classe). */
 /** `contador`: marcador que começa em 0 e não enche no descanso (Morrendo, Exaustão, Estresse…); `baixaNoDescanso`: quanto cai no descanso longo. */
 /** `ocultarSemMax`: some da ficha quando o máximo é 0 (ex.: Fúrias para quem não é Bárbaro); `voltaNoCurto`: enche também no descanso curto. */
-export type RecursoDef = { id: string; nome: string; formula?: string; maxFixo?: number; sugerido?: string; contador?: boolean; baixaNoDescanso?: number; ocultarSemMax?: boolean; voltaNoCurto?: boolean }
+/** `dica`: como se acha o máximo (ex.: “Role Físico + Fortitude”), aparece debaixo da barra (v0.35.6). */
+export type RecursoDef = { id: string; nome: string; dica?: string; formula?: string; maxFixo?: number; sugerido?: string; contador?: boolean; baixaNoDescanso?: number; ocultarSemMax?: boolean; voltaNoCurto?: boolean }
 export type LimiteDef = { nome: string; uso: string; max: string }
+/**
+ * Graus de dado (v0.35.6): atributos e perícias valem um dado (d4, d6, d8…) em vez de um número.
+ * O valor guardado é o número de lados; 0 = “não tem” e rola o dado `zero` (ex.: d4). `maxPericia` limita o grau das perícias.
+ */
+export type GrausDef = { lados: number[]; zero?: number; maxPericia?: number }
+/** Tabela rolável do sistema (v0.35.6): rola `dado` e mostra a linha; `campo` = campo de texto onde dá para guardar o resultado. */
+export type TabelaDef = { id: string; nome: string; dado: string; linhas: { de: number; ate: number; texto: string }[]; campo?: string }
+/** Capítulo das regras do sistema, escrito pelo autor (v0.35.6). Aparece na ficha, em “Regras”. */
+export type CapituloRegra = { titulo: string; texto: string }
+export type SecaoFicha = 'principal' | 'atributos' | 'habilidades' | 'equipamentos' | 'anotacoes'
 
 export type Sistema = {
   id: string
@@ -30,7 +42,15 @@ export type Sistema = {
   creditos?: string
   dados: string
   /** Como a ficha rola: d20 + bônus, d100 abaixo do valor, ou sem rolagem ('assimilacao' = dados de símbolos do Assimilação RPG). Sem isso, deduz por `dados`. */
-  rolagem?: 'd20' | 'd100' | 'nenhuma' | 'personalizada' | 'parada' | 'assimilacao'
+  rolagem?: 'd20' | 'd100' | 'nenhuma' | 'personalizada' | 'parada' | 'assimilacao' | 'graus'
+  /** Com rolagem 'graus': quais dados existem (v0.35.6). */
+  graus?: GrausDef
+  /** Tabelas roláveis (v0.35.6). */
+  tabelas?: TabelaDef[]
+  /** Regras escritas pelo autor, em capítulos (v0.35.6). */
+  regras?: CapituloRegra[]
+  /** Nomes das partes da ficha (v0.35.6): ex.: “Vivências” em vez de “Atributos e perícias”. */
+  nomesSecoes?: Partial<Record<SecaoFicha, string>>
   /** Com rolagem 'parada': rola tantos dados quanto o atributo e fica com o maior (0 = rola 2 e fica com o menor). Ex.: Ordem Paranormal (d20), Blades (d6). */
   parada?: { lados: number; /** Como ler o resultado (Blades: 6 = sucesso, 4–5 = parcial, dois 6 = crítico). */ leitura?: 'blades' }
   /** Valores calculados que também se rolam como parada (ex.: atributos de resistência do Blades). */
@@ -59,6 +79,8 @@ export type Sistema = {
     lista: PericiaDef[]
     /** 'treino' = escolher grau; 'valor' = digitar número (ex.: porcentagem) */
     modo: 'treino' | 'valor'
+    /** O jogador pode acrescentar perícias com o nome que quiser (v0.35.6). */
+    livres?: boolean
     treinos?: TreinoDef[]
     /** Variáveis: MOD (modificador do atributo), ATR (valor), TREINO (bônus do grau) ou VALOR */
     total: string
@@ -96,6 +118,8 @@ export type DadosFicha = {
   nivelAtributos?: Record<string, number>
   poderes?: unknown[]
   uso?: unknown
+  /** Perícias que o próprio jogador criou (sistemas com perícias livres, v0.35.6); o valor fica em `pericias[id]`. */
+  periciasExtras?: { id: string; nome: string }[]
   /** Livro do Jogador e suplementos escolhidos para ESTA ficha (mestre autoriza na campanha). */
   dndLivros?: import('./dndLivros').SelecaoLivrosDnd
   /** Atributos antes dos bônus raciais na criação 2014. Ausência = ficha antiga com totais manuais. */

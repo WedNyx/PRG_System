@@ -8,8 +8,11 @@
   --font-geist-mono: "Geist Mono";
   --font-cinzel: "Cinzel";
   --font-cormorant: "Cormorant Garamond";
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Todos os temas são escuros: o texto padrão é claro mesmo com o celular no modo claro (v0.35.5).
+     Antes, janelas abertas por cima da página (Editar perfil, avisos…) ficavam com título preto no fundo escuro. */
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  color-scheme: dark;
 }
 
 @theme inline {

@@ -6,12 +6,18 @@ import { ligarZoomSuave } from '@/lib/zoomRoda'
 import { emojiCondicao } from '@/lib/condicoes'
 import { Bolinhas } from './Combate'
 import { celulasPincel, expandirNevoa, mapaDeNevoa, METROS_POR_CELULA_MESA, type AreaNevoa, type Camada, type LuzToken } from '@/lib/nuvem/mesa'
+import { anguloEntre, contornoArea, tokensNaArea, type AreaEfeito, type FormaArea } from '@/lib/mesa/areasEfeito'
+import { distancia } from '@/lib/sistemas/combate'
 
 export const CELULA = 44
 export const METROS_POR_CELULA = METROS_POR_CELULA_MESA
-export type ModoMesa = 'mover' | 'regua' | 'ping' | 'desenhar' | 'revelar' | 'esconder' | 'area-revelar' | 'area-esconder' | 'nevoa-area' | 'editar-mapa'
+export type ModoMesa = 'mover' | 'regua' | 'ping' | 'desenhar' | 'area-efeito' | 'revelar' | 'esconder' | 'area-revelar' | 'area-esconder' | 'nevoa-area' | 'editar-mapa'
 export type Ping = { id: string; x: number; y: number; autor: string }
 export type CursorRemoto = { id: string; nome: string; x: number; y: number }
+/** Régua de outra pessoa (v0.34.9): todos veem a medição ao vivo. */
+export type ReguaRemota = { id: string; nome: string; x1: number; y1: number; x2: number; y2: number }
+/** Área que outra pessoa está mirando agora (antes de soltar). */
+export type PreviaArea = AreaEfeito & { quem: string }
 export type TokenMapa = {
   id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; tamanho: number
   visivel: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; rodadas?: Record<string, number>; morte?: { estado?: 'caido' | 'estavel' | 'morto'; sucessos?: number; falhas?: number; futuras?: number } | null; podeMover: boolean; meu: boolean
@@ -38,7 +44,15 @@ type Props = {
   mirando?: boolean
   /** Token da vez no combate (ganha um anel dourado). */
   vez?: string | null
+  /** Áreas de efeito (v0.34.9): as que estão no mapa, as que outros estão mirando e a forma/tamanho/cor escolhidos. */
+  areas?: AreaEfeito[]; previas?: PreviaArea[]
+  formaArea?: FormaArea; metrosArea?: number; corArea?: string
+  onCriarArea?: (a: Omit<AreaEfeito, 'id'>) => void; onPreviaArea?: (a: Omit<AreaEfeito, 'id'> | null) => void
+  /** Régua compartilhada: a minha vai para os outros; as deles aparecem aqui. */
+  reguas?: ReguaRemota[]; onRegua?: (r: { x1: number; y1: number; x2: number; y2: number } | null) => void
 }
+
+const medir = (r: { x1: number; y1: number; x2: number; y2: number }) => { const n = Math.max(Math.abs(r.x2 - r.x1), Math.abs(r.y2 - r.y1)); return { n, m: Math.round(n * METROS_POR_CELULA_MESA * 10) / 10 } }
 
 const pts = (a: number[]) => { const r: string[] = []; for (let i = 0; i + 1 < a.length; i += 2) r.push(`${a[i]},${a[i + 1]}`); return r.join(' ') }
 
@@ -53,6 +67,7 @@ export default function MapaMesa(p: Props) {
   const [regua, setRegua] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
   const [area, setArea] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
   const [traco, setTraco] = useState<number[] | null>(null)
+  const [mira, setMira] = useState<{ x: number; y: number; angulo: number } | null>(null)
   const [pintura, setPintura] = useState<Set<string>>(new Set())
   const [camadaEdit, setCamadaEdit] = useState<{ c: Camada; tipo: 'mover' | 'tamanho'; ox: number; oy: number; ar: number } | null>(null)
   const inicio = useRef<{ px: number; py: number } | null>(null)
@@ -65,6 +80,16 @@ export default function MapaMesa(p: Props) {
   const tokenTocado = useRef<string | null>(null)
   const pintando = useRef(false)
   const editandoMapa = modo === 'editar-mapa'
+  const areaDe = (m: { x: number; y: number; angulo: number }): Omit<AreaEfeito, 'id'> => ({ forma: p.formaArea ?? 'circulo', x: m.x, y: m.y, angulo: m.angulo, metros: p.metrosArea ?? 6, cor: p.corArea ?? '#f97316', nome: '' })
+  // Tokens dentro de alguma área (colocada, mirando agora ou de outra pessoa) ganham um anel da cor da área.
+  const todasAreas = useMemo(() => [...(p.areas ?? []), ...(p.previas ?? []), ...(mira ? [{ ...areaDe(mira), id: 'minha-mira' }] : [])],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [p.areas, p.previas, mira, p.formaArea, p.metrosArea, p.corArea])
+  const atingidos = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const a of todasAreas) for (const t of tokensNaArea(a, p.tokens)) if (!m.has(t.id)) m.set(t.id, a.cor)
+    return m
+  }, [todasAreas, p.tokens])
 
   const ponto = useCallback((e: React.PointerEvent) => {
     const r = ref.current?.getBoundingClientRect()
@@ -115,7 +140,12 @@ export default function MapaMesa(p: Props) {
       }
       return
     }
-    if (regua) { const cel = celula(e); if (cel) setRegua({ ...regua, x2: cel.x, y2: cel.y }); return }
+    if (regua) { const cel = celula(e); if (cel && (cel.x !== regua.x2 || cel.y !== regua.y2)) { const n = { ...regua, x2: cel.x, y2: cel.y }; setRegua(n); p.onRegua?.(n) } return }
+    if (mira && q) {
+      const angulo = anguloEntre(mira.x, mira.y, q.px / CELULA, q.py / CELULA)
+      if (angulo !== mira.angulo) { const n = { ...mira, angulo }; setMira(n); p.onPreviaArea?.(areaDe(n)) }
+      return
+    }
     if (area) { const cel = celula(e); if (cel) setArea({ ...area, x2: cel.x, y2: cel.y }); return }
     if (traco && q) {
       if (Math.abs(q.px - traco[traco.length - 2]) + Math.abs(q.py - traco[traco.length - 1]) < 4) return
@@ -133,7 +163,9 @@ export default function MapaMesa(p: Props) {
       if (houveDrag.current && t?.podeMover && !p.mirando) p.onMoverToken(arrastando, dragPos.x, dragPos.y)
       else if (!houveDrag.current || p.mirando) tokenTocado.current = arrastando
     }
-    setArrastando(null); setDragPos(null); inicio.current = null; setRegua(null)
+    setArrastando(null); setDragPos(null); inicio.current = null
+    if (regua) { setRegua(null); p.onRegua?.(null) }
+    if (mira) { p.onCriarArea?.(areaDe(mira)); p.onPreviaArea?.(null); setMira(null) }
     if (traco && traco.length >= 4) p.onDesenhar(traco, tracoId.current)
     setTraco(null)
     if (area) {
@@ -154,7 +186,8 @@ export default function MapaMesa(p: Props) {
     if (editandoMapa) { p.onSelecionarCamada(null); return }
     const cel = celula(e)
     if (modo === 'ping') { if (cel) p.onPing(cel.x, cel.y); return }
-    if (modo === 'regua') { if (cel) setRegua({ x1: cel.x, y1: cel.y, x2: cel.x, y2: cel.y }); return }
+    if (modo === 'regua') { if (cel) { const n = { x1: cel.x, y1: cel.y, x2: cel.x, y2: cel.y }; setRegua(n); p.onRegua?.(n) } return }
+    if (modo === 'area-efeito') { if (cel && p.onCriarArea) { const n = { x: cel.x + 0.5, y: cel.y + 0.5, angulo: 0 }; setMira(n); p.onPreviaArea?.(areaDe(n)) } return }
     if (modo === 'desenhar') { const q = ponto(e); if (q) { tracoId.current = crypto.randomUUID(); setTraco([Math.round(q.px), Math.round(q.py)]) } return }
     if (admin && (modo === 'area-revelar' || modo === 'area-esconder' || modo === 'nevoa-area')) { if (cel) setArea({ x1: cel.x, y1: cel.y, x2: cel.x, y2: cel.y }); return }
     if (admin && (modo === 'revelar' || modo === 'esconder')) { pintando.current = true; if (cel) setPintura(new Set(celulasPincel(cel.x, cel.y, p.pincel))) }
@@ -184,7 +217,7 @@ export default function MapaMesa(p: Props) {
   </svg>, [cols, rows, largura, altura])
   const linhasDesenhos = useMemo(() => p.desenhos.map(d => <polyline key={d.id} points={pts(d.pontos)} fill="none" stroke={d.cor} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" opacity={0.9} />), [p.desenhos])
   const camadas = p.camadas.map(c => camadaEdit?.c.id === c.id ? camadaEdit.c : c)
-  const medida = regua ? (() => { const n = Math.max(Math.abs(regua.x2 - regua.x1), Math.abs(regua.y2 - regua.y1)); return { n, m: Math.round(n * METROS_POR_CELULA * 10) / 10 } })() : null
+  const medida = regua ? medir(regua) : null
 
   return <div className="h-full w-full overflow-hidden bg-(--s-0b0a14)">
     <TransformWrapper ref={zoom} minScale={0.05} maxScale={4} centerOnInit doubleClick={{ disabled: true }} wheel={{ disabled: true }}
@@ -214,6 +247,17 @@ export default function MapaMesa(p: Props) {
             {traco && <polyline points={pts(traco)} fill="none" stroke={p.cor} strokeWidth={3} strokeLinecap="round" />}
           </svg>
 
+          {todasAreas.length > 0 && <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 6 }} aria-hidden>
+            {todasAreas.map(a => { const c = contornoArea(a), pre = a.id === 'minha-mira' || 'quem' in a, n = tokensNaArea(a, p.tokens).length
+              const rotulo = `${a.nome ? a.nome + ' · ' : ''}${a.metros} m · ${n} alvo${n === 1 ? '' : 's'}${'quem' in a ? ' · ' + (a as PreviaArea).quem : ''}`
+              return <g key={a.id}>
+                {c.tipo === 'circulo' ? <circle cx={c.cx * CELULA} cy={c.cy * CELULA} r={c.r * CELULA} fill={a.cor + '33'} stroke={a.cor} strokeWidth={2.5} strokeDasharray={pre ? '8 5' : undefined} />
+                  : <polygon points={c.pontos.map(([x, y]) => `${x * CELULA},${y * CELULA}`).join(' ')} fill={a.cor + '33'} stroke={a.cor} strokeWidth={2.5} strokeDasharray={pre ? '8 5' : undefined} strokeLinejoin="round" />}
+                <circle cx={a.x * CELULA} cy={a.y * CELULA} r={4} fill={a.cor} />
+                <g transform={`translate(${a.x * CELULA + 8}, ${a.y * CELULA - 10})`}><rect x={-4} y={-14} width={rotulo.length * 6.4 + 10} height={20} rx={5} fill="rgba(2,6,23,0.85)" /><text x={2} y={1} fill={a.cor} fontSize={12} fontWeight={700}>{rotulo}</text></g>
+              </g> })}
+          </svg>}
+
           {p.tokens.map(t => {
             const emDrag = arrastando === t.id && dragPos && t.podeMover
             const x = emDrag ? dragPos.x : t.x, y = emDrag ? dragPos.y : t.y
@@ -229,6 +273,7 @@ export default function MapaMesa(p: Props) {
                 style={{ backgroundColor: t.cor, backgroundImage: t.imagem_url ? `url(${t.imagem_url})` : undefined }}>
                 {t.morte?.estado === 'morto' ? '⚰️' : morto ? '💀' : !t.imagem_url && t.nome[0]?.toUpperCase()}
               </div>
+              {atingidos.has(t.id) && <span aria-hidden className="pointer-events-none absolute -inset-1 rounded-full border-[3px]" style={{ borderColor: atingidos.get(t.id), boxShadow: `0 0 10px ${atingidos.get(t.id)}` }} />}
               {p.vez === t.id && <><span aria-hidden className="prg-vez pointer-events-none absolute -inset-1.5 rounded-full border-[3px] border-amber-300" />
                 <span className="pointer-events-none absolute -left-2 -top-2 rounded-full bg-amber-400 px-1 text-[10px] font-bold text-(--a-1a1230) shadow" title="Vez deste token">⚔️</span></>}
               {!t.podeMover && <span className="pointer-events-none absolute -right-1 -top-1 text-[10px]" title="Travado">🔒</span>}
@@ -248,8 +293,14 @@ export default function MapaMesa(p: Props) {
             const alvo = p.tokens.find(x => x.id === p.alcance!.alvo)
             return <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 9 }}>
               {r !== null && <circle cx={cx} cy={cy} r={r} fill="rgba(239,68,68,0.10)" stroke="#f87171" strokeWidth={2} strokeDasharray="8 6" />}
-              {alvo && <><line x1={cx} y1={cy} x2={(alvo.x + alvo.tamanho / 2) * CELULA} y2={(alvo.y + alvo.tamanho / 2) * CELULA} stroke="#fbbf24" strokeWidth={2.5} strokeDasharray="6 4" />
-                <circle cx={(alvo.x + alvo.tamanho / 2) * CELULA} cy={(alvo.y + alvo.tamanho / 2) * CELULA} r={alvo.tamanho * CELULA * 0.62} fill="none" stroke="#fbbf24" strokeWidth={3} /></>}
+              {alvo && (() => {
+                const ax = (alvo.x + alvo.tamanho / 2) * CELULA, ay = (alvo.y + alvo.tamanho / 2) * CELULA
+                const dist = distancia(t, alvo), fora = p.alcance!.metros !== null && dist > p.alcance!.metros!
+                const cor = fora ? '#f87171' : '#fbbf24', txt = `${dist} m${fora ? ' · fora do alcance' : p.alcance!.metros !== null ? ' · no alcance' : ''}`
+                return <><line x1={cx} y1={cy} x2={ax} y2={ay} stroke={cor} strokeWidth={2.5} strokeDasharray="6 4" />
+                  <circle cx={ax} cy={ay} r={alvo.tamanho * CELULA * 0.62} fill="none" stroke={cor} strokeWidth={3} />
+                  <g transform={`translate(${(cx + ax) / 2}, ${(cy + ay) / 2})`}><rect x={-4} y={-15} width={txt.length * 6.6 + 10} height={22} rx={6} fill="rgba(2,6,23,0.9)" /><text x={2} y={1} fill={cor} fontSize={13} fontWeight={700}>{txt}</text></g></>
+              })()}
             </svg>
           })()}
           {camadaEscuro}
@@ -262,6 +313,11 @@ export default function MapaMesa(p: Props) {
           {regua && medida && <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 40 }}>
             <line x1={regua.x1 * CELULA + CELULA / 2} y1={regua.y1 * CELULA + CELULA / 2} x2={regua.x2 * CELULA + CELULA / 2} y2={regua.y2 * CELULA + CELULA / 2} stroke="#fbbf24" strokeWidth={3} strokeDasharray="8 4" />
             <g transform={`translate(${regua.x2 * CELULA + CELULA}, ${regua.y2 * CELULA})`}><rect x={-4} y={-16} width={110} height={24} rx={6} fill="rgba(2,6,23,0.9)" /><text x={4} y={1} fill="#fbbf24" fontSize={13} fontWeight={700}>{medida.n} cél · {medida.m}m</text></g>
+          </svg>}
+          {(p.reguas ?? []).length > 0 && <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 39 }} aria-hidden>
+            {(p.reguas ?? []).map(g => { const md = medir(g); return <g key={g.id}>
+              <line x1={g.x1 * CELULA + CELULA / 2} y1={g.y1 * CELULA + CELULA / 2} x2={g.x2 * CELULA + CELULA / 2} y2={g.y2 * CELULA + CELULA / 2} stroke="#38bdf8" strokeWidth={3} strokeDasharray="8 4" />
+              <g transform={`translate(${g.x2 * CELULA + CELULA}, ${g.y2 * CELULA})`}><rect x={-4} y={-16} width={150} height={24} rx={6} fill="rgba(2,6,23,0.9)" /><text x={4} y={1} fill="#7dd3fc" fontSize={12} fontWeight={700}>{g.nome}: {md.n} cél · {md.m}m</text></g></g> })}
           </svg>}
           {p.cursores.map(c => <div key={c.id} className="pointer-events-none absolute transition-all duration-100" style={{ left: c.x, top: c.y, zIndex: 45 }}>
             <svg width="16" height="16" viewBox="0 0 16 16"><path d="M1 1 L15 7 L8 8.5 L6 15 Z" fill="#38bdf8" stroke="#0c4a6e" /></svg>

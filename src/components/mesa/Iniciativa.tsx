@@ -133,16 +133,19 @@ function EntrarNoCombate({ tokens, acao, fechar }: { tokens: Tk[]; acao: Acao; f
 }
 
 /** Dano ou cura em vários de uma vez (área): rola uma vez; quem passou na resistência leva metade. */
-function DanoEmVarios({ tokens, naOrdem, acao, fechar }: { tokens: Tk[]; naOrdem: string[]; acao: Acao; fechar: () => void }) {
-  const [sel, setSel] = useState<Record<string, 'inteiro' | 'metade'>>({})
-  const [dano, setDano] = useState(''), [rotulo, setRotulo] = useState(''), [cura, setCura] = useState(false), [indo, setIndo] = useState(false)
+export function DanoEmVarios({ tokens, naOrdem, acao, fechar, inicial = [], rotuloInicial = '' }: { tokens: Tk[]; naOrdem: string[]; acao: Acao; fechar: () => void
+  /** Vindo de uma área de efeito (v0.34.9): os atingidos já marcados. */
+  inicial?: string[]; rotuloInicial?: string }) {
+  const [sel, setSel] = useState<Record<string, 'inteiro' | 'metade'>>(() => Object.fromEntries(inicial.map(id => [id, 'inteiro' as const])))
+  const [dano, setDano] = useState(''), [rotulo, setRotulo] = useState(rotuloInicial), [cura, setCura] = useState(false), [indo, setIndo] = useState(false)
   const ids = Object.keys(sel)
   async function aplicar() {
     setIndo(true)
     try { const r = await acao({ acao: 'dano_varios', dano, rotulo, cura, alvos: ids.map(id => ({ tokenId: id, metade: sel[id] === 'metade' })) }); toast.success(`${cura ? 'Cura' : 'Dano'} de ${r.total} aplicado(a) em ${ids.length}.`); fechar() }
     catch { /* a mesa já mostra o erro */ } finally { setIndo(false) }
   }
-  const ordenados = [...tokens].sort((a, b) => Number(naOrdem.includes(b.id)) - Number(naOrdem.includes(a.id)))
+  const peso = (id: string) => (inicial.includes(id) ? 2 : 0) + (naOrdem.includes(id) ? 1 : 0)
+  const ordenados = [...tokens].sort((a, b) => peso(b.id) - peso(a.id))
   return <Janela titulo={cura ? '💚 Cura em vários' : '💥 Dano em vários'} fechar={fechar}>
     <div className="flex flex-wrap gap-2">
       <input aria-label="Dano ou cura" value={dano} onChange={x => setDano(x.target.value)} placeholder="8d6 ou 12" className={input + ' !w-28 font-mono'} />

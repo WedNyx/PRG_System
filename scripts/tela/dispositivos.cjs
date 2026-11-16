@@ -31,6 +31,8 @@ const DISPOSITIVOS = [
   // v0.33.8: combate em andamento (aba Iniciativa) e escuridão com luz.
   await call(M, 'POST', 'mesa/' + cid, { acao: 'sessao', aberta: true })
   await call(M, 'POST', 'mesa/' + cid, { acao: 'cena_editar', cenaId: cena, escuridao: 60 })
+  // v0.34.9: uma área de efeito no mapa.
+  await call(M, 'POST', 'mesa/' + cid, { acao: 'area_criar', cenaId: cena, area: { forma: 'cone', x: 3.5, y: 3.5, angulo: 45, metros: 9, nome: 'Sopro' } })
   r = await call(J, 'POST', 'mesa/' + cid, { acao: 'token_criar', cenaId: cena, fichaId: fL }); const tL = r.d.token?.id
   r = await call(M, 'POST', 'mesa/' + cid, { acao: 'token_criar', cenaId: cena, nome: 'Ogro', hp_max: 30, luz: { brilho: 6, penumbra: 6 } }); const tO = r.d.token?.id
   await call(M, 'POST', 'mesa/' + cid, { acao: 'combate_preparar', tokens: [{ tokenId: tL }, { tokenId: tO }] })

@@ -14,6 +14,7 @@ import { acertou, ALCANCE_CORPO, criticoBlades, distancia, gastarCusto, ordenarI
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { adiarNaOrdem, entrarNaOrdem, moverNaOrdem, mudarValor, sairDaOrdem } from '@/lib/sistemas/ordemCombate'
 import { ehV8 } from '@/lib/nuvem/categorias'
+import { lerAreasEfeito, MAX_AREAS_POR_CENA, normalizarAreaEfeito } from '@/lib/mesa/areasEfeito'
 import { condicoesDisponiveis, emojiCondicao, nomeCondicao, normalizarDanos, normalizarRodadas, passarRodada } from '@/lib/condicoes'
 
 export const dynamic = 'force-dynamic'
@@ -447,6 +448,27 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       await rest(`prg_desenhos?cena_id=eq.${q(c.id)}`, { method: 'DELETE' })
       return ok({ ok: true })
     }
+    // Áreas de efeito (v0.34.9): qualquer participante coloca; quem colocou ou o mestre tira.
+    case 'area_criar': case 'area_excluir': case 'areas_limpar': {
+      const c = await cenaDaCampanha(cid, b.cenaId)
+      const atuais = lerAreasEfeito((c as unknown as { areas_efeito?: unknown }).areas_efeito, c.grid_cols, c.grid_rows)
+      let novas = atuais
+      if (b.acao === 'area_criar') {
+        const a = normalizarAreaEfeito(b.area, c.grid_cols, c.grid_rows)
+        if (!a) throw new ErroApi(400, 'Área inválida.')
+        if (atuais.length >= MAX_AREAS_POR_CENA) throw new ErroApi(400, `Máximo de ${MAX_AREAS_POR_CENA} áreas na cena. Tire alguma antes.`)
+        novas = [...atuais.filter(x => x.id !== a.id), { ...a, autor_id: eu }]
+      } else if (b.acao === 'area_excluir') {
+        const alvo = atuais.find(x => x.id === b.id)
+        if (!alvo) return ok({ ok: true })
+        if (!admin && alvo.autor_id !== eu) throw new ErroApi(403, 'Só quem colocou a área (ou o mestre) pode tirar.')
+        novas = atuais.filter(x => x.id !== b.id)
+      } else { exigirAdmin(admin); novas = [] }
+      await rest(`prg_cenas?id=eq.${q(c.id)}`, { method: 'PATCH', body: JSON.stringify({ areas_efeito: novas }) }).catch(() => {
+        throw new ErroApi(409, 'Esta função precisa da atualização do banco (migração 030). Avise o administrador.')
+      })
+      return ok({ areas: novas })
+    }
     case 'tabelas_salvar': {
       exigirAdmin(admin)
       const tabelas = lerTabelas(b.tabelas)
@@ -678,7 +700,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       await rest(`prg_mesa_eventos?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ dados: novo }) })
       const alvo = (d.alvo as { nome: string }).nome
       await rest('prg_mesa_eventos', { method: 'POST', body: JSON.stringify({ campanha_id: cid, autor_id: eu, tipo: 'sistema', visibilidade: 'publica',
-        texto: fator === 0 ? `🛡️ O mestre anulou o dano em ${alvo}.` : `💥 ${alvo} recebeu ${aplicado} de dano${fator === 0.5 ? ' (metade)' : ''}.` }) }).catch(() => {})
+        texto: fator === 0 ? `🛡️ O mestre decidiu: o ataque não acertou ${alvo}.` : `💥 ${alvo} recebeu ${aplicado} de dano${fator === 0.5 ? ' (metade)' : ''}.` }) }).catch(() => {})
       return ok({ ok: true, aplicado })
     }
     case 'iniciativa_entrar': {

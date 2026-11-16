@@ -1,5 +1,15 @@
 # Biblioteca de ilustrações de itens de TODAS as fichas — Game-Icons.net
 
+## Acervo completo (v0.35.3)
+Desde a v0.35.3 a plataforma usa o acervo inteiro: **4.170 ícones** do pacote npm `game-icons-transparent@1.0.2` (fundo transparente, CC BY 3.0, exceto os poucos marcados como CC0 no `license.txt` do pacote).
+- `scripts/icones-game-icons.mjs` roda no `prebuild`: copia só os caminhos (`<path d>`) de cada SVG para `public/icones/gi/<autor>/<nome>.svg` e monta `public/icones/gi/indice.json` (nomes e autores). Os arquivos gerados não vão para o git.
+- O item guarda `iconeBiblioteca: "gi:<autor>/<nome>"`. A ficha pinta o ícone com máscara CSS na cor da raridade.
+- Crédito: o editor mostra o autor do ícone escolhido (“feito por …”, como pede a licença: *Icons made by {author}*) e o link para game-icons.net. Autores: Lorc, Delapouite, Skoll, Sbed, Carl Olsen, John Colburn, Caro Asercion, Cathelineau, DarkZaitzev e outros.
+- A Forja (desenhos próprios) saiu de todas as fichas; itens antigos com desenho da Forja ganham o ícone equivalente.
+- O 📦 Arsenal pronto (`src/lib/arsenal.ts`) usa só ícones desse acervo; o teste `arsenal.test.ts` confere que todos existem no pacote.
+
+## Ícones escolhidos (até a v0.35.2)
+
 ## Fonte e licença
 As 32 ilustrações vetoriais adicionadas à PR #48 são derivadas de [Game-Icons.net](https://game-icons.net/), repositório original em [game-icons/icons](https://github.com/game-icons/icons), licenciadas sob **Creative Commons Attribution 3.0 — CC BY 3.0**: https://creativecommons.org/licenses/by/3.0/.
 

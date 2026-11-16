@@ -6,6 +6,7 @@ import { Dice5, Info } from 'lucide-react'
 import { calcular } from '@/lib/sistemas/calculo'
 import type { DadosFicha, FichaManual as Manual, Sistema } from '@/lib/sistemas/tipos'
 import { montarRolagem, rolarExpressao } from '@/lib/dice'
+import AcoesRapidas from './AcoesRapidas'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import { InventarioFicha, PoderesFicha } from './Inventario'
 import JanelaDescanso from './Descanso'
@@ -15,8 +16,9 @@ import { expressaoParada, leituraBlades, leituraD100 } from '@/lib/sistemas/comb
 import TesteAssimilacao from './TesteAssimilacao'
 import AtributosOrdem from './AtributosOrdem'
 import { Retrato } from './FichaGenerica'
+import { AcoesBlades, AtributoComMod, AtributoModificador, estiloDoSistema, estiloTema, GrauPericia, PiramideFate, ResumoOrdem, temaDoSistema } from './VisualSistema'
 
-const card = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5'
+const card = 'rounded-2xl border border-(--ficha-borda) bg-(--ficha-cartao) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
 const sinal = (n: number | null | undefined) => n === null || n === undefined ? '—' : n >= 0 ? '+' + n : String(n)
 /** Campos que só existiam para as contas automáticas (a CA, a Defesa e os PV agora são digitados direto). Os dados continuam salvos. */
@@ -30,6 +32,8 @@ const SO_CALCULO: Record<string, string[]> = {
   'mork-borg': ['escudo'],
   brp: ['nivel_poder'],
 }
+/** PF2e: talentos separados como na ficha do jogo. */
+const TALENTOS_PF2E: [string, string][] = [['talentos_ancestralidade', 'Ancestralidade'], ['talentos_classe', 'Classe'], ['talentos_pericia', 'Perícia'], ['talentos_gerais', 'Gerais']]
 const numero = (v: string) => v.trim() === '' || v.trim() === '-' ? null : Math.max(-9999, Math.min(9999, Math.round(Number(v)) || 0))
 
 /**
@@ -45,6 +49,8 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   passarItem?: (it: Item, tem: number) => void
 }) {
   const m: Manual = d.manual ?? { mods: {}, derivados: {}, pericias: {} }
+  // Visual do sistema (v0.35.1): cores, letra dos títulos e o jeito de mostrar atributos e perícias.
+  const tema = temaDoSistema(s.id), visual = estiloDoSistema(s.id)
   const c = useMemo(() => calcular(s, d), [s, d])
   // Inventário e poderes no modo genérico: sem catálogo nem conta automática de arma do D&D.
   const sInv = useMemo<Sistema>(() => s.id === 'dnd5e-srd' ? { ...s, id: 'dnd5e-manual' } : s, [s])
@@ -93,10 +99,10 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const listasDe = (sec: string) => s.listas.filter(l => secaoDeLista(l.id) === sec)
   const tituloAtr = s.tituloAtributos?.trim() || 'Atributos', tituloPer = s.pericias?.titulo?.trim() || 'Perícias'
   const SECOES = ([
-    { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade, valores e recursos', ajuda: 'Preencha os dados do personagem, os valores (CA, Defesa…) e o máximo de cada recurso. Nada é calculado: o que você digita é o que vale.', ok: true },
+    { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade, valores e recursos', ajuda: 'Preencha os dados do personagem, os valores (CA, Defesa…) e o máximo de cada recurso. Nada é calculado: o que você digita é o que vale. Embaixo ficam as ações rápidas: armas equipadas e poderes, para rolar com um toque.', ok: true },
     { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? `${tituloAtr} e ${tituloPer[0].toLowerCase()}${tituloPer.slice(1)}` : tituloPer) : tituloAtr, sub: 'Testes e rolagens', ajuda: `Digite os valores${comMod ? ', os modificadores' : ''}${s.pericias ? ' e o total de cada perícia' : ''}. Toque no botão ao lado para rolar com o número digitado.`, ok: s.atributos.length > 0 || !!s.pericias },
     { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ajuda: 'Adicione poderes, magias, talentos e habilidades do personagem. O jogador e o mestre escrevem tudo.', ok: true },
-    { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou desenho, separados em abas por tipo.', ok: true },
+    { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou ícone, ou pegue prontos no 📦 Arsenal. Itens equipados com rolagem aparecem nas ações rápidas.', ok: true },
     { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ajuda: 'Espaço livre para a história do personagem, aliados, segredos e lembretes.', ok: true },
   ] as const).filter(x => x.ok)
   const [secao, setSecao] = useState<string>('principal')
@@ -108,12 +114,14 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const maxDe = (id: string) => { const x = d.recursos[id]?.max; return x === undefined || x === null ? null : Number(x) || 0 }
   const recursoPrincipal = s.recursos.find(r => /^(pv|vida)$/.test(r.id)) ?? s.recursos.find(r => maxDe(r.id))
   const defesa = s.derivados.find(x => /^(defesa|ca)$/.test(x.id))
-  const lista = (l: { id: string; nome: string }) => <label key={l.id} className={card + ' block'}>
-    <span className="font-bold text-(--a-ed9cd8)">{l.nome}</span>
-    <textarea rows={6} value={d.listas[l.id] ?? ''} disabled={somenteLeitura} maxLength={20000} onChange={e => set('listas', { ...d.listas, [l.id]: e.target.value })} className={input + ' mt-2'} />
+  // Ordem Paranormal: rituais em destaque.
+  const destaque = (id: string) => s.id === 'ordem-paranormal' && id === 'rituais'
+  const lista = (l: { id: string; nome: string }, linhas = 6) => <label key={l.id} className={card + ' block' + (destaque(l.id) ? ' !border-2 !border-(--ficha-acento) shadow-[0_0_20px_#a855f733]' : '')}>
+    <span className="font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">{destaque(l.id) ? '🔮 ' : ''}{l.nome}</span>
+    <textarea rows={linhas} value={d.listas[l.id] ?? ''} disabled={somenteLeitura} maxLength={20000} onChange={e => set('listas', { ...d.listas, [l.id]: e.target.value })} className={input + ' mt-2'} />
   </label>
 
-  return <div>
+  return <div style={estiloTema(tema)} data-visual={s.id} className={tema.sombrio ? 'ficha-sombria' : undefined}>
     <RolagemCentral ref={central} />
     {descansando && <JanelaDescanso s={s} d={d} onChange={onChange} rolarTotal={rolarTotal} fechar={() => setDescansando(false)} />}
     <div className="sticky top-[57px] z-10 -mx-3 mb-4 border-b border-(--a-373251) bg-(--s-100d1c)/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-4" aria-label="Resumo do personagem">
@@ -138,6 +146,8 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
         {atual && <p className="flex gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-2 text-xs text-(--a-cfc0df)"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></p>}
 
         {secao === 'principal' && <>
+          {s.id === 'ordem-paranormal' && <ResumoOrdem nex={Number(d.campos.nex ?? 0) || 0} classe={String(d.campos.classe ?? '')} trilha={String(d.campos.trilha ?? '')} origem={String(d.campos.origem ?? '')}
+            pe={{ atual: Number(d.recursos.pe?.atual ?? 0) || 0, max: maxDe('pe') }} san={{ atual: Number(d.recursos.san?.atual ?? 0) || 0, max: maxDe('san') }} />}
           <section className={card}>
             <div className="flex items-start gap-4">
               <Retrato url={d.retrato} nome={d.nome} somenteLeitura={somenteLeitura} onChange={u => onChange({ ...d, retrato: u ?? undefined })} />
@@ -156,7 +166,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
             </div>
           </section>
           {(s.derivados.length > 0 || s.recursos.length > 0) && <section className={card}>
-            <div className="mb-3 flex flex-wrap items-center gap-2"><h2 className="flex-1 font-bold text-(--a-ed9cd8)">Valores e recursos</h2>
+            <div className="mb-3 flex flex-wrap items-center gap-2"><h2 className="flex-1 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">Valores e recursos</h2>
               {!somenteLeitura && s.recursos.length > 0 && <button type="button" onClick={() => setDescansando(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d4a23a]/70 px-3 py-1.5 text-sm text-amber-100 hover:bg-[#3a2a14]">🌙 Descanso</button>}</div>
             {s.derivados.length > 0 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {s.derivados.map(x => <label key={x.id} className="rounded-xl bg-(--s-171325) p-3">
@@ -174,16 +184,25 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               })}
             </div>}
           </section>}
+          <AcoesRapidas d={d} rolar={rolarExpr} irInventario={() => ir('equipamentos')} />
         </>}
 
         {secao === 'atributos' && <>
           {s.atributos.length > 0 && <section className={card}>
-            <h2 className="mb-3 font-bold text-(--a-ed9cd8)">{tituloAtr}</h2>
+            <h2 className="mb-3 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">{tituloAtr}</h2>
             {s.id === 'ordem-paranormal'
               ? <AtributosOrdem atributos={s.atributos} valores={d.atributos} nex={Number(d.campos.nex ?? 5)} somenteLeitura={somenteLeitura} semLimite
                 onChange={(id, valor) => set('atributos', { ...d.atributos, [id]: valor })} />
+              : visual.atributos === 'com-mod' ? <div className="grid grid-cols-3 gap-x-2 gap-y-5 pb-3 sm:grid-cols-6 sm:gap-3">
+                {s.atributos.map(a => <AtributoComMod key={a.id} id={a.id} nome={a.nome} valor={Number(d.atributos[a.id] ?? a.padrao)} mod={m.mods[a.id] ?? 0} somenteLeitura={somenteLeitura}
+                  mudarValor={v => set('atributos', { ...d.atributos, [a.id]: v })} mudarMod={v => setManual('mods', a.id, v)} rolar={d20 ? () => void rolar(a.nome, m.mods[a.id] ?? 0) : undefined} />)}
+              </div>
+              : visual.atributos === 'modificador' ? <div className={'grid gap-2 sm:gap-3 ' + (s.atributos.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 sm:grid-cols-6')}>
+                {s.atributos.map(a => <AtributoModificador key={a.id} id={a.id} nome={a.nome} valor={Number(d.atributos[a.id] ?? a.padrao)} somenteLeitura={somenteLeitura} sombrio={tema.sombrio}
+                  mudar={v => set('atributos', { ...d.atributos, [a.id]: v })} rolar={d20 ? () => void rolar(a.nome, Number(d.atributos[a.id] ?? a.padrao)) : undefined} />)}
+              </div>
               : <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6">
-                {s.atributos.map(a => <div key={a.id} className="rounded-xl border border-(--a-5e4b78) bg-(--s-171325) p-2 text-center sm:p-3">
+                {s.atributos.map(a => <div key={a.id} className="rounded-xl border border-(--ficha-borda) bg-(--s-171325) p-2 text-center sm:p-3">
                   <p className="text-xs uppercase tracking-wider text-(--a-c4b6d4)" title={a.nome}>{a.id}</p>
                   <input type="number" aria-label={a.nome} value={d.atributos[a.id] ?? a.padrao} disabled={somenteLeitura}
                     onChange={e => set('atributos', { ...d.atributos, [a.id]: numero(e.target.value) ?? 0 })}
@@ -197,28 +216,41 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               </div>}
           </section>}
           {s.rolagem === 'assimilacao' && <TesteAssimilacao s={s} d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolarNaCampanha={rolarNaCampanha} />}
-          {(d20 || parada || regra) && s.atributos.length > 0 && <section className={card}>
-            <h2 className="mb-2 flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Dice5 size={18} /> Teste de atributo</h2>
+          {(d20 || parada || regra) && s.atributos.length > 0 && (visual.atributos === 'padrao' || visual.atributos === 'hexagonos' || !d20) && <section className={card}>
+            <h2 className="mb-2 flex items-center gap-2 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]"><Dice5 size={18} /> Teste de atributo</h2>
             {parada && <p className="mb-2 text-xs text-(--a-a998bd)">Rola um d{parada} para cada ponto do atributo e fica com o maior. Com 0, rola dois e fica com o menor.</p>}
             <div className="flex flex-wrap gap-2">{s.atributos.map(a => { const v = Number(d.atributos[a.id]) || 0, b = comMod ? m.mods[a.id] ?? 0 : v
               return <button key={a.id} type="button" onClick={() => parada ? rolar(a.nome, 0, v) : rolar(a.nome, b)}
                 className="rounded-lg border border-(--a-5e4b78) px-3 py-2 text-sm hover:bg-(--s-34294f)">{a.id} {parada ? `(${Math.max(0, v) || 2}d${parada})` : sinal(b)}</button> })}</div>
           </section>}
-          {parada && !!s.resistencias?.length && <section className={card}>
-            <h2 className="mb-1 flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Dice5 size={18} /> Resistência</h2>
+          {parada && !!s.resistencias?.length && visual.pericias !== 'acoes' && <section className={card}>
+            <h2 className="mb-1 flex items-center gap-2 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]"><Dice5 size={18} /> Resistência</h2>
             <p className="mb-2 text-xs text-(--a-a998bd)">Rola um d{parada} por ponto (o número digitado em Valores) e fica com o maior.</p>
             <div className="flex flex-wrap gap-2">{s.resistencias.map(id => { const x = s.derivados.find(y => y.id === id); if (!x) return null; const n = Number(m.derivados[id]) || 0
               return <button key={id} type="button" onClick={() => rolar(x.nome.split(' (')[0], 0, n, true)} className="rounded-lg border border-(--a-5e4b78) px-3 py-2 text-sm hover:bg-(--s-34294f)">{x.nome.split(' (')[0]} ({n || 2}d{parada})</button> })}</div>
           </section>}
           {s.pericias && <section className={card}>
-            <h2 className="mb-1 font-bold text-(--a-ed9cd8)">{tituloPer}</h2>
-            <p className="mb-3 text-xs text-(--a-a998bd)">{s.pericias.modo === 'valor' ? 'Digite o valor de cada uma.' : 'Digite o total (bônus) de cada uma.'}{podeRolar ? ' Toque no botão para rolar.' : ''}</p>
+            <h2 className="mb-1 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">{tituloPer}</h2>
+            {visual.pericias === 'piramide' ? <>
+              <p className="mb-3 text-xs text-(--a-a998bd)">Cada degrau mostra as perícias daquele nível. Toque numa perícia para rolar 4dF + o nível.</p>
+              <PiramideFate pericias={s.pericias.lista} valores={m.pericias} somenteLeitura={somenteLeitura}
+                mudar={(id, v) => onChange({ ...d, manual: { ...m, pericias: { ...m.pericias, [id]: v } }, pericias: { ...d.pericias, [id]: s.pericias!.treinos?.[v]?.id ?? d.pericias[id] } })}
+                rolar={(nome, v) => void rolar(nome, v)} />
+            </> : visual.pericias === 'acoes' ? <>
+              <p className="mb-3 text-xs text-(--a-a998bd)">Toque nas bolinhas para marcar os pontos de cada ação; toque no nome para rolar. 🛡️ rola a resistência do grupo (o número digitado em Valores).</p>
+              <AcoesBlades grupos={[...grupos].map(([g, itens]) => [g, itens])} valores={m.pericias} somenteLeitura={somenteLeitura}
+                resistencias={Object.fromEntries([...grupos].map(([g]) => { const id = (s.resistencias ?? []).find(x => x === g.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()); return [g, id ? { id, valor: Number(m.derivados[id]) || 0 } : undefined] }))}
+                mudar={(id, v) => onChange({ ...d, manual: { ...m, pericias: { ...m.pericias, [id]: v } }, pericias: { ...d.pericias, [id]: 'd' + v } })}
+                rolar={(nome, n) => void rolar(nome, 0, n)} rolarResistencia={(nome, n) => void rolar(nome, 0, n, true)} />
+            </> : <>
+            <p className="mb-3 text-xs text-(--a-a998bd)">{s.pericias.modo === 'valor' ? 'Digite o valor de cada uma.' : visual.pericias === 'graus' ? 'Toque no círculo para marcar o grau de treino e digite o total (bônus) de cada uma.' : 'Digite o total (bônus) de cada uma.'}{podeRolar ? ' Toque no dado para rolar.' : ''}</p>
             {[...grupos].map(([g, itens]) => <div key={g} className="mb-4">
               {g && <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{g}</h3>}
               <div className="grid gap-2 sm:grid-cols-2">
                 {itens.map(p => { const valor = s.pericias!.modo === 'valor'
                   const tot = valor ? Number(d.pericias[p.id]) || 0 : m.pericias[p.id] ?? 0
                   return <div key={p.id} className="flex items-center gap-2 rounded-lg bg-(--s-171325) px-3 py-2">
+                    {visual.pericias === 'graus' && <GrauPericia s={s} valor={String(d.pericias[p.id] ?? '')} nome={p.nome} somenteLeitura={somenteLeitura} mudar={v => set('pericias', { ...d.pericias, [p.id]: v })} />}
                     <span className="min-w-0 flex-1 truncate text-sm">{p.nome}{p.atributo && <span className="ml-1 text-[10px] text-(--a-a998bd)">({p.atributo})</span>}</span>
                     <input type="number" aria-label={(valor ? 'Valor de ' : 'Total de ') + p.nome} value={valor ? d.pericias[p.id] ?? 0 : m.pericias[p.id] ?? ''} placeholder="0" disabled={somenteLeitura}
                       onChange={e => valor ? set('pericias', { ...d.pericias, [p.id]: numero(e.target.value) ?? 0 }) : setManual('pericias', p.id, numero(e.target.value))}
@@ -228,21 +260,29 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
                   </div> })}
               </div>
             </div>)}
+            </>}
           </section>}
         </>}
 
         {secao === 'habilidades' && <>
+          {s.id === 'ordem-paranormal' && listasDe('habilidades').filter(l => destaque(l.id)).map(l => lista(l, 8))}
+          {s.id === 'pf2e' && <section className={card}>
+            <h2 className="mb-1 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">Talentos por categoria</h2>
+            <p className="mb-3 text-xs text-(--a-a998bd)">Um talento por linha, com o nível em que foi escolhido (ex.: “1 · Golpe Duplo”).</p>
+            <div className="grid gap-3 sm:grid-cols-2">{TALENTOS_PF2E.map(([id, nome]) => <label key={id} className="block rounded-xl border border-(--ficha-borda) bg-(--s-171325) p-2 text-sm font-semibold">{nome}
+              <textarea rows={4} value={d.listas[id] ?? ''} disabled={somenteLeitura} maxLength={8000} onChange={e => set('listas', { ...d.listas, [id]: e.target.value })} className={input + ' mt-1 font-normal'} /></label>)}</div>
+          </section>}
           <PoderesFicha {...propsInv} />
           {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
-          <section className="grid gap-4">{listasDe('habilidades').map(lista)}</section>
+          <section className="grid gap-4">{listasDe('habilidades').filter(l => !destaque(l.id) && !(s.id === 'pf2e' && l.id === 'talentos' && !d.listas.talentos?.trim())).map(l => lista(s.id === 'pf2e' && l.id === 'talentos' ? { ...l, nome: 'Outros talentos' } : l))}</section>
         </>}
         {secao === 'equipamentos' && <>
           <InventarioFicha {...propsInv} passarItem={passarItem} />
           {listasDe('equipamentos').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
-          <section className="grid gap-4">{listasDe('equipamentos').map(lista)}</section>
+          <section className="grid gap-4">{listasDe('equipamentos').map(l => lista(l))}</section>
         </>}
         {secao === 'anotacoes' && <>
-          <section className="grid gap-4">{listasDe('anotacoes').map(lista)}</section>
+          <section className="grid gap-4">{listasDe('anotacoes').map(l => lista(l))}</section>
           {s.autor && <section className={card + ' text-sm'}><p>✍️ <strong className="text-(--a-ed9cd8)">{s.nome}</strong> é um sistema autoral criado por <strong className="text-(--a-e4d3ff)">{s.autor}</strong>.</p></section>}
           {(s.observacoes?.length || s.creditos) && <section className={card + ' text-xs text-(--a-bfb2cf)'}>
             {s.observacoes?.map(o => <p key={o} className="mb-2 flex gap-2"><Info size={14} className="mt-0.5 shrink-0" /> {o}</p>)}

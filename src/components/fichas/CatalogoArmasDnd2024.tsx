@@ -103,7 +103,7 @@ export default function CatalogoArmasDnd2024({ edicao, livrosAtivos, adicionar, 
             {mostrados.map(reg => reg.tipo === 'base' ? (() => {
               const a = reg.arma
               return <li key={a.id} className="flex gap-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
-                <ArteItem item={{ nome: a.nome, categoria: 'arma' }} tamanho={56} estiloDnd />
+                <ArteItem item={{ nome: a.nome, categoria: 'arma' }} tamanho={56} />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <strong className="text-sm">{a.nome}</strong>
@@ -122,7 +122,7 @@ export default function CatalogoArmasDnd2024({ edicao, livrosAtivos, adicionar, 
               const a = reg.arma
               const baseId = baseEscolhida[a.id] ?? (a.armaBase ? (edicao === 'phb2014' ? '2014-' : '') + a.armaBase : '')
               return <li key={a.id} className="flex gap-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
-                <ArteItem item={{ nome: a.nome, categoria: 'arma', magico: a.classe === 'magica' }} tamanho={56} estiloDnd />
+                <ArteItem item={{ nome: a.nome, categoria: 'arma', magico: a.classe === 'magica' }} tamanho={56} />
                 <div className="min-w-0 flex-1">
                   <strong className="block text-sm">{a.nome}</strong>
                   <p className="mt-1 text-[11px] text-(--a-c4b6d4)">{rotuloArsenalDnd(ativo)}</p>

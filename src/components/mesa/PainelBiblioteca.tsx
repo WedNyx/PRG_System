@@ -9,6 +9,8 @@ import { CATEGORIAS_ITEM, TIPOS_PODER, type Item, type Poder } from '@/lib/siste
 import { corDaRaridade, RARIDADES, type Raridade } from '@/lib/itensArte'
 import { GRUPOS_PRONTOS, PRONTOS, type Pronto } from '@/lib/bibliotecaPronta'
 import { EditorItem, EditorPoder } from '@/components/fichas/Inventario'
+import ArsenalPronto from '@/components/fichas/ArsenalPronto'
+import { itemDoArsenal } from '@/lib/arsenal'
 import ArteItem from '@/components/fichas/ArteItem'
 import type { Estado } from './MesaNova'
 import { btn, input, msg } from './estilos'
@@ -34,6 +36,7 @@ export default function PainelBiblioteca({ campanhaId, e }: { campanhaId: string
   const [tipo, setTipo] = useState<'item' | 'poder'>('item')
   const [cat, setCat] = useState('')
   const [busca, setBusca] = useState('')
+  const [arsenal, setArsenal] = useState(false)
   const [editando, setEditando] = useState<{ id?: string; tipo: 'item' | 'poder'; valor: Item | Poder } | null>(null)
   const [dando, setDando] = useState<Entrada | null>(null)
   const [versao, setVersao] = useState(0)
@@ -81,6 +84,7 @@ export default function PainelBiblioteca({ campanhaId, e }: { campanhaId: string
       <div className="flex flex-wrap gap-1">{[{ id: '', nome: 'Todos' }, ...categorias].map(c => <button key={c.id} type="button" onClick={() => setCat(c.id)}
         className={'rounded-full border px-2.5 py-0.5 text-[11px] ' + (cat === c.id ? 'border-(--a-b99bff) bg-(--s-3a2c58)' : 'border-(--a-3d3152) text-(--a-cfc0df)')}>{c.nome}</button>)}</div>
       <button type="button" className={btn} onClick={() => setEditando(tipo === 'item' ? { tipo: 'item', valor: { id: 'novo', nome: '', categoria: (cat as Item['categoria']) || 'equipamento', peso: 0, bonus: [] } } : { tipo: 'poder', valor: { id: 'novo', nome: '', tipo: (cat as Poder['tipo']) || 'magia' } })}><Plus size={14} /> Novo {tipo === 'item' ? 'item' : 'poder'}</button>
+      {tipo === 'item' && <button type="button" className={btn} onClick={() => setArsenal(true)}>📦 Arsenal pronto</button>}
       {lista === null && <p className="text-sm text-(--a-b4aeca)">Carregando…</p>}
       {lista && !visiveis.length && <p className="rounded-xl border border-dashed border-(--a-55456e) p-3 text-sm text-(--a-b4aeca)">{(lista ?? []).length ? 'Nada com esse filtro.' : <>A biblioteca está vazia. Comece pelos <button type="button" onClick={() => setVista('prontos')} className="underline">✨ prontos para usar</button> ou crie o seu.</>}</p>}
       <ul className="space-y-1.5">{visiveis.map(b => <li key={b.id} className="rounded-xl border border-(--a-3b3054) bg-(--s-171428)/80 p-2">
@@ -125,6 +129,7 @@ export default function PainelBiblioteca({ campanhaId, e }: { campanhaId: string
       })}
     </>}
 
+    {arsenal && <ArsenalPronto fechar={() => setArsenal(false)} adicionar={x => void salvar('item', itemDoArsenal(x, () => 'novo'))} />}
     {editando?.tipo === 'item' && <EditorItem s={s} inicial={editando.valor as Item} salvar={v => void salvar('item', v, editando.id)} fechar={() => setEditando(null)} />}
     {editando?.tipo === 'poder' && <EditorPoder s={s} inicial={editando.valor as Poder} salvar={v => void salvar('poder', v, editando.id)} fechar={() => setEditando(null)} />}
     {dando && <JanelaDar campanhaId={campanhaId} e={e} b={dando} fechar={() => setDando(null)} />}

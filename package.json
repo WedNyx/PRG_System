@@ -1,9 +1,10 @@
 {
   "name": "prg-system",
-  "version": "0.35.0",
+  "version": "0.35.3",
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/icones-game-icons.mjs",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
@@ -15,6 +16,7 @@
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.0",
     "canvas-confetti": "^1.9.4",
+    "game-icons-transparent": "1.0.2",
     "lucide-react": "^1.25.0",
     "next": "16.2.10",
     "react": "19.2.4",

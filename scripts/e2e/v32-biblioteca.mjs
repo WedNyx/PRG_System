@@ -20,14 +20,14 @@ r=await call(J,'POST',bib,{acao:'importar',entradas:[{tipo:'item',dados:{nome:'H
 r=await call(M,'POST',bib,{acao:'importar',entradas:[{tipo:'item',dados:{nome:'',categoria:'arma'}}]}); check('entrada sem nome é recusada', r.s===400, r)
 r=await call(M,'GET',bib); const lista=r.d.biblioteca
 const pocao=lista.find(b=>b.nome==='Poção de cura'), lamina=lista.find(b=>b.nome==='Lâmina do Crepúsculo'), folego=lista.find(b=>b.nome==='Segundo fôlego')
-check('guarda arte e raridade; arte inválida sai', pocao?.dados.arte?.forma==='pocao' && lamina?.dados.raridade==='raro' && !lamina?.dados.arte && folego?.dados.recarga==='curto', lista)
+check('desenho antigo vira ícone, raridade fica; arte inválida sai', pocao?.dados.iconeBiblioteca==='pocao' && !pocao?.dados.arte && lamina?.dados.raridade==='raro' && !lamina?.dados.arte && folego?.dados.recarga==='curto', lista)
 r=await call(M,'POST',bib,{acao:'duplicar',id:lamina.id}); check('duplica com “(cópia)”', r.s===201 && r.d.entrada?.nome==='Lâmina do Crepúsculo (cópia)' && r.d.entrada?.dados.raridade==='raro', r)
 
 r=await call(M,'POST',`campanhas/${cid}/recompensas`,{fichaIds:[fL,fG],bibliotecaIds:[pocao.id,pocao.id,pocao.id],anunciar:true})
 check('dá 3 poções para Lyra e para o NPC', r.s===200 && r.d.recompensados?.length===2, r)
 const ler=async id=>(await call(M,'GET','fichas/'+id)).d.ficha.dados
 let d=await ler(fL); let p=d.itens.filter(i=>i.nome==='Poção de cura')
-check('empilha: 1 item com quantidade 3, com arte', p.length===1 && d.uso.itens[p[0].id].qtd===3 && p[0].arte?.forma==='pocao', {itens:d.itens, uso:d.uso})
+check('empilha: 1 item com quantidade 3, com ícone', p.length===1 && d.uso.itens[p[0].id].qtd===3 && p[0].iconeBiblioteca==='pocao', {itens:d.itens, uso:d.uso})
 await call(M,'POST',`campanhas/${cid}/recompensas`,{fichaIds:[fL],bibliotecaIds:[pocao.id,folego.id]})
 d=await ler(fL); p=d.itens.filter(i=>i.nome==='Poção de cura')
 check('dar de novo soma (4) e o poder entra com a recarga', d.uso.itens[p[0].id].qtd===4 && d.poderes.some(x=>x.nome==='Segundo fôlego' && x.recarga==='curto'), {uso:d.uso, poderes:d.poderes})

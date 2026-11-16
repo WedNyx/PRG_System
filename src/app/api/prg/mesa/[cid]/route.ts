@@ -16,7 +16,8 @@ import { adiarNaOrdem, entrarNaOrdem, moverNaOrdem, mudarValor, sairDaOrdem } fr
 import { ehV8 } from '@/lib/nuvem/categorias'
 import { lerAreasEfeito, MAX_AREAS_POR_CENA, normalizarAreaEfeito } from '@/lib/mesa/areasEfeito'
 import { caminhoLivre, lerParedes, MAX_PAREDES, normalizarParede } from '@/lib/mesa/paredes'
-import { alcanceCelulas, celulasVisiveis, revelarNaNevoa, segmentosVisao } from '@/lib/mesa/visao'
+import { alcanceDoToken, celulasVisiveis, estaEscuro, normalizarVisao, revelarNaNevoa, segmentosVisao } from '@/lib/mesa/visao'
+import { METROS_POR_CELULA_MESA } from '@/lib/nuvem/mesa'
 import { condicoesDisponiveis, emojiCondicao, nomeCondicao, normalizarDanos, normalizarRodadas, passarRodada } from '@/lib/condicoes'
 
 export const dynamic = 'force-dynamic'
@@ -47,10 +48,18 @@ async function revelarPelaVisao(cid: string, cenaId: string) {
   try {
     const [c] = await rest<Cena[]>(`prg_cenas?select=*&id=eq.${q(cenaId)}&campanha_id=eq.${q(cid)}`)
     if (!c?.visao_dinamica || !c.fog_ativo) return
-    const tokens = await rest<{ x: number; y: number; tamanho: number | null; npc: boolean; dono_id: string | null }[]>(`prg_tokens?select=x,y,tamanho,npc,dono_id&cena_id=eq.${q(cenaId)}&npc=eq.false&dono_id=not.is.null&limit=40`)
+    type Tk = { x: number; y: number; tamanho: number | null; npc: boolean; dono_id: string | null; visivel: boolean; luz: unknown; visao?: unknown }
+    const todos = await rest<Tk[]>(`prg_tokens?select=*&cena_id=eq.${q(cenaId)}&limit=200`)
+    const tokens = todos.filter(t => !t.npc && t.dono_id)
     if (!tokens.length) return
-    const segs = segmentosVisao(lerParedes(c.paredes, c.grid_cols, c.grid_rows)), raio = alcanceCelulas(c.visao_alcance)
-    const celulas = tokens.flatMap(t => { const m = (t.tamanho ?? 1) / 2; return celulasVisiveis(t.x + m, t.y + m, segs, c.grid_cols, c.grid_rows, raio + m - 0.5) })
+    const segs = segmentosVisao(lerParedes(c.paredes, c.grid_cols, c.grid_rows))
+    // No escuro (v0.35.2): cada personagem só vê o que está iluminado ou dentro da própria visão no escuro.
+    const escuro = estaEscuro((c as unknown as { escuridao?: number }).escuridao)
+    const luzes = escuro ? todos.flatMap(t => { const l = normalizarLuz(t.luz); if (!l || !t.visivel) return []; const m = (t.tamanho ?? 1) / 2
+      return [{ x: t.x + m, y: t.y + m, raio: (l.brilho + l.penumbra) / METROS_POR_CELULA_MESA + m }] }) : []
+    const celulas = tokens.flatMap(t => { const m = (t.tamanho ?? 1) / 2, v = normalizarVisao(t.visao)
+      return celulasVisiveis(t.x + m, t.y + m, segs, c.grid_cols, c.grid_rows, alcanceDoToken(v, c.visao_alcance) + m - 0.5,
+        escuro ? { visao: (v?.escuro ?? 0) / METROS_POR_CELULA_MESA + m, luzes } : undefined) })
     const r = revelarNaNevoa(c.fog_revelado, celulas, c.grid_cols, c.grid_rows)
     if (r.mudou) await rest(`prg_cenas?id=eq.${q(c.id)}`, { method: 'PATCH', body: JSON.stringify({ fog_revelado: r.nevoa }) })
   } catch { /* a visão é um extra: se falhar, a mesa segue */ }
@@ -398,7 +407,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         const [casa] = await rpc<{ x: number; y: number }[]>('prg_token_casa_livre', { p_token: (t as { id: string }).id }).catch(() => [])
         if (casa) Object.assign(t as object, casa)
       }
-      if (c.visao_dinamica && dono) await revelarPelaVisao(cid, c.id)
+      if (c.visao_dinamica && (dono || normalizarLuz(b.luz))) await revelarPelaVisao(cid, c.id)
       return ok({ token: t }, 201)
     }
     case 'token_mover': {
@@ -415,7 +424,8 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         }
       }
       await rest(`prg_tokens?id=eq.${q(t.id)}`, { method: 'PATCH', body: JSON.stringify({ x: nx, y: ny }) })
-      if (c?.visao_dinamica && !t.npc && t.dono_id) await revelarPelaVisao(cid, t.cena_id)
+      // Personagem andou (ou um token com luz mudou de lugar): revela o que passou a ser visto.
+      if (c?.visao_dinamica) await revelarPelaVisao(cid, t.cena_id)
       return ok({ ok: true })
     }
     case 'token_editar': {
@@ -449,6 +459,8 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         if (corValida(b.cor)) m.cor = b.cor
         // Luz própria do token (tocha, magia, visão…): o dono e o mestre definem.
         if (b.luz !== undefined) m.luz = normalizarLuz(b.luz)
+        // Visão própria (v0.35.2): alcance e visão no escuro, em metros.
+        if (b.visao !== undefined) m.visao = normalizarVisao(b.visao)
       }
       if (admin) {
         if (b.movimento === 'dono' || b.movimento === 'todos' || b.movimento === 'mestre') m.movimento = b.movimento
@@ -459,9 +471,11 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       }
       if (!Object.keys(m).length) { if (b.hp_atual !== undefined) return ok({ ok: true }); throw new ErroApi(400, 'Nada para alterar.') }
       await rest(`prg_tokens?id=eq.${q(t.id)}`, { method: 'PATCH', body: JSON.stringify(m) }).catch(er => {
+        if (m.visao !== undefined) throw new ErroApi(409, 'A visão dos tokens precisa da atualização do banco (migração 033). Avise o administrador.')
         if (m.luz !== undefined) throw new ErroApi(409, 'A luz dos tokens precisa da atualização do banco (migração 028). Avise o administrador.')
         throw er
       })
+      if (m.luz !== undefined || m.visao !== undefined) await revelarPelaVisao(cid, t.cena_id)
       return ok({ ok: true })
     }
     case 'token_excluir': {

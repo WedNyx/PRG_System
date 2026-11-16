@@ -14,6 +14,7 @@ import { podeMoverToken } from '@/lib/nuvem/mesa'
 import MapaMesa, { type CursorRemoto, type ModoMesa, type Ping, type PreviaArea, type ReguaRemota, type TokenMapa } from './MapaMesa'
 import { separarEventos, type AbaChat } from '@/lib/mesa/abasChat'
 import { caminhoLivre, lerParedes, TIPOS_PAREDE, type TipoParede } from '@/lib/mesa/paredes'
+import { normalizarVisao, type VisaoToken } from '@/lib/mesa/visao'
 import { CORES_AREA, FORMAS_AREA, lerAreasEfeito, tokensNaArea, type AreaEfeito, type FormaArea } from '@/lib/mesa/areasEfeito'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import PainelCampanha from './PainelCampanha'
@@ -36,7 +37,7 @@ import FichaNaMesa from './FichaNaMesa'
 import { DanoEmVarios, PainelIniciativa } from './Iniciativa'
 
 type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean; fog_areas?: AreaNevoa[] | null; areas_efeito?: unknown; paredes?: unknown; visao_dinamica?: boolean | null; visao_alcance?: number | null; escuridao?: number | null; luz_revela_nevoa?: boolean | null }
-type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; condicoes_rodadas?: Record<string, number> | null; condicoes_dano?: Record<string, string> | null; morte?: Morte | null; dono_id: string | null; ficha_id: string | null; ficha_modelo?: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number; luz?: LuzToken | null }
+type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; condicoes_rodadas?: Record<string, number> | null; condicoes_dano?: Record<string, string> | null; morte?: Morte | null; dono_id: string | null; ficha_id: string | null; ficha_modelo?: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number; luz?: LuzToken | null; visao?: VisaoToken | null }
 export type Evento = { id: number; tipo: 'chat' | 'rolagem' | 'sistema' | 'ataque'; dados?: DadosAtaque | null; visibilidade: 'publica' | 'mestre' | 'privada'; autor_id: string | null; destinatario_id: string | null; personagem: string | null; texto: string | null; expressao: string | null; resultados: number[] | null; total: number | null; criado_em: string; autor: { apelido: string } | null }
 type Iniciativa = { id: string; nome: string; valor: number; tokenId?: string | null }
 export type Estado = {
@@ -689,6 +690,7 @@ function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar, abrirFicha
         <p className="text-[11px] text-(--a-a998bd)">💥 Dano por turno: rolado no começo do turno de {t.nome} e tirado da vida dele. Deixe vazio para não causar dano.</p>
       </div>}
       {pode && <LuzDoToken key={JSON.stringify(t.luz ?? null)} t={t} acao={acao} />}
+      {pode && <VisaoDoToken key={'v' + JSON.stringify(t.visao ?? null)} t={t} acao={acao} />}
       {pode && <label className={btn + ' mt-3 cursor-pointer'}><ImageIcon size={14} /> Trocar imagem do token<input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={async x => {
         const f = x.target.files?.[0]; x.target.value = ''; if (!f) return
         try { const { url } = await enviarImagem(campanhaId, eu, f); await acao({ acao: 'token_editar', tokenId: t.id, imagem_url: url }) } catch (er) { toast.error(msg(er)) }
@@ -830,6 +832,7 @@ function VisaoPersonagens({ cena, acao }: { cena: Cena; acao: Acao }) {
     {ligada && <label className="flex flex-wrap items-center gap-2 text-xs">Até onde enxergam
       <select value={cena.visao_alcance ?? 0} onChange={x => void acao({ acao: 'cena_editar', cenaId: cena.id, visao_alcance: Number(x.target.value) }).catch(() => {})} className={input + ' !w-auto'}>
         {[[0, 'Sem limite (até as paredes)'], [9, '9 m'], [18, '18 m'], [27, '27 m'], [36, '36 m'], [60, '60 m']].map(([v, n]) => <option key={v} value={v}>{n}</option>)}</select></label>}
+    {ligada && <p className="text-[11px] text-(--a-b4aeca)">🌑 Com a escuridão da cena em 50 ou mais, cada personagem só vê o que alguma luz ilumina ou o que está dentro da visão no escuro dele. A luz e a visão de cada um se ajustam tocando no token.</p>}
     {ligada && <p className="text-[11px] text-(--a-b4aeca)">Para começar uma área do zero, use “Esconder tudo”: a névoa volta e se abre de novo onde os personagens estão.</p>}
   </div>
 }
@@ -864,6 +867,26 @@ function Iluminacao({ cena, acao }: { cena: Cena; acao: Acao }) {
     <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={cena.luz_revela_nevoa !== false} onChange={x => void acao({ acao: 'cena_editar', cenaId: cena.id, luz_revela_nevoa: x.target.checked }).catch(() => {})} />
       A luz dos personagens dos jogadores tira a névoa por onde eles passam</label>
     <p className="text-[11px] text-(--a-b4aeca)">A luz de cada token (tocha, lanterna, magia) é definida no próprio token: toque nele no mapa. Você vê a escuridão mais clara para conseguir trabalhar.</p>
+  </div>
+}
+
+/** Visão de cada personagem (v0.35.2): até onde enxerga e visão no escuro (elfo, anão, criaturas da noite…). */
+const VISOES_PRONTAS: { nome: string; escuro: number }[] = [{ nome: 'Normal', escuro: 0 }, { nome: 'No escuro 9 m', escuro: 9 }, { nome: 'No escuro 18 m', escuro: 18 }, { nome: 'No escuro 36 m', escuro: 36 }]
+function VisaoDoToken({ t, acao }: { t: Token; acao: Acao }) {
+  const v = normalizarVisao(t.visao)
+  const [alcance, setAlcance] = useState(v?.alcance ?? 0), [escuro, setEscuro] = useState(v?.escuro ?? 0)
+  const salvar = (n: { alcance: number; escuro: number }) => acao({ acao: 'token_editar', tokenId: t.id, visao: n.alcance || n.escuro ? n : null }).catch(() => {})
+  return <div className="mt-3 space-y-2 rounded-lg bg-(--s-1e1a30) p-2 text-xs">
+    <p className="flex items-center gap-1 text-sm font-semibold"><Eye size={14} /> Visão do personagem <span className="font-normal text-(--a-c4b6d4)">· {v?.alcance ? `até ${v.alcance} m` : 'alcance da cena'}{v?.escuro ? ` · no escuro ${v.escuro} m` : ''}</span></p>
+    <p className="text-[11px] text-(--a-b4aeca)">Vale quando o mestre liga a “Visão dos personagens”. Com a cena escura, cada um só vê o que a luz alcança, ou até onde a visão no escuro dele vai.</p>
+    <div className="flex flex-wrap gap-1">{VISOES_PRONTAS.map(x => <button key={x.nome} type="button" aria-pressed={(v?.escuro ?? 0) === x.escuro} className={btn + ' !px-2 !py-1 text-xs' + ((v?.escuro ?? 0) === x.escuro ? ' !border-(--a-b99bff)' : '')}
+      onClick={() => { setEscuro(x.escuro); void salvar({ alcance, escuro: x.escuro }) }}>{x.nome}</button>)}</div>
+    <div className="flex flex-wrap items-center gap-2">
+      <label className="flex items-center gap-1">Enxerga até <select value={alcance} onChange={x => setAlcance(Number(x.target.value))} className={input + ' !w-auto !py-1'}>
+        {[[0, 'o da cena'], [9, '9 m'], [18, '18 m'], [27, '27 m'], [36, '36 m'], [60, '60 m']].map(([n, rot]) => <option key={n} value={n}>{rot}</option>)}</select></label>
+      <label className="flex items-center gap-1">No escuro <input type="number" min={0} max={120} step={1.5} value={escuro} onChange={x => setEscuro(Number(x.target.value))} className={input + ' !w-16 !py-1'} /> m</label>
+      <button type="button" className={btn + ' !py-1'} onClick={() => void salvar({ alcance, escuro })}>Aplicar</button>
+    </div>
   </div>
 }
 

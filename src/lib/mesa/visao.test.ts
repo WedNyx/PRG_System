@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Parede } from './paredes'
-import { alcanceCelulas, celulasVisiveis, dentroDoPoligono, poligonoVisao, revelarNaNevoa, segmentosVisao, temLinhaDeVisao } from './visao'
+import { alcanceCelulas, alcanceDoToken, celulasVisiveis, estaEscuro, iluminado, normalizarVisao, dentroDoPoligono, poligonoVisao, revelarNaNevoa, segmentosVisao, temLinhaDeVisao } from './visao'
 import { expandirNevoa } from '../nuvem/mesa'
 
 const P = (x1: number, y1: number, x2: number, y2: number, tipo: Parede['tipo'] = 'parede', extra: Partial<Parede> = {}): Parede => ({ id: `p${x1}${y1}${x2}${y2}${tipo}`, x1, y1, x2, y2, tipo, ...extra })
@@ -51,5 +51,29 @@ describe('visão e luz com paredes (v0.35.0)', () => {
     expect(r.mudou).toBe(true)
     expect([...expandirNevoa(r.nevoa)].sort()).toEqual(['0,0', '1,0', '2,0', '5,5'])
     expect(revelarNaNevoa(['0-2,0'], ['1,0'], 10, 10).mudou).toBe(false)
+  })
+
+  it('visão de cada personagem (v0.35.2)', () => {
+    expect(normalizarVisao({ alcance: 18, escuro: 500 })).toEqual({ alcance: 18, escuro: 300 })
+    expect(normalizarVisao({ alcance: 0, escuro: 0 })).toBeNull()
+    expect(alcanceDoToken({ alcance: 9, escuro: 0 }, 60)).toBe(6)
+    expect(alcanceDoToken(null, 9)).toBe(6)
+    expect(estaEscuro(49)).toBe(false)
+    expect(estaEscuro(50)).toBe(true)
+  })
+
+  it('no escuro só se vê o que está iluminado ou dentro da visão no escuro', () => {
+    const sem = new Set(celulasVisiveis(0.5, 0.5, [], 20, 20, 30, { visao: 0, luzes: [] }))
+    expect([...sem]).toEqual(['0,0']) // só a própria casa
+    const elfo = new Set(celulasVisiveis(0.5, 0.5, [], 20, 20, 30, { visao: 4, luzes: [] }))
+    expect(elfo.has('3,0') && !elfo.has('6,0')).toBe(true)
+    const tocha = new Set(celulasVisiveis(0.5, 0.5, [], 20, 20, 30, { visao: 0, luzes: [{ x: 10.5, y: 0.5, raio: 2 }] }))
+    expect(tocha.has('10,0') && tocha.has('11,0') && !tocha.has('5,0')).toBe(true)
+  })
+
+  it('a luz não atravessa parede', () => {
+    const segs = segmentosVisao([P(5, 0, 5, 10)])
+    expect(iluminado(4.5, 0.5, [{ x: 6.5, y: 0.5, raio: 4 }], segs)).toBe(false)
+    expect(iluminado(7.5, 0.5, [{ x: 6.5, y: 0.5, raio: 4 }], segs)).toBe(true)
   })
 })

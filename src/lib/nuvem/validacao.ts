@@ -124,7 +124,7 @@ export function validarFichaDados(dados: unknown): Ok<{ dados: Record<string, un
   let d = dados as Record<string, unknown>
   // Retrato das fichas genéricas: só imagens enviadas pela plataforma (nada de links de fora).
   if ('retrato' in d && !imagemDaPlataforma(d.retrato)) { const { retrato: _fora, ...resto } = d; void _fora; d = resto }
-  // Itens e poderes guardados já limpos (forma/cores da forja, raridade, bônus e rolagens válidos).
+  // Itens e poderes guardados já limpos (ícone, raridade, bônus e rolagens válidos).
   if (Array.isArray(d.itens)) d = { ...d, itens: lerItens(d.itens) }
   if (Array.isArray(d.poderes)) d = { ...d, poderes: lerPoderes(d.poderes) }
   const fields = d.fields && typeof d.fields === 'object' ? d.fields as Record<string, unknown> : {}

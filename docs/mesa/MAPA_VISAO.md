@@ -1,4 +1,4 @@
-# Mapa da mesa: medir, paredes e visão (v0.34.9 a v0.35.0)
+# Mapa da mesa: medir, paredes e visão (v0.34.9 a v0.35.2)
 
 ## Partes
 | Parte | Versão | Migração | O que faz |
@@ -6,6 +6,7 @@
 | 1. Medir e mirar | 0.34.9 | 030 `areas_efeito` | Régua compartilhada, alcance do ataque, áreas de efeito (círculo, cone, linha e quadrado), decisões do mestre fora do chat e chat em 4 abas |
 | 2. Paredes e portas | 0.34.10 | 031 `paredes` | Parede, porta e janela bloqueiam os tokens dos jogadores, conferido no servidor; pincel redondo; "ver como jogador" |
 | 3. Visão | 0.35.0 | 032 `visao_dinamica`, `visao_alcance` | A névoa se abre pelo que os personagens enxergam; a luz para nas paredes |
+| 4. Visão por personagem | 0.35.2 | 033 `prg_tokens.visao` | Alcance próprio e visão no escuro; com a cena escura, só se vê o que a luz alcança |
 
 ## Regras
 - **Parede:** bloqueia passagem, visão e luz.
@@ -24,6 +25,11 @@
     - o que está à vista agora fica claro.
   - Tokens que não são de jogador só aparecem quando estão à vista.
 - **Alcance:** 0 m significa "sem limite", que na prática vai até as paredes, com teto de 60 células.
+- **Visão por personagem (v0.35.2):**
+  - Cada token pode ter `visao: { alcance, escuro }`, em metros. Alcance 0 usa o da cena; escuro 0 é não ter visão no escuro.
+  - O dono e o mestre editam, tocando no token › Visão do personagem.
+  - Com escuridão da cena em 50 ou mais e a visão ligada, cada personagem só vê o que alguma luz ilumina (luz de qualquer token, até as paredes) ou o que está dentro da própria visão no escuro.
+  - Na tela do jogador, a visão no escuro aparece clareada sem cor, e a luz aparece com a cor dela.
 
 ## Código
 - `src/lib/mesa/areasEfeito.ts`: geometria das áreas.
@@ -33,5 +39,5 @@
 - e2e: `v34-areas-efeito.mjs`, `v34-paredes.mjs` e `v35-visao.mjs`.
 
 ## Limites conhecidos
-- A escuridão da cena continua sendo um véu visual. A visão dos personagens não leva em conta "enxergar no escuro" de cada raça ou classe: o alcance é o mesmo para todos, escolhido pelo mestre.
+- O grupo enxerga junto: cada jogador vê o que qualquer personagem do grupo vê (não há visão separada por jogador).
 - Os dados das paredes chegam ao navegador de todos (o jogador não vê as linhas, mas elas estão nos dados da mesa).

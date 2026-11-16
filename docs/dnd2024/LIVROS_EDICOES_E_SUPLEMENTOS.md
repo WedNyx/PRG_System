@@ -78,7 +78,7 @@ Fontes de consulta:
 - Para fichas D&D, **Forja removida do editor e da prévia**. Apenas Game-Icons por nome/tipo, com 43 ícones SVG atribuídos à biblioteca Game-Icons, Lorc e Delapouite (CC BY 3.0); 11 novos ícones adicionais de espadas, adagas, tridente, lança, machado, maça, revólver etc.
 - Ícones aparecem de forma sugerida de acordo com a categoria e, no seletor, com ordem de preferência por versão 2014/2024. A seção **Ver todos os ícones** permite escolher livremente outro desenho.
 - **Foto personalizada continua disponível** para player via galeria do celular/arquivos do computador e mantém prioridade sobre a arte sugerida. Retirar a foto volta ao ícone, sem apagar o item.
-- A Forja permanece disponível para outros sistemas de RPG que já usavam esse recurso; não foi removida globalmente.
+- v0.35.3: a Forja saiu de todos os sistemas. Os itens usam um ícone do acervo completo do Game-Icons (4.170) ou foto.
 
 ### Árvore de origem com hexágonos naturais
 - Na aba **Árvore de Habilidades** do D&D existe agora o painel `ArvoreDndOficial` com hexágonos gerados a partir da ficha para **Classe/Subclasse, Espécie/Raça, Origem/Antecedente e Habilidades do Mestre**.

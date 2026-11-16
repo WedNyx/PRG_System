@@ -27,6 +27,41 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.35.3', data: '2026-11-16',
+    titulo: 'Ações rápidas, arsenal pronto e os 4.170 ícones do Game-Icons',
+    itens: [
+      'Ações rápidas: no Principal da ficha aparecem as armas e itens equipados e os poderes com dados. Um toque rola (na campanha, vai também para o chat da mesa).',
+      'Cada item pode ter até 6 rolagens prontas (Acerto, Dano, Crítico ou o nome que quiser). Viram botões no inventário e nas ações rápidas, com “Rolar tudo”.',
+      '📦 Arsenal pronto: itens prontos em cinco estilos (medieval e fantasia, faroeste, moderno, ficção científica e terror), com busca. Também na biblioteca do mestre.',
+      'O acervo completo do Game-Icons (4.170 ícones) entrou na plataforma: no editor do item, “Buscar entre todos os ícones”, com busca em português e filtros por tema.',
+      'A Forja (os desenhos próprios dos itens) saiu. Agora cada item mostra um ícone do Game-Icons ou a foto que você enviar.',
+      'Itens que usavam um desenho da Forja ganharam sozinhos o ícone equivalente; quem quiser troca o ícone ou põe uma foto.',
+      'A raridade continua: a moldura e o ícone pegam a cor dela, e do Raro para cima o item brilha.',
+    ],
+  },
+  {
+    versao: '0.35.2', data: '2026-11-16',
+    titulo: 'Mesa: visão de cada personagem e visão no escuro',
+    itens: [
+      'Cada token pode ter a própria visão: até onde enxerga e visão no escuro (elfo, anão, criaturas da noite…). Toque no token › Visão do personagem.',
+      'Com a escuridão da cena em 50 ou mais e a “Visão dos personagens” ligada, cada um só vê o que alguma luz ilumina ou o que está dentro da visão no escuro dele.',
+      'A luz de qualquer token (tocha, fogueira, magia) revela o que ilumina, e para nas paredes.',
+    ],
+  },
+  {
+    versao: '0.35.1', data: '2026-11-16',
+    titulo: 'Cada sistema com a sua cara',
+    itens: [
+      'As fichas ganharam cores e letras inspiradas em cada jogo (sem logos nem artes oficiais).',
+      'D&D e Faroeste: modificador grande no meio do atributo e o valor numa “moeda” embaixo; círculos de proficiência nas perícias.',
+      'Pathfinder 2e: atributos em blocos, graus de proficiência (D, T, E, M, L) e talentos por categoria (ancestralidade, classe, perícia e gerais).',
+      'Fate: pirâmide de perícias — cada degrau mostra as perícias daquele nível, e um toque rola.',
+      'Blades in the Dark: ações agrupadas em Perspicácia, Proeza e Determinação, com bolinhas para marcar os pontos.',
+      'Ordem Paranormal: NEX, classe, trilha, origem, PE e Sanidade em destaque no começo da ficha, e rituais destacados.',
+      'Tormenta20: atributos em blocos e perícias com marca de treinado. MÖRK BORG: ficha preta e amarela, com letras grossas e fácil de ler no celular.',
+    ],
+  },
+  {
     versao: '0.35.0', data: '2026-11-16',
     titulo: 'Mesa: visão dos personagens e luz que para nas paredes',
     itens: [

@@ -27,6 +27,17 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.34.10', data: '2026-11-16',
+    titulo: 'Mesa: paredes, portas e névoa melhor',
+    itens: [
+      'Nova ferramenta do mestre 🧱 Paredes e portas: arraste de um canto da grade a outro para criar parede, porta ou janela. Os tokens dos jogadores não atravessam; o mestre põe o token onde quiser.',
+      'Portas abrem e fecham com um toque (qualquer jogador). O mestre pode trancar: aí só ele abre.',
+      'Os jogadores não veem as linhas das paredes, só as portas, e as portas debaixo da névoa ficam escondidas.',
+      'Névoa: pincel redondo (até 9 células), “Revelar tudo” e “Esconder tudo” direto na barra do mapa.',
+      'Novo botão 👓 Ver como jogador: o mestre vê o mapa como o grupo vê (névoa fechada, sem paredes nem tokens escondidos).',
+    ],
+  },
+  {
     versao: '0.34.9', data: '2026-11-16',
     titulo: 'Mesa: medir, mirar e áreas de efeito',
     itens: [
@@ -47,6 +58,16 @@ export const VERSOES: Versao[] = [
       'Saíram da ficha a criação guiada, a conferência, os avisos de limite, a Árvore de habilidades, o guia de criação e os catálogos obrigatórios do D&D.',
       'Fichas que já existiam continuam mostrando os mesmos números: na primeira vez que abrem, guardam os valores que tinham e daí em diante só mudam quando alguém digitar.',
       'Classe, espécie e outros campos de escolha viraram texto livre (com sugestões ao digitar).',
+    ],
+  },
+  {
+    versao: '0.34.7', data: '2026-11-15',
+    titulo: 'Fase 1 concluída: dados, D&D 2014 e Ordem Paranormal juntos',
+    itens: [
+      'Ficha de campanha do jogador volta a abrir (antes aparecia “Falha de conexão”).',
+      'Motor de dados, D&D 2014 e Ordem Paranormal conferidos juntos: testes, tipos, compilação e 45 testes de ponta a ponta.',
+      'Todas as fichas (D&D 2024 e 2014, PF2e, Fate, Blades, BRP, Faroeste, Ordem, Tormenta20, MÖRK BORG, Assimilação e Livre) abertas seção por seção no celular pequeno, no celular e no computador, sem rolagem lateral nem erros de acessibilidade.',
+      'Grimório do D&D 2014: o texto em destaque aparece em negrito, sem asteriscos.',
     ],
   },
   {

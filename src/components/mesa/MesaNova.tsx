@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { Flame, Trash, SquareDashed, Sun, ArrowDown, ArrowLeft, ArrowUp, BookOpen, CircleHelp, Crown, Globe, Library, MoreHorizontal, PanelRightClose, PanelRightOpen, ScrollText, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
+import { BrickWall, Glasses, Flame, Trash, SquareDashed, Sun, ArrowDown, ArrowLeft, ArrowUp, BookOpen, CircleHelp, Crown, Globe, Library, MoreHorizontal, PanelRightClose, PanelRightOpen, ScrollText, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
@@ -13,6 +13,7 @@ import type { Camada } from '@/lib/nuvem/mesa'
 import { podeMoverToken } from '@/lib/nuvem/mesa'
 import MapaMesa, { type CursorRemoto, type ModoMesa, type Ping, type PreviaArea, type ReguaRemota, type TokenMapa } from './MapaMesa'
 import { separarEventos, type AbaChat } from '@/lib/mesa/abasChat'
+import { caminhoLivre, lerParedes, TIPOS_PAREDE, type TipoParede } from '@/lib/mesa/paredes'
 import { CORES_AREA, FORMAS_AREA, lerAreasEfeito, tokensNaArea, type AreaEfeito, type FormaArea } from '@/lib/mesa/areasEfeito'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import PainelCampanha from './PainelCampanha'
@@ -34,7 +35,7 @@ import NaTela from '@/components/NaTela'
 import FichaNaMesa from './FichaNaMesa'
 import { DanoEmVarios, PainelIniciativa } from './Iniciativa'
 
-type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean; fog_areas?: AreaNevoa[] | null; areas_efeito?: unknown; escuridao?: number | null; luz_revela_nevoa?: boolean | null }
+type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean; fog_areas?: AreaNevoa[] | null; areas_efeito?: unknown; paredes?: unknown; escuridao?: number | null; luz_revela_nevoa?: boolean | null }
 type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; condicoes_rodadas?: Record<string, number> | null; condicoes_dano?: Record<string, string> | null; morte?: Morte | null; dono_id: string | null; ficha_id: string | null; ficha_modelo?: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number; luz?: LuzToken | null }
 export type Evento = { id: number; tipo: 'chat' | 'rolagem' | 'sistema' | 'ataque'; dados?: DadosAtaque | null; visibilidade: 'publica' | 'mestre' | 'privada'; autor_id: string | null; destinatario_id: string | null; personagem: string | null; texto: string | null; expressao: string | null; resultados: number[] | null; total: number | null; criado_em: string; autor: { apelido: string } | null }
 type Iniciativa = { id: string; nome: string; valor: number; tokenId?: string | null }
@@ -82,6 +83,9 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [reguas, setReguas] = useState<Record<string, ReguaRemota & { ate: number }>>({})
   const [previas, setPrevias] = useState<Record<string, PreviaArea & { ate: number }>>({})
   const [danoArea, setDanoArea] = useState<AreaEfeito | null>(null)
+  // Paredes e “ver como jogador” (v0.34.10).
+  const [tipoParede, setTipoParede] = useState<TipoParede | 'apagar'>('parede')
+  const [comoJogador, setComoJogador] = useState(false)
   const [dicas, setDicas] = useState<'auto' | 'aberto' | 'fechado'>('auto')
   const [aba, setAba] = useState<'chat' | 'fichas' | 'tokens' | 'iniciativa' | 'musica' | 'campanha' | 'tabelas' | 'biblioteca' | 'mestre'>('chat')
   const [painel, setPainel] = useState(true)
@@ -277,6 +281,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     const c = fichaDoToken(tokenId)?.combate
     setAtaque({ atacante: tokenId, fonte: c?.ataques[0] ? chaveFonte(c.ataques[0]) : 'livre', teste: c?.testePadrao ?? '', dano: '', bonus: '', defesa: '', alvo: null, mirando: false })
   }
+  const paredesCena = cena ? lerParedes(cena.paredes, cena.grid_cols, cena.grid_rows) : []
   const areasCena = cena ? lerAreasEfeito(cena.areas_efeito, cena.grid_cols, cena.grid_rows) : []
   const pendentes = admin ? e.eventos.filter(ev => ev.tipo === 'ataque' && ev.dados?.status === 'pendente').map(ev => ({ id: ev.id, d: ev.dados as DadosAtaque, total: ev.total })) : []
   const vez = e.mesa?.iniciativa?.[e.mesa.turno]
@@ -285,6 +290,9 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
 
   /** Solta o token: aparece na hora para mim e para os outros; o servidor confirma em seguida. */
   async function moverToken(id: string, x: number, y: number) {
+    // Jogador não atravessa parede nem porta fechada (o servidor confere de novo).
+    const tk = e!.tokens.find(t => t.id === id)
+    if (!admin && cena && tk && !caminhoLivre(paredesCena, cena.grid_cols, cena.grid_rows, tk, { x, y }, tk.tamanho ?? 1)) { toast.error('🧱 Uma parede ou porta fechada bloqueia o caminho.'); return }
     setPosicoes(m => ({ ...m, [id]: { x, y, ate: Date.now() + 8000 } }))
     aoVivo('token:' + id, 0, 'token', { id, x, y }, true)
     await acao({ acao: 'token_mover', tokenId: id, x, y }).catch(() => setPosicoes(m => limpar(m, k => k !== id)))
@@ -301,6 +309,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     { id: 'revelar', icone: Eye, nome: 'Revelar com pincel', so: true, fog: true }, { id: 'esconder', icone: CloudFog, nome: 'Esconder com pincel', so: true, fog: true },
     { id: 'nevoa-area', icone: SquareDashed, nome: 'Partes com névoa: arraste para criar uma; toque numa para revelar ou esconder', so: true, fog: true },
     { id: 'area-revelar', icone: Square, nome: 'Revelar área (arraste um retângulo)', so: true, fog: true }, { id: 'area-esconder', icone: EyeOff, nome: 'Esconder área', so: true, fog: true },
+    { id: 'paredes', icone: BrickWall, nome: 'Paredes e portas: arraste de um canto da grade a outro; os jogadores não passam', so: true },
     { id: 'editar-mapa', icone: Layers, nome: 'Montar mapa (mover/redimensionar imagens)', so: true },
   ]
   // Painel em grupos (v0.32.6): poucas abas em cima e, dentro de cada grupo, as partes dele com uma linha explicando o que fazem.
@@ -372,7 +381,19 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
         <div className="flex max-w-full flex-wrap items-center gap-1 rounded-xl border border-(--a-373251) bg-(--s-19172c)/95 p-1 shadow-lg">
           {ferramentas.filter(f => !f.so || admin).filter(f => !f.fog || cena?.fog_ativo).map(f => <button key={f.id} type="button" title={f.nome} aria-label={f.nome} aria-pressed={modo === f.id} onClick={() => setModo(f.id)}
             className={'rounded-lg p-2 ' + (modo === f.id ? 'bg-(--a-7654bb)' : 'hover:bg-(--s-34294f)')}><f.icone size={18} /></button>)}
-          {(modo === 'revelar' || modo === 'esconder') && [1, 3, 5].map(n => <button key={n} type="button" onClick={() => setPincel(n)} aria-label={'Pincel ' + n + '×' + n} className={'rounded-lg px-2 py-1.5 text-xs ' + (pincel === n ? 'bg-(--a-7654bb)' : 'hover:bg-(--s-34294f)')}>{n}×{n}</button>)}
+          {(modo === 'revelar' || modo === 'esconder' || modo === 'area-revelar' || modo === 'area-esconder' || modo === 'nevoa-area') && cena && <>
+            <button type="button" className={btn} onClick={() => void acao({ acao: 'cena_editar', cenaId: cena.id, nevoa_tudo: true }).catch(() => {})}><Eye size={14} /> Revelar tudo</button>
+            <button type="button" className={btn} onClick={() => { if (confirm('Esconder o mapa todo com névoa?')) void acao({ acao: 'cena_editar', cenaId: cena.id, fog_limpar: true }).catch(() => {}) }}><EyeOff size={14} /> Esconder tudo</button></>}
+          {modo === 'paredes' && cena && <>
+            {TIPOS_PAREDE.map(t => <button key={t.id} type="button" onClick={() => setTipoParede(t.id)} aria-pressed={tipoParede === t.id} title={t.nome + ': ' + t.dica} aria-label={'Desenhar ' + t.nome}
+              className={'h-9 min-w-9 rounded-lg px-2 text-base ' + (tipoParede === t.id ? 'bg-(--a-7654bb)' : 'hover:bg-(--s-34294f)')}>{t.icone}</button>)}
+            <button type="button" onClick={() => setTipoParede('apagar')} aria-pressed={tipoParede === 'apagar'} title="Apagar: toque numa parede, porta ou janela" aria-label="Apagar parede"
+              className={'rounded-lg p-2 ' + (tipoParede === 'apagar' ? 'bg-(--a-7654bb)' : 'hover:bg-(--s-34294f)')}><Eraser size={18} /></button>
+            {paredesCena.length > 0 && <button type="button" title="Apagar todas as paredes" aria-label="Apagar todas as paredes" onClick={() => { if (confirm('Apagar todas as paredes, portas e janelas desta cena?')) void acao({ acao: 'paredes_limpar', cenaId: cena.id }).catch(() => {}) }} className="rounded-lg p-2 hover:bg-(--s-34294f)"><Trash2 size={18} /></button>}
+          </>}
+          {admin && cena && <button type="button" onClick={() => setComoJogador(v => !v)} aria-pressed={comoJogador} title={comoJogador ? 'Voltar à visão do mestre' : 'Ver como jogador: névoa fechada, sem paredes nem tokens escondidos'} aria-label="Ver como jogador"
+            className={'rounded-lg p-2 ' + (comoJogador ? 'bg-amber-600 text-black' : 'hover:bg-(--s-34294f)')}><Glasses size={18} /></button>}
+          {(modo === 'revelar' || modo === 'esconder') && [1, 3, 5, 9].map(n => <button key={n} type="button" onClick={() => setPincel(n)} aria-label={'Pincel ' + n + '×' + n} className={'rounded-lg px-2 py-1.5 text-xs ' + (pincel === n ? 'bg-(--a-7654bb)' : 'hover:bg-(--s-34294f)')}>{n}×{n}</button>)}
           {modo === 'desenhar' && <>{CORES.map(c => <button key={c} type="button" aria-label={'Cor ' + c} onClick={() => setCor(c)} className={'h-8 w-8 rounded-lg border-2 ' + (cor === c ? 'border-white' : 'border-transparent')} style={{ background: c }} />)}
             {admin && cena && <button type="button" title="Apagar desenhos" aria-label="Apagar desenhos" onClick={() => { setTracos({}); aoVivo('limpar', 0, 'limpar', {}, true); void acao({ acao: 'desenhos_limpar', cenaId: cena.id }).catch(() => {}) }} className="rounded-lg p-2 hover:bg-(--s-34294f)"><Eraser size={18} /></button>}</>}
           {modo === 'area-efeito' && <>
@@ -408,6 +429,10 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
             void acao({ acao: 'area_criar', cenaId: cena.id, area: { ...a, id: crypto.randomUUID() } }).then(() => toast.success(`Área no mapa: ${n} alvo${n === 1 ? '' : 's'} dentro.`, { description: 'Para tirar, use a lista “Áreas no mapa”.' })).catch(() => {}) }}
           onPreviaArea={a => aoVivo('area', a ? 90 : 0, 'area', { id: e.eu, quem: nomes[e.eu] ?? '', a }, !a)}
           reguas={Object.values(reguas)} onRegua={g => aoVivo('regua', g ? 90 : 0, 'regua', { id: e.eu, nome: nomes[e.eu] ?? '', r: g }, !g)}
+          paredes={paredesCena} tipoParede={tipoParede} comoJogador={comoJogador}
+          onCriarParede={w => void acao({ acao: 'parede_criar', cenaId: cena.id, parede: w }).catch(() => {})}
+          onApagarParede={id => void acao({ acao: 'parede_excluir', cenaId: cena.id, id }).catch(() => {})}
+          onPorta={espectador ? undefined : id => { const w = paredesCena.find(x => x.id === id); void acao({ acao: 'porta', cenaId: cena.id, id }).then(() => toast(w?.aberta ? '🚪 Porta fechada.' : '🚪 Porta aberta.')).catch(() => {}) }}
           onArrastando={(id, x, y) => aoVivo('token:' + id, 60, 'token', { id, x, y })}
           onTracando={(id, pontos) => aoVivo('traco:' + id, 120, 'traco', { id, cor, pontos })}
           onCursor={(x, y) => aoVivo('cursor', 90, 'cursor', { id: e.eu, nome: nomes[e.eu] ?? '', x, y })} />

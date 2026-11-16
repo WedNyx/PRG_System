@@ -179,6 +179,15 @@ export function celulasPincel(x: number, y: number, n: number): string[] {
   const r = Math.floor(Math.max(1, n) / 2)
   return celulasRetangulo(Math.max(0, x - r), Math.max(0, y - r), x + r, y + r)
 }
+/** Pincel redondo (v0.34.10): células cujo centro cai no círculo de diâmetro n. */
+export function celulasPincelRedondo(x: number, y: number, n: number, cols: number, rows: number): string[] {
+  if (n <= 2) return celulasPincel(x, y, n)
+  const r = n / 2, out: string[] = []
+  for (let j = Math.max(0, Math.floor(y - r)); j <= Math.min(rows - 1, Math.ceil(y + r)); j++)
+    for (let i = Math.max(0, Math.floor(x - r)); i <= Math.min(cols - 1, Math.ceil(x + r)); i++)
+      if ((i - x) ** 2 + (j - y) ** 2 <= r * r - 0.25) out.push(`${i},${j}`)
+  return out
+}
 export const todasCelulas = (cols: number, rows: number) => celulasRetangulo(0, 0, cols - 1, rows - 1, cols * rows)
 
 export type Movimento = 'dono' | 'todos' | 'mestre'

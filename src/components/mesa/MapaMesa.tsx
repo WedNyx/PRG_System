@@ -5,13 +5,14 @@ import { TransformComponent, TransformWrapper, type ReactZoomPanPinchRef } from 
 import { ligarZoomSuave } from '@/lib/zoomRoda'
 import { emojiCondicao } from '@/lib/condicoes'
 import { Bolinhas } from './Combate'
-import { celulasPincel, expandirNevoa, mapaDeNevoa, METROS_POR_CELULA_MESA, type AreaNevoa, type Camada, type LuzToken } from '@/lib/nuvem/mesa'
+import { celulasPincelRedondo, expandirNevoa, mapaDeNevoa, METROS_POR_CELULA_MESA, type AreaNevoa, type Camada, type LuzToken } from '@/lib/nuvem/mesa'
 import { anguloEntre, contornoArea, tokensNaArea, type AreaEfeito, type FormaArea } from '@/lib/mesa/areasEfeito'
 import { distancia } from '@/lib/sistemas/combate'
+import { distanciaParede, type Parede, type TipoParede } from '@/lib/mesa/paredes'
 
 export const CELULA = 44
 export const METROS_POR_CELULA = METROS_POR_CELULA_MESA
-export type ModoMesa = 'mover' | 'regua' | 'ping' | 'desenhar' | 'area-efeito' | 'revelar' | 'esconder' | 'area-revelar' | 'area-esconder' | 'nevoa-area' | 'editar-mapa'
+export type ModoMesa = 'mover' | 'regua' | 'ping' | 'desenhar' | 'area-efeito' | 'paredes' | 'revelar' | 'esconder' | 'area-revelar' | 'area-esconder' | 'nevoa-area' | 'editar-mapa'
 export type Ping = { id: string; x: number; y: number; autor: string }
 export type CursorRemoto = { id: string; nome: string; x: number; y: number }
 /** Régua de outra pessoa (v0.34.9): todos veem a medição ao vivo. */
@@ -50,6 +51,11 @@ type Props = {
   onCriarArea?: (a: Omit<AreaEfeito, 'id'>) => void; onPreviaArea?: (a: Omit<AreaEfeito, 'id'> | null) => void
   /** Régua compartilhada: a minha vai para os outros; as deles aparecem aqui. */
   reguas?: ReguaRemota[]; onRegua?: (r: { x1: number; y1: number; x2: number; y2: number } | null) => void
+  /** Paredes, portas e janelas (v0.34.10). O mestre desenha; porta abre e fecha com um toque. */
+  paredes?: Parede[]; tipoParede?: TipoParede | 'apagar'
+  onCriarParede?: (p: Omit<Parede, 'id'>) => void; onApagarParede?: (id: string) => void; onPorta?: (id: string) => void
+  /** Mestre vendo o mapa como os jogadores veem (névoa fechada, sem paredes nem tokens escondidos). */
+  comoJogador?: boolean
 }
 
 const medir = (r: { x1: number; y1: number; x2: number; y2: number }) => { const n = Math.max(Math.abs(r.x2 - r.x1), Math.abs(r.y2 - r.y1)); return { n, m: Math.round(n * METROS_POR_CELULA_MESA * 10) / 10 } }
@@ -68,6 +74,7 @@ export default function MapaMesa(p: Props) {
   const [area, setArea] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
   const [traco, setTraco] = useState<number[] | null>(null)
   const [mira, setMira] = useState<{ x: number; y: number; angulo: number } | null>(null)
+  const [linha, setLinha] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
   const [pintura, setPintura] = useState<Set<string>>(new Set())
   const [camadaEdit, setCamadaEdit] = useState<{ c: Camada; tipo: 'mover' | 'tamanho'; ox: number; oy: number; ar: number } | null>(null)
   const inicio = useRef<{ px: number; py: number } | null>(null)
@@ -80,6 +87,9 @@ export default function MapaMesa(p: Props) {
   const tokenTocado = useRef<string | null>(null)
   const pintando = useRef(false)
   const editandoMapa = modo === 'editar-mapa'
+  /** O que só o mestre vê (névoa transparente, tokens escondidos, paredes). “Ver como jogador” desliga. */
+  const olharMestre = admin && !p.comoJogador
+  const vertice = (e: React.PointerEvent) => { const q = ponto(e); return q ? { x: Math.max(0, Math.min(cols, Math.round(q.px / CELULA))), y: Math.max(0, Math.min(rows, Math.round(q.py / CELULA))) } : null }
   const areaDe = (m: { x: number; y: number; angulo: number }): Omit<AreaEfeito, 'id'> => ({ forma: p.formaArea ?? 'circulo', x: m.x, y: m.y, angulo: m.angulo, metros: p.metrosArea ?? 6, cor: p.corArea ?? '#f97316', nome: '' })
   // Tokens dentro de alguma área (colocada, mirando agora ou de outra pessoa) ganham um anel da cor da área.
   const todasAreas = useMemo(() => [...(p.areas ?? []), ...(p.previas ?? []), ...(mira ? [{ ...areaDe(mira), id: 'minha-mira' }] : [])],
@@ -141,6 +151,7 @@ export default function MapaMesa(p: Props) {
       return
     }
     if (regua) { const cel = celula(e); if (cel && (cel.x !== regua.x2 || cel.y !== regua.y2)) { const n = { ...regua, x2: cel.x, y2: cel.y }; setRegua(n); p.onRegua?.(n) } return }
+    if (linha) { const v = vertice(e); if (v && (v.x !== linha.x2 || v.y !== linha.y2)) setLinha({ ...linha, x2: v.x, y2: v.y }); return }
     if (mira && q) {
       const angulo = anguloEntre(mira.x, mira.y, q.px / CELULA, q.py / CELULA)
       if (angulo !== mira.angulo) { const n = { ...mira, angulo }; setMira(n); p.onPreviaArea?.(areaDe(n)) }
@@ -153,7 +164,7 @@ export default function MapaMesa(p: Props) {
       setTraco(novo); p.onTracando?.(tracoId.current, novo)
       return
     }
-    if (pintando.current) { const cel = celula(e); if (cel) setPintura(s => { const n = new Set(s); celulasPincel(cel.x, cel.y, p.pincel).forEach(k => n.add(k)); return n }) }
+    if (pintando.current) { const cel = celula(e); if (cel) setPintura(s => { const n = new Set(s); celulasPincelRedondo(cel.x, cel.y, p.pincel, cols, rows).forEach(k => n.add(k)); return n }) }
   }
 
   function up(e: React.PointerEvent) {
@@ -166,6 +177,7 @@ export default function MapaMesa(p: Props) {
     setArrastando(null); setDragPos(null); inicio.current = null
     if (regua) { setRegua(null); p.onRegua?.(null) }
     if (mira) { p.onCriarArea?.(areaDe(mira)); p.onPreviaArea?.(null); setMira(null) }
+    if (linha) { if (linha.x1 !== linha.x2 || linha.y1 !== linha.y2) p.onCriarParede?.({ ...linha, tipo: p.tipoParede === 'apagar' ? 'parede' : p.tipoParede ?? 'parede' }); setLinha(null) }
     if (traco && traco.length >= 4) p.onDesenhar(traco, tracoId.current)
     setTraco(null)
     if (area) {
@@ -187,10 +199,19 @@ export default function MapaMesa(p: Props) {
     const cel = celula(e)
     if (modo === 'ping') { if (cel) p.onPing(cel.x, cel.y); return }
     if (modo === 'regua') { if (cel) { const n = { x1: cel.x, y1: cel.y, x2: cel.x, y2: cel.y }; setRegua(n); p.onRegua?.(n) } return }
+    if (modo === 'paredes' && admin) {
+      if (p.tipoParede === 'apagar') {
+        const q = ponto(e); if (!q) return
+        const perto = [...(p.paredes ?? [])].map(w => ({ w, d: distanciaParede(w, q.px / CELULA, q.py / CELULA) })).sort((a, b) => a.d - b.d)[0]
+        if (perto && perto.d < 0.4) p.onApagarParede?.(perto.w.id)
+        return
+      }
+      const v = vertice(e); if (v) setLinha({ x1: v.x, y1: v.y, x2: v.x, y2: v.y }); return
+    }
     if (modo === 'area-efeito') { if (cel && p.onCriarArea) { const n = { x: cel.x + 0.5, y: cel.y + 0.5, angulo: 0 }; setMira(n); p.onPreviaArea?.(areaDe(n)) } return }
     if (modo === 'desenhar') { const q = ponto(e); if (q) { tracoId.current = crypto.randomUUID(); setTraco([Math.round(q.px), Math.round(q.py)]) } return }
     if (admin && (modo === 'area-revelar' || modo === 'area-esconder' || modo === 'nevoa-area')) { if (cel) setArea({ x1: cel.x, y1: cel.y, x2: cel.x, y2: cel.y }); return }
-    if (admin && (modo === 'revelar' || modo === 'esconder')) { pintando.current = true; if (cel) setPintura(new Set(celulasPincel(cel.x, cel.y, p.pincel))) }
+    if (admin && (modo === 'revelar' || modo === 'esconder')) { pintando.current = true; if (cel) setPintura(new Set(celulasPincelRedondo(cel.x, cel.y, p.pincel, cols, rows))) }
   }
 
   // Névoa (v0.33.8): desenhada num canvas pequeno (uma célula = 4 px) com borda suave, em vez de milhares de quadrados.
@@ -208,9 +229,9 @@ export default function MapaMesa(p: Props) {
     return m
   }, [p.fogAtivo, cols, rows, areasNevoa, reveladas, pintura, area, modo, luzesQueRevelam])
   const comNevoa = (x: number, y: number) => !!nevoa && x >= 0 && y >= 0 && x < cols && y < rows && nevoa[y * cols + x] === 1
-  const camadaNevoa = nevoa ? <CanvasNevoa cols={cols} rows={rows} mapa={nevoa} admin={admin} largura={largura} altura={altura} /> : null
-  const luzes = useMemo(() => p.tokens.filter(t => t.luz && (t.visivel || admin)).map(t => ({ x: t.x + t.tamanho / 2, y: t.y + t.tamanho / 2, luz: t.luz!, tam: t.tamanho })), [p.tokens, admin])
-  const camadaEscuro = (p.escuridao ?? 0) > 0 ? <CanvasLuz cols={cols} rows={rows} largura={largura} altura={altura} escuridao={p.escuridao ?? 0} admin={admin} luzes={luzes} /> : null
+  const camadaNevoa = nevoa ? <CanvasNevoa cols={cols} rows={rows} mapa={nevoa} admin={olharMestre} largura={largura} altura={altura} /> : null
+  const luzes = useMemo(() => p.tokens.filter(t => t.luz && (t.visivel || olharMestre)).map(t => ({ x: t.x + t.tamanho / 2, y: t.y + t.tamanho / 2, luz: t.luz!, tam: t.tamanho })), [p.tokens, olharMestre])
+  const camadaEscuro = (p.escuridao ?? 0) > 0 ? <CanvasLuz cols={cols} rows={rows} largura={largura} altura={altura} escuridao={p.escuridao ?? 0} admin={olharMestre} luzes={luzes} /> : null
   const camadaGrade = useMemo(() => <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 2 }}>
     {Array.from({ length: cols + 1 }, (_, i) => <line key={'v' + i} x1={i * CELULA} y1={0} x2={i * CELULA} y2={altura} stroke="rgba(148,163,184,0.18)" />)}
     {Array.from({ length: rows + 1 }, (_, i) => <line key={'h' + i} x1={0} y1={i * CELULA} x2={largura} y2={i * CELULA} stroke="rgba(148,163,184,0.18)" />)}
@@ -247,6 +268,23 @@ export default function MapaMesa(p: Props) {
             {traco && <polyline points={pts(traco)} fill="none" stroke={p.cor} strokeWidth={3} strokeLinecap="round" />}
           </svg>
 
+          {((p.paredes ?? []).length > 0 || linha) && olharMestre && <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 7 }} aria-hidden>
+            {(p.paredes ?? []).map(w => <line key={w.id} x1={w.x1 * CELULA} y1={w.y1 * CELULA} x2={w.x2 * CELULA} y2={w.y2 * CELULA} strokeLinecap="round"
+              stroke={w.tipo === 'parede' ? '#f59e0b' : w.tipo === 'janela' ? '#7dd3fc' : w.aberta ? '#86efac' : '#22c55e'} strokeWidth={w.tipo === 'parede' ? 5 : 4} strokeDasharray={w.tipo === 'janela' ? '6 4' : w.tipo === 'porta' && w.aberta ? '3 6' : undefined} opacity={0.95} />)}
+            {linha && <line x1={linha.x1 * CELULA} y1={linha.y1 * CELULA} x2={linha.x2 * CELULA} y2={linha.y2 * CELULA} stroke="#fde68a" strokeWidth={5} strokeDasharray="8 5" strokeLinecap="round" />}
+            {modo === 'paredes' && Array.from({ length: (cols + 1) * (rows + 1) }, (_, i) => <circle key={i} cx={(i % (cols + 1)) * CELULA} cy={Math.floor(i / (cols + 1)) * CELULA} r={1.6} fill="rgba(253,230,138,0.45)" />)}
+          </svg>}
+          {(p.paredes ?? []).filter(w => w.tipo === 'porta').map(w => {
+            const mx = (w.x1 + w.x2) / 2, my = (w.y1 + w.y2) / 2
+            // Porta debaixo da névoa (dos dois lados) não aparece para os jogadores.
+            const lados: [number, number][] = w.x1 === w.x2 ? [[mx - 1, Math.floor(my)], [mx, Math.floor(my)]] : w.y1 === w.y2 ? [[Math.floor(mx), my - 1], [Math.floor(mx), my]] : [[Math.floor(mx), Math.floor(my)]]
+            if (!olharMestre && p.fogAtivo && lados.every(([cx, cy]) => comNevoa(cx, cy))) return null
+            const pode = !!p.onPorta && modo !== 'paredes' && (!w.trancada || admin)
+            return <button key={'porta-' + w.id} type="button" disabled={!pode} onClick={e => { e.stopPropagation(); p.onPorta?.(w.id) }} onPointerDown={e => e.stopPropagation()}
+              aria-label={(w.aberta ? 'Fechar porta' : 'Abrir porta') + (w.trancada ? ' (trancada)' : '')} title={w.trancada ? 'Porta trancada' : w.aberta ? 'Porta aberta: toque para fechar' : 'Porta fechada: toque para abrir'}
+              className={'absolute flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-sm shadow-lg ' + (w.aberta ? 'border-emerald-300 bg-emerald-950/90' : 'border-amber-300 bg-[#2b1d0c]/95') + (pode ? ' hover:scale-110' : ' cursor-default')}
+              style={{ left: mx * CELULA, top: my * CELULA, zIndex: 26 }}>{w.trancada ? '🔒' : '🚪'}</button>
+          })}
           {todasAreas.length > 0 && <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 6 }} aria-hidden>
             {todasAreas.map(a => { const c = contornoArea(a), pre = a.id === 'minha-mira' || 'quem' in a, n = tokensNaArea(a, p.tokens).length
               const rotulo = `${a.nome ? a.nome + ' · ' : ''}${a.metros} m · ${n} alvo${n === 1 ? '' : 's'}${'quem' in a ? ' · ' + (a as PreviaArea).quem : ''}`
@@ -261,7 +299,8 @@ export default function MapaMesa(p: Props) {
           {p.tokens.map(t => {
             const emDrag = arrastando === t.id && dragPos && t.podeMover
             const x = emDrag ? dragPos.x : t.x, y = emDrag ? dragPos.y : t.y
-            if (p.fogAtivo && !admin && !t.meu && comNevoa(x, y)) return null
+            if (p.fogAtivo && !olharMestre && !t.meu && comNevoa(x, y)) return null
+            if (!t.visivel && admin && p.comoJogador) return null
             const lado = t.tamanho * CELULA
             const pct = t.hp_max ? Math.max(0, Math.min(1, (t.hp_atual ?? 0) / t.hp_max)) : null
             const morto = t.hp_max ? (t.hp_atual ?? 0) <= 0 : false
@@ -305,7 +344,7 @@ export default function MapaMesa(p: Props) {
           })()}
           {camadaEscuro}
           {camadaNevoa}
-          {admin && p.fogAtivo && (modo === 'nevoa-area' || modo === 'revelar' || modo === 'esconder' || modo === 'area-revelar' || modo === 'area-esconder') && areasNevoa.map(a => <div key={a.id}
+          {olharMestre && p.fogAtivo && (modo === 'nevoa-area' || modo === 'revelar' || modo === 'esconder' || modo === 'area-revelar' || modo === 'area-esconder') && areasNevoa.map(a => <div key={a.id}
             className={'pointer-events-none absolute border-2 ' + (a.revelada ? 'border-dashed border-emerald-300/70' : 'border-sky-300/80')} style={{ zIndex: 24, left: a.x * CELULA, top: a.y * CELULA, width: a.w * CELULA, height: a.h * CELULA }}>
             <span className="absolute left-1 top-1 rounded bg-black/75 px-1.5 py-0.5 text-[11px] text-white">{a.revelada ? '👁️' : '🌫️'} {a.nome || 'Área'}</span></div>)}
           {area && <div className={'pointer-events-none absolute border-2 border-dashed ' + (modo === 'nevoa-area' ? 'border-sky-300 bg-sky-300/15' : 'border-amber-300 bg-amber-300/10')} style={{ zIndex: 25, left: Math.min(area.x1, area.x2) * CELULA, top: Math.min(area.y1, area.y2) * CELULA, width: (Math.abs(area.x2 - area.x1) + 1) * CELULA, height: (Math.abs(area.y2 - area.y1) + 1) * CELULA }} />}

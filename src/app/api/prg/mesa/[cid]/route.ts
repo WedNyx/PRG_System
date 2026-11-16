@@ -15,6 +15,7 @@ import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { adiarNaOrdem, entrarNaOrdem, moverNaOrdem, mudarValor, sairDaOrdem } from '@/lib/sistemas/ordemCombate'
 import { ehV8 } from '@/lib/nuvem/categorias'
 import { lerAreasEfeito, MAX_AREAS_POR_CENA, normalizarAreaEfeito } from '@/lib/mesa/areasEfeito'
+import { caminhoLivre, lerParedes, MAX_PAREDES, normalizarParede } from '@/lib/mesa/paredes'
 import { condicoesDisponiveis, emojiCondicao, nomeCondicao, normalizarDanos, normalizarRodadas, passarRodada } from '@/lib/condicoes'
 
 export const dynamic = 'force-dynamic'
@@ -378,9 +379,18 @@ export const POST = rota<Ctx>(async (req, { params }) => {
     }
     case 'token_mover': {
       const t = await tokenDaCampanha(cid, b.tokenId)
-      const [c] = await rest<Cena[]>(`prg_cenas?select=grid_cols,grid_rows,tokens_travados&id=eq.${q(t.cena_id)}`)
+      const [c] = await rest<(Cena & { paredes?: unknown })[]>(`prg_cenas?select=*&id=eq.${q(t.cena_id)}`)
       if (!podeMoverToken(t, eu, admin, !!c?.tokens_travados)) throw new ErroApi(403, c?.tokens_travados ? 'O mestre travou os tokens desta cena.' : 'Você não pode mover este token.')
-      await rest(`prg_tokens?id=eq.${q(t.id)}`, { method: 'PATCH', body: JSON.stringify({ x: inteiro(b.x, 0, (c?.grid_cols ?? 100) - 1) ?? 0, y: inteiro(b.y, 0, (c?.grid_rows ?? 100) - 1) ?? 0 }) })
+      const nx = inteiro(b.x, 0, (c?.grid_cols ?? 100) - 1) ?? 0, ny = inteiro(b.y, 0, (c?.grid_rows ?? 100) - 1) ?? 0
+      // Paredes e portas fechadas (v0.34.10): jogador não atravessa; o mestre põe o token onde quiser.
+      if (!admin && c) {
+        const paredes = lerParedes(c.paredes, c.grid_cols, c.grid_rows)
+        if (paredes.length) {
+          const [pos] = await rest<{ x: number; y: number; tamanho: number | null }[]>(`prg_tokens?select=x,y,tamanho&id=eq.${q(t.id)}`)
+          if (pos && !caminhoLivre(paredes, c.grid_cols, c.grid_rows, pos, { x: nx, y: ny }, pos.tamanho ?? 1)) throw new ErroApi(400, '🧱 Uma parede ou porta fechada bloqueia o caminho.')
+        }
+      }
+      await rest(`prg_tokens?id=eq.${q(t.id)}`, { method: 'PATCH', body: JSON.stringify({ x: nx, y: ny }) })
       return ok({ ok: true })
     }
     case 'token_editar': {
@@ -468,6 +478,34 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         throw new ErroApi(409, 'Esta função precisa da atualização do banco (migração 030). Avise o administrador.')
       })
       return ok({ areas: novas })
+    }
+    // Paredes, portas e janelas (v0.34.10): o mestre desenha; qualquer um abre e fecha porta destrancada.
+    case 'parede_criar': case 'parede_excluir': case 'paredes_limpar': case 'porta': {
+      const c = await cenaDaCampanha(cid, b.cenaId)
+      const atuais = lerParedes((c as unknown as { paredes?: unknown }).paredes, c.grid_cols, c.grid_rows)
+      let novas = atuais
+      if (b.acao === 'porta') {
+        const p = atuais.find(x => x.id === b.id && x.tipo === 'porta')
+        if (!p) throw new ErroApi(404, 'Porta não encontrada.')
+        if (b.trancada !== undefined) { exigirAdmin(admin); novas = atuais.map(x => x === p ? { ...x, trancada: b.trancada === true, ...(b.trancada === true ? { aberta: false } : {}) } : x) }
+        else {
+          if (p.trancada && !admin) throw new ErroApi(403, '🔒 A porta está trancada.')
+          novas = atuais.map(x => x === p ? { ...x, aberta: typeof b.aberta === 'boolean' ? b.aberta : !x.aberta } : x)
+        }
+      } else {
+        exigirAdmin(admin)
+        if (b.acao === 'parede_criar') {
+          const lista = (Array.isArray(b.paredes) ? b.paredes : [b.parede]).slice(0, 50).map(x => normalizarParede(x, c.grid_cols, c.grid_rows))
+          if (!lista.length || lista.some(x => !x)) throw new ErroApi(400, 'Parede inválida.')
+          if (atuais.length + lista.length > MAX_PAREDES) throw new ErroApi(400, `Máximo de ${MAX_PAREDES} paredes por cena.`)
+          novas = [...atuais, ...lista as NonNullable<typeof lista[number]>[]]
+        } else if (b.acao === 'parede_excluir') novas = atuais.filter(x => x.id !== b.id)
+        else novas = []
+      }
+      await rest(`prg_cenas?id=eq.${q(c.id)}`, { method: 'PATCH', body: JSON.stringify({ paredes: novas }) }).catch(() => {
+        throw new ErroApi(409, 'Esta função precisa da atualização do banco (migração 031). Avise o administrador.')
+      })
+      return ok({ paredes: novas })
     }
     case 'tabelas_salvar': {
       exigirAdmin(admin)

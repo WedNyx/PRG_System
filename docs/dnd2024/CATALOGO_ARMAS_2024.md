@@ -29,7 +29,7 @@ Fontes públicas consultadas:
 4. Adicionar uma arma básica cria um `Item` comum do inventário, preservando quantidade, equipado, carga, bônus, arte, foto, transferência, permissões e rolagem na mesa.
 5. Armas mágicas e suplementos criam `Item` com referência estável à obra (`armaRefDnd`), preservada ao editar, normalizar fichas antigas e transferir entre personagens.
 6. É possível escolher manualmente um **modelo de arma básica** para usar as rolagens abertas sem afirmar que os efeitos únicos do suplemento são automáticos.
-7. A interface do editor de D&D ganhou prévia, campos de nome/peso/tipo prioritários, aparência recolhível, formulário mobile com maior área útil e botão Salvar fixo; a Forja permanece personalizável.
+7. A interface do editor de D&D ganhou prévia, campos de nome/peso/tipo prioritários, aparência recolhível, formulário mobile com maior área útil e botão Salvar fixo. (A Forja saiu na v0.35.3; ver ICONES_ITENS_CREDITOS.md.)
 8. Busca no inventário por nome, descrição e livro; 10 novos desenhos SVG de famílias de armas (besta, rifle, pistola, chicote, tridente, mangual, alabarda, cimitarra, foice, lâmina radiante) e paletas diferentes para relíquias por nome, sem hotlinks para imagens protegidas.
 9. As outras fichas continuam com o editor genérico por enquanto; a refatoração futura será feita **por sistema**, não globalmente.
 

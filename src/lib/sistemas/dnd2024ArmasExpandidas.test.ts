@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { ARMAS_DND_EXPANDIDAS, LIVROS_ARMAS_DND, referenciaArmaDndPorId, totalArmasDndCatalogo } from './dnd2024ArmasExpandidas'
 import { ARMAS_DND_2024, expressaoDanoLivreDnd, armaDndPorId } from './dnd2024Armas'
 import { lerItens, normalizarItem, transferirItem } from './inventario'
-import { arteDoItem, FORMAS } from '../itensArte'
 import { normalizarFicha } from './calculo'
 import { sistemaPorId } from './catalogo'
 
@@ -65,15 +64,5 @@ describe('Arsenal D&D 2024 expandido — PR #48', () => {
     expect(expressaoDanoLivreDnd('texto')).toBeNull()
     expect(expressaoDanoLivreDnd('1d8!')).toBeNull()
   })
-  it('a nova forja tem artes de armas variadas com relíquias visualmente distintas e determinísticas', () => {
-    for (const forma of ['besta', 'rifle', 'pistola', 'chicote', 'tridente', 'mangual', 'alabarda', 'cimitarra', 'foice-arma', 'lamina-radiante']) {
-      expect(FORMAS.some(f => f.id === forma)).toBe(true)
-    }
-    expect(arteDoItem({ nome: 'Rifle laser', categoria: 'arma' }).forma).toBe('rifle')
-    expect(arteDoItem({ nome: 'Sun Blade', categoria: 'arma' }).forma).toBe('lamina-radiante')
-    expect(arteDoItem({ nome: 'Besta pesada', categoria: 'arma' }).forma).toBe('besta')
-    const a = arteDoItem({ nome: 'Frostmourne', categoria: 'arma', magico: true })
-    const b = arteDoItem({ nome: 'Frostmourne', categoria: 'arma', magico: true })
-    expect(a).toEqual(b)
-  })
+
 })

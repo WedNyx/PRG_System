@@ -188,11 +188,11 @@ export const sugestaoIconeRpg = (forma: string): string | null => {
   return iconeRpgPorId(id)?.id ?? null
 }
 
-/** Ícone padrão para novos/antigos itens D&D: nenhuma imagem da Forja é gerada.
- * A ilustração escolhida pelo jogador ou foto própria tem prioridade.
+/** Ícone sugerido pelo nome e pelo tipo do item (todos os sistemas, v0.35.3).
+ * A ilustração escolhida pelo jogador ou a foto própria têm prioridade.
  * São silhuetas adaptadas da biblioteca Game-Icons (CC BY 3.0).
  */
-export function sugestaoIconeDnd(nome: string, categoria: string): string {
+export function sugestaoIcone(nome: string, categoria: string): string {
   const n = nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
   const regras: [RegExp, string][] = [
     [/revolver|pistola|mosquete|rifle|escopeta|arma de fogo|laser/, 'revolver'],
@@ -221,3 +221,5 @@ export function sugestaoIconeDnd(nome: string, categoria: string): string {
   }
   return padrao[categoria] ?? 'grimorio'
 }
+/** Nome antigo (era só do D&D). */
+export const sugestaoIconeDnd = sugestaoIcone

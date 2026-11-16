@@ -37,3 +37,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ícones do Game-Icons gerados no build (scripts/icones-game-icons.mjs)
+/public/icones/gi

@@ -27,6 +27,19 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.35.3', data: '2026-11-16',
+    titulo: 'Ações rápidas, arsenal pronto e os 4.170 ícones do Game-Icons',
+    itens: [
+      'Ações rápidas: no Principal da ficha aparecem as armas e itens equipados e os poderes com dados. Um toque rola (na campanha, vai também para o chat da mesa).',
+      'Cada item pode ter até 6 rolagens prontas (Acerto, Dano, Crítico ou o nome que quiser). Viram botões no inventário e nas ações rápidas, com “Rolar tudo”.',
+      '📦 Arsenal pronto: itens prontos em cinco estilos (medieval e fantasia, faroeste, moderno, ficção científica e terror), com busca. Também na biblioteca do mestre.',
+      'O acervo completo do Game-Icons (4.170 ícones) entrou na plataforma: no editor do item, “Buscar entre todos os ícones”, com busca em português e filtros por tema.',
+      'A Forja (os desenhos próprios dos itens) saiu. Agora cada item mostra um ícone do Game-Icons ou a foto que você enviar.',
+      'Itens que usavam um desenho da Forja ganharam sozinhos o ícone equivalente; quem quiser troca o ícone ou põe uma foto.',
+      'A raridade continua: a moldura e o ícone pegam a cor dela, e do Raro para cima o item brilha.',
+    ],
+  },
+  {
     versao: '0.35.2', data: '2026-11-16',
     titulo: 'Mesa: visão de cada personagem e visão no escuro',
     itens: [

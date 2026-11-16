@@ -91,7 +91,7 @@ function Conteudo() {
     ;(async () => {
       try {
         if (nuvem) {
-          const r = await api<{ ficha: { sistema: string; dados: DadosFicha; versao: number; status?: string; npc?: boolean; bloqueada?: boolean; observacao_mestre?: string; campanha_id?: string | null }; podeEditar: boolean; souMestre?: boolean; regras?: { efetivas: { habilidades?: 'livre' | 'aprovacao' | 'mestre' } } | null; configProgressao?: ConfiguracaoProgressao; pendentes?: string[]; pedido?: { caminho: string; depois: unknown }[] }>('fichas/' + nuvem)
+          const r = await api<{ ficha: { sistema: string; dados: DadosFicha; versao: number; status?: string; npc?: boolean; bloqueada?: boolean; observacao_mestre?: string; campanha_id?: string | null }; podeEditar: boolean; souMestre?: boolean; regras?: { habilidades?: 'livre' | 'aprovacao' | 'mestre' } | null; configProgressao?: ConfiguracaoProgressao; pendentes?: string[]; pedido?: { caminho: string; depois: unknown }[] }>('fichas/' + nuvem)
           if (r.pendentes?.length) setAviso({ texto: 'Aguardando o mestre aprovar: ' + r.pendentes.map(a => AREAS[a] ?? a).join(', ') + '. Os valores que você mudou já aparecem na ficha; o mestre aprova em Campanhas › Pedidos.', desfazer: false })
           if (r.ficha.observacao_mestre) setErro('Mestre: ' + r.ficha.observacao_mestre)
           else if (!r.podeEditar && r.ficha.bloqueada) setErro('O mestre travou esta ficha neste momento.')

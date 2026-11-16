@@ -8,7 +8,7 @@ import { Bolinhas } from './Combate'
 import { celulasPincelRedondo, expandirNevoa, mapaDeNevoa, METROS_POR_CELULA_MESA, type AreaNevoa, type Camada, type LuzToken } from '@/lib/nuvem/mesa'
 import { anguloEntre, contornoArea, tokensNaArea, type AreaEfeito, type FormaArea } from '@/lib/mesa/areasEfeito'
 import { distancia } from '@/lib/sistemas/combate'
-import { distanciaParede, type Parede, type TipoParede } from '@/lib/mesa/paredes'
+import { distanciaParede, segmentosDaForma, type FormaParede, type Parede, type TipoParede } from '@/lib/mesa/paredes'
 import { alcanceDoToken, estaEscuro, iluminado, poligonoVisao, segmentosVisao, temLinhaDeVisao, type LuzCelulas, type Segmento, type VisaoToken } from '@/lib/mesa/visao'
 
 export const CELULA = 44
@@ -56,7 +56,9 @@ type Props = {
   reguas?: ReguaRemota[]; onRegua?: (r: { x1: number; y1: number; x2: number; y2: number } | null) => void
   /** Paredes, portas e janelas (v0.34.10). O mestre desenha; porta abre e fecha com um toque. */
   paredes?: Parede[]; tipoParede?: TipoParede | 'apagar'
-  onCriarParede?: (p: Omit<Parede, 'id'>) => void; onApagarParede?: (id: string) => void; onPorta?: (id: string) => void
+  /** Forma do desenho (linha, à mão livre, retângulo, círculo, triângulo) e se as pontas encaixam na grade (v0.35.4). */
+  formaParede?: FormaParede; gradeParede?: boolean
+  onCriarParedes?: (p: Omit<Parede, 'id'>[]) => void; onApagarParede?: (id: string) => void; onPorta?: (id: string) => void
   /** Mestre vendo o mapa como os jogadores veem (névoa fechada, sem paredes nem tokens escondidos). */
   comoJogador?: boolean
   /** Visão dos personagens (v0.35.0): para os jogadores, só fica claro o que os tokens deles enxergam agora. */
@@ -79,7 +81,8 @@ export default function MapaMesa(p: Props) {
   const [area, setArea] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
   const [traco, setTraco] = useState<number[] | null>(null)
   const [mira, setMira] = useState<{ x: number; y: number; angulo: number } | null>(null)
-  const [linha, setLinha] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
+  /** Parede sendo desenhada: onde começou, onde está o dedo e (à mão livre) o traço. */
+  const [linha, setLinha] = useState<{ a: { x: number; y: number }; b: { x: number; y: number }; pontos: [number, number][] } | null>(null)
   const [pintura, setPintura] = useState<Set<string>>(new Set())
   const [camadaEdit, setCamadaEdit] = useState<{ c: Camada; tipo: 'mover' | 'tamanho'; ox: number; oy: number; ar: number } | null>(null)
   const inicio = useRef<{ px: number; py: number } | null>(null)
@@ -110,7 +113,23 @@ export default function MapaMesa(p: Props) {
     }
     return false
   })
-  const vertice = (e: React.PointerEvent) => { const q = ponto(e); return q ? { x: Math.max(0, Math.min(cols, Math.round(q.px / CELULA))), y: Math.max(0, Math.min(rows, Math.round(q.py / CELULA))) } : null }
+  // Ponta da parede: no canto da grade (encaixar) ou onde o dedo está, grudando na ponta de uma parede que já existe.
+  const vertice = (e: React.PointerEvent) => {
+    const q = ponto(e); if (!q) return null
+    const lim = (v: number, max: number) => Math.max(0, Math.min(max, v))
+    if (p.gradeParede !== false) return { x: lim(Math.round(q.px / CELULA), cols), y: lim(Math.round(q.py / CELULA), rows) }
+    const x = lim(q.px / CELULA, cols), y = lim(q.py / CELULA, rows)
+    let perto: { x: number; y: number } | null = null, dist = 0.3
+    for (const w of p.paredes ?? []) for (const [px, py] of [[w.x1, w.y1], [w.x2, w.y2]]) { const d = Math.hypot(px - x, py - y); if (d < dist) { dist = d; perto = { x: px, y: py } } }
+    return perto ?? { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 }
+  }
+  // Um botão por porta: a porta desenhada como forma (vários pedaços) mostra o botão no pedaço do meio.
+  const portasDoMapa = useMemo(() => {
+    const grupos = new Map<string, Parede[]>()
+    for (const w of p.paredes ?? []) if (w.tipo === 'porta') grupos.set(w.grupo ?? w.id, [...(grupos.get(w.grupo ?? w.id) ?? []), w])
+    return [...grupos.values()].map(l => l[Math.floor((l.length - 1) / 2)])
+  }, [p.paredes])
+  const segsRascunho = linha ? segmentosDaForma(p.formaParede ?? 'linha', linha.a, linha.b, linha.pontos) : []
   const areaDe = (m: { x: number; y: number; angulo: number }): Omit<AreaEfeito, 'id'> => ({ forma: p.formaArea ?? 'circulo', x: m.x, y: m.y, angulo: m.angulo, metros: p.metrosArea ?? 6, cor: p.corArea ?? '#f97316', nome: '' })
   // Tokens dentro de alguma área (colocada, mirando agora ou de outra pessoa) ganham um anel da cor da área.
   const todasAreas = useMemo(() => [...(p.areas ?? []), ...(p.previas ?? []), ...(mira ? [{ ...areaDe(mira), id: 'minha-mira' }] : [])],
@@ -172,7 +191,15 @@ export default function MapaMesa(p: Props) {
       return
     }
     if (regua) { const cel = celula(e); if (cel && (cel.x !== regua.x2 || cel.y !== regua.y2)) { const n = { ...regua, x2: cel.x, y2: cel.y }; setRegua(n); p.onRegua?.(n) } return }
-    if (linha) { const v = vertice(e); if (v && (v.x !== linha.x2 || v.y !== linha.y2)) setLinha({ ...linha, x2: v.x, y2: v.y }); return }
+    if (linha) {
+      if (p.formaParede === 'livre') {
+        const q2 = ponto(e); if (!q2) return
+        const x = Math.max(0, Math.min(cols, q2.px / CELULA)), y = Math.max(0, Math.min(rows, q2.py / CELULA)), u = linha.pontos[linha.pontos.length - 1]
+        if (Math.hypot(x - u[0], y - u[1]) >= 0.1) setLinha({ ...linha, b: { x, y }, pontos: [...linha.pontos, [Math.round(x * 100) / 100, Math.round(y * 100) / 100]] })
+        return
+      }
+      const v = vertice(e); if (v && (v.x !== linha.b.x || v.y !== linha.b.y)) setLinha({ ...linha, b: v }); return
+    }
     if (mira && q) {
       const angulo = anguloEntre(mira.x, mira.y, q.px / CELULA, q.py / CELULA)
       if (angulo !== mira.angulo) { const n = { ...mira, angulo }; setMira(n); p.onPreviaArea?.(areaDe(n)) }
@@ -198,7 +225,16 @@ export default function MapaMesa(p: Props) {
     setArrastando(null); setDragPos(null); inicio.current = null
     if (regua) { setRegua(null); p.onRegua?.(null) }
     if (mira) { p.onCriarArea?.(areaDe(mira)); p.onPreviaArea?.(null); setMira(null) }
-    if (linha) { if (linha.x1 !== linha.x2 || linha.y1 !== linha.y2) p.onCriarParede?.({ ...linha, tipo: p.tipoParede === 'apagar' ? 'parede' : p.tipoParede ?? 'parede' }); setLinha(null) }
+    if (linha) {
+      // Forma pronta: vira segmentos; mais de um segmento ganham o mesmo grupo (apagam e abrem juntos).
+      const segs = segsRascunho.filter(([x1, y1, x2, y2]) => Math.hypot(x2 - x1, y2 - y1) >= 0.05)
+      const tamanho = segs.reduce((t, [x1, y1, x2, y2]) => t + Math.hypot(x2 - x1, y2 - y1), 0)
+      if (segs.length && tamanho >= 0.3) {
+        const grupo = segs.length > 1 ? crypto.randomUUID() : undefined, tipo = p.tipoParede === 'apagar' ? 'parede' : p.tipoParede ?? 'parede'
+        p.onCriarParedes?.(segs.map(([x1, y1, x2, y2]) => ({ x1, y1, x2, y2, tipo, ...(grupo ? { grupo } : {}) })))
+      }
+      setLinha(null)
+    }
     if (traco && traco.length >= 4) p.onDesenhar(traco, tracoId.current)
     setTraco(null)
     if (area) {
@@ -227,7 +263,8 @@ export default function MapaMesa(p: Props) {
         if (perto && perto.d < 0.4) p.onApagarParede?.(perto.w.id)
         return
       }
-      const v = vertice(e); if (v) setLinha({ x1: v.x, y1: v.y, x2: v.x, y2: v.y }); return
+      if (p.formaParede === 'livre') { const q = ponto(e); if (q) { const a = { x: Math.max(0, Math.min(cols, q.px / CELULA)), y: Math.max(0, Math.min(rows, q.py / CELULA)) }; setLinha({ a, b: a, pontos: [[Math.round(a.x * 100) / 100, Math.round(a.y * 100) / 100]] }) } return }
+      const v = vertice(e); if (v) setLinha({ a: v, b: v, pontos: [] }); return
     }
     if (modo === 'area-efeito') { if (cel && p.onCriarArea) { const n = { x: cel.x + 0.5, y: cel.y + 0.5, angulo: 0 }; setMira(n); p.onPreviaArea?.(areaDe(n)) } return }
     if (modo === 'desenhar') { const q = ponto(e); if (q) { tracoId.current = crypto.randomUUID(); setTraco([Math.round(q.px), Math.round(q.py)]) } return }
@@ -298,13 +335,13 @@ export default function MapaMesa(p: Props) {
           {((p.paredes ?? []).length > 0 || linha) && olharMestre && <svg width={largura} height={altura} className="pointer-events-none absolute inset-0" style={{ zIndex: 7 }} aria-hidden>
             {(p.paredes ?? []).map(w => <line key={w.id} x1={w.x1 * CELULA} y1={w.y1 * CELULA} x2={w.x2 * CELULA} y2={w.y2 * CELULA} strokeLinecap="round"
               stroke={w.tipo === 'parede' ? '#f59e0b' : w.tipo === 'janela' ? '#7dd3fc' : w.aberta ? '#86efac' : '#22c55e'} strokeWidth={w.tipo === 'parede' ? 5 : 4} strokeDasharray={w.tipo === 'janela' ? '6 4' : w.tipo === 'porta' && w.aberta ? '3 6' : undefined} opacity={0.95} />)}
-            {linha && <line x1={linha.x1 * CELULA} y1={linha.y1 * CELULA} x2={linha.x2 * CELULA} y2={linha.y2 * CELULA} stroke="#fde68a" strokeWidth={5} strokeDasharray="8 5" strokeLinecap="round" />}
-            {modo === 'paredes' && Array.from({ length: (cols + 1) * (rows + 1) }, (_, i) => <circle key={i} cx={(i % (cols + 1)) * CELULA} cy={Math.floor(i / (cols + 1)) * CELULA} r={1.6} fill="rgba(253,230,138,0.45)" />)}
+            {segsRascunho.map(([x1, y1, x2, y2], i) => <line key={'r' + i} x1={x1 * CELULA} y1={y1 * CELULA} x2={x2 * CELULA} y2={y2 * CELULA} stroke="#fde68a" strokeWidth={5} strokeDasharray="8 5" strokeLinecap="round" />)}
+            {modo === 'paredes' && p.gradeParede !== false && Array.from({ length: (cols + 1) * (rows + 1) }, (_, i) => <circle key={i} cx={(i % (cols + 1)) * CELULA} cy={Math.floor(i / (cols + 1)) * CELULA} r={1.6} fill="rgba(253,230,138,0.45)" />)}
           </svg>}
-          {(p.paredes ?? []).filter(w => w.tipo === 'porta').map(w => {
+          {portasDoMapa.map(w => {
             const mx = (w.x1 + w.x2) / 2, my = (w.y1 + w.y2) / 2
             // Porta debaixo da névoa (dos dois lados) não aparece para os jogadores.
-            const lados: [number, number][] = w.x1 === w.x2 ? [[mx - 1, Math.floor(my)], [mx, Math.floor(my)]] : w.y1 === w.y2 ? [[Math.floor(mx), my - 1], [Math.floor(mx), my]] : [[Math.floor(mx), Math.floor(my)]]
+            const lados: [number, number][] = [[-0.5, -0.5], [0.5, -0.5], [-0.5, 0.5], [0.5, 0.5]].map(([dx, dy]) => [Math.floor(mx + dx), Math.floor(my + dy)])
             if (!olharMestre && p.fogAtivo && lados.every(([cx, cy]) => comNevoa(cx, cy))) return null
             const pode = !!p.onPorta && modo !== 'paredes' && (!w.trancada || admin)
             return <button key={'porta-' + w.id} type="button" disabled={!pode} onClick={e => { e.stopPropagation(); p.onPorta?.(w.id) }} onPointerDown={e => e.stopPropagation()}

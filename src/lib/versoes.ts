@@ -27,6 +27,18 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.35.4', data: '2026-11-16',
+    titulo: 'Paredes que travam de verdade e desenhadas do jeito que você quiser',
+    itens: [
+      'As paredes agora travam o token: ele anda em linha reta e não “pula” uma parede só porque existe um caminho em volta. Para contornar, mova em etapas.',
+      'O mestre também é bloqueado pelas paredes. Para pôr um token do outro lado, ligue 👻 Atravessar paredes na ferramenta Paredes.',
+      'Paredes, portas e janelas podem ser desenhadas em linha, à mão livre, retângulo, círculo ou triângulo, encaixando na grade ou soltas, seguindo o desenho do mapa.',
+      'Uma forma vira uma peça só: apagar um lado apaga a forma inteira, e uma porta em forma abre e fecha inteira.',
+      'Janela: ninguém passa, mas a luz e a visão atravessam.',
+      'A barra de ferramentas da mesa não bloqueia mais o toque no mapa ao lado dela.',
+    ],
+  },
+  {
     versao: '0.35.3', data: '2026-11-16',
     titulo: 'Ações rápidas, arsenal pronto e os 4.170 ícones do Game-Icons',
     itens: [

@@ -1,4 +1,4 @@
-# Mapa da mesa: medir, paredes e visão (v0.34.9 a v0.35.2)
+# Mapa da mesa: medir, paredes e visão (v0.34.9 a v0.35.4)
 
 ## Partes
 | Parte | Versão | Migração | O que faz |
@@ -10,6 +10,7 @@
 
 ## Regras
 - **Parede:** bloqueia passagem, visão e luz.
+- **Formas (v0.35.4):** linha, à mão livre (simplificada por Ramer–Douglas–Peucker, até 80 pedaços), retângulo, círculo (12 a 32 lados) e triângulo; pontas na grade ou soltas (centésimos de célula, grudando na ponta de parede próxima). Os pedaços de uma forma têm o mesmo `grupo`: apagam juntos e, se porta, abrem/fecham/trancam juntos. Até 1.000 pedaços por cena. Sem migração (a coluna `paredes` é jsonb).
 - **Porta:**
   - fechada, bloqueia tudo; aberta, deixa passar e ver;
   - qualquer jogador abre e fecha;
@@ -33,10 +34,13 @@
 
 ## Código
 - `src/lib/mesa/areasEfeito.ts`: geometria das áreas.
-- `src/lib/mesa/paredes.ts`: segmentos e caminho livre (BFS célula a célula, considerando o tamanho do token).
+- `src/lib/mesa/paredes.ts`: segmentos, formas (`segmentosDaForma`) e caminho livre.
+  - Até a v0.35.3 o caminho era uma busca célula a célula: se existisse QUALQUER caminho em volta, o token passava (por isso pedaços soltos de parede não travavam), e o mestre ignorava as paredes.
+  - Desde a v0.35.4 o token anda em linha reta do centro de origem ao centro de destino (`atravessaParede`). Token maior que 1 célula também confere as quinas. Encostar na ponta de uma parede não bloqueia; passar pelo encontro de duas paredes, uma de cada lado, bloqueia.
+  - O mestre também é bloqueado, a não ser que mande `atravessar: true` (botão 👻 na ferramenta Paredes).
 - `src/lib/mesa/visao.ts`: linha de visão, células visíveis (servidor) e polígono de visão (desenho da luz e da visão).
 - `src/lib/mesa/abasChat.ts`: em que aba do chat cada evento aparece.
-- e2e: `v34-areas-efeito.mjs`, `v34-paredes.mjs` e `v35-visao.mjs`.
+- e2e: `v34-areas-efeito.mjs`, `v34-paredes.mjs` e `v35-visao.mjs`. Tela: `scripts/tela/paredes.cjs`.
 
 ## Limites conhecidos
 - O grupo enxerga junto: cada jogador vê o que qualquer personagem do grupo vê (não há visão separada por jogador).

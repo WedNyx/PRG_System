@@ -106,7 +106,9 @@ export const LUZES_PRONTAS: { nome: string; brilho: number; penumbra: number; co
  * Quais células ficam com névoa (1) para quem não é o mestre.
  * Névoa = (dentro de uma área escondida, ou o mapa todo se não houver áreas) − células reveladas − luz dos personagens.
  */
-export function mapaDeNevoa(o: { cols: number; rows: number; areas: AreaNevoa[]; reveladas: Set<string>; luzes?: { x: number; y: number; raio: number }[] }): Uint8Array {
+/** Luz que tira a névoa; `ve` (v0.35.0) diz se a luz chega ao ponto (paredes no caminho). */
+export type LuzNevoa = { x: number; y: number; raio: number; ve?: (px: number, py: number) => boolean }
+export function mapaDeNevoa(o: { cols: number; rows: number; areas: AreaNevoa[]; reveladas: Set<string>; luzes?: LuzNevoa[] }): Uint8Array {
   const { cols, rows } = o
   const m = new Uint8Array(cols * rows)
   if (!o.areas.length) m.fill(1)
@@ -116,7 +118,7 @@ export function mapaDeNevoa(o: { cols: number; rows: number; areas: AreaNevoa[];
     const r = Math.ceil(l.raio)
     for (let y = Math.max(0, Math.floor(l.y - r)); y <= Math.min(rows - 1, Math.ceil(l.y + r)); y++)
       for (let x = Math.max(0, Math.floor(l.x - r)); x <= Math.min(cols - 1, Math.ceil(l.x + r)); x++)
-        if ((x + 0.5 - l.x) ** 2 + (y + 0.5 - l.y) ** 2 <= l.raio ** 2) m[y * cols + x] = 0
+        if ((x + 0.5 - l.x) ** 2 + (y + 0.5 - l.y) ** 2 <= l.raio ** 2 && (!l.ve || l.ve(x + 0.5, y + 0.5))) m[y * cols + x] = 0
   }
   return m
 }

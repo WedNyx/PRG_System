@@ -35,7 +35,7 @@ import NaTela from '@/components/NaTela'
 import FichaNaMesa from './FichaNaMesa'
 import { DanoEmVarios, PainelIniciativa } from './Iniciativa'
 
-type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean; fog_areas?: AreaNevoa[] | null; areas_efeito?: unknown; paredes?: unknown; escuridao?: number | null; luz_revela_nevoa?: boolean | null }
+type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean; fog_areas?: AreaNevoa[] | null; areas_efeito?: unknown; paredes?: unknown; visao_dinamica?: boolean | null; visao_alcance?: number | null; escuridao?: number | null; luz_revela_nevoa?: boolean | null }
 type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; condicoes_rodadas?: Record<string, number> | null; condicoes_dano?: Record<string, string> | null; morte?: Morte | null; dono_id: string | null; ficha_id: string | null; ficha_modelo?: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number; luz?: LuzToken | null }
 export type Evento = { id: number; tipo: 'chat' | 'rolagem' | 'sistema' | 'ataque'; dados?: DadosAtaque | null; visibilidade: 'publica' | 'mestre' | 'privada'; autor_id: string | null; destinatario_id: string | null; personagem: string | null; texto: string | null; expressao: string | null; resultados: number[] | null; total: number | null; criado_em: string; autor: { apelido: string } | null }
 type Iniciativa = { id: string; nome: string; valor: number; tokenId?: string | null }
@@ -430,6 +430,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           onPreviaArea={a => aoVivo('area', a ? 90 : 0, 'area', { id: e.eu, quem: nomes[e.eu] ?? '', a }, !a)}
           reguas={Object.values(reguas)} onRegua={g => aoVivo('regua', g ? 90 : 0, 'regua', { id: e.eu, nome: nomes[e.eu] ?? '', r: g }, !g)}
           paredes={paredesCena} tipoParede={tipoParede} comoJogador={comoJogador}
+          visaoDinamica={!!cena.visao_dinamica} visaoAlcance={cena.visao_alcance ?? 0}
           onCriarParede={w => void acao({ acao: 'parede_criar', cenaId: cena.id, parede: w }).catch(() => {})}
           onApagarParede={id => void acao({ acao: 'parede_excluir', cenaId: cena.id, id }).catch(() => {})}
           onPorta={espectador ? undefined : id => { const w = paredesCena.find(x => x.id === id); void acao({ acao: 'porta', cenaId: cena.id, id }).then(() => toast(w?.aberta ? '🚪 Porta fechada.' : '🚪 Porta aberta.')).catch(() => {}) }}
@@ -569,6 +570,7 @@ function PainelMestre({ e, acao, campanhaId, setModo }: { e: Estado; acao: Acao;
           <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, fog_limpar: true })}><EyeOff size={14} /> Esconder tudo</button></>}
       </div>
       {cena.fog_ativo && <p className="text-xs text-(--a-b4aeca)">No canto do mapa: <SquareDashed size={12} className="inline" /> marca as partes que têm névoa (salas, cavernas…) e revela cada uma com um toque; <Eye size={12} className="inline" /> pincel (1×1, 3×3, 5×5) e <Square size={12} className="inline" /> retângulo revelam ou escondem pedaços.</p>}
+      <VisaoPersonagens cena={cena} acao={acao} />
       {cena.fog_ativo && <AreasNevoa cena={cena} acao={acao} setModo={setModo} />}
       <Iluminacao key={cena.id + ':' + (cena.escuridao ?? 0)} cena={cena} acao={acao} />
       <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, tokens_travados: !cena.tokens_travados })}>{cena.tokens_travados ? <><LockOpen size={14} /> Destravar tokens dos jogadores</> : <><Lock size={14} /> Travar tokens dos jogadores</>}</button>
@@ -816,6 +818,20 @@ function DanoPorTurno({ valor, nome, pode, salvar }: { valor: string; nome: stri
   const enviar = () => { if (v.trim().toLowerCase() !== valor) salvar(v.trim().toLowerCase()) }
   return <label className="flex items-center gap-1 text-[11px]">💥<input aria-label={'Dano por turno de ' + nome} disabled={!pode} value={v} maxLength={20} placeholder="sem dano"
     onChange={x => setV(x.target.value)} onBlur={enviar} onKeyDown={x => { if (x.key === 'Enter') { x.preventDefault(); (x.target as HTMLInputElement).blur() } }} className={input + ' !w-20 !py-1 font-mono'} /></label>
+}
+
+/** Visão dos personagens (v0.35.0): a névoa se abre sozinha pelo que os tokens dos jogadores enxergam. */
+function VisaoPersonagens({ cena, acao }: { cena: Cena; acao: Acao }) {
+  const ligada = !!cena.visao_dinamica
+  return <div className="space-y-2 rounded-xl border border-(--a-3d3152) p-3">
+    <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={ligada}
+      onChange={x => void acao({ acao: 'cena_editar', cenaId: cena.id, visao_dinamica: x.target.checked }).catch(() => {})} />
+      <span><strong>👁️ Visão dos personagens</strong><span className="block text-xs text-(--a-b4aeca)">A névoa se abre sozinha pelo que os personagens dos jogadores enxergam. Paredes e portas fechadas bloqueiam; janelas deixam ver. O que já foi visto continua aparecendo, mais escuro, e os inimigos só aparecem quando estão à vista.</span></span></label>
+    {ligada && <label className="flex flex-wrap items-center gap-2 text-xs">Até onde enxergam
+      <select value={cena.visao_alcance ?? 0} onChange={x => void acao({ acao: 'cena_editar', cenaId: cena.id, visao_alcance: Number(x.target.value) }).catch(() => {})} className={input + ' !w-auto'}>
+        {[[0, 'Sem limite (até as paredes)'], [9, '9 m'], [18, '18 m'], [27, '27 m'], [36, '36 m'], [60, '60 m']].map(([v, n]) => <option key={v} value={v}>{n}</option>)}</select></label>}
+    {ligada && <p className="text-[11px] text-(--a-b4aeca)">Para começar uma área do zero, use “Esconder tudo”: a névoa volta e se abre de novo onde os personagens estão.</p>}
+  </div>
 }
 
 /** Partes do mapa com névoa (v0.33.8): cada área revela/esconde com um toque. */

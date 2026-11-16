@@ -15,7 +15,7 @@ import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
 import { adiarNaOrdem, entrarNaOrdem, moverNaOrdem, mudarValor, sairDaOrdem } from '@/lib/sistemas/ordemCombate'
 import { ehV8 } from '@/lib/nuvem/categorias'
 import { lerAreasEfeito, MAX_AREAS_POR_CENA, normalizarAreaEfeito } from '@/lib/mesa/areasEfeito'
-import { caminhoLivre, lerParedes, MAX_PAREDES, normalizarParede } from '@/lib/mesa/paredes'
+import { caminhoLivre, lerParedes, MAX_PAREDES, MAX_PAREDES_PEDIDO, normalizarParede } from '@/lib/mesa/paredes'
 import { alcanceDoToken, celulasVisiveis, estaEscuro, normalizarVisao, revelarNaNevoa, segmentosVisao } from '@/lib/mesa/visao'
 import { METROS_POR_CELULA_MESA } from '@/lib/nuvem/mesa'
 import { condicoesDisponiveis, emojiCondicao, nomeCondicao, normalizarDanos, normalizarRodadas, passarRodada } from '@/lib/condicoes'
@@ -415,8 +415,9 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       const [c] = await rest<(Cena & { paredes?: unknown })[]>(`prg_cenas?select=*&id=eq.${q(t.cena_id)}`)
       if (!podeMoverToken(t, eu, admin, !!c?.tokens_travados)) throw new ErroApi(403, c?.tokens_travados ? 'O mestre travou os tokens desta cena.' : 'Você não pode mover este token.')
       const nx = inteiro(b.x, 0, (c?.grid_cols ?? 100) - 1) ?? 0, ny = inteiro(b.y, 0, (c?.grid_rows ?? 100) - 1) ?? 0
-      // Paredes e portas fechadas (v0.34.10): jogador não atravessa; o mestre põe o token onde quiser.
-      if (!admin && c) {
+      // Paredes e portas fechadas (v0.34.10): ninguém atravessa; desde a v0.35.4 o mestre também não,
+      // a não ser que ligue “atravessar paredes” (para pôr um token em qualquer lugar).
+      if (c && !(admin && b.atravessar === true)) {
         const paredes = lerParedes(c.paredes, c.grid_cols, c.grid_rows)
         if (paredes.length) {
           const [pos] = await rest<{ x: number; y: number; tamanho: number | null }[]>(`prg_tokens?select=x,y,tamanho&id=eq.${q(t.id)}`)
@@ -526,19 +527,26 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       if (b.acao === 'porta') {
         const p = atuais.find(x => x.id === b.id && x.tipo === 'porta')
         if (!p) throw new ErroApi(404, 'Porta não encontrada.')
-        if (b.trancada !== undefined) { exigirAdmin(admin); novas = atuais.map(x => x === p ? { ...x, trancada: b.trancada === true, ...(b.trancada === true ? { aberta: false } : {}) } : x) }
+        // Porta desenhada como forma (v0.35.4): todos os pedaços abrem, fecham e trancam juntos.
+        const daPorta = (x: typeof p) => x === p || (!!p.grupo && x.grupo === p.grupo && x.tipo === 'porta')
+        if (b.trancada !== undefined) { exigirAdmin(admin); novas = atuais.map(x => daPorta(x) ? { ...x, trancada: b.trancada === true, ...(b.trancada === true ? { aberta: false } : {}) } : x) }
         else {
           if (p.trancada && !admin) throw new ErroApi(403, '🔒 A porta está trancada.')
-          novas = atuais.map(x => x === p ? { ...x, aberta: typeof b.aberta === 'boolean' ? b.aberta : !x.aberta } : x)
+          const aberta = typeof b.aberta === 'boolean' ? b.aberta : !p.aberta
+          novas = atuais.map(x => daPorta(x) ? { ...x, aberta } : x)
         }
       } else {
         exigirAdmin(admin)
         if (b.acao === 'parede_criar') {
-          const lista = (Array.isArray(b.paredes) ? b.paredes : [b.parede]).slice(0, 50).map(x => normalizarParede(x, c.grid_cols, c.grid_rows))
+          const lista = (Array.isArray(b.paredes) ? b.paredes : [b.parede]).slice(0, MAX_PAREDES_PEDIDO).map(x => normalizarParede(x, c.grid_cols, c.grid_rows))
           if (!lista.length || lista.some(x => !x)) throw new ErroApi(400, 'Parede inválida.')
           if (atuais.length + lista.length > MAX_PAREDES) throw new ErroApi(400, `Máximo de ${MAX_PAREDES} paredes por cena.`)
           novas = [...atuais, ...lista as NonNullable<typeof lista[number]>[]]
-        } else if (b.acao === 'parede_excluir') novas = atuais.filter(x => x.id !== b.id)
+        } else if (b.acao === 'parede_excluir') {
+          // Apagar um pedaço de uma forma apaga a forma inteira (v0.35.4).
+          const alvo = atuais.find(x => x.id === b.id)
+          novas = atuais.filter(x => x.id !== b.id && !(alvo?.grupo && x.grupo === alvo.grupo))
+        }
         else novas = []
       }
       await rest(`prg_cenas?id=eq.${q(c.id)}`, { method: 'PATCH', body: JSON.stringify({ paredes: novas }) }).catch(() => {

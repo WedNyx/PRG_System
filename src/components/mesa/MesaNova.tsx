@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { BrickWall, Glasses, Flame, Trash, SquareDashed, Sun, ArrowDown, ArrowLeft, ArrowUp, BookOpen, CircleHelp, Crown, Globe, Library, MoreHorizontal, PanelRightClose, PanelRightOpen, ScrollText, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
+import { BrickWall, Grid3x3, Glasses, Flame, Trash, SquareDashed, Sun, ArrowDown, ArrowLeft, ArrowUp, BookOpen, CircleHelp, Crown, Globe, Library, MoreHorizontal, PanelRightClose, PanelRightOpen, ScrollText, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
@@ -13,7 +13,7 @@ import type { Camada } from '@/lib/nuvem/mesa'
 import { podeMoverToken } from '@/lib/nuvem/mesa'
 import MapaMesa, { type CursorRemoto, type ModoMesa, type Ping, type PreviaArea, type ReguaRemota, type TokenMapa } from './MapaMesa'
 import { separarEventos, type AbaChat } from '@/lib/mesa/abasChat'
-import { caminhoLivre, lerParedes, TIPOS_PAREDE, type TipoParede } from '@/lib/mesa/paredes'
+import { caminhoLivre, FORMAS_PAREDE, lerParedes, TIPOS_PAREDE, type FormaParede, type TipoParede } from '@/lib/mesa/paredes'
 import { normalizarVisao, type VisaoToken } from '@/lib/mesa/visao'
 import { CORES_AREA, FORMAS_AREA, lerAreasEfeito, tokensNaArea, type AreaEfeito, type FormaArea } from '@/lib/mesa/areasEfeito'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
@@ -86,6 +86,10 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [danoArea, setDanoArea] = useState<AreaEfeito | null>(null)
   // Paredes e “ver como jogador” (v0.34.10).
   const [tipoParede, setTipoParede] = useState<TipoParede | 'apagar'>('parede')
+  const [formaParede, setFormaParede] = useState<FormaParede>('linha')
+  const [gradeParede, setGradeParede] = useState(true)
+  /** Mestre: mover tokens atravessando paredes (para pôr um NPC em qualquer lugar). Desligado: as paredes valem para todos. */
+  const [atravessar, setAtravessar] = useState(false)
   const [comoJogador, setComoJogador] = useState(false)
   const [dicas, setDicas] = useState<'auto' | 'aberto' | 'fechado'>('auto')
   const [aba, setAba] = useState<'chat' | 'fichas' | 'tokens' | 'iniciativa' | 'musica' | 'campanha' | 'tabelas' | 'biblioteca' | 'mestre'>('chat')
@@ -291,12 +295,15 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
 
   /** Solta o token: aparece na hora para mim e para os outros; o servidor confirma em seguida. */
   async function moverToken(id: string, x: number, y: number) {
-    // Jogador não atravessa parede nem porta fechada (o servidor confere de novo).
+    // Ninguém atravessa parede, janela nem porta fechada (o servidor confere de novo); o mestre só se ligar o 👻.
     const tk = e!.tokens.find(t => t.id === id)
-    if (!admin && cena && tk && !caminhoLivre(paredesCena, cena.grid_cols, cena.grid_rows, tk, { x, y }, tk.tamanho ?? 1)) { toast.error('🧱 Uma parede ou porta fechada bloqueia o caminho.'); return }
+    const livre = admin && atravessar
+    if (!livre && cena && tk && !caminhoLivre(paredesCena, cena.grid_cols, cena.grid_rows, tk, { x, y }, tk.tamanho ?? 1)) {
+      toast.error('🧱 Uma parede ou porta fechada bloqueia o caminho.', { description: admin ? 'Para contornar, mova em etapas. Para pôr o token do outro lado, ligue 👻 Atravessar paredes (ferramenta Paredes).' : 'Para contornar, mova em etapas.' }); return
+    }
     setPosicoes(m => ({ ...m, [id]: { x, y, ate: Date.now() + 8000 } }))
     aoVivo('token:' + id, 0, 'token', { id, x, y }, true)
-    await acao({ acao: 'token_mover', tokenId: id, x, y }).catch(() => setPosicoes(m => limpar(m, k => k !== id)))
+    await acao({ acao: 'token_mover', tokenId: id, x, y, ...(livre ? { atravessar: true } : {}) }).catch(() => setPosicoes(m => limpar(m, k => k !== id)))
   }
   function desenhar(pontos: number[], id: string) {
     if (!cena) return
@@ -310,7 +317,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     { id: 'revelar', icone: Eye, nome: 'Revelar com pincel', so: true, fog: true }, { id: 'esconder', icone: CloudFog, nome: 'Esconder com pincel', so: true, fog: true },
     { id: 'nevoa-area', icone: SquareDashed, nome: 'Partes com névoa: arraste para criar uma; toque numa para revelar ou esconder', so: true, fog: true },
     { id: 'area-revelar', icone: Square, nome: 'Revelar área (arraste um retângulo)', so: true, fog: true }, { id: 'area-esconder', icone: EyeOff, nome: 'Esconder área', so: true, fog: true },
-    { id: 'paredes', icone: BrickWall, nome: 'Paredes e portas: arraste de um canto da grade a outro; os jogadores não passam', so: true },
+    { id: 'paredes', icone: BrickWall, nome: 'Paredes, portas e janelas: desenhe no mapa', so: true },
     { id: 'editar-mapa', icone: Layers, nome: 'Montar mapa (mover/redimensionar imagens)', so: true },
   ]
   // Painel em grupos (v0.32.6): poucas abas em cima e, dentro de cada grupo, as partes dele com uma linha explicando o que fazem.
@@ -377,9 +384,9 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
       <section className="relative min-h-[45vh] flex-1 overflow-hidden">
         {admin && !sessaoAberta && !ataque && avisoSessao && <p role="status" className="pointer-events-none absolute inset-x-2 top-2 z-30 mx-auto flex max-w-md items-center gap-2 rounded-xl border border-amber-500/50 bg-[#2b2310]/85 p-2 text-xs text-amber-100"><span className="flex-1 text-center">🌙 Sessão fechada: só você vê a mesa. Toque em “▶ Abrir sessão” quando o grupo for jogar.</span><button type="button" aria-label="Esconder aviso" onClick={() => setAvisoSessao(false)} className="pointer-events-auto rounded p-1.5 hover:bg-white/10"><X size={14} /></button></p>}
-        {!espectador && <div className="absolute bottom-2 left-2 z-20 flex max-w-[calc(100%-1rem)] flex-col items-start gap-1">
+        {!espectador && <div className="pointer-events-none absolute bottom-2 left-2 z-20 flex max-w-[calc(100%-1rem)] flex-col items-start gap-1">
         {cena && <p className="pointer-events-none rounded-md bg-(--s-19172c)/90 px-2 py-0.5 text-[11px] text-(--a-cfc0df)">{ferramentas.find(f => f.id === modo)?.nome}{modo === 'mover' ? ' · toque no token para ver vida e atacar' : ''}</p>}
-        <div className="flex max-w-full flex-wrap items-center gap-1 rounded-xl border border-(--a-373251) bg-(--s-19172c)/95 p-1 shadow-lg">
+        <div className="pointer-events-auto flex max-w-full flex-wrap items-center gap-1 rounded-xl border border-(--a-373251) bg-(--s-19172c)/95 p-1 shadow-lg">
           {ferramentas.filter(f => !f.so || admin).filter(f => !f.fog || cena?.fog_ativo).map(f => <button key={f.id} type="button" title={f.nome} aria-label={f.nome} aria-pressed={modo === f.id} onClick={() => setModo(f.id)}
             className={'rounded-lg p-2 ' + (modo === f.id ? 'bg-(--a-7654bb)' : 'hover:bg-(--s-34294f)')}><f.icone size={18} /></button>)}
           {(modo === 'revelar' || modo === 'esconder' || modo === 'area-revelar' || modo === 'area-esconder' || modo === 'nevoa-area') && cena && <>
@@ -388,7 +395,13 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           {modo === 'paredes' && cena && <>
             {TIPOS_PAREDE.map(t => <button key={t.id} type="button" onClick={() => setTipoParede(t.id)} aria-pressed={tipoParede === t.id} title={t.nome + ': ' + t.dica} aria-label={'Desenhar ' + t.nome}
               className={'h-9 min-w-9 rounded-lg px-2 text-base ' + (tipoParede === t.id ? 'bg-(--a-7654bb)' : 'hover:bg-(--s-34294f)')}>{t.icone}</button>)}
-            <button type="button" onClick={() => setTipoParede('apagar')} aria-pressed={tipoParede === 'apagar'} title="Apagar: toque numa parede, porta ou janela" aria-label="Apagar parede"
+            <select aria-label="Forma da parede" title={FORMAS_PAREDE.find(f => f.id === formaParede)?.dica} value={formaParede} onChange={x => setFormaParede(x.target.value as FormaParede)} className="h-9 rounded-lg border border-(--a-5e4b78) bg-(--s-151123) px-1 text-xs">
+              {FORMAS_PAREDE.map(f => <option key={f.id} value={f.id}>{f.icone} {f.nome}</option>)}</select>
+            {formaParede !== 'livre' && <button type="button" onClick={() => setGradeParede(v => !v)} aria-pressed={gradeParede} title={gradeParede ? 'Encaixando nos cantos da grade (toque para desenhar livre)' : 'Desenho livre (toque para encaixar na grade)'} aria-label="Encaixar na grade"
+              className={'rounded-lg p-2 ' + (gradeParede ? 'bg-(--a-7654bb)' : 'hover:bg-(--s-34294f)')}><Grid3x3 size={18} /></button>}
+            <button type="button" onClick={() => setAtravessar(v => !v)} aria-pressed={atravessar} title={atravessar ? 'Você (mestre) move tokens atravessando paredes. Toque para desligar.' : 'Atravessar paredes: só o mestre, para pôr um token em qualquer lugar'} aria-label="Mestre atravessa paredes"
+              className={'h-9 min-w-9 rounded-lg px-2 text-base ' + (atravessar ? 'bg-amber-600' : 'hover:bg-(--s-34294f)')}>👻</button>
+            <button type="button" onClick={() => setTipoParede('apagar')} aria-pressed={tipoParede === 'apagar'} title="Apagar: toque numa parede, porta ou janela (a forma inteira sai)" aria-label="Apagar parede"
               className={'rounded-lg p-2 ' + (tipoParede === 'apagar' ? 'bg-(--a-7654bb)' : 'hover:bg-(--s-34294f)')}><Eraser size={18} /></button>
             {paredesCena.length > 0 && <button type="button" title="Apagar todas as paredes" aria-label="Apagar todas as paredes" onClick={() => { if (confirm('Apagar todas as paredes, portas e janelas desta cena?')) void acao({ acao: 'paredes_limpar', cenaId: cena.id }).catch(() => {}) }} className="rounded-lg p-2 hover:bg-(--s-34294f)"><Trash2 size={18} /></button>}
           </>}
@@ -430,9 +443,9 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
             void acao({ acao: 'area_criar', cenaId: cena.id, area: { ...a, id: crypto.randomUUID() } }).then(() => toast.success(`Área no mapa: ${n} alvo${n === 1 ? '' : 's'} dentro.`, { description: 'Para tirar, use a lista “Áreas no mapa”.' })).catch(() => {}) }}
           onPreviaArea={a => aoVivo('area', a ? 90 : 0, 'area', { id: e.eu, quem: nomes[e.eu] ?? '', a }, !a)}
           reguas={Object.values(reguas)} onRegua={g => aoVivo('regua', g ? 90 : 0, 'regua', { id: e.eu, nome: nomes[e.eu] ?? '', r: g }, !g)}
-          paredes={paredesCena} tipoParede={tipoParede} comoJogador={comoJogador}
+          paredes={paredesCena} tipoParede={tipoParede} formaParede={formaParede} gradeParede={gradeParede} comoJogador={comoJogador}
           visaoDinamica={!!cena.visao_dinamica} visaoAlcance={cena.visao_alcance ?? 0}
-          onCriarParede={w => void acao({ acao: 'parede_criar', cenaId: cena.id, parede: w }).catch(() => {})}
+          onCriarParedes={ws => void acao({ acao: 'parede_criar', cenaId: cena.id, paredes: ws }).catch(() => {})}
           onApagarParede={id => void acao({ acao: 'parede_excluir', cenaId: cena.id, id }).catch(() => {})}
           onPorta={espectador ? undefined : id => { const w = paredesCena.find(x => x.id === id); void acao({ acao: 'porta', cenaId: cena.id, id }).then(() => toast(w?.aberta ? '🚪 Porta fechada.' : '🚪 Porta aberta.')).catch(() => {}) }}
           onArrastando={(id, x, y) => aoVivo('token:' + id, 60, 'token', { id, x, y })}

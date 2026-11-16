@@ -192,3 +192,11 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 @keyframes prg-brilha { 0%, 100% { opacity: .25; transform: scale(.7) rotate(0deg); } 50% { opacity: 1; transform: scale(1.15) rotate(45deg); } }
 .prg-brilha { animation: prg-brilha 1.8s ease-in-out infinite; color: #fff7d6; text-shadow: 0 0 6px #fde68a; }
 @media (prefers-reduced-motion: reduce) { .prg-brilha { animation: none; } }
+
+/* Ficha de MÖRK BORG (v0.35.1): preto, amarelo e letras grossas, com contraste alto para ler no celular. */
+.ficha-sombria {
+  --s-171325: #050505; --s-151123: #000; --s-201a32: #0a0a0a; --s-2b2140: #1a1a00; --s-34294f: #222200;
+  --a-5e4b78: #6b6200; --a-55456e: #ffe600; --a-a998bd: #d6d6d6; --a-c4b6d4: #f2f2f2; --a-d3adf0: #ffe600; --a-cfc0df: #f2f2f2;
+}
+.ficha-sombria h2, .ficha-sombria h3 { text-transform: uppercase; letter-spacing: 0.14em; font-weight: 900; }
+.ficha-sombria section { border-width: 2px; }

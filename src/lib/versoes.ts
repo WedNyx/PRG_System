@@ -27,6 +27,19 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.35.1', data: '2026-11-16',
+    titulo: 'Cada sistema com a sua cara',
+    itens: [
+      'As fichas ganharam cores e letras inspiradas em cada jogo (sem logos nem artes oficiais).',
+      'D&D e Faroeste: modificador grande no meio do atributo e o valor numa “moeda” embaixo; círculos de proficiência nas perícias.',
+      'Pathfinder 2e: atributos em blocos, graus de proficiência (D, T, E, M, L) e talentos por categoria (ancestralidade, classe, perícia e gerais).',
+      'Fate: pirâmide de perícias — cada degrau mostra as perícias daquele nível, e um toque rola.',
+      'Blades in the Dark: ações agrupadas em Perspicácia, Proeza e Determinação, com bolinhas para marcar os pontos.',
+      'Ordem Paranormal: NEX, classe, trilha, origem, PE e Sanidade em destaque no começo da ficha, e rituais destacados.',
+      'Tormenta20: atributos em blocos e perícias com marca de treinado. MÖRK BORG: ficha preta e amarela, com letras grossas e fácil de ler no celular.',
+    ],
+  },
+  {
     versao: '0.35.0', data: '2026-11-16',
     titulo: 'Mesa: visão dos personagens e luz que para nas paredes',
     itens: [

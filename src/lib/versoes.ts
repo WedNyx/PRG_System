@@ -27,6 +27,29 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.35.6', data: '2026-11-16',
+    titulo: 'Criador de sistemas mais livre e o Projeto N.O.V.A',
+    itens: [
+      'Novo sistema autoral: Projeto N.O.V.A, do godgamer (investigação e combate, atributos em graus de dado). Só ele edita.',
+      'Graus de dado: no construtor, os atributos e as perícias podem valer um dado (d4, d6, d8…) em vez de um número. O teste rola o dado do atributo e o da perícia juntos.',
+      'Perícias criadas pelo jogador: o autor pode deixar cada um criar as suas (vivências, ofícios…) com o nome que quiser.',
+      'Regras em capítulos: o autor escreve as regras do sistema, e elas aparecem na ficha, em Anotações e regras.',
+      'Tabelas para rolar: efeitos, traumas, encontros… a ficha rola, mostra a linha e pode guardar o resultado num campo.',
+      'Explicações em atributos, perícias, campos e recursos, e nomes próprios para as partes da ficha.',
+      'A prévia do construtor mostra a ficha como ela é de verdade (modelo manual).',
+    ],
+  },
+  {
+    versao: '0.35.5', data: '2026-11-16',
+    titulo: 'Guia da plataforma novo, com fotos atuais',
+    itens: [
+      'O Guia começa por “Por onde começar”: um caminho curto para quem vai jogar, para quem vai mestrar e para quem vai criar um sistema.',
+      'Dúvidas comuns respondidas logo no começo (não consigo entrar na mesa, meu token não anda, a ficha não soma, o mapa está escuro…).',
+      'O resto do guia está dividido em capítulos (primeiros passos, ficha, campanha, mesa, ferramentas do mestre, sistemas e conta), com fotos novas de tudo, incluindo ações rápidas, arsenal, paredes e escuridão.',
+      'Janelas como “Editar perfil” não passam mais da tela do celular, e os títulos delas não ficam mais escuros em celulares no modo claro.',
+    ],
+  },
+  {
     versao: '0.35.4', data: '2026-11-16',
     titulo: 'Paredes que travam de verdade e desenhadas do jeito que você quiser',
     itens: [

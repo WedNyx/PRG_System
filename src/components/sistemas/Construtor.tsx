@@ -5,14 +5,16 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, Eye, Globe, Loader2, Lock, Plus, Save, Trash2 } from 'lucide-react'
-import FichaGenerica from '@/components/fichas/FichaGenerica'
+import FichaManual from '@/components/fichas/FichaManual'
 import { CapaDoSistema } from './CapaDoSistema'
 import { api } from '@/lib/nuvem/cliente'
 import { SISTEMAS } from '@/lib/sistemas/catalogo'
-import { fichaVazia } from '@/lib/sistemas/calculo'
+import { fichaVazia, tornarManual } from '@/lib/sistemas/calculo'
 import { idUnico, sistemaEmBranco, slug, validarSistema } from '@/lib/sistemas/autoral'
 import { esquecerSistema } from '@/lib/sistemas/cliente'
-import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
+import type { CapituloRegra, DadosFicha, GrausDef, SecaoFicha, Sistema, TabelaDef } from '@/lib/sistemas/tipos'
+import { GRAUS_PADRAO, opcoesDeGrau, rotuloGrau } from '@/lib/sistemas/graus'
+import { EditorRegras, EditorTabelas, NOMES_SECOES } from './EditorExtras'
 import EditorRolagem from './EditorRolagem'
 import EditorOpcoes, { type OpcaoDef } from './EditorOpcoes'
 import EditorProgressao, { type DefProgressao } from './EditorProgressao'
@@ -22,11 +24,12 @@ import { lerArvore } from '@/lib/sistemas/arvore'
 /* Linhas editáveis: `auto` = o nome na fórmula ainda acompanha o nome (até salvar pela 1ª vez). */
 type Linha = Record<string, unknown> & { id: string; nome: string; auto?: boolean }
 type Def = {
-  nome: string; resumo: string; capa?: string; dados: string; rolagem: 'd20' | 'd100' | 'nenhuma' | 'personalizada' | 'parada'; regraRolagem: { nome: string; formula: string }; parada: { lados: number; leitura?: 'blades' }; resistencias: string[]; creditos?: string
+  nome: string; resumo: string; capa?: string; dados: string; rolagem: 'd20' | 'd100' | 'nenhuma' | 'personalizada' | 'parada' | 'graus'; graus: GrausDef; regraRolagem: { nome: string; formula: string }; parada: { lados: number; leitura?: 'blades' }; resistencias: string[]; creditos?: string
   campos: Linha[]; atributos: Linha[]; tituloAtributos: string; formulaModificador: string; derivados: Linha[]
-  pericias: { modo: 'treino' | 'valor' | 'nenhuma'; titulo?: string; total: string; treinos: Linha[]; lista: Linha[] }
+  pericias: { modo: 'treino' | 'valor' | 'nenhuma'; titulo?: string; livres?: boolean; total: string; treinos: Linha[]; lista: Linha[] }
   recursos: Linha[]; listas: Linha[]; limites: { nome: string; uso: string; max: string }[]; observacoes: string; carga: { formula: string; unidade: string }
   arvore: { pontos: number; nos: unknown[] }; progressao: DefProgressao | null
+  tabelas: TabelaDef[]; regras: CapituloRegra[]; nomesSecoes: Partial<Record<SecaoFicha, string>>
 }
 const ID_TESTE = 'autoral-00000000000000000000000000000000'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-sm text-white'
@@ -47,10 +50,12 @@ function paraDef(s: Partial<Sistema> & Record<string, unknown>, auto = false): D
     rolagem: (s.rolagem as Def['rolagem']) ?? (String(s.dados ?? '').startsWith('d100') || s.id === 'brp' ? 'd100' : String(s.dados ?? 'd20').startsWith('d20') ? 'd20' : 'nenhuma'),
     regraRolagem: (s.regraRolagem as Def['regraRolagem']) ?? { nome: 'Teste', formula: '1d20+VALOR' },
     parada: (s.parada as Def['parada']) ?? { lados: 20 },
+    graus: (s.graus as GrausDef) ?? GRAUS_PADRAO,
+    tabelas: (s.tabelas as TabelaDef[]) ?? [], regras: (s.regras as CapituloRegra[]) ?? [], nomesSecoes: (s.nomesSecoes as Def['nomesSecoes']) ?? {},
     resistencias: Array.isArray(s.resistencias) ? (s.resistencias as string[]) : [],
     creditos: typeof s.creditos === 'string' ? s.creditos : undefined,
     campos: l(s.campos), atributos: l(s.atributos), tituloAtributos: typeof s.tituloAtributos === 'string' ? s.tituloAtributos : '', formulaModificador: String(s.formulaModificador ?? ''), derivados: l(s.derivados),
-    pericias: p ? { modo: p.modo, titulo: p.titulo, total: p.total, treinos: l(p.treinos), lista: l(p.lista) } : { modo: 'nenhuma', total: 'MOD + TREINO', treinos: [], lista: [] },
+    pericias: p ? { modo: p.modo, titulo: p.titulo, livres: !!p.livres, total: p.total, treinos: l(p.treinos), lista: l(p.lista) } : { modo: 'nenhuma', total: 'MOD + TREINO', treinos: [], lista: [] },
     recursos: l(s.recursos), listas: l(s.listas), limites: (s.limites as Def['limites']) ?? [], observacoes: ((s.observacoes as string[]) ?? []).join('\n'),
     carga: { formula: (s.carga as Sistema['carga'])?.formula ?? '', unidade: (s.carga as Sistema['carga'])?.unidade ?? 'kg' },
     arvore: { pontos: Number((s.arvore as Sistema['arvore'])?.pontos) || 0, nos: (s.arvore as Sistema['arvore'])?.nos ?? [] },
@@ -62,11 +67,14 @@ function paraEnvio(d: Def) {
   return {
     nome: d.nome, resumo: d.resumo, ...(d.capa ? { capa: d.capa } : {}), dados: d.dados, rolagem: d.rolagem, ...(d.rolagem === 'personalizada' ? { regraRolagem: d.regraRolagem } : {}), ...(d.rolagem === 'parada' ? { parada: d.parada } : {}), ...(d.resistencias.length ? { resistencias: d.resistencias } : {}), creditos: d.creditos,
     campos: tira(d.campos), atributos: tira(d.atributos), ...(d.tituloAtributos.trim() ? { tituloAtributos: d.tituloAtributos.trim() } : {}), formulaModificador: d.formulaModificador, derivados: tira(d.derivados),
-    pericias: d.pericias.modo === 'nenhuma' ? undefined : { modo: d.pericias.modo, titulo: d.pericias.titulo, total: d.pericias.total, treinos: tira(d.pericias.treinos), lista: tira(d.pericias.lista) },
+    pericias: d.pericias.modo === 'nenhuma' ? undefined : { modo: d.pericias.modo, titulo: d.pericias.titulo, ...(d.pericias.livres ? { livres: true } : {}), total: d.pericias.total, treinos: tira(d.pericias.treinos), lista: tira(d.pericias.lista) },
     recursos: tira(d.recursos), listas: tira(d.listas), limites: d.limites, observacoes: d.observacoes.split('\n').map(x => x.trim()).filter(Boolean),
     carga: d.carga.formula ? d.carga : undefined,
     ...(d.arvore.nos.length ? { arvore: d.arvore } : {}),
     ...(d.progressao ? { progressoes: d.progressao } : {}),
+    ...(d.rolagem === 'graus' ? { graus: d.graus } : {}),
+    ...(d.tabelas.length ? { tabelas: d.tabelas } : {}), ...(d.regras.length ? { regras: d.regras } : {}),
+    ...(Object.values(d.nomesSecoes).some(v => v?.trim()) ? { nomesSecoes: d.nomesSecoes } : {}),
   }
 }
 
@@ -177,14 +185,27 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
           <label className="block">Descrição curta<textarea rows={2} value={def.resumo} maxLength={400} onChange={e => mudar(d => ({ ...d, resumo: e.target.value }))} className={input + ' mt-1'} /></label>
           <CapaDoSistema nome={def.nome} capa={def.capa} mudar={capa => mudar(d => ({ ...d, capa }))} />
           <div className="grid gap-2 sm:grid-cols-2">
-            <label className="block">Como se rola<select value={def.rolagem} onChange={e => mudar(d => ({ ...d, rolagem: e.target.value as Def['rolagem'] }))} className={input + ' mt-1'}>
+            <label className="block">Como se rola<select value={def.rolagem} onChange={e => mudar(d => paraGraus({ ...d, rolagem: e.target.value as Def['rolagem'] }))} className={input + ' mt-1'}>
               <option value="d20">d20 + bônus (toque na perícia para rolar)</option><option value="d100">d100 abaixo do valor (porcentagem)</option><option value="personalizada">🎲 Rolagem personalizada (monte a sua)</option>
-              <option value="parada">🎲 Parada de dados (um dado por ponto, fica com o maior)</option><option value="nenhuma">Sem rolagem automática</option></select></label>
+              <option value="parada">🎲 Parada de dados (um dado por ponto, fica com o maior)</option><option value="graus">🎲 Graus de dado (atributo vale d4, d6, d8…)</option><option value="nenhuma">Sem rolagem automática</option></select></label>
             <label className="block">Dados (texto que aparece no cartão)<input value={def.dados} maxLength={40} onChange={e => mudar(d => ({ ...d, dados: e.target.value }))} className={input + ' mt-1'} placeholder="Ex.: d20, 2d6, d100" /></label>
           </div>
           {def.rolagem === 'personalizada' && <EditorRolagem regra={def.regraRolagem} mudar={r => mudar(d => ({ ...d, regraRolagem: r }))} />}
           {def.rolagem === 'parada' && <label className="block">Lados do dado da parada (ex.: 20 como Ordem Paranormal, 6 como Blades)
             <input type="number" min={2} max={100} value={def.parada.lados} onChange={e => mudar(d => ({ ...d, parada: { ...d.parada, lados: Number(e.target.value) || 20 } }))} className={input + ' mt-1 max-w-[8rem]'} /></label>}
+          {def.rolagem === 'graus' && <div className="space-y-2 rounded-xl border border-(--a-6d5690) bg-(--s-171325) p-3 text-sm">
+            <p className="text-xs text-(--a-c4b6d4)">Cada atributo e cada perícia vale um dado. No teste, rola o dado do atributo e, se tiver, o da perícia, e soma os dois.</p>
+            <label className="block text-xs">Dados que existem (lados, separados por vírgula)
+              <input defaultValue={def.graus.lados.join(', ')} onBlur={e => { const lados = [...new Set(e.target.value.split(/[^0-9]+/).map(Number).filter(n => n >= 2 && n <= 100))].sort((a, b) => a - b); if (lados.length) mudar(d => ({ ...d, graus: { ...d.graus, lados } })) }}
+                className={input + ' mt-1 font-mono'} placeholder="4, 6, 8, 10, 12" /></label>
+            <label className="flex flex-wrap items-center gap-2 text-xs"><input type="checkbox" checked={!!def.graus.zero} onChange={e => mudar(d => ({ ...d, graus: { ...d.graus, zero: e.target.checked ? d.graus.lados[0] : undefined } }))} /> Existe o valor 0 (o personagem não tem), e com 0 rola um
+              <select aria-label="Dado do zero" disabled={!def.graus.zero} value={def.graus.zero ?? def.graus.lados[0]} onChange={e => mudar(d => ({ ...d, graus: { ...d.graus, zero: Number(e.target.value) } }))} className={pequeno}>{def.graus.lados.map(l => <option key={l} value={l}>d{l}</option>)}</select></label>
+            <label className="flex flex-wrap items-center gap-2 text-xs">Grau máximo das perícias
+              <select aria-label="Grau máximo das perícias" value={def.graus.maxPericia ?? ''} onChange={e => mudar(d => ({ ...d, graus: { ...d.graus, maxPericia: Number(e.target.value) || undefined } }))} className={pequeno}><option value="">Sem limite</option>{def.graus.lados.map(l => <option key={l} value={l}>d{l}</option>)}</select></label>
+          </div>}
+          <details className="rounded-xl bg-(--s-171325) p-3 text-sm"><summary className="cursor-pointer font-semibold">🏷️ Nomes das partes da ficha (opcional)</summary>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">{NOMES_SECOES.map(([id, padrao]) => <label key={id} className="block text-xs">{padrao}
+              <input value={def.nomesSecoes[id] ?? ''} maxLength={40} onChange={e => mudar(d => ({ ...d, nomesSecoes: { ...d.nomesSecoes, [id]: e.target.value } }))} className={input + ' mt-1'} placeholder={padrao} /></label>)}</div></details>
           {def.creditos && <p className="rounded-lg bg-(--s-171325) p-2 text-[11px] text-(--a-a998bd)">Créditos do modelo usado (licença aberta): {def.creditos}</p>}
         </SecaoBase>
 
@@ -196,6 +217,7 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
                 <option value="texto">Texto</option><option value="numero">Número</option><option value="area">Texto longo</option><option value="escolha">Lista de opções</option></select>
               <Remover rotulo="Remover campo" onClick={() => mudar(d => ({ ...d, campos: d.campos.filter((_, k) => k !== i) }))} />
             </div>
+            <Dica valor={c.dica} mudar={v => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, dica: v } : x) }))} />
             {c.tipo === 'numero' && <div className="flex items-center gap-2"><label className="text-xs">Começa em <input type="number" value={Number(c.padrao ?? 0)} onChange={e => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, padrao: Number(e.target.value) } : x) }))} className={pequeno + ' w-20'} /></label><Var id={c.id} /></div>}
             {c.tipo === 'escolha' && <EditorOpcoes opcoes={(c.opcoes as OpcaoDef[]) ?? []} alvos={alvosDoDef(def)} tabelas={def.progressao?.classes.map(t => ({ id: t.id, nome: t.nome })) ?? []} mudar={o => mudar(d => ({ ...d, campos: d.campos.map((x, k) => k === i ? { ...x, opcoes: o } : x) }))} />}
             {c.tipo === 'escolha' && ((c.opcoes as OpcaoDef[]) ?? []).some(o => o.progressao) && <label className="flex flex-wrap items-center gap-2 text-xs">O nível desta escolha fica em
@@ -216,13 +238,16 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
               <Remover rotulo="Remover atributo" onClick={() => mudar(d => ({ ...d, atributos: d.atributos.filter((_, k) => k !== i) }))} />
             </div>
             <div className="flex flex-wrap gap-2 text-xs">{(['min', 'max', 'padrao'] as const).map(k => <label key={k} className="flex items-center gap-1">{k === 'min' ? 'Mín.' : k === 'max' ? 'Máx.' : 'Começa'}
-              <input type="number" value={Number(a[k] ?? 0)} onChange={e => mudar(d => ({ ...d, atributos: d.atributos.map((x, j) => j === i ? { ...x, [k]: Number(e.target.value) } : x) }))} className={pequeno + ' w-16'} /></label>)}</div>
+              {def.rolagem === 'graus'
+                ? <select value={Number(a[k] ?? 0)} onChange={e => mudar(d => ({ ...d, atributos: d.atributos.map((x, j) => j === i ? { ...x, [k]: Number(e.target.value) } : x) }))} className={pequeno}>{opcoesDeGrau(def.graus).map(o => <option key={o} value={o}>{rotuloGrau(o, def.graus)}</option>)}</select>
+                : <input type="number" value={Number(a[k] ?? 0)} onChange={e => mudar(d => ({ ...d, atributos: d.atributos.map((x, j) => j === i ? { ...x, [k]: Number(e.target.value) } : x) }))} className={pequeno + ' w-16'} />}</label>)}</div>
+            <Dica valor={a.dica} mudar={v => mudar(d => ({ ...d, atributos: d.atributos.map((x, k) => k === i ? { ...x, dica: v } : x) }))} />
           </div>)}
           <button type="button" className={botao} onClick={() => mudar(d => ({ ...d, atributos: [...d.atributos, { ...novo(d.atributos, { min: 0, max: 5, padrao: 1 }, true), id: idUnico('ATR', new Set(d.atributos.map(x => x.id))) }] }))}><Plus size={14} /> Atributo</button>
-          <label className="block">Modificador do atributo
+          {def.rolagem !== 'graus' && <><label className="block">Modificador do atributo
             <select value={MODIFICADORES.some(m => m.id === def.formulaModificador) ? def.formulaModificador : '__outro'} onChange={e => mudar(d => ({ ...d, formulaModificador: e.target.value === '__outro' ? 'X' : e.target.value }))} className={input + ' mt-1'}>
               {MODIFICADORES.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}<option value="__outro">Outra fórmula (use X para o valor)</option></select></label>
-          {!MODIFICADORES.some(m => m.id === def.formulaModificador) && formula(def.formulaModificador, v => mudar(d => ({ ...d, formulaModificador: v })), ' (X = valor)')}
+          {!MODIFICADORES.some(m => m.id === def.formulaModificador) && formula(def.formulaModificador, v => mudar(d => ({ ...d, formulaModificador: v })), ' (X = valor)')}</>}
         </SecaoBase>
 
         <SecaoBase id="derivados" titulo="🧮 Valores calculados" sub="Vida, defesa, iniciativa… a ficha calcula sozinha" aberta={aberta === 'derivados'} alternar={() => setAberta(a => a === 'derivados' ? '' : 'derivados')}>
@@ -240,9 +265,11 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
         <SecaoBase id="pericias" titulo={'🎯 ' + (def.pericias.titulo?.trim() || 'Perícias')} sub="Lista, atributo de cada uma e graus de treino — e o nome desta parte no seu sistema" aberta={aberta === 'pericias'} alternar={() => setAberta(a => a === 'pericias' ? '' : 'pericias')}>
           <label className="block text-xs">Como o seu sistema chama esta parte? (opcional)
             <input value={def.pericias.titulo ?? ''} maxLength={40} onChange={e => mudar(d => ({ ...d, pericias: { ...d.pericias, titulo: e.target.value } }))} className={input + ' mt-1'} placeholder="Perícias (ex.: Talentos, Ofícios, Conhecimentos)" /></label>
-          <label className="block">Tipo<select value={def.pericias.modo} onChange={e => mudar(d => ({ ...d, pericias: { ...d.pericias, modo: e.target.value as Def['pericias']['modo'], total: e.target.value === 'valor' ? 'VALOR' : d.pericias.total || 'MOD + TREINO' } }))} className={input + ' mt-1'}>
-            <option value="treino">Por graus (destreinado, treinado…)</option><option value="valor">Por número (pontos ou porcentagem)</option><option value="nenhuma">Sem perícias</option></select></label>
-          {def.pericias.modo === 'treino' && <div className="space-y-2 rounded-xl bg-(--s-171325) p-2">
+          <label className="flex items-start gap-2 rounded-lg bg-(--s-171325) p-2 text-xs"><input type="checkbox" checked={!!def.pericias.livres} onChange={e => mudar(d => ({ ...d, pericias: { ...d.pericias, livres: e.target.checked, modo: d.pericias.modo === 'nenhuma' ? 'valor' : d.pericias.modo } }))} className="mt-0.5" />
+            <span>O jogador cria as dele <span className="block text-(--a-a998bd)">Na ficha aparece “Criar”: cada um põe as perícias (vivências, ofícios…) com o nome que quiser.</span></span></label>
+          {def.rolagem === 'graus' ? <p className="text-xs text-(--a-c4b6d4)">Com graus de dado, cada perícia vale um dado (escolhido na ficha).</p> : <label className="block">Tipo<select value={def.pericias.modo} onChange={e => mudar(d => ({ ...d, pericias: { ...d.pericias, modo: e.target.value as Def['pericias']['modo'], total: e.target.value === 'valor' ? 'VALOR' : d.pericias.total || 'MOD + TREINO' } }))} className={input + ' mt-1'}>
+            <option value="treino">Por graus (destreinado, treinado…)</option><option value="valor">Por número (pontos ou porcentagem)</option><option value="nenhuma">Sem perícias</option></select></label>}
+          {def.rolagem !== 'graus' && def.pericias.modo === 'treino' && <div className="space-y-2 rounded-xl bg-(--s-171325) p-2">
             <p className="text-xs font-semibold text-(--a-d3adf0)">Graus de treino (bônus)</p>
             {def.pericias.treinos.map((t, i) => <div key={i} className="flex gap-2">
               <input aria-label="Nome do grau" value={t.nome} onChange={e => mudar(d => ({ ...d, pericias: { ...d.pericias, treinos: renomear(d.pericias.treinos, i, e.target.value) } }))} className={input} placeholder="Treinado" />
@@ -251,15 +278,16 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
             {def.pericias.treinos.length < 8 && <button type="button" className={botao} onClick={() => mudar(d => ({ ...d, pericias: { ...d.pericias, treinos: [...d.pericias.treinos, novo(d.pericias.treinos, { formula: '0' })] } }))}><Plus size={14} /> Grau</button>}
           </div>}
           {def.pericias.modo !== 'nenhuma' && <>
-            <label className="block text-xs">Total da perícia
+            {def.rolagem !== 'graus' && <label className="block text-xs">Total da perícia
               <select value={['MOD + TREINO', 'ATR + TREINO', 'TREINO', 'VALOR', 'MOD + VALOR'].includes(def.pericias.total) ? def.pericias.total : '__'} onChange={e => mudar(d => ({ ...d, pericias: { ...d.pericias, total: e.target.value === '__' ? d.pericias.total : e.target.value } }))} className={input + ' mt-1'}>
                 {def.pericias.modo === 'treino' ? <><option value="MOD + TREINO">Modificador do atributo + grau</option><option value="ATR + TREINO">Valor do atributo + grau</option><option value="TREINO">Só o grau</option></>
                   : <><option value="VALOR">Só o número digitado</option><option value="MOD + VALOR">Modificador do atributo + número</option></>}
-                <option value="__">Outra fórmula…</option></select></label>
+                <option value="__">Outra fórmula…</option></select></label>}
             <div className="space-y-2">{def.pericias.lista.map((p, i) => <div key={i} className="flex flex-wrap gap-2 rounded-xl bg-(--s-171325) p-2">
               <input aria-label="Nome da perícia" value={p.nome} onChange={e => mudar(d => ({ ...d, pericias: { ...d.pericias, lista: renomear(d.pericias.lista, i, e.target.value) } }))} className={input + ' min-w-0 flex-1'} placeholder="Ex.: Furtividade" />
               <select aria-label="Atributo" value={String(p.atributo ?? '')} onChange={e => mudar(d => ({ ...d, pericias: { ...d.pericias, lista: d.pericias.lista.map((y, k) => k === i ? { ...y, atributo: e.target.value } : y) } }))} className={pequeno}>
                 <option value="">Sem atributo</option>{def.atributos.map(a => <option key={a.id} value={a.id}>{a.id}</option>)}</select>
+              <input aria-label="Explicação da perícia" value={String(p.dica ?? '')} maxLength={300} onChange={e => mudar(d => ({ ...d, pericias: { ...d.pericias, lista: d.pericias.lista.map((y, k) => k === i ? { ...y, dica: e.target.value } : y) } }))} className={input + ' basis-full'} placeholder="Explicação (opcional)" />
               <input aria-label="Grupo" value={String(p.grupo ?? '')} onChange={e => mudar(d => ({ ...d, pericias: { ...d.pericias, lista: d.pericias.lista.map((y, k) => k === i ? { ...y, grupo: e.target.value } : y) } }))} className={pequeno + ' w-32'} placeholder="Grupo (opcional)" />
               <Remover rotulo="Remover perícia" onClick={() => mudar(d => ({ ...d, pericias: { ...d.pericias, lista: d.pericias.lista.filter((_, k) => k !== i) } }))} />
             </div>)}</div>
@@ -272,6 +300,7 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
             <div className="flex gap-2"><input aria-label="Nome do recurso" value={r.nome} onChange={e => mudar(d => ({ ...d, recursos: renomear(d.recursos, i, e.target.value) }))} className={input} placeholder="Ex.: Mana" />
               <Remover rotulo="Remover recurso" onClick={() => mudar(d => ({ ...d, recursos: d.recursos.filter((_, k) => k !== i) }))} /></div>
             {formula(String(r.formula ?? ''), v => mudar(d => ({ ...d, recursos: d.recursos.map((y, k) => k === i ? { ...y, formula: v } : y) })), ' — vazio = jogador digita')}
+            <Dica valor={r.dica} mudar={v => mudar(d => ({ ...d, recursos: d.recursos.map((y, k) => k === i ? { ...y, dica: v } : y) }))} rotulo="Como achar o máximo (aparece na ficha)" />
           </div>)}
           <button type="button" className={botao} onClick={() => mudar(d => ({ ...d, recursos: [...d.recursos, novo(d.recursos, {})] }))}><Plus size={14} /> Recurso</button>
         </SecaoBase>
@@ -300,6 +329,13 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
           </div>
           <label className="block text-xs">Lembretes de regras (um por linha; aparecem no fim da ficha)
             <textarea rows={4} value={def.observacoes} onChange={e => mudar(d => ({ ...d, observacoes: e.target.value }))} className={input + ' mt-1'} placeholder="Ex.: 20 natural é crítico." /></label>
+        </SecaoBase>
+
+        <SecaoBase id="livro" titulo="📚 Regras do sistema" sub="Escreva as regras em capítulos: aparecem na ficha, em Anotações e regras" aberta={aberta === 'livro'} alternar={() => setAberta(a => a === 'livro' ? '' : 'livro')}>
+          <EditorRegras regras={def.regras} mudar={regras => mudar(d => ({ ...d, regras }))} />
+        </SecaoBase>
+        <SecaoBase id="tabelas" titulo="🎲 Tabelas para rolar" sub="Efeitos, encontros, traumas… a ficha rola e mostra a linha" aberta={aberta === 'tabelas'} alternar={() => setAberta(a => a === 'tabelas' ? '' : 'tabelas')}>
+          <EditorTabelas tabelas={def.tabelas} campos={def.campos.filter(c => (c.tipo === 'texto' || c.tipo === 'area') && c.nome).map(c => ({ id: c.id, nome: c.nome }))} mudar={tabelas => mudar(d => ({ ...d, tabelas }))} />
         </SecaoBase>
 
         <SecaoBase id="progressao" titulo="📈 Progressão por nível" sub="O que o personagem ganha a cada nível" aberta={aberta === 'progressao'} alternar={() => setAberta(a => a === 'progressao' ? '' : 'progressao')}>
@@ -404,11 +440,11 @@ function Previa({ def, validacao }: { def: Def; validacao: ReturnType<typeof val
   const [dados, setDados] = useState<DadosFicha | null>(null)
   const chave = sistema ? JSON.stringify([sistema.campos.map(c => c.id), sistema.atributos.map(a => a.id), sistema.pericias?.lista.map(p => p.id), sistema.recursos.map(r => r.id)]) : ''
   const [chaveDados, setChaveDados] = useState('')
-  if (sistema && chave !== chaveDados) { setChaveDados(chave); setDados(fichaVazia(sistema, 'Personagem de teste')) }
+  if (sistema && chave !== chaveDados) { setChaveDados(chave); setDados(tornarManual(sistema, fichaVazia(sistema, 'Personagem de teste'))) }
   if (!sistema || !dados) return <p className="rounded-xl bg-[#3a2a14]/95 p-4 text-sm text-[#f6dca8]">Corrija os problemas acima para ver a prévia de “{def.nome || 'seu sistema'}”.</p>
   return <div className="rounded-2xl border border-(--a-8b6cba) bg-(--s-100d1c)/90 p-3">
     <p className="mb-3 flex items-center gap-2 text-xs text-(--a-d3adf0)">👀 Prévia: mexa à vontade, nada aqui é salvo.</p>
-    <FichaGenerica sistema={sistema} dados={dados} onChange={setDados} />
+    <FichaManual sistema={sistema} dados={dados} onChange={setDados} />
   </div>
 }
 
@@ -417,7 +453,7 @@ function EscolherModelo({ escolher }: { escolher: (d: Def) => void }) {
   return <Tela>
     <div className="w-full max-w-lg rounded-3xl border border-(--a-655079) bg-(--s-1d1733)/95 p-6 text-left shadow-xl">
       <h1 className="text-2xl font-bold">✍️ Criar sistema autoral</h1>
-      <p className="mt-2 text-sm text-(--a-cfc0df)">Monte atributos, perícias, fórmulas e recursos. A ficha calcula tudo sozinha e você vê o resultado na hora.</p>
+      <p className="mt-2 text-sm text-(--a-cfc0df)">Monte do seu jeito: atributos (número ou grau de dado), perícias (fixas ou criadas pelo jogador), recursos, tabelas para rolar e as regras em capítulos. Veja a ficha na hora, em “Prévia”.</p>
       <button type="button" onClick={() => escolher(paraDef(sistemaEmBranco() as Partial<Sistema> & Record<string, unknown>, true))} className="mt-5 w-full rounded-xl bg-(--a-7654bb) p-3 text-left font-semibold hover:bg-(--a-8a67ce)">
         🌱 Começar com um exemplo simples<span className="block text-xs font-normal text-(--a-e4d3ff)">3 atributos, vida, defesa e algumas perícias para você mudar.</span></button>
       <label className="mt-4 block text-sm">Ou copiar a estrutura de um sistema da plataforma
@@ -427,4 +463,17 @@ function EscolherModelo({ escolher }: { escolher: (d: Def) => void }) {
       <Link href="/central?secao=sistemas" className="mt-5 inline-block text-sm text-(--a-c7a8ff) underline">Voltar</Link>
     </div>
   </Tela>
+}
+
+/** Graus de dado: perícias passam a ser “por número” e os atributos ganham graus que existem. */
+function paraGraus(d: Def): Def {
+  if (d.rolagem !== 'graus') return d
+  const ops = opcoesDeGrau(d.graus), perto = (v: unknown) => ops.reduce((m, o) => Math.abs(o - Number(v)) < Math.abs(m - Number(v)) ? o : m, ops[0])
+  return { ...d, pericias: d.pericias.modo === 'treino' ? { ...d.pericias, modo: 'valor', total: 'VALOR' } : d.pericias,
+    atributos: d.atributos.map(a => ({ ...a, min: perto(a.min ?? 0), max: perto(a.max ?? ops.at(-1)), padrao: perto(a.padrao ?? 6) })) }
+}
+/** Explicação curta (atributo, campo, recurso…) que aparece na ficha. */
+function Dica({ valor, mudar, rotulo = 'Explicação (aparece na ficha)' }: { valor: unknown; mudar: (v: string) => void; rotulo?: string }) {
+  return <label className="block text-[11px] text-(--a-c4b6d4)">{rotulo}
+    <textarea rows={1} value={typeof valor === 'string' ? valor : ''} maxLength={400} onChange={e => mudar(e.target.value)} className={input + ' mt-0.5 text-xs'} placeholder="Opcional" /></label>
 }

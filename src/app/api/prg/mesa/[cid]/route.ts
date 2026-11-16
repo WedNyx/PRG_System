@@ -669,7 +669,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
         const rec = fa.r.recursos.find(r => r.id === opcao.recurso)
         if (!(await mudarFicha(fa.f.id, d => gastarCusto(d, opcao.recurso!, opcao.custo!)))) throw new ErroApi(400, `Sem ${rec?.nome ?? 'recurso'} suficiente (precisa de ${opcao.custo}).`)
       }
-      const regra = regraDeAtaque(fa?.s, bonus, teste?.dados, teste?.assim)
+      const regra = regraDeAtaque(fa?.s, bonus, teste?.dados, teste?.assim, teste?.graus)
       const rolagem = rolarExpressao(regra.expressao)!
       // Assimilação: mantém o melhor dado; o que vale são os Sucessos dele.
       const assim = regra.comparar === 'assimilacao' ? resultadoAssim(regra.expressao, rolagem.resultados, 1) : null

@@ -25,8 +25,9 @@ export default function ContinuarJornada({ aventureiroId }: { aventureiroId: str
   const papel = (p: string) => p === 'mestre' ? '👑 Mestre' : p === 'comestre' ? '🎩 Co-mestre' : p === 'espectador' ? '👁️ Espectador' : '⚔️ Jogador'
   return <section className="mt-6" aria-label="Continuar">
     <h2 className="mb-3 text-lg font-bold">↩️ Continuar de onde parou</h2>
-    <div className="grid gap-3 md:grid-cols-2">
-      {!!camps?.length && <div className="space-y-2">{camps.map(c => <div key={c.id} className="flex items-center gap-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32)/90 p-2.5">
+    {/* grid-cols-1 (minmax(0,1fr)): sem isso, o nome comprido da campanha alargava a página no celular (v0.35.5). */}
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      {!!camps?.length && <div className="min-w-0 space-y-2">{camps.map(c => <div key={c.id} className="flex items-center gap-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32)/90 p-2.5">
         <span className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl border border-(--a-55456e)">{c.capa_url
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={c.capa_url} alt="" className="h-full w-full object-cover" /> : <ImagemCapa id={c.sistema} nome={c.nome} />}</span>
@@ -36,7 +37,7 @@ export default function ContinuarJornada({ aventureiroId }: { aventureiroId: str
         </div>
         <Link href={'/mesa?campanha=' + c.id} className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-(--a-7652ac) px-3 py-2 text-xs font-semibold hover:bg-(--a-8b68c4)">🗺️ Mesa</Link>
       </div>)}</div>}
-      {!!fichas?.length && <div className="space-y-2">{fichas.map(f => <Link key={f.id} href={linkFicha(f)} className="flex items-center gap-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32)/90 p-2.5 transition hover:border-(--a-b79aff) hover:bg-(--s-2b2143)">
+      {!!fichas?.length && <div className="min-w-0 space-y-2">{fichas.map(f => <Link key={f.id} href={linkFicha(f)} className="flex items-center gap-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32)/90 p-2.5 transition hover:border-(--a-b79aff) hover:bg-(--s-2b2143)">
         <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-(--a-55456e) bg-(--s-2a2142) text-xl font-bold text-(--a-c5a7ff)">{f.retrato
           // eslint-disable-next-line @next/next/no-img-element
           ? <img src={f.retrato} alt="" className="h-full w-full object-cover" /> : (f.nome || '?')[0].toUpperCase()}</span>

@@ -142,7 +142,7 @@ export function JanelaAtaque({ estado, mudar, tokens, ficha, admin, acao, fechar
       {!c && <p className="mt-2 text-xs text-(--a-a99bbb)">Este token não tem ficha ligada: informe o bônus e o dano.</p>}
       {estado.fonte === 'livre' && <label className="mt-2 block">Dano<input value={estado.dano} onChange={x => mudar({ ...estado, dano: x.target.value })} maxLength={40} className={input + ' mt-1 font-mono'} placeholder="Ex.: 1d8+3" /></label>}
       {c && c.testes.length > 0 ? <label className="mt-2 block">Teste de ataque<select value={estado.teste} onChange={x => mudar({ ...estado, teste: x.target.value })} className={input + ' mt-1'}>
-        {c.testes.map(t => <option key={t.id} value={t.id}>{t.nome} ({t.assim ? [t.assim.d6 ? t.assim.d6 + 'd6' : '', t.assim.d10 ? t.assim.d10 + 'd10' : ''].filter(Boolean).join(' + ') : (t.valor >= 0 ? '+' : '') + t.valor})</option>)}</select></label>
+        {c.testes.map(t => <option key={t.id} value={t.id}>{t.nome} ({t.graus ? ['d' + (t.graus.atr || 4), t.graus.per ? 'd' + t.graus.per : ''].filter(Boolean).join(' + ') : t.assim ? [t.assim.d6 ? t.assim.d6 + 'd6' : '', t.assim.d10 ? t.assim.d10 + 'd10' : ''].filter(Boolean).join(' + ') : (t.valor >= 0 ? '+' : '') + t.valor})</option>)}</select></label>
         : <label className="mt-2 block">Bônus de ataque<input value={estado.bonus} onChange={x => mudar({ ...estado, bonus: x.target.value })} inputMode="numeric" className={input + ' mt-1'} placeholder="0" /></label>}
       <div className="mt-3 rounded-xl border border-(--a-3d3152) bg-(--s-151123) p-3">
         {al ? <p>🎯 Alvo: <strong>{al.nome}</strong> · {dist} m{alcance !== null && <> de {alcance} m</>}</p> : <p className="text-(--a-c4b6d4)">Nenhum alvo escolhido.</p>}

@@ -157,12 +157,10 @@ export function JanelaAtaque({ estado, mudar, tokens, ficha, admin, acao, fechar
   </div></NaTela>
 }
 
-/** Ataque no chat: resultado, dano e (para o mestre) os botões para aplicar quando ele confirma. */
-export function CartaoAtaque({ d, eventoId, admin, acao, rolagem }: { d: DadosAtaque; eventoId: number; admin: boolean; acao: Acao; rolagem?: { expressao: string; resultados: number[] } }) {
-  const [ocupado, setOcupado] = useState(false)
-  const decidir = async (fator: number) => { setOcupado(true); try { await acao({ acao: 'ataque_decidir', eventoId, fator }) } catch (e) { toast.error(msg(e)) } finally { setOcupado(false) } }
+/** Ataque no chat: resultado e dano. A decisão do mestre (aplicar, metade, anular) fica em “Ataques esperando você” (v0.34.9). */
+export function CartaoAtaque({ d, admin, rolagem }: { d: DadosAtaque; admin: boolean; rolagem?: { expressao: string; resultados: number[] } }) {
   const selo = d.status === 'aplicado' ? <span className="rounded-full bg-[#4b253a] px-2 py-0.5 text-[11px] text-red-100">💥 {d.aplicado} de dano{d.vida?.depois !== null && d.vida?.depois !== undefined ? ` · ❤️ ${d.vida.depois}${d.vida.max ? '/' + d.vida.max : ''}` : ''}</span>
-    : d.status === 'pendente' ? <span className="rounded-full bg-amber-900/70 px-2 py-0.5 text-[11px] text-amber-100">⏳ Aguardando o mestre</span>
+    : d.status === 'pendente' ? <span className="rounded-full bg-amber-900/70 px-2 py-0.5 text-[11px] text-amber-100">⏳ {admin ? 'Decida no aviso do mapa' : 'Aguardando o mestre'}</span>
     : d.status === 'ignorado' ? <span className="rounded-full bg-(--s-2b2140) px-2 py-0.5 text-[11px]">🛡️ Dano anulado</span>
     : d.status === 'resolvendo' ? <span className="rounded-full bg-amber-900/70 px-2 py-0.5 text-[11px] text-amber-100">⏳ Aplicando…</span>
     : <span className="rounded-full bg-(--s-2b2140) px-2 py-0.5 text-[11px]">💨 Errou</span>
@@ -172,13 +170,34 @@ export function CartaoAtaque({ d, eventoId, admin, acao, rolagem }: { d: DadosAt
     <p className="mt-1 text-xs text-(--a-e4d3ff)">{d.acerto ? '✅ Acertou' : '❌ Errou'}{d.comparar === 'maior_igual' ? ` (Defesa ${d.defesa})` : ''}
       {d.dano && <> · dano <span className="font-mono">{d.dano.expressao}</span>{!d.assimilacao && <> [{d.dano.resultados.join(', ')}]</>} = <strong className="text-base text-(--a-ed9cd8)">{d.dano.total}</strong>{d.assimilacao && <span className="text-(--a-c4b6d4)"> (1 por símbolo)</span>}</>}</p>
     {d.assimilacao && d.dano && /d(6|10|12)\b/.test(d.dano.expressao) && <RolagemAssim expressao={d.dano.expressao} resultados={d.dano.resultados} todos compacto />}
-    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">{selo}
-      {admin && d.status === 'pendente' && d.dano && <>
-        <button type="button" disabled={ocupado} onClick={() => void decidir(1)} className="rounded-md bg-[#b91c1c] px-2 py-1 text-[11px] font-semibold text-white disabled:opacity-50">Aplicar {d.dano.total}</button>
-        <button type="button" disabled={ocupado} onClick={() => void decidir(0.5)} className="rounded-md bg-[#7c2d12] px-2 py-1 text-[11px] text-white disabled:opacity-50">Metade ({Math.floor(d.dano.total / 2)})</button>
-        <button type="button" disabled={ocupado} onClick={() => void decidir(0)} className="rounded-md border border-(--a-62527e) px-2 py-1 text-[11px] disabled:opacity-50">Anular</button></>}
-    </div>
+    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">{selo}</div>
   </div>
+}
+
+/**
+ * Ataques esperando o mestre (v0.34.9): ficam num aviso próprio sobre o mapa, separado do chat.
+ * O mestre vê quem atacou quem, a rolagem e o dano, e escolhe aplicar, metade ou anular.
+ */
+export function DecisoesMestre({ pendentes, acao }: { pendentes: { id: number; d: DadosAtaque; total?: number | null }[]; acao: Acao }) {
+  // No celular começa fechado (só a faixa com o número), para não cobrir o mapa.
+  const [aberto, setAberto] = useState(() => typeof window === 'undefined' || window.innerWidth >= 640)
+  const [ocupado, setOcupado] = useState<number | null>(null)
+  if (!pendentes.length) return null
+  const decidir = async (eventoId: number, fator: number) => { setOcupado(eventoId); try { await acao({ acao: 'ataque_decidir', eventoId, fator }) } catch (e) { toast.error(msg(e)) } finally { setOcupado(null) } }
+  return <section aria-label="Ataques esperando você" className={(aberto ? 'w-[min(22rem,calc(100vw-1rem))] ' : 'w-auto ') + 'rounded-xl border border-amber-500/60 bg-[#241a0c]/95 text-sm text-amber-50 shadow-2xl'}>
+    <button type="button" onClick={() => setAberto(a => !a)} aria-expanded={aberto} className={'flex w-full items-center gap-2 px-3 py-2 text-left font-semibold' + (aberto ? '' : ' prg-sua-vez')}>
+      <span className="flex-1">⏳ {pendentes.length === 1 ? 'Um ataque esperando você' : `${pendentes.length} ataques esperando você`}</span>
+      <span aria-hidden className="text-xs">{aberto ? '▲' : '▼'}</span></button>
+    {aberto && <ul className="max-h-[40vh] space-y-2 overflow-y-auto px-3 pb-3">{pendentes.map(({ id, d, total }) => <li key={id} className="rounded-lg border border-amber-700/50 bg-black/30 p-2">
+      <p><strong>{d.atacante.nome}</strong> → <strong>{d.alvo.nome}</strong> <span className="text-xs text-amber-200/80">com {d.arma} · {d.distancia} m</span></p>
+      <p className="mt-0.5 text-xs text-amber-100/90">{total !== null && total !== undefined ? `Rolou ${total}` : 'Rolou'}{d.comparar === 'maior_igual' ? ` contra Defesa ${d.defesa}` : ''} · ✅ acertou{d.dano ? <> · dano <span className="font-mono">{d.dano.expressao}</span> = <strong className="text-base">{d.dano.total}</strong></> : null}</p>
+      {d.dano && <div className="mt-2 grid grid-cols-3 gap-1.5">
+        <button type="button" disabled={ocupado === id} onClick={() => void decidir(id, 1)} className="rounded-md bg-[#b91c1c] px-2 py-1.5 text-xs font-semibold text-white disabled:opacity-50">Acertou ({d.dano.total})</button>
+        <button type="button" disabled={ocupado === id} onClick={() => void decidir(id, 0.5)} className="rounded-md bg-[#7c2d12] px-2 py-1.5 text-xs text-white disabled:opacity-50">Metade ({Math.floor(d.dano.total / 2)})</button>
+        <button type="button" disabled={ocupado === id} onClick={() => void decidir(id, 0)} className="rounded-md border border-amber-600/60 px-2 py-1.5 text-xs disabled:opacity-50">Não acertou</button>
+      </div>}
+    </li>)}</ul>}
+  </section>
 }
 
 /** Regras de combate da campanha (no painel do mestre). */

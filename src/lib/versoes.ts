@@ -27,6 +27,18 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.34.9', data: '2026-11-16',
+    titulo: 'Mesa: medir, mirar e áreas de efeito',
+    itens: [
+      'Nova ferramenta 🔥 Área de efeito: círculo, cone, linha e quadrado. Escolha o tamanho em metros e a cor, toque no ponto e arraste para mirar; quem está dentro ganha um anel da cor da área.',
+      'As áreas ficam no mapa até alguém tirar (quem colocou ou o mestre). O mestre aplica dano ou cura em todos os atingidos de uma vez.',
+      'Régua compartilhada: todos veem quem está medindo e a distância, ao vivo.',
+      'Ataque: a linha até o alvo mostra a distância e avisa quando está fora do alcance.',
+      'A decisão do mestre (acertou, metade, não acertou) saiu do chat e virou um aviso próprio sobre o mapa: “Ataques esperando você”.',
+      'O chat agora tem quatro abas: Conversa, Dados, Combate (ataques, turnos e tudo o que foi rolado durante o combate) e Mestre (rolagens e tabelas do mestre).',
+    ],
+  },
+  {
     versao: '0.34.8', data: '2026-11-15',
     titulo: 'Fichas manuais no modelo de cada sistema',
     itens: [

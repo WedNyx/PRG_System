@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { SquareDashed, Sun, ArrowDown, ArrowLeft, ArrowUp, BookOpen, CircleHelp, Crown, Globe, Library, MoreHorizontal, PanelRightClose, PanelRightOpen, ScrollText, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
+import { Flame, Trash, SquareDashed, Sun, ArrowDown, ArrowLeft, ArrowUp, BookOpen, CircleHelp, Crown, Globe, Library, MoreHorizontal, PanelRightClose, PanelRightOpen, ScrollText, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
@@ -11,7 +11,9 @@ import { estiloPapel, PAPEL_ESTILO } from './papeis'
 import { condicoesDisponiveis, emojiCondicao, nomeCondicao } from '@/lib/condicoes'
 import type { Camada } from '@/lib/nuvem/mesa'
 import { podeMoverToken } from '@/lib/nuvem/mesa'
-import MapaMesa, { type CursorRemoto, type ModoMesa, type Ping, type TokenMapa } from './MapaMesa'
+import MapaMesa, { type CursorRemoto, type ModoMesa, type Ping, type PreviaArea, type ReguaRemota, type TokenMapa } from './MapaMesa'
+import { separarEventos, type AbaChat } from '@/lib/mesa/abasChat'
+import { CORES_AREA, FORMAS_AREA, lerAreasEfeito, tokensNaArea, type AreaEfeito, type FormaArea } from '@/lib/mesa/areasEfeito'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import PainelCampanha from './PainelCampanha'
 import PainelMusica from './PainelMusica'
@@ -27,12 +29,12 @@ import RecorteImagem from './RecorteImagem'
 import { LUZES_PRONTAS, MAX_GRADE, type AreaNevoa, type LuzToken } from '@/lib/nuvem/mesa'
 import { btn, input, msg } from './estilos'
 import RolagemAssim, { marcaAssim } from '@/components/dados/RolagemAssim'
-import { CartaoAtaque, ConfigCombate, DescansoGrupo, JanelaAtaque, PainelFichas, PainelMorte, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type Morte } from './Combate'
+import { CartaoAtaque, DecisoesMestre, ConfigCombate, DescansoGrupo, JanelaAtaque, PainelFichas, PainelMorte, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type Morte } from './Combate'
 import NaTela from '@/components/NaTela'
 import FichaNaMesa from './FichaNaMesa'
-import { PainelIniciativa } from './Iniciativa'
+import { DanoEmVarios, PainelIniciativa } from './Iniciativa'
 
-type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean; fog_areas?: AreaNevoa[] | null; escuridao?: number | null; luz_revela_nevoa?: boolean | null }
+type Cena = { id: string; nome: string; mapa_url: string | null; grid_cols: number; grid_rows: number; fog_ativo: boolean; fog_revelado: string[]; ativa: boolean; camadas: Camada[]; tokens_travados: boolean; fog_areas?: AreaNevoa[] | null; areas_efeito?: unknown; escuridao?: number | null; luz_revela_nevoa?: boolean | null }
 type Token = { id: string; nome: string; cor: string; imagem_url: string | null; x: number; y: number; visivel: boolean; npc: boolean; hp_atual: number | null; hp_max: number | null; condicoes: string[]; condicoes_rodadas?: Record<string, number> | null; condicoes_dano?: Record<string, string> | null; morte?: Morte | null; dono_id: string | null; ficha_id: string | null; ficha_modelo?: string | null; movimento: 'dono' | 'todos' | 'mestre'; tamanho: number; luz?: LuzToken | null }
 export type Evento = { id: number; tipo: 'chat' | 'rolagem' | 'sistema' | 'ataque'; dados?: DadosAtaque | null; visibilidade: 'publica' | 'mestre' | 'privada'; autor_id: string | null; destinatario_id: string | null; personagem: string | null; texto: string | null; expressao: string | null; resultados: number[] | null; total: number | null; criado_em: string; autor: { apelido: string } | null }
 type Iniciativa = { id: string; nome: string; valor: number; tokenId?: string | null }
@@ -73,6 +75,13 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [modo, setModo] = useState<ModoMesa>('mover')
   const [cor, setCor] = useState(CORES[0])
   const [pincel, setPincel] = useState(1)
+  // Áreas de efeito e régua compartilhada (v0.34.9).
+  const [formaArea, setFormaArea] = useState<FormaArea>('circulo')
+  const [metrosArea, setMetrosArea] = useState(6)
+  const [corArea, setCorArea] = useState(CORES_AREA[0])
+  const [reguas, setReguas] = useState<Record<string, ReguaRemota & { ate: number }>>({})
+  const [previas, setPrevias] = useState<Record<string, PreviaArea & { ate: number }>>({})
+  const [danoArea, setDanoArea] = useState<AreaEfeito | null>(null)
   const [dicas, setDicas] = useState<'auto' | 'aberto' | 'fechado'>('auto')
   const [aba, setAba] = useState<'chat' | 'fichas' | 'tokens' | 'iniciativa' | 'musica' | 'campanha' | 'tabelas' | 'biblioteca' | 'mestre'>('chat')
   const [painel, setPainel] = useState(true)
@@ -157,6 +166,22 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           setTracos(m => ({ ...m, [d.id as string]: { id: d.id as string, cor: d.cor as string, pontos: d.pontos as number[], ate: Date.now() + 10000 } }))
       })
       .on('broadcast', { event: 'limpar' }, () => setTracos({}))
+      .on('broadcast', { event: 'regua' }, ({ payload }) => {
+        const g = payload as { id?: unknown; nome?: unknown; r?: { x1?: unknown; y1?: unknown; x2?: unknown; y2?: unknown } | null }
+        if (typeof g.id !== 'string') return
+        const id = g.id, r = g.r
+        if (!r) { setReguas(m => limpar(m, k => k !== id)); return }
+        if (![r.x1, r.y1, r.x2, r.y2].every(n => Number.isInteger(n))) return
+        setReguas(m => ({ ...m, [id]: { id, nome: typeof g.nome === 'string' ? g.nome.slice(0, 40) : '?', x1: r.x1 as number, y1: r.y1 as number, x2: r.x2 as number, y2: r.y2 as number, ate: Date.now() + 8000 } }))
+      })
+      .on('broadcast', { event: 'area' }, ({ payload }) => {
+        const g = payload as { id?: unknown; quem?: unknown; a?: Record<string, unknown> | null }
+        if (typeof g.id !== 'string') return
+        const id = g.id, a = g.a
+        if (!a) { setPrevias(m => limpar(m, k => k !== id)); return }
+        if (!FORMAS_AREA.some(f => f.id === a.forma) || ![a.x, a.y, a.angulo, a.metros].every(n => typeof n === 'number' && Number.isFinite(n)) || typeof a.cor !== 'string' || !/^#[0-9a-f]{6}$/i.test(a.cor)) return
+        setPrevias(m => ({ ...m, [id]: { id: 'previa-' + id, forma: a.forma as FormaArea, x: a.x as number, y: a.y as number, angulo: a.angulo as number, metros: Math.min(300, a.metros as number), cor: a.cor as string, nome: '', quem: typeof g.quem === 'string' ? g.quem.slice(0, 40) : '?', ate: Date.now() + 8000 } }))
+      })
       .on('presence', { event: 'sync' }, () => setOnline(Object.keys(ch.presenceState())))
       .subscribe(status => { setTempoReal(status === 'SUBSCRIBED'); if (status === 'SUBSCRIBED') void ch.track({ em: Date.now() }) })
     canal.current = ch
@@ -179,6 +204,12 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     if (!forcar && agora - (ultimoEnvio.current[chave] ?? 0) < ms) return
     ultimoEnvio.current[chave] = agora
     void canal.current?.send({ type: 'broadcast', event: evento, payload })
+  }, [])
+
+  // Régua e mira de quem saiu sem soltar: somem sozinhas.
+  useEffect(() => {
+    const t = setInterval(() => { const agora = Date.now(); setReguas(m => limpar(m, (_k, v) => v.ate > agora)); setPrevias(m => limpar(m, (_k, v) => v.ate > agora)) }, 3000)
+    return () => clearInterval(t)
   }, [])
 
   const desenhosMapa = useMemo(() => {
@@ -246,6 +277,8 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     const c = fichaDoToken(tokenId)?.combate
     setAtaque({ atacante: tokenId, fonte: c?.ataques[0] ? chaveFonte(c.ataques[0]) : 'livre', teste: c?.testePadrao ?? '', dano: '', bonus: '', defesa: '', alvo: null, mirando: false })
   }
+  const areasCena = cena ? lerAreasEfeito(cena.areas_efeito, cena.grid_cols, cena.grid_rows) : []
+  const pendentes = admin ? e.eventos.filter(ev => ev.tipo === 'ataque' && ev.dados?.status === 'pendente').map(ev => ({ id: ev.id, d: ev.dados as DadosAtaque, total: ev.total })) : []
   const vez = e.mesa?.iniciativa?.[e.mesa.turno]
   const minhaVez = !espectador && vez?.tokenId ? e.tokens.find(t => t.id === vez.tokenId && t.dono_id === e.eu) ?? null : null
   const salvarCamadas = (camadas: Camada[]) => cena && acao({ acao: 'cena_editar', cenaId: cena.id, camadas }).catch(() => {})
@@ -264,6 +297,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   }
   const ferramentas: { id: ModoMesa; icone: typeof Hand; nome: string; so?: boolean; fog?: boolean }[] = [
     { id: 'mover', icone: Hand, nome: 'Mover / arrastar' }, { id: 'regua', icone: Ruler, nome: 'Régua: arraste para medir a distância' }, { id: 'ping', icone: MapPin, nome: 'Marcar: toque para chamar a atenção de todos' }, { id: 'desenhar', icone: Pencil, nome: 'Desenhar no mapa (todos veem)' },
+    { id: 'area-efeito', icone: Flame, nome: 'Área de efeito: escolha a forma e o tamanho, toque no ponto e arraste para mirar' },
     { id: 'revelar', icone: Eye, nome: 'Revelar com pincel', so: true, fog: true }, { id: 'esconder', icone: CloudFog, nome: 'Esconder com pincel', so: true, fog: true },
     { id: 'nevoa-area', icone: SquareDashed, nome: 'Partes com névoa: arraste para criar uma; toque numa para revelar ou esconder', so: true, fog: true },
     { id: 'area-revelar', icone: Square, nome: 'Revelar área (arraste um retângulo)', so: true, fog: true }, { id: 'area-esconder', icone: EyeOff, nome: 'Esconder área', so: true, fog: true },
@@ -341,6 +375,13 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           {(modo === 'revelar' || modo === 'esconder') && [1, 3, 5].map(n => <button key={n} type="button" onClick={() => setPincel(n)} aria-label={'Pincel ' + n + '×' + n} className={'rounded-lg px-2 py-1.5 text-xs ' + (pincel === n ? 'bg-(--a-7654bb)' : 'hover:bg-(--s-34294f)')}>{n}×{n}</button>)}
           {modo === 'desenhar' && <>{CORES.map(c => <button key={c} type="button" aria-label={'Cor ' + c} onClick={() => setCor(c)} className={'h-8 w-8 rounded-lg border-2 ' + (cor === c ? 'border-white' : 'border-transparent')} style={{ background: c }} />)}
             {admin && cena && <button type="button" title="Apagar desenhos" aria-label="Apagar desenhos" onClick={() => { setTracos({}); aoVivo('limpar', 0, 'limpar', {}, true); void acao({ acao: 'desenhos_limpar', cenaId: cena.id }).catch(() => {}) }} className="rounded-lg p-2 hover:bg-(--s-34294f)"><Eraser size={18} /></button>}</>}
+          {modo === 'area-efeito' && <>
+            {FORMAS_AREA.map(f => <button key={f.id} type="button" onClick={() => setFormaArea(f.id)} aria-pressed={formaArea === f.id} title={f.nome + ': ' + f.dica} aria-label={'Forma: ' + f.nome}
+              className={'h-9 min-w-9 rounded-lg px-2 text-base leading-none ' + (formaArea === f.id ? 'bg-(--a-7654bb)' : 'hover:bg-(--s-34294f)')}>{f.icone}</button>)}
+            <select aria-label="Tamanho da área" value={metrosArea} onChange={x => setMetrosArea(Number(x.target.value))} className="h-9 rounded-lg border border-(--a-5e4b78) bg-(--s-151123) px-1 text-xs">
+              {[1.5, 3, 4.5, 6, 9, 12, 15, 18, 24, 30].map(m => <option key={m} value={m}>{formaArea === 'circulo' ? 'raio ' : formaArea === 'quadrado' ? 'lado ' : ''}{m} m</option>)}</select>
+            {CORES_AREA.map(c => <button key={c} type="button" aria-label={'Cor da área ' + c} aria-pressed={corArea === c} onClick={() => setCorArea(c)} className={'h-7 w-7 rounded-md border-2 ' + (corArea === c ? 'border-white' : 'border-transparent')} style={{ background: c }} />)}
+          </>}
           {modo === 'editar-mapa' && camadaSel && cena && <>
             <button type="button" className={btn} onClick={() => { const l = cena.camadas; const i = l.findIndex(c => c.id === camadaSel); if (i < l.length - 1) { const n = [...l]; [n[i], n[i + 1]] = [n[i + 1], n[i]]; void salvarCamadas(n) } }}><ArrowUp size={14} /> Frente</button>
             <button type="button" className={btn} onClick={() => { const l = cena.camadas; const i = l.findIndex(c => c.id === camadaSel); if (i > 0) { const n = [...l]; [n[i], n[i - 1]] = [n[i - 1], n[i]]; void salvarCamadas(n) } }}><ArrowDown size={14} /> Trás</button>
@@ -362,11 +403,24 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           mirando={!!ataque?.mirando}
           alcance={ataque ? { tokenId: ataque.atacante, metros: fichaDoToken(ataque.atacante)?.combate?.ataques.find(a => chaveFonte(a) === ataque.fonte)?.alcance ?? null, alvo: ataque.alvo } : null}
           onDesenhar={desenhar}
+          areas={areasCena} previas={Object.values(previas)} formaArea={formaArea} metrosArea={metrosArea} corArea={corArea}
+          onCriarArea={a => { const n = tokensNaArea({ ...a, id: 'x' }, tokensMapa).length
+            void acao({ acao: 'area_criar', cenaId: cena.id, area: { ...a, id: crypto.randomUUID() } }).then(() => toast.success(`Área no mapa: ${n} alvo${n === 1 ? '' : 's'} dentro.`, { description: 'Para tirar, use a lista “Áreas no mapa”.' })).catch(() => {}) }}
+          onPreviaArea={a => aoVivo('area', a ? 90 : 0, 'area', { id: e.eu, quem: nomes[e.eu] ?? '', a }, !a)}
+          reguas={Object.values(reguas)} onRegua={g => aoVivo('regua', g ? 90 : 0, 'regua', { id: e.eu, nome: nomes[e.eu] ?? '', r: g }, !g)}
           onArrastando={(id, x, y) => aoVivo('token:' + id, 60, 'token', { id, x, y })}
           onTracando={(id, pontos) => aoVivo('traco:' + id, 120, 'traco', { id, cor, pontos })}
           onCursor={(x, y) => aoVivo('cursor', 90, 'cursor', { id: e.eu, nome: nomes[e.eu] ?? '', x, y })} />
           : <div className="flex h-full items-center justify-center p-6 text-center text-(--a-b4aeca)">{admin ? 'Crie uma cena em "Mestre → Controles" para começar.' : 'O mestre ainda não abriu nenhuma cena.'}</div>}
 
+        {(pendentes.length > 0 || areasCena.length > 0) && <div className="absolute right-2 top-2 z-30 flex max-h-[calc(100%-5rem)] flex-col items-end gap-2">
+          {pendentes.length > 0 && <DecisoesMestre pendentes={pendentes} acao={acao} />}
+          {areasCena.length > 0 && cena && <ListaAreas areas={areasCena} tokens={tokensMapa} eu={e.eu} admin={admin} espectador={espectador}
+            tirar={id => void acao({ acao: 'area_excluir', cenaId: cena.id, id }).catch(() => {})}
+            limpar={() => void acao({ acao: 'areas_limpar', cenaId: cena.id }).catch(() => {})} dano={setDanoArea} />}
+        </div>}
+        {danoArea && <DanoEmVarios tokens={e.tokens} naOrdem={(e.mesa?.iniciativa ?? []).map(x => x.tokenId).filter((x): x is string => !!x)} acao={acao} fechar={() => setDanoArea(null)}
+          inicial={tokensNaArea(danoArea, tokensMapa).map(t => t.id)} rotuloInicial={danoArea.nome} />}
         {ataque && <JanelaAtaque estado={ataque} mudar={setAtaque} tokens={e.tokens} ficha={fichaDoToken(ataque.atacante)} admin={admin} acao={acao}
           fechar={() => setAtaque(null)} aoAtacar={ev => destacar(ev as unknown as Evento)} />}
         <TocadorMesa estado={e.musica} desvio={desvio} aoTerminar={admin && e.musica?.por === e.eu ? () => { void api(`campanhas/${campanhaId}/musica`, { method: 'POST', body: { acao: 'proxima', auto: true } }).then(avisarMudanca).catch(() => {}) } : undefined} />
@@ -624,6 +678,26 @@ function TokenModal({ t, admin, eu, acao, campanhaId, fechar, atacar, abrirFicha
   </div></NaTela>
 }
 
+/** Áreas de efeito que estão no mapa (v0.34.9): quantos alvos cada uma pega, tirar e, para o mestre, dano nos atingidos. */
+function ListaAreas({ areas, tokens, eu, admin, espectador, tirar, limpar, dano }: { areas: AreaEfeito[]; tokens: TokenMapa[]; eu: string; admin: boolean; espectador: boolean
+  tirar: (id: string) => void; limpar: () => void; dano: (a: AreaEfeito) => void }) {
+  const [aberto, setAberto] = useState(false)
+  return <section aria-label="Áreas no mapa" className={(aberto ? 'w-[min(18rem,calc(100vw-1rem))] ' : 'w-auto ') + 'rounded-xl border border-(--a-55456e) bg-(--s-19172c)/95 text-sm shadow-xl'}>
+    <button type="button" onClick={() => setAberto(a => !a)} aria-expanded={aberto} className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-semibold">
+      <Flame size={14} className="text-orange-300" /><span className="flex-1 whitespace-nowrap">Áreas no mapa ({areas.length})</span><span aria-hidden>{aberto ? '▲' : '▼'}</span></button>
+    {aberto && <div className="space-y-1.5 px-2 pb-2">
+      <ul className="max-h-[30vh] space-y-1 overflow-y-auto">{areas.map(a => { const f = FORMAS_AREA.find(x => x.id === a.forma), n = tokensNaArea(a, tokens).length
+        return <li key={a.id} className="flex items-center gap-1.5 rounded-lg bg-(--s-151123) px-2 py-1">
+          <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: a.cor }} aria-hidden />
+          <span className="min-w-0 flex-1 truncate text-xs">{a.nome || f?.nome} · {a.metros} m · {n} alvo{n === 1 ? '' : 's'}</span>
+          {admin && n > 0 && <button type="button" onClick={() => dano(a)} title="Dano ou cura nos atingidos" aria-label="Dano ou cura nos atingidos" className="rounded-md px-1.5 py-0.5 text-xs hover:bg-(--s-34294f)">💥</button>}
+          {!espectador && (admin || a.autor_id === eu) && <button type="button" onClick={() => tirar(a.id)} title="Tirar a área" aria-label="Tirar a área" className="rounded-md p-1 hover:bg-(--s-34294f)"><Trash size={13} /></button>}
+        </li> })}</ul>
+      {admin && areas.length > 1 && <button type="button" onClick={limpar} className={btn + ' w-full justify-center'}>Tirar todas</button>}
+    </div>}
+  </section>
+}
+
 function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHistorico }: { e: Estado; nomes: Record<string, string>; papelDe: Record<string, string>; admin: boolean; espectador: boolean; acao: Acao; destacar: (ev: Evento) => void; abrirHistorico: () => void }) {
   const [texto, setTexto] = useState('')
   const [expr, setExpr] = useState('1d20')
@@ -631,20 +705,20 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
   const [dest, setDest] = useState('')
   const [pers, setPers] = useState('')
   const fim = useRef<HTMLLIElement>(null)
-  // Duas abas: a conversa do grupo e o que acontece na mesa (rolagens, ataques, turnos, avisos).
-  const [aba, setAba] = useState<'conversa' | 'mesa'>('conversa')
-  const ehConversa = (ev: Evento) => ev.tipo === 'chat'
-  const lista = e.eventos.filter(ev => aba === 'conversa' ? ehConversa(ev) : !ehConversa(ev))
-  const [visto, setVisto] = useState<Record<'conversa' | 'mesa', number>>({ conversa: 0, mesa: 0 })
-  const ultimoConversa = e.eventos.reduce((m, ev) => ev.tipo === 'chat' ? Math.max(m, ev.id) : m, 0)
-  const ultimoMesa = e.eventos.reduce((m, ev) => ev.tipo !== 'chat' ? Math.max(m, ev.id) : m, 0)
+  // Quatro abas (v0.34.9): a conversa do grupo, os dados dos jogadores, o combate e as rolagens do mestre.
+  const [aba, setAba] = useState<AbaChat>('conversa')
+  const combateAgora = (e.mesa?.iniciativa?.length ?? 0) > 0
+  const abaDe = useMemo(() => separarEventos(e.eventos, papelDe, combateAgora), [e.eventos, papelDe, combateAgora])
+  const lista = e.eventos.filter(ev => abaDe.get(ev.id) === aba)
+  const ultimos = useMemo(() => { const u: Record<AbaChat, number> = { conversa: 0, dados: 0, combate: 0, mestre: 0 }; for (const ev of e.eventos) { const a = abaDe.get(ev.id); if (a) u[a] = Math.max(u[a], ev.id) } return u }, [e.eventos, abaDe])
+  const [visto, setVisto] = useState<Record<AbaChat, number>>({ conversa: 0, dados: 0, combate: 0, mestre: 0 })
   const iniciado = useRef(false)
   useEffect(() => {
     // O que já estava na mesa ao entrar não conta como novo.
-    if (!iniciado.current && (ultimoConversa || ultimoMesa)) { setVisto({ conversa: ultimoConversa, mesa: ultimoMesa }); iniciado.current = true; return }
-    setVisto(v => ({ ...v, [aba]: Math.max(v[aba], aba === 'conversa' ? ultimoConversa : ultimoMesa) }))
-  }, [aba, ultimoConversa, ultimoMesa])
-  const novos = (t: 'conversa' | 'mesa') => t === aba ? 0 : e.eventos.filter(ev => (t === 'conversa') === ehConversa(ev) && ev.id > visto[t] && ev.autor_id !== e.eu).length
+    if (!iniciado.current && Object.values(ultimos).some(Boolean)) { setVisto(ultimos); iniciado.current = true; return }
+    setVisto(v => v[aba] >= ultimos[aba] ? v : { ...v, [aba]: ultimos[aba] })
+  }, [aba, ultimos])
+  const novos = (t: AbaChat) => t === aba ? 0 : e.eventos.filter(ev => abaDe.get(ev.id) === t && ev.id > visto[t] && ev.autor_id !== e.eu).length
   useEffect(() => { fim.current?.scrollIntoView({ block: 'end' }) }, [lista.length, aba])
   const meus = e.fichas.filter(f => f.dono_id === e.eu || (admin && f.npc))
   async function rolar(x: string) {
@@ -654,30 +728,30 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
   }
   async function enviar() {
     if (!texto.trim()) return
-    if (/^\/r(oll)?\s+/i.test(texto)) { await rolar(texto.replace(/^\/r(oll)?\s+/i, '')); setTexto(''); toast('🎲 A rolagem foi para “Dados e mesa”.'); return }
+    if (/^\/r(oll)?\s+/i.test(texto)) { await rolar(texto.replace(/^\/r(oll)?\s+/i, '')); setTexto(''); toast(`🎲 A rolagem foi para “${combateAgora ? 'Combate' : admin ? 'Mestre' : 'Dados'}”.`); return }
     await acao({ acao: 'evento', tipo: 'chat', texto, visibilidade: vis, destinatarioId: dest, personagem: pers }).then(() => setTexto('')).catch(() => {})
   }
   return <div className="flex min-h-full flex-col gap-3">
     <p className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]" aria-label="Legenda das cores">{(['mestre', 'jogador', 'espectador'] as const).map(p => <span key={p} className={PAPEL_ESTILO[p].cor}>{PAPEL_ESTILO[p].icone} {PAPEL_ESTILO[p].nome}</span>)}</p>
     <div className="flex items-center justify-between"><p className="text-xs text-(--a-b4aeca)">{espectador ? 'Você está assistindo: pode conversar no chat.' : ''}</p>
       <button type="button" onClick={abrirHistorico} className={btn}><History size={14} /> Histórico</button></div>
-    <div role="tablist" aria-label="Conversa ou acontecimentos da mesa" className="sticky top-0 z-10 grid grid-cols-2 gap-1 rounded-xl border border-(--a-373251) bg-(--s-151123) p-1 text-sm shadow-lg">
-      {([['conversa', '💬 Conversa'], ['mesa', '🎲 Dados e mesa']] as const).map(([id, nome]) => { const n = novos(id)
+    <div role="tablist" aria-label="Conversa, dados, combate ou mestre" className="sticky top-0 z-10 grid grid-cols-4 gap-1 rounded-xl border border-(--a-373251) bg-(--s-151123) p-1 text-xs shadow-lg sm:text-sm">
+      {([['conversa', '💬', 'Conversa'], ['dados', '🎲', 'Dados'], ['combate', '⚔️', 'Combate'], ['mestre', '🎩', 'Mestre']] as const).map(([id, icone, rot]) => { const n = novos(id), nome = <><span aria-hidden>{icone}</span> {rot}</>
         return <button key={id} type="button" role="tab" aria-selected={aba === id} onClick={() => setAba(id)}
           className={'relative rounded-lg px-2 py-1.5 font-semibold transition ' + (aba === id ? 'bg-(--a-7654bb) text-white' : 'text-(--a-cfc0df) hover:bg-(--s-2b2140)')}>{nome}
           {n > 0 && <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-[#e5484d] px-1 text-[11px] leading-5 text-white">{n > 99 ? '99+' : n}</span>}</button> })}
     </div>
-    <p className="-mt-1 text-[11px] text-(--a-a99bbb)">{aba === 'conversa' ? 'Mensagens do grupo. Rolagens, ataques e turnos ficam em “Dados e mesa”.' : 'Rolagens de dados, ataques, turnos e avisos da mesa.'}</p>
+    <p className="-mt-1 text-[11px] text-(--a-a99bbb)">{aba === 'conversa' ? 'Mensagens do grupo. Rolagens ficam nas outras abas.' : aba === 'dados' ? 'Rolagens dos jogadores e avisos da mesa (fora do combate).' : aba === 'combate' ? 'Ataques, iniciativa, turnos, dano e tudo o que foi rolado durante o combate.' : 'Rolagens e tabelas do mestre fora do combate.'}</p>
     <ul className="space-y-2 text-sm">{lista.map(ev => <li key={ev.id} className={'rounded-lg p-2 ' + (ev.visibilidade === 'publica' ? 'bg-(--s-1e1a30)' : 'border border-(--a-7a5a9a) bg-(--s-261c38)')}>
       <p className="text-[11px] text-(--a-b4aeca)">{hora(ev.criado_em)} · {ev.tipo === 'sistema' ? <strong className="text-(--a-e4d3ff)">Mesa</strong> : (() => { const st = estiloPapel(papelDe[ev.autor_id ?? '']); return <strong className={st.cor} title={st.nome}>{st.icone} {ev.personagem || ev.autor?.apelido || '?'}</strong> })()}{ev.personagem && ev.autor ? ` (${ev.autor.apelido})` : ''}
         {ev.visibilidade === 'mestre' && ' · 🔒 só o mestre'}{ev.visibilidade === 'privada' && ` · 🔒 privado para ${nomes[ev.destinatario_id ?? ''] ?? '?'}`}</p>
       {ev.tipo === 'rolagem' && marcaAssim(ev.dados) && ev.expressao && ev.resultados ? <div>{ev.texto && <p className="text-xs text-(--a-c4b6d4)">🎲 {ev.texto}</p>}<RolagemAssim expressao={ev.expressao} resultados={ev.resultados} {...marcaAssim(ev.dados)!} /></div>
         : ev.tipo === 'rolagem' ? <p><span className="text-(--a-b99bff)">🎲 {ev.expressao}</span> → [{ev.resultados?.join(', ')}] = <strong className="text-lg text-(--a-ed9cd8)">{ev.total}</strong>
         {ev.expressao?.includes('d20') && ev.resultados?.[0] === 20 && ' ✨ 20 natural!'}{ev.expressao?.includes('d20') && ev.resultados?.[0] === 1 && ' 💀 1 natural'}{ev.texto && <span className="block text-xs text-(--a-c4b6d4)">{ev.texto}</span>}</p>
-        : ev.tipo === 'ataque' && ev.dados ? <CartaoAtaque d={ev.dados} eventoId={ev.id} admin={admin} acao={acao} rolagem={ev.expressao && ev.resultados ? { expressao: ev.expressao, resultados: ev.resultados } : undefined} />
+        : ev.tipo === 'ataque' && ev.dados ? <CartaoAtaque d={ev.dados} admin={admin} rolagem={ev.expressao && ev.resultados ? { expressao: ev.expressao, resultados: ev.resultados } : undefined} />
         : <p className="whitespace-pre-wrap break-words">{ev.texto}</p>}
     </li>)}<li ref={fim} aria-hidden className="h-0 list-none" /></ul>
-    {lista.length === 0 && <p className="text-center text-sm text-(--a-b4aeca)">{aba === 'conversa' ? 'Ninguém falou ainda. Mande um oi!' : 'Nada por aqui ainda. Role um dado!'}</p>}
+    {lista.length === 0 && <p className="text-center text-sm text-(--a-b4aeca)">{aba === 'conversa' ? 'Ninguém falou ainda. Mande um oi!' : aba === 'combate' ? 'Nenhum combate por enquanto.' : aba === 'mestre' ? 'O mestre ainda não rolou nada.' : 'Nada por aqui ainda. Role um dado!'}</p>}
     <div className="mt-auto space-y-2 border-t border-(--a-373251) pt-3">
       <div className="grid grid-cols-2 gap-2">
         <select aria-label="Quem vê" value={vis} onChange={x => setVis(x.target.value as typeof vis)} className={input}>
@@ -686,7 +760,7 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
           {e.membros.filter(m => m.aventureiro_id !== e.eu).map(m => <option key={m.aventureiro_id} value={m.aventureiro_id}>{m.aventureiro?.apelido}{m.papel === 'mestre' || m.papel === 'comestre' ? ' (mestre)' : m.papel === 'espectador' ? ' (espectador)' : ''}</option>)}</select>
           : <select aria-label="Personagem" value={pers} onChange={x => setPers(x.target.value)} className={input}><option value="">Como eu mesmo</option>{meus.map(f => <option key={f.id} value={f.nome || 'Personagem'}>{f.nome || 'Personagem sem nome'}</option>)}</select>}
       </div>
-      {!espectador && aba === 'mesa' && <><div className="flex flex-wrap gap-1">{DADOS.map(d => <button key={d} type="button" onClick={() => rolar(d)} className={btn}>{d.slice(1)}</button>)}</div>
+      {!espectador && aba !== 'conversa' && <><div className="flex flex-wrap gap-1">{DADOS.map(d => <button key={d} type="button" onClick={() => rolar(d)} className={btn}>{d.slice(1)}</button>)}</div>
       <form onSubmit={x => { x.preventDefault(); void rolar(expr) }} className="flex gap-2">
         <input aria-label="Expressão de dados" value={expr} onChange={x => setExpr(x.target.value)} maxLength={80} placeholder="2d6+3, 4d6kh3, 2d20kh1" className={input} />
         <button type="submit" className="rounded-lg bg-(--a-7654bb) px-3 text-sm font-semibold"><Dices size={18} /></button>
@@ -695,7 +769,7 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
         <input aria-label="Mensagem" value={texto} onChange={x => setTexto(x.target.value)} maxLength={1000} placeholder={espectador ? 'Mensagem' : 'Mensagem (ou /r 1d20+2)'} className={input} />
         <button type="submit" aria-label="Enviar" className="rounded-lg bg-(--a-7654bb) px-3"><Send size={18} /></button>
       </form>}
-      {aba === 'mesa' && espectador && <p className="text-xs text-(--a-b4aeca)">Espectadores assistem às rolagens; para falar, use a Conversa.</p>}
+      {aba !== 'conversa' && espectador && <p className="text-xs text-(--a-b4aeca)">Espectadores assistem às rolagens; para falar, use a Conversa.</p>}
     </div>
   </div>
 }

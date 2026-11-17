@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest'
 import { FACES, lerResultados, montarTeste, montarTesteAssimilacao, nivelDeSaude, penalidadeSaude, somar, sugerirMantidos } from './assimilacao'
 
 describe('dados de Assimilação', () => {
-  it('as faces batem com as contas do livro (d6: 3 C, 1 B, 1 A · d10: 5 C, 3 B, 7 A · d12: 8 C, 5 B, 8 A)', () => {
+  it('as faces batem com as contas do livro (d6: 3 C, 2 B, 1 A · d10: 5 C, 4 B, 7 A · d12: 8 C, 6 B, 8 A)', () => {
     const t = (l: 6 | 10 | 12) => somar(FACES[l])
-    expect(t(6)).toEqual({ a: 1, b: 1, c: 3 })
-    expect(t(10)).toEqual({ a: 7, b: 3, c: 5 })
-    expect(t(12)).toEqual({ a: 8, b: 5, c: 8 })
+    expect(t(6)).toEqual({ a: 1, b: 2, c: 3 })
+    expect(t(10)).toEqual({ a: 7, b: 4, c: 5 })
+    expect(t(12)).toEqual({ a: 8, b: 6, c: 8 })
     expect(FACES[6].length).toBe(6); expect(FACES[10].length).toBe(10); expect(FACES[12].length).toBe(12)
+  })
+  it('faces 4 e 5 têm Adaptação e Pressão nos três dados', () => {
+    for (const l of [6, 10, 12] as const) for (const i of [3, 4]) expect(FACES[l][i]).toEqual({ a: 0, b: 1, c: 1 })
   })
   it('monta o teste: Instinto em d6, aptidão em d10; agir por instinto vira d12 e mantém +1', () => {
     expect(montarTeste({ instinto: 2, aptidao: 3 })).toMatchObject({ expressao: '2d6+3d10', manter: 1, total: 5 })

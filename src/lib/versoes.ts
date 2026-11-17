@@ -26,6 +26,7 @@ export function versaoValida(versao: string): boolean {
 }
 
 export const VERSOES: Versao[] = [
+  { versao: '0.35.10', data: '2026-11-17', titulo: 'Dados de Assimilação', itens: ['D6, D10 e D12 com símbolos personalizados e animação poliédrica.', 'Movimento e colisões aproximadas, preservando o resultado sorteado.', 'Assistência de dados na ficha e animações na mesa virtual.'] },
   {
     versao: '0.35.9', data: '2026-11-17',
     titulo: 'Cada ficha com a cara do seu sistema',

@@ -71,6 +71,8 @@ export type Sistema = {
   nomesItens?: Partial<Record<'arma' | 'armadura' | 'consumivel' | 'equipamento' | 'tesouro' | 'outro' | 'magico', string>>
   campos: CampoDef[]
   atributos: AtributoDef[]
+  /** Como a ficha mostra os atributos (v0.35.8): 'lua' = em arco, formando uma lua minguante. */
+  visualAtributos?: 'lua'
   /** Nome que a ficha usa para os atributos (sistemas autorais: “Aspectos”, “Virtudes”…; v0.33.8). As perícias usam `pericias.titulo`. */
   tituloAtributos?: string
   /** Modificador do atributo; `X` é o valor do atributo. Sem isso, o modificador é o próprio valor. */
@@ -122,6 +124,8 @@ export type DadosFicha = {
   uso?: unknown
   /** Perícias que o próprio jogador criou (sistemas com perícias livres, v0.35.6); o valor fica em `pericias[id]`. */
   periciasExtras?: { id: string; nome: string }[]
+  /** Marcações da ficha que não calculam nada (v0.35.9): caixas de estresse, salvaguardas contra a morte, espaços de magia usados, relógios, condições… */
+  marcas?: Record<string, boolean | number | string>
   /** Livro do Jogador e suplementos escolhidos para ESTA ficha (mestre autoriza na campanha). */
   dndLivros?: import('./dndLivros').SelecaoLivrosDnd
   /** Atributos antes dos bônus raciais na criação 2014. Ausência = ficha antiga com totais manuais. */

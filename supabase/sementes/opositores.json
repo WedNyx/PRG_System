@@ -1,0 +1,468 @@
+{
+ "nome": "Lunethernnyis: Opositores",
+ "resumo": "Campanha de investigação, combate e poderes extraordinários: sete atributos de 0 a 5, 24 perícias com treinamento +0/+3/+6/+9, testes de 1d20 contra DT, defesa passiva com esquiva e guarda ativas. Em desenvolvimento.",
+ "dados": "d20",
+ "rolagem": "d20",
+ "visualAtributos": "lua",
+ "tituloAtributos": "Atributos",
+ "campos": [
+  {
+   "id": "conceito",
+   "nome": "Conceito",
+   "tipo": "texto"
+  },
+  {
+   "id": "lado",
+   "nome": "Original ou Opositor",
+   "tipo": "escolha",
+   "opcoes": [
+    {
+     "nome": "Original"
+    },
+    {
+     "nome": "Opositor"
+    }
+   ]
+  },
+  {
+   "id": "nivel",
+   "nome": "Nível",
+   "tipo": "numero",
+   "padrao": 1
+  },
+  {
+   "id": "xp",
+   "nome": "XP total",
+   "tipo": "numero",
+   "padrao": 0,
+   "dica": "O XP não é gasto ao subir de nível (tabela em Regras › Progressão)."
+  },
+  {
+   "id": "fraqueza",
+   "nome": "Fraqueza (atributo 0)",
+   "tipo": "texto",
+   "dica": "Só se o personagem tiver um atributo em 0: escreva a fraqueza e o gatilho."
+  },
+  {
+   "id": "deslocamento",
+   "nome": "Deslocamento",
+   "tipo": "texto",
+   "dica": "Ainda em definição nos testes."
+  }
+ ],
+ "atributos": [
+  {
+   "id": "POT",
+   "nome": "Potência",
+   "min": 0,
+   "max": 5,
+   "padrao": 1,
+   "dica": "Força física e impacto: arrombar portas, erguer cargas, empurrar inimigos e golpear com força. Não determina sozinho a técnica com armas."
+  },
+  {
+   "id": "DES",
+   "nome": "Destreza",
+   "min": 0,
+   "max": 5,
+   "padrao": 1,
+   "dica": "Coordenação e precisão motora: manipular mecanismos delicados, manejar ferramentas e executar movimentos precisos. Não é rapidez de reação."
+  },
+  {
+   "id": "REF",
+   "nome": "Reflexo",
+   "min": 0,
+   "max": 5,
+   "padrao": 1,
+   "dica": "Rapidez para reagir: responder a emboscadas, interceptar objetos e reagir a armadilhas. Não é velocidade de corrida nem percepção."
+  },
+  {
+   "id": "TEN",
+   "nome": "Tenacidade",
+   "min": 0,
+   "max": 5,
+   "padrao": 1,
+   "dica": "Vigor, fôlego e resistência física: resistir ao desgaste, à exaustão e a condições adversas. Não substitui defesa ativa."
+  },
+  {
+   "id": "ENG",
+   "nome": "Engenho",
+   "min": 0,
+   "max": 5,
+   "padrao": 1,
+   "dica": "Raciocínio, criatividade e solução de problemas: analisar pistas, programar, planejar e improvisar. Não concede sentidos aguçados."
+  },
+  {
+   "id": "VON",
+   "nome": "Vontade",
+   "min": 0,
+   "max": 5,
+   "padrao": 1,
+   "dica": "Determinação, concentração e resistência mental: resistir à coerção, manter o foco e transmitir convicção. Não define se o personagem é simpático."
+  },
+  {
+   "id": "SIN",
+   "nome": "Sintonia",
+   "min": 0,
+   "max": 5,
+   "padrao": 1,
+   "dica": "Conexão e controle de fenômenos extraordinários: estabilizar energia, moldar técnicas e interagir com manifestações sobrenaturais. Não aumenta o dano sozinha."
+  }
+ ],
+ "formulaModificador": "",
+ "derivados": [
+  {
+   "id": "defesa",
+   "nome": "Defesa Passiva",
+   "formula": "10 + REF",
+   "dica": "10 + Reflexo + modificadores"
+  },
+  {
+   "id": "iniciativa",
+   "nome": "Iniciativa",
+   "formula": "REF",
+   "dica": "1d20 + Reflexo (proposta)"
+  },
+  {
+   "id": "pv_max",
+   "nome": "PV máximos",
+   "formula": "25 + TEN * 5",
+   "dica": "25 + (TEN × 5)"
+  },
+  {
+   "id": "limite_atributo",
+   "nome": "Limite de atributo",
+   "formula": "3 + min(1, max(0, nivel - 3)) + min(1, max(0, nivel - 7))",
+   "dica": "3 até o nível 3; 4 nos níveis 4–7; 5 a partir do 8"
+  }
+ ],
+ "pericias": {
+  "titulo": "Perícias",
+  "modo": "treino",
+  "total": "ATR + TREINO",
+  "treinos": [
+   {
+    "id": "iniciante",
+    "nome": "Iniciante",
+    "formula": "0"
+   },
+   {
+    "id": "praticante",
+    "nome": "Praticante",
+    "formula": "3",
+    "custo": 1
+   },
+   {
+    "id": "experiente",
+    "nome": "Experiente",
+    "formula": "6",
+    "custo": 3
+   },
+   {
+    "id": "eximio",
+    "nome": "Exímio",
+    "formula": "9",
+    "custo": 6
+   }
+  ],
+  "lista": [
+   {
+    "id": "confronto",
+    "nome": "Confronto",
+    "atributo": "POT",
+    "grupo": "Combate",
+    "dica": "Atacar corpo a corpo com armas próximas ou desarmado. Alternativo: DES."
+   },
+   {
+    "id": "pontaria",
+    "nome": "Pontaria",
+    "atributo": "DES",
+    "grupo": "Combate",
+    "dica": "Atingir alvos à distância com armas ou projéteis, inclusive sobrenaturais que exijam mira. Alternativo: ENG."
+   },
+   {
+    "id": "guarda",
+    "nome": "Guarda",
+    "atributo": "REF",
+    "grupo": "Combate",
+    "dica": "Bloquear, aparar ou interceptar ativamente golpes. Alternativos: POT, DES."
+   },
+   {
+    "id": "estrategia",
+    "nome": "Estratégia",
+    "atributo": "ENG",
+    "grupo": "Combate",
+    "dica": "Analisar padrões de combate, planejar táticas e coordenar aliados. Alternativo: VON."
+   },
+   {
+    "id": "atletismo",
+    "nome": "Atletismo",
+    "atributo": "POT",
+    "grupo": "Corpo e movimento",
+    "dica": "Correr, saltar, escalar, nadar e exercer esforço físico. Alternativo: TEN."
+   },
+   {
+    "id": "acrobacia",
+    "nome": "Acrobacia",
+    "atributo": "DES",
+    "grupo": "Corpo e movimento",
+    "dica": "Equilibrar-se, fazer manobras e atravessar obstáculos com movimentos complexos. Alternativo: REF."
+   },
+   {
+    "id": "furtividade",
+    "nome": "Furtividade",
+    "atributo": "DES",
+    "grupo": "Corpo e movimento",
+    "dica": "Esconder-se, mover-se em silêncio e evitar detecção. Alternativo: ENG."
+   },
+   {
+    "id": "evasao",
+    "nome": "Evasão",
+    "atributo": "DES",
+    "grupo": "Corpo e movimento",
+    "dica": "Escapar de agarrões, amarras, correntes e imobilizações. Alternativos: POT, ENG."
+   },
+   {
+    "id": "investigacao",
+    "nome": "Investigação",
+    "atributo": "ENG",
+    "grupo": "Conhecimento e investigação",
+    "dica": "Examinar cenas, relacionar pistas e reconstruir acontecimentos. Alternativo: DES."
+   },
+   {
+    "id": "tecnologia",
+    "nome": "Tecnologia",
+    "atributo": "ENG",
+    "grupo": "Conhecimento e investigação",
+    "dica": "Operar, programar, analisar e reparar dispositivos. Alternativo: DES."
+   },
+   {
+    "id": "medicina",
+    "nome": "Medicina",
+    "atributo": "ENG",
+    "grupo": "Conhecimento e investigação",
+    "dica": "Prestar primeiros socorros, diagnosticar e tratar ferimentos. Alternativo: DES."
+   },
+   {
+    "id": "erudicao",
+    "nome": "Erudição",
+    "atributo": "ENG",
+    "grupo": "Conhecimento e investigação",
+    "dica": "Recordar e interpretar conhecimentos históricos, científicos e culturais. Alternativo: VON."
+   },
+   {
+    "id": "diplomacia",
+    "nome": "Diplomacia",
+    "atributo": "VON",
+    "grupo": "Interação social",
+    "dica": "Negociar, persuadir, mediar conflitos e conquistar cooperação. Alternativo: ENG, ou nenhum atributo quando justificável."
+   },
+   {
+    "id": "intimidacao",
+    "nome": "Intimidação",
+    "atributo": "VON",
+    "grupo": "Interação social",
+    "dica": "Pressionar, ameaçar e impor autoridade. Alternativo: POT, conforme a abordagem."
+   },
+   {
+    "id": "enganacao",
+    "nome": "Enganação",
+    "atributo": "ENG",
+    "grupo": "Interação social",
+    "dica": "Mentir, blefar e ocultar intenções. Alternativo: VON, conforme a abordagem."
+   },
+   {
+    "id": "expressao",
+    "nome": "Expressão",
+    "atributo": "VON",
+    "grupo": "Interação social",
+    "dica": "Discursar, atuar, cantar e transmitir emoções. Alternativo: DES, conforme a apresentação."
+   },
+   {
+    "id": "canalizacao",
+    "nome": "Canalização",
+    "atributo": "SIN",
+    "grupo": "Poderes extraordinários",
+    "dica": "Concentrar, sustentar e estabilizar energia extraordinária. Alternativo: VON."
+   },
+   {
+    "id": "dominio",
+    "nome": "Domínio",
+    "atributo": "SIN",
+    "grupo": "Poderes extraordinários",
+    "dica": "Moldar e controlar efeitos sobrenaturais complexos ou precisos. Alternativos: DES, ENG."
+   },
+   {
+    "id": "sensibilidade",
+    "nome": "Sensibilidade",
+    "atributo": "SIN",
+    "grupo": "Poderes extraordinários",
+    "dica": "Detectar energias, presenças e alterações sobrenaturais. Alternativo: REF."
+   },
+   {
+    "id": "ocultismo",
+    "nome": "Ocultismo",
+    "atributo": "ENG",
+    "grupo": "Poderes extraordinários",
+    "dica": "Interpretar símbolos, rituais e conhecimentos místicos. Alternativo: SIN."
+   },
+   {
+    "id": "percepcao",
+    "nome": "Percepção",
+    "grupo": "Exploração e sobrevivência",
+    "dica": "Notar sons, cheiros, movimentos, detalhes e ameaças. Sem atributo obrigatório: ENG ou REF, conforme o contexto."
+   },
+   {
+    "id": "rastreamento",
+    "nome": "Rastreamento",
+    "atributo": "ENG",
+    "grupo": "Exploração e sobrevivência",
+    "dica": "Seguir pegadas, sinais e vestígios de criaturas ou veículos. Alternativo: REF."
+   },
+   {
+    "id": "sobrevivencia",
+    "nome": "Sobrevivência",
+    "atributo": "TEN",
+    "grupo": "Exploração e sobrevivência",
+    "dica": "Obter recursos e abrigo, orientar-se e enfrentar ambientes hostis. Alternativo: ENG."
+   },
+   {
+    "id": "oficio",
+    "nome": "Ofício",
+    "atributo": "DES",
+    "grupo": "Exploração e sobrevivência",
+    "dica": "Construir, fabricar, modificar e reparar objetos com técnicas práticas. Alternativos: ENG, POT."
+   }
+  ]
+ },
+ "recursos": [
+  {
+   "id": "pv",
+   "nome": "PV",
+   "formula": "pv_max"
+  },
+  {
+   "id": "esquivas",
+   "nome": "Esquivas Ativas",
+   "maxFixo": 2,
+   "dica": "2 por rodada, voltam no início do seu próximo turno."
+  },
+  {
+   "id": "guarda",
+   "nome": "Guarda Ativa",
+   "maxFixo": 1,
+   "dica": "1 por rodada; −2 por esquiva já tentada na rodada (até −4)."
+  },
+  {
+   "id": "reacao",
+   "nome": "Reação",
+   "maxFixo": 1,
+   "dica": "1 Reação comum por rodada."
+  },
+  {
+   "id": "sucessos_morte",
+   "nome": "Sucessos (Morrendo)",
+   "maxFixo": 3,
+   "contador": true,
+   "dica": "1d20 + TEN contra DT 12 no início do turno. 3 sucessos estabilizam."
+  },
+  {
+   "id": "falhas_morte",
+   "nome": "Falhas (Morrendo)",
+   "maxFixo": 3,
+   "contador": true,
+   "dica": "3 falhas causam morte. Dano comum soma 1 falha; crítico soma 2 ao todo."
+  }
+ ],
+ "limites": [
+  {
+   "nome": "Pontos de atributo na criação (7 + 6)",
+   "uso": "soma_atributos",
+   "max": "13"
+  },
+  {
+   "nome": "Pontos de perícia na criação",
+   "uso": "custo_pericias",
+   "max": "8"
+  },
+  {
+   "nome": "Atributo acima do limite do nível",
+   "uso": "maior_atributo",
+   "max": "limite_atributo"
+  }
+ ],
+ "listas": [
+  {
+   "id": "tecnicas",
+   "nome": "Técnicas e poderes"
+  },
+  {
+   "id": "transformacoes",
+   "nome": "Transformações"
+  },
+  {
+   "id": "ferimentos",
+   "nome": "Ferimentos e condições"
+  },
+  {
+   "id": "ressonancia",
+   "nome": "Ressonância (Original e Opositor)"
+  },
+  {
+   "id": "anotacoes",
+   "nome": "Anotações e história"
+  }
+ ],
+ "regras": [
+  {
+   "titulo": "Sobre o sistema",
+   "texto": "Lunethernnyis: Opositores nasceu como adaptação de “Os Marcados do Cometa” para uma One Shot e foi ampliado para campanha/minicampanha. Está em desenvolvimento: as regras aprovadas valem; o que está marcado como proposta ainda será testado.\n\nQuando houver conflito, o resumo das regras aprovadas vale mais que notas antigas."
+  },
+  {
+   "titulo": "Atributos e criação",
+   "texto": "Sete atributos: Potência (POT), Destreza (DES), Reflexo (REF), Tenacidade (TEN), Engenho (ENG), Vontade (VON) e Sintonia (SIN).\n\nTodos começam em 1, e o jogador recebe 6 pontos para distribuir livremente. Na criação, nenhum atributo passa de 3. Os valores são escolhidos, não rolados.\n\nOpcionalmente, o jogador pode reduzir um único atributo de 1 para 0 e ganhar 1 ponto extra, respeitando o máximo de 3. Não é permitido ter dois atributos em 0.\n\nLimite de atributo pelo nível: níveis 1–3, máximo 3; níveis 4–7, máximo 4; a partir do nível 8, máximo 5. O limite não dá pontos sozinho."
+  },
+  {
+   "titulo": "Atributo 0 e fraquezas",
+   "texto": "Atributo 0 não é incapacidade completa: indica uma vulnerabilidade específica. O atributo vale 0 nos testes, e a fraqueza pode impor −2 adicional somente no gatilho descrito. Não se acumula consigo mesma.\n\nPotência 0 — Força Limitada: −2 ao exercer força intensa contra grande resistência.\nDestreza 0 — Coordenação Imprecisa: −2 em manipulações delicadas sob perigo imediato.\nReflexo 0 — Reação Tardia: −2 no primeiro teste para reagir a uma ameaça completamente inesperada.\nTenacidade 0 — Fôlego Curto: −2 para resistir à exaustão ou esforço físico prolongado.\nEngenho 0 — Improviso Lento: −2 ao resolver problemas técnicos complexos sob pressão.\nVontade 0 — Firmeza Abalada: −2 no primeiro teste contra uma nova fonte de medo sobrenatural ou coerção mental.\nSintonia 0 — Canalização Instável: −2 em Canalização para sustentar ou estabilizar poderes sob interferência.\n\nPreparação, ferramentas, tempo extra ou ajuda efetiva podem neutralizar a penalidade situacional. O Mestre explica quando a fraqueza se aplica."
+  },
+  {
+   "titulo": "Perícias e treinamento",
+   "texto": "São 24 perícias em seis grupos. Cada personagem recebe 8 pontos; todas começam em Iniciante. Os custos são totais, não cumulativos. Na criação, só UMA perícia pode chegar a Exímio.\n\nIniciante +0 (custo 0) · Praticante +3 (custo 1) · Experiente +6 (custo 3) · Exímio +9 (custo 6).\nExemplos: 1 Exímio + 2 Praticantes; 2 Experientes + 2 Praticantes; ou 8 Praticantes.\n\nA associação entre atributo e perícia é flexível: a mesma perícia pode usar atributos diferentes conforme a situação, e nem toda ação exige perícia. Não existe atributo Carisma: a personalidade é interpretada."
+  },
+  {
+   "titulo": "Testes e dificuldades",
+   "texto": "Teste: 1d20 + atributo adequado + bônus da perícia aplicável + modificadores ≥ DT.\n\nDTs de referência (proposta): 8 muito fácil · 12 fácil · 16 moderada · 20 difícil · 24 muito difícil · 28 extrema · 32 lendária.\n\nCríticos: 20 natural é Sucesso Crítico; 1 natural é Falha Crítica.\n\nDados: d20 para testes e ataques; d4 a d12 para dano, cura e efeitos; d100 para acontecimentos especiais, destino e raridade.\n\nGuia do Mestre: descubra a intenção, veja se é preciso rolar, escolha a perícia e o atributo (ou nenhum, se justificado), defina a DT e narre o resultado."
+  },
+  {
+   "titulo": "Combate: rodada e ações",
+   "texto": "Em cada rodada, cada personagem tem um turno com 1 Ação, 1 Movimento e 1 Ação Rápida. Fora do turno, tem 1 Reação comum por rodada, recuperada no início do próximo turno.\n\nIniciativa (proposta): 1d20 + Reflexo. Empate: maior Reflexo; depois, rolam de novo.\n\nAtaques (proposta): 1d20 + atributo + perícia de combate + modificadores contra a Defesa do alvo. Corpo a corpo: Potência ou Destreza + Confronto. À distância: Destreza + Pontaria. Poderes: a técnica determina o teste."
+  },
+  {
+   "titulo": "Defesa e esquiva",
+   "texto": "Defesa Passiva: 10 + Reflexo + modificadores. Um ataque que não a supera falha.\n\nSe o ataque superar a Defesa Passiva, o alvo pode tentar UMA defesa ativa antes do dano:\n• Esquiva Ativa (2 por rodada): 1d20 + Reflexo + modificadores; igualar ou superar o total do ataque evita o golpe.\n• Guarda Ativa (1 por rodada): 1d20 + atributo pertinente + Guarda + modificadores. Sofre −2 por esquiva já tentada na rodada (até −4).\n\nEsquiva e Guarda não gastam a Reação comum. Efeitos mentais, áreas e ataques inevitáveis exigem resistências próprias."
+  },
+  {
+   "titulo": "Dano, PV e queda",
+   "texto": "Dano: o atacante rola o dado da arma ou técnica (d4 a d12, conforme a intensidade). Críticos terão regra própria.\n\nPV máximos: 25 + (TEN × 5). TEN 0/1/2/3/4/5 = 25/30/35/40/45/50 PV.\n\nAo chegar a 0 PV: Incapacitado e Morrendo. No início de cada turno, 1d20 + TEN contra DT 12. Três sucessos estabilizam; três falhas causam morte. Ao recuperar pelo menos 1 PV, volta à consciência.\n\nDano enquanto Morrendo: um ataque comum que cause dano soma 1 falha; um crítico que cause dano soma 2 falhas ao todo.\n\nEstabilizado: para de fazer testes de morte, continua inconsciente a 0 PV, zera sucessos e falhas e recebe um Ferimento temporário. Receber dano estabilizado volta a Morrendo."
+  },
+  {
+   "titulo": "Ferimentos e primeiros socorros (propostas)",
+   "texto": "Ferimentos (proposta): Leve −1, Moderado −2, Grave −3 nos testes relacionados; só vale a penalidade do ferimento mais grave.\n\nPrimeiros socorros (proposta): uma Ação, 1d20 + ENG + Medicina contra DT 12 para estabilizar um aliado Morrendo. Tratar ferimentos leves/moderados/graves: DT 12/16/20."
+  },
+  {
+   "titulo": "Manobras, assimetria e poderes",
+   "texto": "Nem toda ação ofensiva causa dano: agarrar, derrubar, empurrar, desarmar, conter, bloquear passagem, mexer no cenário, proteger alguém, preparar armadilhas e usar poderes de forma criativa.\n\nPrincípio de assimetria: personagens não precisam ter o mesmo potencial destrutivo. O sistema recompensa dano, mobilidade, controle, suporte, defesa, investigação, interação social, manipulação do cenário e exploração das fraquezas inimigas.\n\nPoderes e transformações são construídos para cada personagem. Cada técnica registra: tipo de ação, teste, alcance, alvo ou área, dano ou efeito, custo, duração, limitações e interação com crítico."
+  },
+  {
+   "titulo": "Opositores e Ressonância",
+   "texto": "Os Opositores usam o mesmo núcleo de regras dos personagens originais. A Ressonância entre Original e Opositor será desenvolvida depois que o combate-base estiver estável."
+  },
+  {
+   "titulo": "Progressão (XP)",
+   "texto": "XP acumulativo, cerca de 1 nível a cada 2–3 sessões (valores provisórios). O XP não é gasto ao subir de nível.\n\nNível 1: 0 · Nível 2: 300 · Nível 3: 750 · Nível 4: 1.350 · Nível 5: 2.100 · Nível 6: 3.000 · Nível 7: 4.050 · Nível 8: 5.250 · Nível 9: 6.600 · Nível 10: 8.100.\n\nGanhos sugeridos: participação 30–50; desafio importante 20–40; informação relevante 20–40; objetivo secundário 30–60; objetivo principal 60–120."
+  }
+ ],
+ "observacoes": [
+  "Sistema em desenvolvimento: propostas marcadas nas Regras ainda serão testadas."
+ ]
+}

@@ -1,4 +1,4 @@
-import { lerPericiasExtras } from './graus'
+import { lerMarcas, lerPericiasExtras } from './graus'
 import { pvPorNivel2014 } from './dnd2014Vitalidade'
 import { avaliarSeguro, type Variaveis } from './formula'
 import { imagemDaPlataforma } from '../nuvem/validacao'
@@ -145,6 +145,7 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     ...(d.criacaoLivre !== undefined ? { criacaoLivre: d.criacaoLivre === true } : {}),
     // Perícias criadas pelo jogador (sistemas com perícias livres, v0.35.6).
     ...(s.pericias?.livres && d.periciasExtras !== undefined ? { periciasExtras: lerPericiasExtras(d.periciasExtras) } : {}),
+    ...(d.marcas !== undefined ? { marcas: lerMarcas(d.marcas) } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndAntecedente !== undefined && lerRegistroAntecedenteDnd(d.dndAntecedente) ? { dndAntecedente: lerRegistroAntecedenteDnd(d.dndAntecedente)! } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndTalentoHumano !== undefined && lerTalentoMagiaHumano(d.dndTalentoHumano) ? { dndTalentoHumano: lerTalentoMagiaHumano(d.dndTalentoHumano)! } : {}),
     ...(s.id === 'dnd5e-srd' && d.dndMagias !== undefined ? { dndMagias: lerMagiasDnd(d.dndMagias) } : {}),

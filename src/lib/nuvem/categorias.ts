@@ -67,6 +67,10 @@ function categoriaGenerica(caminho: string): Campo {
   if (caminho === 'dndMagias') return 'habilidades'
   if (caminho === 'dndMulticlasse') return 'nivel'
   if (caminho === 'uso') return 'pv'
+  // Marcações de jogo (estresse, salvaguardas contra a morte, espaços de magia, relógios…): mudam no jogo, como PV (v0.35.9).
+  if (caminho === 'marcas') return 'pv'
+  // Perícias criadas pelo jogador (v0.35.6) seguem as regras das perícias.
+  if (caminho === 'periciasExtras') return 'pericias'
   // Ficha manual: modificadores com os atributos, totais com as perícias, valores (CA, Defesa…) com PV e recursos.
   if (caminho === 'manual.mods') return 'atributos'
   if (caminho === 'manual.pericias') return 'pericias'

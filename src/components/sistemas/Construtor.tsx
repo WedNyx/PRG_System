@@ -29,7 +29,7 @@ type Def = {
   pericias: { modo: 'treino' | 'valor' | 'nenhuma'; titulo?: string; livres?: boolean; total: string; treinos: Linha[]; lista: Linha[] }
   recursos: Linha[]; listas: Linha[]; limites: { nome: string; uso: string; max: string }[]; observacoes: string; carga: { formula: string; unidade: string }
   arvore: { pontos: number; nos: unknown[] }; progressao: DefProgressao | null
-  tabelas: TabelaDef[]; regras: CapituloRegra[]; nomesSecoes: Partial<Record<SecaoFicha, string>>
+  tabelas: TabelaDef[]; regras: CapituloRegra[]; nomesSecoes: Partial<Record<SecaoFicha, string>>; visualAtributos: '' | 'lua'
 }
 const ID_TESTE = 'autoral-00000000000000000000000000000000'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-sm text-white'
@@ -51,6 +51,7 @@ function paraDef(s: Partial<Sistema> & Record<string, unknown>, auto = false): D
     regraRolagem: (s.regraRolagem as Def['regraRolagem']) ?? { nome: 'Teste', formula: '1d20+VALOR' },
     parada: (s.parada as Def['parada']) ?? { lados: 20 },
     graus: (s.graus as GrausDef) ?? GRAUS_PADRAO,
+    visualAtributos: s.visualAtributos === 'lua' ? 'lua' : '',
     tabelas: (s.tabelas as TabelaDef[]) ?? [], regras: (s.regras as CapituloRegra[]) ?? [], nomesSecoes: (s.nomesSecoes as Def['nomesSecoes']) ?? {},
     resistencias: Array.isArray(s.resistencias) ? (s.resistencias as string[]) : [],
     creditos: typeof s.creditos === 'string' ? s.creditos : undefined,
@@ -72,7 +73,7 @@ function paraEnvio(d: Def) {
     carga: d.carga.formula ? d.carga : undefined,
     ...(d.arvore.nos.length ? { arvore: d.arvore } : {}),
     ...(d.progressao ? { progressoes: d.progressao } : {}),
-    ...(d.rolagem === 'graus' ? { graus: d.graus } : {}),
+    ...(d.rolagem === 'graus' ? { graus: d.graus } : {}), ...(d.visualAtributos ? { visualAtributos: d.visualAtributos } : {}),
     ...(d.tabelas.length ? { tabelas: d.tabelas } : {}), ...(d.regras.length ? { regras: d.regras } : {}),
     ...(Object.values(d.nomesSecoes).some(v => v?.trim()) ? { nomesSecoes: d.nomesSecoes } : {}),
   }
@@ -231,6 +232,9 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
         <SecaoBase id="atributos" titulo={'✨ ' + (def.tituloAtributos.trim() || 'Atributos')} sub="Sigla, nome, mínimo e máximo — e o nome desta parte no seu sistema" aberta={aberta === 'atributos'} alternar={() => setAberta(a => a === 'atributos' ? '' : 'atributos')}>
           <label className="block text-xs">Como o seu sistema chama esta parte? (opcional)
             <input value={def.tituloAtributos} maxLength={40} onChange={e => mudar(d => ({ ...d, tituloAtributos: e.target.value }))} className={input + ' mt-1'} placeholder="Atributos (ex.: Aspectos, Virtudes, Essências)" /></label>
+          {def.rolagem !== 'graus' && <label className="block text-xs">Como mostrar os atributos na ficha
+            <select value={def.visualAtributos} onChange={e => mudar(d => ({ ...d, visualAtributos: e.target.value === 'lua' ? 'lua' : '' }))} className={input + ' mt-1'}>
+              <option value="">Cartões lado a lado</option><option value="lua">🌙 Formando uma lua minguante (até 9 atributos)</option></select></label>}
           {def.atributos.map((a, i) => <div key={i} className="space-y-1 rounded-xl bg-(--s-171325) p-2">
             <div className="flex gap-2">
               <input aria-label="Sigla" value={a.id} maxLength={6} onChange={e => { const v = e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''); mudar(d => ({ ...d, atributos: d.atributos.map((x, k) => k === i ? { ...x, id: v || x.id, auto: false } : x) })) }} className={pequeno + ' w-20 font-mono uppercase'} placeholder="FOR" />

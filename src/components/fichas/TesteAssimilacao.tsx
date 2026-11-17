@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
+import AnimacaoAssim from './AnimacaoAssim'
 import { toast } from 'sonner'
 import { Dice5 } from 'lucide-react'
 import { rolarExpressao } from '@/lib/dice'
@@ -63,6 +64,8 @@ export default function TesteAssimilacao({ s, d, c, onChange, somenteLeitura, ro
   const [qtdDano, setQtdDano] = useState(1)
   const [dano, setDano] = useState<DadoAssim[] | null>(null)
   const [ocupado, setOcupado] = useState(false)
+  const [animacao, setAnimacao] = useState<DadoAssim[] | null>(null)
+  const fecharAnimacao = useCallback(() => setAnimacao(null), [])
 
   const v = (id: string) => Number(c.vars[id]) || 0
   const atual = (id: string) => Number(d.recursos[id]?.atual) || 0
@@ -89,6 +92,7 @@ export default function TesteAssimilacao({ s, d, c, onChange, somenteLeitura, ro
       const r = await jogar(m.expressao, rotulo, { manter: m.manter })
       if (!r) { toast.error('Não deu para rolar agora.'); return }
       const dados = lerResultados(m.grupos, r)
+      setAnimacao(dados)
       setTeste({ rotulo, dados, manter: m.manter, mantidos: sugerirMantidos(dados, m.manter) })
       // Gasta os pontos usados (Determinação para manter dado; Assimilação, ou 2 de Determinação, para Agir por Instinto).
       if (!somenteLeitura && (gastoDet || custoAssim.assimilacao)) {
@@ -115,7 +119,7 @@ export default function TesteAssimilacao({ s, d, c, onChange, somenteLeitura, ro
     setOcupado(true)
     try {
       const r = await jogar(t.expressao, 'Teste de Assimilação', { todos: true })
-      if (r) setAssim({ dados: lerResultados(t.grupos, r), anotado: false })
+      if (r) { const dados = lerResultados(t.grupos, r); setAnimacao(dados); setAssim({ dados, anotado: false }) }
     } finally { setOcupado(false) }
   }
   function anotarPressoes(n: number) {
@@ -130,7 +134,7 @@ export default function TesteAssimilacao({ s, d, c, onChange, somenteLeitura, ro
     const n = Math.max(1, Math.min(20, qtdDano))
     const grupos = [{ lados: 10 as LadoAssim, qtd: n }]
     setOcupado(true)
-    try { const r = await jogar(`${n}d10`, 'Dano', { todos: true }); if (r) setDano(lerResultados(grupos, r)) } finally { setOcupado(false) }
+    try { const r = await jogar(`${n}d10`, 'Dano', { todos: true }); if (r) { const dados = lerResultados(grupos, r); setAnimacao(dados); setDano(dados) } } finally { setOcupado(false) }
   }
 
   const mantidos = teste ? teste.mantidos.map(i => teste.dados[i].face) : []
@@ -139,6 +143,7 @@ export default function TesteAssimilacao({ s, d, c, onChange, somenteLeitura, ro
   const totDano = dano ? somar(dano.map(x => x.face)) : null
 
   return <>
+    {animacao && <AnimacaoAssim dados={animacao} fechar={fecharAnimacao} />}
     <section className={card} aria-label="Teste com os dados de Assimilação">
       <h2 className="mb-1 flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Dice5 size={18} /> Teste</h2>
       <p className="mb-3 text-xs text-(--a-a998bd)">Um d6 por ponto do Instinto e um d10 por ponto do Conhecimento ou Prática. Role todos e mantenha o melhor (ou mais, gastando recursos).</p>

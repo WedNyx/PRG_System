@@ -20,9 +20,11 @@ export function posicaoNaLua(i: number, n: number) {
 const SERIFA = { fontFamily: 'var(--font-cinzel), Georgia, serif' }
 const OURO = '#e2bf72'
 
-export default function AtributosLua({ atributos, valores, somenteLeitura, mudar, rolar }: {
+export default function AtributosLua({ atributos, valores, somenteLeitura, mudar, rolar, mods, mudarMod }: {
   atributos: AtributoDef[]; valores: Record<string, number>; somenteLeitura: boolean
   mudar: (id: string, v: number) => void; rolar?: (a: AtributoDef, v: number) => void
+  /** Sistemas com fórmula de modificador própria (v0.35.8): mostra e permite editar o modificador na legenda. */
+  mods?: Record<string, number>; mudarMod?: (id: string, v: number) => void
 }) {
   const id = useId().replace(/:/g, '')
   const lista = atributos.slice(0, 9)
@@ -88,9 +90,15 @@ export default function AtributosLua({ atributos, valores, somenteLeitura, mudar
         </div>
       })}
     </div>
-    {/* legenda: sigla e nome */}
-    <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-xs sm:grid-cols-3">
-      {lista.map(a => <li key={a.id} className="flex items-baseline gap-1.5"><span style={SERIFA} className="font-semibold text-[#e2bf72]">{a.id}</span><span className="text-(--a-cfc0df)">{a.nome}</span></li>)}
+    {/* legenda: sigla, nome e, se o sistema tiver modificador próprio, o modificador (editável) */}
+    <ul className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs sm:grid-cols-3">
+      {lista.map(a => <li key={a.id} className="flex items-baseline gap-1.5">
+        <span style={SERIFA} className="font-semibold text-[#e2bf72]">{a.id}</span><span className="text-(--a-cfc0df)">{a.nome}</span>
+        {mudarMod && <label className="ml-auto flex items-center gap-1 text-[10px] text-(--a-c4b6d4)">mod
+          <input type="number" aria-label={'Modificador de ' + a.nome} value={mods?.[a.id] ?? 0} disabled={somenteLeitura}
+            onChange={e => mudarMod(a.id, Math.round(Number(e.target.value)) || 0)}
+            className="w-10 rounded border border-(--a-5e4b78) bg-(--s-151123) px-1 text-center font-bold text-(--a-d4baff) disabled:opacity-70" /></label>}
+      </li>)}
     </ul>
   </div>
 }

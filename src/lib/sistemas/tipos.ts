@@ -17,7 +17,10 @@ export type DerivadoDef = { id: string; nome: string; formula: string; dica?: st
 /** `contador`: marcador que começa em 0 e não enche no descanso (Morrendo, Exaustão, Estresse…); `baixaNoDescanso`: quanto cai no descanso longo. */
 /** `ocultarSemMax`: some da ficha quando o máximo é 0 (ex.: Fúrias para quem não é Bárbaro); `voltaNoCurto`: enche também no descanso curto. */
 /** `dica`: como se acha o máximo (ex.: “Role Físico + Fortitude”), aparece debaixo da barra (v0.35.6). */
-export type RecursoDef = { id: string; nome: string; dica?: string; formula?: string; maxFixo?: number; sugerido?: string; contador?: boolean; baixaNoDescanso?: number; ocultarSemMax?: boolean; voltaNoCurto?: boolean }
+/** `inicial`: fórmula do valor com que a ficha nova começa (em vez do máximo); `semEnchimentoNoDescanso`: a perda fica
+ * (Sanidade, Sorte do Call of Cthulhu…): nem o descanso longo enche, mesmo sem ser um marcador (v0.35.7). */
+export type RecursoDef = { id: string; nome: string; dica?: string; formula?: string; maxFixo?: number; sugerido?: string; contador?: boolean; baixaNoDescanso?: number; ocultarSemMax?: boolean; voltaNoCurto?: boolean
+  inicial?: string; semEnchimentoNoDescanso?: boolean }
 export type LimiteDef = { nome: string; uso: string; max: string }
 /**
  * Graus de dado (v0.35.6): atributos e perícias valem um dado (d4, d6, d8…) em vez de um número.

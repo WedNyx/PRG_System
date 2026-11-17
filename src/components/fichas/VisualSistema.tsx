@@ -11,19 +11,26 @@ import type { Sistema } from '@/lib/sistemas/tipos'
 export type Tema = { acento: string; borda: string; cartao: string; fonte?: string; sombrio?: boolean }
 const PADRAO: Tema = { acento: 'var(--a-ed9cd8)', borda: 'var(--a-55456e)', cartao: 'var(--s-201a32)' }
 const TEMAS: Record<string, Tema> = {
-  'dnd5e-srd': { acento: '#f0806f', borda: '#7a3a33', cartao: 'var(--s-201a32)', fonte: 'var(--font-cinzel), Georgia, serif' },
-  pf2e: { acento: '#e8b84a', borda: '#6b5420', cartao: 'var(--s-201a32)', fonte: 'var(--font-cinzel), Georgia, serif' },
-  'fate-core': { acento: '#6cc4ff', borda: '#24557a', cartao: 'var(--s-201a32)' },
-  blades: { acento: '#9fdccb', borda: '#2f5f56', cartao: 'var(--s-201a32)', fonte: 'var(--font-cormorant), Georgia, serif' },
-  brp: { acento: '#d6bf8f', borda: '#5f4f35', cartao: 'var(--s-201a32)', fonte: 'var(--font-cormorant), Georgia, serif' },
-  'faroeste-arcano': { acento: '#eab26a', borda: '#704a26', cartao: 'var(--s-201a32)', fonte: 'var(--font-cormorant), Georgia, serif' },
-  'ordem-paranormal': { acento: '#d8a6ff', borda: '#5b2a86', cartao: 'var(--s-201a32)' },
-  tormenta20: { acento: '#ff7a6b', borda: '#7f1d1d', cartao: 'var(--s-201a32)', fonte: 'var(--font-cinzel), Georgia, serif' },
+  'dnd5e-srd': { acento: '#f5a28e', borda: '#9a4545', cartao: '#24191f', fonte: 'var(--font-cinzel), Georgia, serif' },
+  pf2e: { acento: '#9ecaff', borda: '#426b9e', cartao: '#172335', fonte: 'var(--font-cinzel), Georgia, serif' },
+  'fate-core': { acento: '#c5b0ff', borda: '#7457ad', cartao: '#221b34' },
+  blades: { acento: '#c4c8ef', borda: '#62678d', cartao: '#1c202a', fonte: 'var(--font-cormorant), Georgia, serif' },
+  brp: { acento: '#a6dfc5', borda: '#45836b', cartao: '#172923', fonte: 'var(--font-cormorant), Georgia, serif' },
+  'faroeste-arcano': { acento: '#f1c184', borda: '#9a6637', cartao: '#302219', fonte: 'var(--font-cormorant), Georgia, serif' },
+  'ordem-paranormal': { acento: '#ff9da7', borda: '#923846', cartao: '#28191f' },
+  tormenta20: { acento: '#a9d1ff', borda: '#476b9b', cartao: '#1b2637', fonte: 'var(--font-cinzel), Georgia, serif' },
   'mork-borg': { acento: '#ffe600', borda: '#ffe600', cartao: '#0a0a0a', sombrio: true },
-  assimilacao: { acento: '#5eead4', borda: '#1f5c55', cartao: 'var(--s-201a32)' },
-  'call-of-cthulhu': { acento: '#9fd8c4', borda: '#2b5a50', cartao: 'var(--s-201a32)', fonte: 'var(--font-cormorant), Georgia, serif' },
+  assimilacao: { acento: '#e7a5f5', borda: '#8a459b', cartao: '#2c1b32' },
+  'call-of-cthulhu': { acento: '#a6e0d2', borda: '#427b76', cartao: '#182925', fonte: 'var(--font-cormorant), Georgia, serif' },
 }
 export const temaDoSistema = (id: string): Tema => TEMAS[id] ?? PADRAO
+export function identidadeVisual(s: Sistema): string {
+  if (/lunethernnyis|opositores/i.test(s.nome)) return 'opositores'
+  if (/projeto n\.?o\.?v\.?a/i.test(s.nome)) return 'nova'
+  return s.id
+}
+TEMAS.opositores = { acento: '#ddc58d', borda: '#826b9f', cartao: '#211a34', fonte: 'var(--font-cinzel), Georgia, serif' }
+TEMAS.nova = { acento: '#ffc18f', borda: '#925e59', cartao: '#292033' }
 /** Variáveis CSS que a ficha usa nos cartões e títulos. */
 export const estiloTema = (t: Tema) => ({ '--ficha-acento': t.acento, '--ficha-borda': t.borda, '--ficha-cartao': t.cartao, '--ficha-fonte': t.fonte ?? 'inherit' } as CSSProperties)
 

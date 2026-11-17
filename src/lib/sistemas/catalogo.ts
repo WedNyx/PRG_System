@@ -489,8 +489,8 @@ export const SISTEMAS: Sistema[] = [
     },
     recursos: [
       { id: 'pv', nome: 'PV', formula: 'pv_max' }, { id: 'pm', nome: 'Pontos de Magia', formula: 'pm_max' },
-      { id: 'sanidade', nome: 'Sanidade', maxFixo: 99, dica: 'Começa igual ao POD. O máximo é 99 menos a perícia Mitos de Cthulhu.' },
-      { id: 'sorte', nome: 'Sorte', maxFixo: 99, dica: 'Rolada na criação, como diz o seu livro; gasta e recupera pelas regras.' },
+      { id: 'sanidade', nome: 'Sanidade', maxFixo: 99, inicial: 'POD', semEnchimentoNoDescanso: true, dica: 'Começa igual ao POD. O máximo é 99 menos a perícia Mitos de Cthulhu. A perda não volta descansando: só pelas regras do seu livro (terapia, tempo…).' },
+      { id: 'sorte', nome: 'Sorte', maxFixo: 99, semEnchimentoNoDescanso: true, dica: 'Rolada na criação, como diz o seu livro; gasta e recupera pelas regras — não enche sozinha no descanso.' },
     ],
     listas: [{ id: 'armas', nome: 'Armas (perícia, dano, alcance, munição)' }, { id: 'fobias', nome: 'Fobias, manias e traumas' }, { id: 'tomos', nome: 'Tomos, magias e encontros estranhos' }, ...LISTAS_PADRAO],
     observacoes: [

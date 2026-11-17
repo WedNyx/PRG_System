@@ -40,6 +40,9 @@ export function fichaVazia(s: Sistema, nome = ''): DadosFicha {
     const c = calcularRegras(s, base), max = c.recursosMax
     for (const r of s.recursos) {
       if (r.contador) continue // marcadores começam em 0
+      // Valor inicial próprio (ex.: Sanidade do Call of Cthulhu = POD, não o máximo de 99).
+      const inicial = r.inicial ? avaliarSeguro(r.inicial, c.vars) : null
+      if (inicial !== null && Number.isFinite(inicial) && inicial > 0) { base.recursos[r.id] = { atual: Math.round(inicial) }; continue }
       // Vida sem fórmula: usa o PV sugerido do sistema (igual ao combate da mesa).
       const m = max[r.id] ?? (/^(pv|vida|hp)$/i.test(r.id) ? (c.derivados.pv_max ?? c.derivados.pv_sugerido ?? null) : null)
       if (m !== null && m !== undefined && Number.isFinite(m) && m > 0) base.recursos[r.id] = { atual: m } }

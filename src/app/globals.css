@@ -227,3 +227,9 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 [data-visual="assimilacao"] .ficha-painel { border-radius: 24px 8px 30px 12px; background-image: radial-gradient(ellipse at 95% 0%, #b45ec51f, transparent 55%); }
 [data-visual="opositores"] .ficha-painel { border-radius: 22px; border-top: 3px double var(--ficha-acento); background-image: radial-gradient(circle at 92% 8%, #d9c58d20, transparent 28%); }
 [data-visual="nova"] .ficha-painel { border-radius: 4px 20px; border-inline-start: 3px solid var(--ficha-acento); background-image: repeating-linear-gradient(90deg, transparent 0 30px, #ffffff04 30px 31px); }
+
+[data-visual="dnd5e-srd"] .ficha-atributo-mod { border-radius: 7px 7px 45% 45% / 7px 7px 28% 28%; border-color: #ba905e; background: linear-gradient(145deg,#41282c,#21171e); }
+[data-visual="faroeste-arcano"] .ficha-atributo-mod { border-radius: 6px; border-style: double; background: linear-gradient(145deg,#483021,#241a15); }
+[data-visual="pf2e"] .ficha-atributo-base { border-radius: 5px 22px; background: linear-gradient(145deg,#253b58,#152031); }
+[data-visual="tormenta20"] .ficha-atributo-base { border-radius: 45% 45% 12px 12px; background: linear-gradient(145deg,#2a3c58,#1b2331); }
+[data-visual="mork-borg"] .ficha-atributo-base { border-radius: 0; box-shadow: 2px 2px #ffe600; }

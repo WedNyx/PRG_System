@@ -7,6 +7,7 @@ import { calcular } from '@/lib/sistemas/calculo'
 import type { DadosFicha, FichaManual as Manual, Sistema } from '@/lib/sistemas/tipos'
 import { montarRolagem, rolarExpressao } from '@/lib/dice'
 import AcoesRapidas from './AcoesRapidas'
+import AtributosLua from './AtributosLua'
 import { AtributosGraus, PericiasGraus, RegrasDoSistema, TabelasDoSistema } from './FichaGraus'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import { InventarioFicha, PoderesFicha } from './Inventario'
@@ -200,7 +201,13 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
           {graus && s.pericias && <PericiasGraus s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} mostrar={mostrar} />}
           {!graus && s.atributos.length > 0 && <section className={card}>
             <h2 className="mb-3 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">{tituloAtr}</h2>
-            {s.id === 'ordem-paranormal'
+            {s.visualAtributos === 'lua' ? <>
+              <AtributosLua atributos={s.atributos} valores={d.atributos} somenteLeitura={somenteLeitura}
+                mudar={(id, v) => set('atributos', { ...d.atributos, [id]: v })} rolar={d20 || regra ? (a, v) => void rolar(a.nome, comMod ? m.mods[a.id] ?? 0 : v) : undefined} />
+              {s.atributos.some(a => a.dica) && <details className="mt-4 rounded-xl bg-(--s-171325) px-3 py-2 text-sm"><summary className="cursor-pointer font-semibold">O que cada atributo faz</summary>
+                <ul className="mt-2 space-y-1.5 text-xs text-(--a-d6c9e4)">{s.atributos.filter(a => a.dica).map(a => <li key={a.id}><strong className="text-(--ficha-acento)">{a.nome} ({a.id}):</strong> {a.dica}</li>)}</ul></details>}
+            </>
+            : s.id === 'ordem-paranormal'
               ? <AtributosOrdem atributos={s.atributos} valores={d.atributos} nex={Number(d.campos.nex ?? 5)} somenteLeitura={somenteLeitura} semLimite
                 onChange={(id, valor) => set('atributos', { ...d.atributos, [id]: valor })} />
               : visual.atributos === 'com-mod' ? <div className="grid grid-cols-3 gap-x-2 gap-y-5 pb-3 sm:grid-cols-6 sm:gap-3">
@@ -226,7 +233,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               </div>}
           </section>}
           {s.rolagem === 'assimilacao' && <TesteAssimilacao s={s} d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolarNaCampanha={rolarNaCampanha} />}
-          {(d20 || parada || regra) && s.atributos.length > 0 && (visual.atributos === 'padrao' || visual.atributos === 'hexagonos' || !d20) && <section className={card}>
+          {(d20 || parada || regra) && s.atributos.length > 0 && s.visualAtributos !== 'lua' && (visual.atributos === 'padrao' || visual.atributos === 'hexagonos' || !d20) && <section className={card}>
             <h2 className="mb-2 flex items-center gap-2 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]"><Dice5 size={18} /> Teste de atributo</h2>
             {parada && <p className="mb-2 text-xs text-(--a-a998bd)">Rola um d{parada} para cada ponto do atributo e fica com o maior. Com 0, rola dois e fica com o menor.</p>}
             <div className="flex flex-wrap gap-2">{s.atributos.map(a => { const v = Number(d.atributos[a.id]) || 0, b = comMod ? m.mods[a.id] ?? 0 : v

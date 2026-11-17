@@ -71,6 +71,8 @@ export type Sistema = {
   nomesItens?: Partial<Record<'arma' | 'armadura' | 'consumivel' | 'equipamento' | 'tesouro' | 'outro' | 'magico', string>>
   campos: CampoDef[]
   atributos: AtributoDef[]
+  /** Como a ficha mostra os atributos (v0.35.8): 'lua' = em arco, formando uma lua minguante. */
+  visualAtributos?: 'lua'
   /** Nome que a ficha usa para os atributos (sistemas autorais: “Aspectos”, “Virtudes”…; v0.33.8). As perícias usam `pericias.titulo`. */
   tituloAtributos?: string
   /** Modificador do atributo; `X` é o valor do atributo. Sem isso, o modificador é o próprio valor. */

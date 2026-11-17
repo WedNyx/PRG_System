@@ -27,6 +27,14 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.35.8', data: '2026-11-17',
+    titulo: 'Lunethernnyis: Opositores nos sistemas autorais',
+    itens: [
+      'O sistema Lunethernnyis: Opositores entrou nos sistemas autorais, criado pelo Wed (só ele edita): sete atributos, 24 perícias com treinamento, Defesa Passiva, esquivas e guarda, PV, testes de morte e as regras em capítulos.',
+      'Novo jeito de mostrar os atributos: formando uma lua minguante. Qualquer autor pode escolher no construtor, em Atributos.',
+    ],
+  },
+  {
     versao: '0.35.7', data: '2026-11-16',
     titulo: 'Call of Cthulhu e rifles novos no arsenal',
     itens: [

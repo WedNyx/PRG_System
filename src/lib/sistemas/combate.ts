@@ -158,6 +158,16 @@ export function leituraBlades(dados: number, resultados: number[], resistencia =
 }
 
 /** Leitura do d100 (BRP): crítico (1/20 do valor), especial (1/5), sucesso, falha e desastre (os 5% de cima da falha). */
+/** Call of Cthulhu 7ª (v0.35.7): crítico 01, extremo até ⅕, difícil até ½, normal até o valor; desastre 100 (96–100 abaixo de 50). */
+export function leituraCoc(valor: number, rolado: number): string {
+  const v = Math.max(0, valor)
+  if (rolado === 1) return '🌟 Crítico!'
+  if (rolado >= (v < 50 ? 96 : 100)) return '💀 Desastre'
+  if (rolado <= Math.floor(v / 5)) return '✨ Sucesso extremo'
+  if (rolado <= Math.floor(v / 2)) return '⭐ Sucesso difícil'
+  if (rolado <= v) return '✅ Sucesso'
+  return '❌ Falha'
+}
 export function leituraD100(valor: number, rolado: number): string {
   const v = Math.max(0, valor)
   const critico = Math.max(1, Math.round(v / 20)), especial = Math.max(1, Math.round(v / 5))

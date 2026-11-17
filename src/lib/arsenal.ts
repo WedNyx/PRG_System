@@ -11,7 +11,7 @@ export type ItemArsenal = { nome: string; categoria: CategoriaItem; icone: strin
 export const ESTILOS_ARSENAL: { id: EstiloArsenal; nome: string; icone: string }[] = [
   { id: 'medieval', nome: 'Medieval e fantasia', icone: 'gi:lorc/broadsword' },
   { id: 'faroeste', nome: 'Faroeste', icone: 'gi:delapouite/revolver' },
-  { id: 'moderno', nome: 'Moderno', icone: 'gi:sbed/rifle' },
+  { id: 'moderno', nome: 'Moderno', icone: 'gi:skoll/ak47' },
   { id: 'scifi', nome: 'Ficção científica', icone: 'gi:sbed/laser-gun' },
   { id: 'terror', nome: 'Terror', icone: 'gi:delapouite/chainsaw' },
 ]
@@ -29,6 +29,7 @@ export const ARSENAL: Record<EstiloArsenal, ItemArsenal[]> = {
     a('Machado de batalha', 'lorc/battle-axe', 2, '1d8', 'Machado de uma mão.'),
     a('Machado grande', 'delapouite/war-axe', 3.5, '1d12', 'Pesado, usado com as duas mãos.'),
     a('Lança', 'lorc/barbed-spear', 1.5, '1d6', 'Pode ser arremessada.', { alcance: 6 }),
+    a('Azagaia', 'lorc/thrown-spear', 1, '1d6', 'Lança curta e leve, feita para arremessar.', { alcance: 9 }),
     a('Alabarda', 'lorc/halberd', 3, '1d10', 'Haste longa: alcança um pouco mais longe.', { alcance: 3 }),
     a('Maça', 'delapouite/flanged-mace', 2, '1d6', 'Arma de impacto.'),
     a('Martelo de guerra', 'delapouite/warhammer', 2, '1d8', 'Arma de impacto pesada.'),
@@ -60,6 +61,8 @@ export const ARSENAL: Record<EstiloArsenal, ItemArsenal[]> = {
     a('Dinamite', 'delapouite/dynamite', 0.3, '3d6', 'Explode numa área. Pavio curto!', { alcance: 15 }),
     a('Chicote', 'lorc/whip', 1, '1d4', 'Alcança um pouco mais longe.', { alcance: 3 }),
     i('Munição (50)', 'equipamento', 'sbed/ammo-box', 1, 'Caixa de balas.'),
+    i('Bandoleira', 'equipamento', 'lorc/bullets', 1, 'Cinto de munição cruzado no peito: as balas ficam à mão.'),
+    a('Rifle de caça', 'skoll/lee-enfield', 3.5, '2d8', 'Ferrolho, um tiro por vez; bom para longas distâncias.', { alcance: 150 }),
     i('Coldre', 'equipamento', 'delapouite/cowboy-holster', 0.5, 'Saque rápido.'),
     i('Chapéu', 'armadura', 'delapouite/outback-hat', 0.2, 'Protege do sol.'),
     i('Botas de cowboy', 'equipamento', 'delapouite/cowboy-boot', 1.5, 'Com esporas.'),
@@ -72,7 +75,10 @@ export const ARSENAL: Record<EstiloArsenal, ItemArsenal[]> = {
   ],
   moderno: [
     a('Pistola', 'john-colburn/pistol-gun', 0.9, '2d6', 'Semiautomática.', { alcance: 25 }),
-    a('Rifle', 'sbed/rifle', 4, '2d8', 'Rifle de assalto ou de caça.', { alcance: 100, rolagens: [{ nome: 'Rajada', expr: '3d8' }] }),
+    // v0.35.7: o “Rifle” genérico virou três (pedido de uma jogadora), cada um com o seu ícone.
+    a('Rifle de caça', 'skoll/lee-enfield', 3.5, '2d8', 'Ferrolho, um tiro por vez; bom para longas distâncias.', { alcance: 150 }),
+    a('Rifle de assalto', 'skoll/ak47', 3.5, '2d8', 'Automático: tiro único ou rajada.', { alcance: 100, rolagens: [{ nome: 'Rajada', expr: '3d8' }] }),
+    a('Rifle de precisão', 'skoll/steyr-aug', 6, '2d10', 'Com luneta: muito longe e muito forte, mas lento para mirar.', { alcance: 300, rolagens: [{ nome: 'Tiro mirado', expr: '3d10' }] }),
     a('Submetralhadora', 'skoll/m3-grease-gun', 3, '2d6', 'Disparo automático.', { alcance: 30, rolagens: [{ nome: 'Rajada', expr: '3d6' }] }),
     a('Metralhadora', 'skoll/machine-gun', 10, '2d10', 'Pesada; melhor apoiada.', { alcance: 120 }),
     a('Espingarda', 'sbed/shotgun', 3.5, '3d6', 'Devastadora de perto.', { alcance: 15, rolagens: [{ nome: 'De longe', expr: '1d6' }] }),
@@ -87,6 +93,7 @@ export const ARSENAL: Record<EstiloArsenal, ItemArsenal[]> = {
     i('Kit de primeiros socorros', 'consumivel', 'delapouite/first-aid-kit', 1, 'Trata ferimentos.', { dano: '1d6+2' }),
     i('Seringa de adrenalina', 'consumivel', 'lorc/syringe', 0.05, 'Um fôlego a mais.'),
     i('Munição', 'equipamento', 'sbed/ammo-box', 1, 'Carregadores extras.'),
+    i('Bandoleira', 'equipamento', 'lorc/bullets', 1, 'Cinto de munição cruzado no peito: as balas ficam à mão.'),
     i('Lanterna', 'equipamento', 'delapouite/flashlight', 0.3, 'Ilumina um cone à frente.'),
     i('Celular', 'equipamento', 'delapouite/phone', 0.2, 'Quando tem sinal…'),
     i('Rádio', 'equipamento', 'delapouite/pocket-radio', 0.4, 'Comunicação com o grupo.'),

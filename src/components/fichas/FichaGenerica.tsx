@@ -308,7 +308,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
       {podeRolar && <p className="mb-3 text-xs text-(--a-a998bd)">Toque no valor para rolar.{parada && (s.atributos.length ? ' Rola um dado por ponto do atributo da perícia e soma o bônus.' : ' Rola um dado por ponto e fica com o maior (0 pontos: dois dados, o menor).')}{regra && (s.tipo === 'autoral' ? <> Regra: <strong className="text-(--a-e4d3ff)">{regra.nome}</strong> (<span className="font-mono">{regra.formula}</span>, VALOR = o número tocado).</> : <> Rola <strong className="text-(--a-e4d3ff)">{regra.nome}</strong> + o valor.</>)}</p>}
       {[...grupos].map(([g, lista]) => <div key={g} className="mb-4">
         {g && <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{g}</h3>}
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {lista.map(p => <div key={p.id} className="flex items-center gap-2 rounded-lg bg-(--s-171325) px-3 py-2">
             <span className="min-w-0 flex-1 truncate text-sm">{p.nome}{p.atributo && <span className="ml-1 text-[10px] text-(--a-a998bd)">({p.atributo})</span>}
               {c.automaticos?.[p.id] && <span className="block truncate text-[10px] text-emerald-300" title="Vem da regra: não precisa marcar">✔ {c.automaticos[p.id]}</span>}</span>

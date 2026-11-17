@@ -9,7 +9,7 @@ const ok = (c, m) => { if (!c) { console.log('✘ ' + m); process.exitCode = 1 }
 const SIS = [
   ['dnd', 'dnd5e-srd', 'Falhas contra a morte: 2', d => d.marcas?.ms_f === 2],
   ['pf2e', 'pf2e', 'Ação 2', d => d.marcas?.acoes === 2],
-  ['fate', 'fate-core', 'Estresse físico: caixa 2', d => d.marcas?.estresse_fisico_2 === 1],
+  ['fate', 'fate-core', 'Estresse físico: 2', d => d.recursos?.estresse_fisico?.atual === 2],
   ['blades', 'blades', 'Estresse: 4', d => d.recursos?.estresse?.atual === 4],
   ['brp', 'brp', null, null], ['coc', 'call-of-cthulhu', null, null],
   ['faroeste', 'faroeste-arcano', null, null],

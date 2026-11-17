@@ -100,24 +100,23 @@ function PainelPf2e(p: Props) {
 
 /* ---------------- Fate ---------------- */
 function PainelFate(p: Props) {
-  const { num, txt, set } = usarMarcas(p)
+  const { txt, set } = usarMarcas(p)
   const pd = recurso(p.d, 'pontos_destino')
-  const trilha = (id: string, nome: string, cor: string) => { const r = recurso(p.d, id), total = Math.max(2, r.max ?? 2)
-    const mudarTotal = (n: number) => p.onChange({ ...p.d, recursos: { ...p.d.recursos, [id]: { ...p.d.recursos[id], atual: r.atual, max: Math.max(1, Math.min(8, n)) } } })
+  // Caixas de estresse (v0.35.9): o próprio recurso é quem diz quantas estão marcadas, igual ao descanso
+  // e à mesa já entendem — assim a recuperação no descanso longo e fichas antigas aparecem certas.
+  const trilha = (id: string, nome: string, cor: string) => { const r = recurso(p.d, id), total = Math.max(2, Math.min(8, r.max ?? 2))
+    const mudarTotal = (n: number) => { const t = Math.max(1, Math.min(8, n)); p.onChange({ ...p.d, recursos: { ...p.d.recursos, [id]: { ...p.d.recursos[id], atual: Math.min(r.atual, t), max: t } } }) }
     return <div><p className="mb-1 flex items-center gap-2 text-xs" style={{ color: cor }}>{nome}
       {!p.somenteLeitura && <span className="ml-auto flex items-center gap-1 text-(--a-c4b6d4)">caixas <button type="button" onClick={() => mudarTotal(total - 1)} className="rounded border border-(--a-5e4b78) px-1.5" aria-label={'Menos caixas de ' + nome}>−</button><button type="button" onClick={() => mudarTotal(total + 1)} className="rounded border border-(--a-5e4b78) px-1.5" aria-label={'Mais caixas de ' + nome}>+</button></span>}</p>
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label={nome}>{Array.from({ length: Math.min(8, total) }, (_, i) => { const k = `${id}_${i + 1}`, on = num(k) > 0
-        return <button key={k} type="button" disabled={p.somenteLeitura} aria-pressed={on} aria-label={`${nome}: caixa ${i + 1}`} onClick={() => {
-          // Caixa marcada vai para as marcações e o total marcado vira o “atual” do recurso (aparece na barra do alto e na mesa).
-          const m = { ...(p.d.marcas ?? {}) }; if (on) delete m[k]; else m[k] = 1
-          const marcadas = Array.from({ length: total }, (_, j) => m[`${id}_${j + 1}`] ? 1 : 0).reduce((a: number, b: number) => a + b, 0)
-          p.onChange({ ...p.d, marcas: m, recursos: { ...p.d.recursos, [id]: { ...p.d.recursos[id], atual: marcadas } } }) }}
-          className="flex h-9 w-9 items-center justify-center rounded-md border-2 text-sm font-black disabled:opacity-70" style={{ borderColor: cor, background: on ? cor : 'transparent', color: on ? '#0b0912' : cor }}>{i + 1}</button> })}</div></div> }
+      <Caixas total={total} marcadas={Math.min(total, r.atual)} mudar={n => mudarRecurso(p, id, n)} rotulo={nome} cor={cor} desabilitado={p.somenteLeitura} />
+    </div> }
   return <section className={card} aria-label="Destino, estresse e consequências">
     <h2 className={titulo}>✦ Destino, estresse e consequências</h2>
     <p className={dica}>Toque nas caixas de estresse para marcar. As consequências ficam escritas até se recuperar.</p>
     <div className="mb-4 flex flex-wrap items-center gap-2"><span className="text-sm">Pontos de destino</span>
-      <Caixas total={Math.max(pd.max ?? 3, pd.atual, 3)} marcadas={pd.atual} mudar={n => mudarRecurso(p, 'pontos_destino', n)} rotulo="Pontos de destino" forma="circulo" cor="#6cc4ff" desabilitado={p.somenteLeitura} /></div>
+      <Caixas total={Math.max(pd.max ?? 3, pd.atual, 3)} marcadas={pd.atual} mudar={n => mudarRecurso(p, 'pontos_destino', n)} rotulo="Pontos de destino" forma="circulo" cor="#6cc4ff" desabilitado={p.somenteLeitura} />
+      {!p.somenteLeitura && <span className="flex items-center gap-1 text-(--a-c4b6d4)"><button type="button" onClick={() => mudarRecurso(p, 'pontos_destino', Math.max(0, pd.atual - 1))} className="rounded border border-(--a-5e4b78) px-1.5" aria-label="Menos um ponto de destino">−</button>
+        <button type="button" onClick={() => mudarRecurso(p, 'pontos_destino', pd.atual + 1)} className="rounded border border-(--a-5e4b78) px-1.5" aria-label="Mais um ponto de destino">+</button></span>}</div>
     <div className="grid gap-3 sm:grid-cols-2">{trilha('estresse_fisico', 'Estresse físico', '#f87171')}{trilha('estresse_mental', 'Estresse mental', '#a78bfa')}</div>
     <div className="mt-4 grid gap-2">{[['cons_suave', 'Suave (2)'], ['cons_moderada', 'Moderada (4)'], ['cons_severa', 'Severa (6)'], ['cons_extra', 'Extra (2)']].map(([k, nome]) =>
       <label key={k} className="flex items-center gap-2 text-sm"><span className="w-28 shrink-0 text-xs text-(--a-c4b6d4)">{nome}</span>

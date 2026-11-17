@@ -30,6 +30,8 @@ import type { EstadoMusica } from '@/lib/nuvem/musica'
 import RecorteImagem from './RecorteImagem'
 import { LUZES_PRONTAS, MAX_GRADE, type AreaNevoa, type LuzToken } from '@/lib/nuvem/mesa'
 import { btn, input, msg } from './estilos'
+import AnimacaoAssim from '@/components/fichas/AnimacaoAssim'
+import { resultadoAssim, type DadoAssim } from '@/lib/sistemas/assimilacao'
 import RolagemAssim, { marcaAssim } from '@/components/dados/RolagemAssim'
 import { CartaoAtaque, DecisoesMestre, ConfigCombate, DescansoGrupo, JanelaAtaque, PainelFichas, PainelMorte, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type Morte } from './Combate'
 import NaTela from '@/components/NaTela'
@@ -116,13 +118,20 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const ultimoEnvio = useRef<Record<string, number>>({})
   const canal = useRef<RealtimeChannel | null>(null)
   const dados = useRef<RolagemCentralHandle>(null)
+  const [animacaoAssim, setAnimacaoAssim] = useState<DadoAssim[] | null>(null)
+  const fecharAssim = useCallback(() => setAnimacaoAssim(null), [])
   const ultimoEvento = useRef(0)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   /** Mostra a rolagem no meio da tela: dados 3D + cartão com o total e cada dado. */
   const destacar = useCallback((ev: Evento) => {
     if (!ev.expressao || !ev.resultados) return
-    if (marcaAssim(ev.dados)) return // dados de símbolos (Assimilação): o chat já mostra cada dado
+    const marca = marcaAssim(ev.dados)
+    if (marca) {
+      const r = resultadoAssim(ev.expressao, ev.resultados, marca.manter)
+      if (r.dados.length) setAnimacaoAssim(r.dados)
+      return
+    }
     const a = ev.tipo === 'ataque' ? ev.dados : null
     dados.current?.mostrar({ rotulo: a ? `⚔️ ${a.arma} → ${a.alvo.nome}` : ev.texto, quem: ev.personagem || ev.autor?.apelido, expressao: ev.expressao, resultados: ev.resultados, total: ev.total ?? 0,
       privada: ev.visibilidade !== 'publica', nota: a ? (a.acerto ? `✅ Acertou!${a.comparar === 'maior_igual' ? ` (Defesa ${a.defesa})` : ''}` : `❌ Errou${a.comparar === 'maior_igual' ? ` (Defesa ${a.defesa})` : ''}`) : null })
@@ -348,6 +357,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
 
   return <div className="fixed inset-0 flex flex-col overflow-hidden bg-(--s-0d0c19) text-(--a-f4f0ff)">
     <RolagemCentral ref={dados} som={som} />
+    {animacaoAssim && <AnimacaoAssim dados={animacaoAssim} fechar={fecharAssim} />}
     <header className="relative z-40 flex shrink-0 items-center gap-1.5 border-b border-(--a-373251) bg-gradient-to-r from-(--s-1b1830) via-(--s-1d1733) to-(--s-1b1830) px-2 py-1.5 sm:gap-2 sm:px-3">
       <Link href="/central" aria-label="Voltar para a Central" title="Voltar para a Central" className="rounded-lg p-1.5 text-(--a-b99bff) hover:bg-(--s-34294f)"><ArrowLeft size={18} /></Link>
       <div className="min-w-0 flex-1">

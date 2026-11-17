@@ -66,6 +66,10 @@ export default function TesteAssimilacao({ s, d, c, onChange, somenteLeitura, ro
   const [ocupado, setOcupado] = useState(false)
   const [animacao, setAnimacao] = useState<DadoAssim[] | null>(null)
   const fecharAnimacao = useCallback(() => setAnimacao(null), [])
+  const [assistente, setAssistente] = useState(false)
+  const [pilha, setPilha] = useState<Record<LadoAssim, number>>({6:0,10:0,12:0})
+  const [livre, setLivre] = useState<DadoAssim[] | null>(null)
+  const qtdLivre = pilha[6]+pilha[10]+pilha[12]
 
   const v = (id: string) => Number(c.vars[id]) || 0
   const atual = (id: string) => Number(d.recursos[id]?.atual) || 0
@@ -81,6 +85,20 @@ export default function TesteAssimilacao({ s, d, c, onChange, somenteLeitura, ro
   async function jogar(expressao: string, rotulo: string, extra: { manter?: number; todos?: boolean } = {}) {
     if (rolarNaCampanha) return (await rolarNaCampanha(expressao, rotulo, { estilo: 'assimilacao', ...extra }))?.resultados ?? null
     return rolarExpressao(expressao)?.resultados ?? null
+  }
+
+  async function rolarLivre() {
+    if (ocupado || !qtdLivre) return
+    const grupos = ([6,10,12] as const).filter(lados=>pilha[lados]>0).map(lados=>({lados,qtd:pilha[lados]}))
+    const expr = grupos.map(g=>g.qtd+'d'+g.lados).join('+')
+    setOcupado(true)
+    try {
+      const r = await jogar(expr, 'Assistência de dados', {todos:true})
+      if (!r) { toast.error('Não deu para rolar agora.'); return }
+      const dados = lerResultados(grupos,r)
+      setLivre(dados); setAnimacao(dados)
+    } catch { toast.error('Não deu para rolar agora.') }
+    finally { setOcupado(false) }
   }
 
   async function rolarTeste() {
@@ -144,6 +162,14 @@ export default function TesteAssimilacao({ s, d, c, onChange, somenteLeitura, ro
 
   return <>
     {animacao && <AnimacaoAssim dados={animacao} fechar={fecharAnimacao} />}
+    <button type="button" aria-label="Assistência de dados de Assimilação" aria-expanded={assistente} onClick={()=>setAssistente(x=>!x)} className="fixed bottom-24 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full border border-sky-400/60 bg-slate-950 shadow-lg"><IconeDado lados={12} tamanho={32}/></button>
+    {assistente && <aside aria-label="Assistência de dados" className="fixed bottom-40 right-3 z-40 max-h-[65vh] w-[min(22rem,calc(100vw-1.5rem))] overflow-auto rounded-2xl border border-sky-700 bg-slate-950 p-3 text-white shadow-xl">
+      <div className="mb-3 flex items-center justify-between"><h2 className="font-bold">Assistência de dados</h2><button type="button" aria-label="Fechar assistência" onClick={()=>setAssistente(false)} className="rounded px-2 py-1">✕</button></div>
+      <div className="grid grid-cols-3 gap-2">{([6,10,12] as const).map(lados=><div key={lados} className="flex flex-col items-center gap-1 rounded-lg bg-slate-900 p-2"><IconeDado lados={lados} tamanho={40}/><span className="text-xs">d{lados}</span><div className="flex items-center gap-2"><button type="button" aria-label={'Retirar d'+lados} disabled={ocupado||!pilha[lados]} onClick={()=>setPilha(p=>({...p,[lados]:Math.max(0,p[lados]-1)}))}>−</button><span>{pilha[lados]}</span><button type="button" aria-label={'Adicionar d'+lados} disabled={ocupado||qtdLivre>=20} onClick={()=>setPilha(p=>p[6]+p[10]+p[12]>=20?p:({...p,[lados]:p[lados]+1}))}>+</button></div></div>)}</div>
+      <p className="my-2 text-xs text-slate-300">Rolagem livre: todos os símbolos contam, sem gastar recursos.</p>
+      <div className="flex gap-2"><button type="button" disabled={ocupado||!qtdLivre} onClick={()=>void rolarLivre()} className="flex-1 rounded-lg bg-sky-800 px-3 py-2 font-semibold disabled:opacity-50">Rolar {qtdLivre} dados</button><button type="button" disabled={ocupado} onClick={()=>{setPilha({6:0,10:0,12:0});setLivre(null)}} className="rounded-lg border border-slate-700 px-2">Limpar</button></div>
+      {livre&&<div className="mt-3"><div className="flex flex-wrap">{livre.map((d,i)=><Dado key={i} d={d} mantido/>)}</div><Totais f={somar(livre.map(d=>d.face))}/></div>}
+    </aside>}
     <section className={card} aria-label="Teste com os dados de Assimilação">
       <h2 className="mb-1 flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Dice5 size={18} /> Teste</h2>
       <p className="mb-3 text-xs text-(--a-a998bd)">Um d6 por ponto do Instinto e um d10 por ponto do Conhecimento ou Prática. Role todos e mantenha o melhor (ou mais, gastando recursos).</p>

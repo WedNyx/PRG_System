@@ -1,6 +1,6 @@
 'use client'
 import { createPortal } from 'react-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Simbolo } from './IconesAssimilacao'
 import { faceDe, type LadoAssim } from '@/lib/sistemas/assimilacao'
 
@@ -40,7 +40,7 @@ function Poliedro({d,t,i}:{d:Dado;t:number;i:number}) {
     return [x*Math.cos(b)+zz*Math.sin(b),yy,-x*Math.sin(b)+zz*Math.cos(b)]
   }
   const project=(w:V)=>{const q=rot(w),s=29/(1-q[2]*.12);return [60+q[0]*s,60-q[1]*s]}
-  return <svg viewBox="0 0 120 120" className="h-24 w-24 sm:h-32 sm:w-32" style={{transform:'translateY('+(-Math.abs(Math.sin(t*13))*38*(1-t))+'px)'}} aria-label={'d'+d.lados}>
+  return <svg viewBox="0 0 120 120" className="block h-auto w-full" style={{transform:'translateY('+(-Math.abs(Math.sin(t*13))*38*(1-t))+'px)'}} aria-label={'d'+d.lados}>
     {faces.map((f,k)=>({f,k,z:rot(f.n)[2]})).filter(x=>x.z>0).sort((a,b)=>a.z-b.z).map(({f,k,z})=>{
       const face=faceDe(d.lados,k+1), symbols=(['a','b','c'] as const).flatMap(tipo=>Array.from({length:face[tipo]},()=>tipo))
       const center=project(f.n), right=project(add(f.n,scale(f.u,.32))), up=project(add(f.n,scale(f.v,-.32)))
@@ -53,8 +53,36 @@ function Poliedro({d,t,i}:{d:Dado;t:number;i:number}) {
     })}
   </svg>
 }
+// Deterministic lightweight tray simulation. Collisions affect visuals only, never the rolled face.
+function trajetorias(n:number) {
+  const cols=Math.min(5,Math.max(1,Math.ceil(Math.sqrt(n)))), rows=Math.ceil(n/cols)
+  const w=cols*94,h=rows*94
+  const corpos=Array.from({length:n},(_,i)=>({x:47+(i%cols)*94,y:47+Math.floor(i/cols)*94,vx:Math.cos(i*2.4+.8)*170,vy:Math.sin(i*2.4+.8)*170}))
+  const frames=Array.from({length:91},(_,step)=>{
+    if(step) {
+      for(const c of corpos) {
+        c.x+=c.vx/60;c.y+=c.vy/60;c.vx*=.966;c.vy*=.966
+        if(c.x<36||c.x>w-36){c.x=Math.max(36,Math.min(w-36,c.x));c.vx*=-.72}
+        if(c.y<36||c.y>h-36){c.y=Math.max(36,Math.min(h-36,c.y));c.vy*=-.72}
+      }
+      for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
+        const a=corpos[i],b=corpos[j],dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy)
+        if(dist>=72)continue
+        const nx=dist>1e-6?dx/dist:1,ny=dist>1e-6?dy/dist:0,over=(72-dist)/2
+        a.x-=nx*over;a.y-=ny*over;b.x+=nx*over;b.y+=ny*over
+        const v=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny
+        if(v<0){const impulse=-v*.85;a.vx-=impulse*nx;a.vy-=impulse*ny;b.vx+=impulse*nx;b.vy+=impulse*ny}
+      }
+      for(const c of corpos){c.x=Math.max(36,Math.min(w-36,c.x));c.y=Math.max(36,Math.min(h-36,c.y))}
+    }
+    return corpos.map(c=>({x:c.x,y:c.y}))
+  })
+  return {w,h,frames}
+}
 export default function AnimacaoAssim({dados,fechar}:{dados:Dado[];fechar:()=>void}) {
   const [t,setT]=useState(0)
+  const tray=useMemo(()=>trajetorias(Math.min(20,dados.length)),[dados.length])
+  const pos=tray.frames[Math.min(90,Math.floor(t*90))]
   useEffect(()=>{
     const start=performance.now();let id=0
     const reduz=window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -67,7 +95,7 @@ export default function AnimacaoAssim({dados,fechar}:{dados:Dado[];fechar:()=>vo
   },[fechar])
   if(typeof document==='undefined')return null
   return createPortal(<div role="dialog" aria-label="Rolagem de Assimilação" className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/65" onClick={fechar}>
-    <div className="flex max-h-[75vh] max-w-[94vw] flex-wrap justify-center overflow-auto">{dados.slice(0,20).map((d,i)=><Poliedro key={i} d={d} t={t} i={i}/>)}</div>
+    <div className="relative" style={{width: "min(94vw, "+tray.w+"px)",aspectRatio: tray.w+"/"+tray.h,maxHeight:"75vh"}}>{dados.slice(0,20).map((d,i)=><div key={i} className="absolute" style={{left:(pos[i].x/tray.w*100)+"%",top:(pos[i].y/tray.h*100)+"%",width:(94/tray.w*100)+"%",transform:"translate(-50%, -50%)"}}><Poliedro d={d} t={t} i={i}/></div>)}</div>
     <button type="button" className="absolute bottom-12 rounded-lg bg-slate-800 px-4 py-2 text-white" onClick={fechar}>Fechar rolagem</button>
   </div>,document.body)
 }

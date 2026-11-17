@@ -447,6 +447,61 @@ export const SISTEMAS: Sistema[] = [
     ],
   },
   {
+    // v0.35.7: Call of Cthulhu 7ª edição — só a estrutura da ficha (características, perícias com o valor-base e recursos).
+    id: 'call-of-cthulhu',
+    nomesItens: { arma: 'Armas', magico: '📕 Tomos e artefatos' },
+    nome: 'Call of Cthulhu 7ª edição (estrutura)',
+    resumo: 'Investigação e horror cósmico nos anos 1920 (ou hoje). Características em %, perícias com o valor-base, PV, Pontos de Magia, Sanidade e Sorte, e testes de d100 com sucesso difícil e extremo. Textos no seu livro.',
+    tipo: 'estrutura', licenca: 'Sistema comercial — estrutura de ficha (sem textos do livro)',
+    creditos: 'Call of Cthulhu é marca registrada da Chaosium Inc. A edição em português é da New Order Editora. Este site não reproduz textos nem tabelas do livro e não é afiliado à Chaosium nem à New Order. Use com o seu livro.',
+    dados: 'd100 (porcentagem)',
+    rolagem: 'd100', leituraD100: 'coc',
+    campos: [
+      { id: 'ocupacao', nome: 'Ocupação', tipo: 'texto' }, { id: 'idade', nome: 'Idade', tipo: 'numero', padrao: 25 },
+      { id: 'pronomes', nome: 'Pronomes', tipo: 'texto' }, { id: 'residencia', nome: 'Residência', tipo: 'texto' }, { id: 'nascimento', nome: 'Local de nascimento', tipo: 'texto' },
+      { id: 'mov', nome: 'Movimento (MOV)', tipo: 'numero', padrao: 8, dica: 'Normalmente 7, 8 ou 9, pela comparação de FOR e DES com TAM; a idade pode diminuir. Confira no seu livro.' },
+      { id: 'corpo', nome: 'Corpo', tipo: 'numero', padrao: 0 }, { id: 'bonus_dano', nome: 'Bônus de dano', tipo: 'texto', padrao: '0' },
+    ],
+    atributos: [['FOR', 'Força'], ['CON', 'Constituição'], ['TAM', 'Tamanho'], ['DES', 'Destreza'], ['APA', 'Aparência'], ['INT', 'Inteligência'], ['POD', 'Poder'], ['EDU', 'Educação']]
+      .map(([id, nome]) => ({ id, nome, min: 0, max: 99, padrao: 50 })),
+    tituloAtributos: 'Características',
+    derivados: [
+      { id: 'pv_max', nome: 'PV máximos', formula: 'piso((CON + TAM) / 10)', dica: '(CON + TAM) ÷ 10, arredondado para baixo' },
+      { id: 'pm_max', nome: 'Pontos de Magia', formula: 'piso(POD / 5)', dica: 'POD ÷ 5' },
+      { id: 'sanidade_inicial', nome: 'Sanidade inicial', formula: 'POD', dica: 'Igual ao POD' },
+      { id: 'for_tam', nome: 'FOR + TAM (bônus de dano e Corpo)', formula: 'FOR + TAM', dica: 'Use a tabela do seu livro para achar o Bônus de dano e o Corpo e anote nos campos.' },
+    ],
+    pericias: {
+      titulo: 'Perícias (%)', modo: 'valor', total: 'VALOR',
+      lista: ([
+        // [nome, base, grupo]
+        ['Lutar (Briga)', '25', 'Combate'], ['Armas de fogo (Pistolas)', '20', 'Combate'], ['Armas de fogo (Rifles/Espingardas)', '25', 'Combate'], ['Arremessar', '20', 'Combate'], ['Esquivar', 'piso(DES / 2)', 'Combate'],
+        ['Encontrar', '25', 'Investigação'], ['Escutar', '20', 'Investigação'], ['Usar bibliotecas', '20', 'Investigação'], ['Rastrear', '10', 'Investigação'], ['Avaliação', '5', 'Investigação'], ['Contabilidade', '5', 'Investigação'], ['Chaveiro', '1', 'Investigação'],
+        ['Charme', '15', 'Social'], ['Lábia', '5', 'Social'], ['Intimidação', '15', 'Social'], ['Persuasão', '10', 'Social'], ['Psicologia', '10', 'Social'], ['Disfarce', '5', 'Social'], ['Nível de crédito', '0', 'Social'],
+        ['Antropologia', '1', 'Conhecimento'], ['Arqueologia', '1', 'Conhecimento'], ['História', '5', 'Conhecimento'], ['Direito', '1', 'Conhecimento'], ['Medicina', '1', 'Conhecimento'], ['Ocultismo', '5', 'Conhecimento'], ['Ciência', '1', 'Conhecimento'],
+        ['Mundo natural', '10', 'Conhecimento'], ['Mitos de Cthulhu', '0', 'Conhecimento'], ['Idioma nativo', 'EDU', 'Conhecimento'], ['Outro idioma', '1', 'Conhecimento'], ['Psicanálise', '1', 'Conhecimento'], ['Primeiros socorros', '30', 'Conhecimento'],
+        ['Escalar', '20', 'Físicas'], ['Saltar', '20', 'Físicas'], ['Natação', '20', 'Físicas'], ['Furtividade', '20', 'Físicas'], ['Dirigir automóveis', '20', 'Físicas'], ['Cavalgar', '5', 'Físicas'], ['Pilotar', '1', 'Físicas'], ['Navegação', '10', 'Físicas'], ['Sobrevivência', '10', 'Físicas'], ['Prestidigitação', '10', 'Físicas'],
+        ['Arte/Ofício', '5', 'Técnicas'], ['Consertos elétricos', '10', 'Técnicas'], ['Consertos mecânicos', '10', 'Técnicas'], ['Operar maquinário pesado', '1', 'Técnicas'], ['Usar computadores (moderno)', '5', 'Técnicas'], ['Eletrônica (moderno)', '1', 'Técnicas'],
+      ] as [string, string, string][]).map(([nome, base, grupo]) => {
+        const x = p([[nome, '', grupo]])[0]
+        return { ...x, id: x.id.replace(/^_+|_+$/g, ''), nome: `${nome} (${/[A-Z]/.test(base) ? base.replace('piso(DES / 2)', 'DES÷2') : base + '%'})`, base }
+      }),
+    },
+    recursos: [
+      { id: 'pv', nome: 'PV', formula: 'pv_max' }, { id: 'pm', nome: 'Pontos de Magia', formula: 'pm_max' },
+      { id: 'sanidade', nome: 'Sanidade', maxFixo: 99, dica: 'Começa igual ao POD. O máximo é 99 menos a perícia Mitos de Cthulhu.' },
+      { id: 'sorte', nome: 'Sorte', maxFixo: 99, dica: 'Rolada na criação, como diz o seu livro; gasta e recupera pelas regras.' },
+    ],
+    listas: [{ id: 'armas', nome: 'Armas (perícia, dano, alcance, munição)' }, { id: 'fobias', nome: 'Fobias, manias e traumas' }, { id: 'tomos', nome: 'Tomos, magias e encontros estranhos' }, ...LISTAS_PADRAO],
+    observacoes: [
+      'Teste: role 1d100. Igual ou abaixo do valor é sucesso; até a metade é sucesso difícil; até um quinto, sucesso extremo; 01 é crítico.',
+      'Desastre: 100. Com valor abaixo de 50, de 96 a 100.',
+      'Dado de bônus ou de penalidade: role uma dezena extra e fique com a melhor (bônus) ou a pior (penalidade). Use o botão de rolar d100 e as rolagens livres do chat.',
+      'Fichas novas já começam com o valor-base de cada perícia. Some os pontos da ocupação e os pessoais pelas regras do seu livro.',
+      'Esquivar começa em DES ÷ 2 e Idioma nativo em EDU: se mudar essas características depois, ajuste o valor à mão.',
+    ],
+  },
+  {
     id: 'faroeste-arcano',
     nomesItens: { arma: 'Armas e munição', magico: '🔮 Itens arcanos' },
     nome: 'Faroeste Arcano (d20 · Velho Oeste)',

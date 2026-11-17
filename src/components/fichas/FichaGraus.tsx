@@ -90,7 +90,7 @@ export function PericiasGraus({ s, d, onChange, somenteLeitura, mostrar }: { s: 
     <section className={card}>
       <h2 className={titulo}>{tituloPer}</h2>
       <p className="mb-3 text-xs text-(--a-a998bd)">Escolha o grau de cada uma{p.livres ? ' e crie as suas' : ''}. Sem grau = o personagem não tem.</p>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {lista.map(x => { const v = valor(x.id)
           return <div key={x.id} className="rounded-lg bg-(--s-171325) px-3 py-2">
             <div className="flex items-center gap-2">

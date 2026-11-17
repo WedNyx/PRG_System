@@ -27,6 +27,15 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.35.7', data: '2026-11-16',
+    titulo: 'Call of Cthulhu e rifles novos no arsenal',
+    itens: [
+      'Novo sistema: Call of Cthulhu 7ª edição (estrutura de ficha). Características em %, perícias que já começam no valor-base, PV, Pontos de Magia, Sanidade e Sorte. O d100 mostra sucesso difícil, extremo, crítico e desastre. Use com o seu livro.',
+      'Arsenal pronto (moderno): o “Rifle” virou Rifle de caça, Rifle de assalto e Rifle de precisão, cada um com o seu ícone. Também chegou a Bandoleira, no moderno e no faroeste, e a Azagaia, no medieval.',
+      'O rifle do arsenal moderno mostrava o ícone de uma bala. Agora mostra o rifle.',
+    ],
+  },
+  {
     versao: '0.35.6', data: '2026-11-16',
     titulo: 'Criador de sistemas mais livre e o Projeto N.O.V.A',
     itens: [

@@ -43,6 +43,8 @@ export type Sistema = {
   dados: string
   /** Como a ficha rola: d20 + bônus, d100 abaixo do valor, ou sem rolagem ('assimilacao' = dados de símbolos do Assimilação RPG). Sem isso, deduz por `dados`. */
   rolagem?: 'd20' | 'd100' | 'nenhuma' | 'personalizada' | 'parada' | 'assimilacao' | 'graus'
+  /** Leitura do d100 (v0.35.7): 'coc' = sucesso difícil (½) e extremo (⅕), crítico 01 e desastre 100 (96–100 com valor abaixo de 50). Sem isso: a do BRP. */
+  leituraD100?: 'coc'
   /** Com rolagem 'graus': quais dados existem (v0.35.6). */
   graus?: GrausDef
   /** Tabelas roláveis (v0.35.6). */

@@ -13,7 +13,7 @@ const SISTEMAS = [
   ['dnd2024', 'dnd5e-srd', { nome: 'Lyra 2024', campos: { classe: 'Mago', nivel: 5, especie: 'Elfo', antecedente: 'Sábio' } }],
   ['dnd2014', 'dnd5e-srd', { nome: 'Borin 2014', dndLivros: { base: 'phb2014', suplementos: [] }, campos: { classe: 'Guerreiro', nivel: 3, especie: 'Anão', subraca2014: 'Anão da Colina', antecedente: 'Soldado' } }],
   ['pf2e', 'pf2e', { nome: 'Valeros' }], ['fate', 'fate-core', { nome: 'Cynere' }], ['blades', 'blades', { nome: 'Silver' }],
-  ['brp', 'brp', { nome: 'Investigadora' }], ['faroeste', 'faroeste-arcano', { nome: 'Jesse' }], ['ordem', 'ordem-paranormal', { nome: 'Arthur', campos: { classe: 'Combatente', nex: 25 } }],
+  ['brp', 'brp', { nome: 'Investigadora' }], ['coc', 'call-of-cthulhu', { nome: 'Harvey' }], ['faroeste', 'faroeste-arcano', { nome: 'Jesse' }], ['ordem', 'ordem-paranormal', { nome: 'Arthur', campos: { classe: 'Combatente', nex: 25 } }],
   ['t20', 'tormenta20', { nome: 'Nix' }], ['morkborg', 'mork-borg', { nome: 'Karg' }], ['assimilacao', 'assimilacao', { nome: 'Rato' }], ['livre', 'livre', { nome: 'Livre' }],
 ]
 const DISPOSITIVOS = [

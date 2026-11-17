@@ -21,6 +21,7 @@ const TEMAS: Record<string, Tema> = {
   tormenta20: { acento: '#ff7a6b', borda: '#7f1d1d', cartao: 'var(--s-201a32)', fonte: 'var(--font-cinzel), Georgia, serif' },
   'mork-borg': { acento: '#ffe600', borda: '#ffe600', cartao: '#0a0a0a', sombrio: true },
   assimilacao: { acento: '#5eead4', borda: '#1f5c55', cartao: 'var(--s-201a32)' },
+  'call-of-cthulhu': { acento: '#9fd8c4', borda: '#2b5a50', cartao: 'var(--s-201a32)', fonte: 'var(--font-cormorant), Georgia, serif' },
 }
 export const temaDoSistema = (id: string): Tema => TEMAS[id] ?? PADRAO
 /** Variáveis CSS que a ficha usa nos cartões e títulos. */

@@ -13,7 +13,7 @@ import { InventarioFicha, PoderesFicha } from './Inventario'
 import JanelaDescanso from './Descanso'
 import type { Item } from '@/lib/sistemas/inventario'
 import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
-import { expressaoParada, leituraBlades, leituraD100 } from '@/lib/sistemas/combate'
+import { expressaoParada, leituraBlades, leituraCoc, leituraD100 } from '@/lib/sistemas/combate'
 import TesteAssimilacao from './TesteAssimilacao'
 import AtributosOrdem from './AtributosOrdem'
 import { Retrato } from './FichaGenerica'
@@ -82,7 +82,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
         r => s.parada?.leitura === 'blades' ? leituraBlades(n, r.resultados, resistencia) : null)
     }
     if (regra) return mostrar(montarRolagem(regra.formula, b), `${nome} · ${regra.nome}`)
-    if (d100) return mostrar('1d100', `${nome} (${b}%)`, r => leituraD100(b, r.total))
+    if (d100) return mostrar('1d100', `${nome} (${b}%)`, r => s.leituraD100 === 'coc' ? leituraCoc(b, r.total) : leituraD100(b, r.total))
     return mostrar('1d20' + (b >= 0 ? '+' + b : String(b)), `${nome} (d20 ${sinal(b)})`)
   }
   const rolarExpr = async (expressao: string, rotulo: string) => { await mostrar(expressao, rotulo) }
@@ -256,7 +256,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
             <p className="mb-3 text-xs text-(--a-a998bd)">{s.pericias.modo === 'valor' ? 'Digite o valor de cada uma.' : visual.pericias === 'graus' ? 'Toque no círculo para marcar o grau de treino e digite o total (bônus) de cada uma.' : 'Digite o total (bônus) de cada uma.'}{podeRolar ? ' Toque no dado para rolar.' : ''}</p>
             {[...grupos].map(([g, itens]) => <div key={g} className="mb-4">
               {g && <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{g}</h3>}
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {itens.map(p => { const valor = s.pericias!.modo === 'valor'
                   const tot = valor ? Number(d.pericias[p.id]) || 0 : m.pericias[p.id] ?? 0
                   return <div key={p.id} className="flex items-center gap-2 rounded-lg bg-(--s-171325) px-3 py-2">

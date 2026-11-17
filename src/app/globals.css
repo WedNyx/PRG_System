@@ -203,3 +203,27 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 }
 .ficha-sombria h2, .ficha-sombria h3 { text-transform: uppercase; letter-spacing: 0.14em; font-weight: 900; }
 .ficha-sombria section { border-width: 2px; }
+
+
+/* Identidades das fichas: decoração local, sem alterar o tema global ou regras. */
+[data-visual] .ficha-painel {
+  background-image: linear-gradient(145deg, color-mix(in srgb, var(--ficha-acento) 6%, transparent), transparent 48%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ficha-acento) 13%, transparent);
+}
+[data-visual] .ficha-resumo { border-color: var(--ficha-borda); background-color: var(--ficha-cartao); }
+[data-visual] .ficha-menu [aria-current="page"] { background: color-mix(in srgb, var(--ficha-acento) 23%, var(--ficha-cartao)); box-shadow: inset 3px 0 var(--ficha-acento); }
+[data-visual] :is(button,input,select,textarea):focus-visible { outline: 2px solid var(--ficha-acento); outline-offset: 2px; }
+[data-visual="dnd5e-srd"] .ficha-painel { border-radius: 8px 8px 22px 22px; border-top: 3px double #c69a64; }
+[data-visual="pf2e"] .ficha-painel { border-radius: 5px 22px; border-inline-width: 3px; }
+[data-visual="fate-core"] .ficha-painel { border-radius: 12px; border-left: 4px solid var(--ficha-borda); background-image: none; }
+[data-visual="blades"] .ficha-painel { border-radius: 3px; border-top: 4px double var(--ficha-borda); background-image: repeating-linear-gradient(135deg, transparent 0 14px, #ffffff03 14px 15px); }
+[data-visual="brp"] .ficha-painel { border-radius: 6px; border-bottom-width: 3px; }
+[data-visual="call-of-cthulhu"] .ficha-painel { border-radius: 4px; border-top: 3px double var(--ficha-borda); background-image: repeating-linear-gradient(0deg, transparent 0 24px, #ffffff04 24px 25px); }
+[data-visual="call-of-cthulhu"] .ficha-painel h2 { font-family: ui-monospace, monospace; }
+[data-visual="faroeste-arcano"] .ficha-painel { border: 2px dashed var(--ficha-borda); border-radius: 8px; }
+[data-visual="ordem-paranormal"] .ficha-painel { border-radius: 4px; border-left: 3px solid var(--ficha-acento); }
+[data-visual="tormenta20"] .ficha-painel { border: 3px double var(--ficha-borda); border-radius: 18px 5px; }
+[data-visual="mork-borg"] .ficha-painel { border-radius: 0; box-shadow: 3px 3px 0 var(--ficha-acento); background-image: none; }
+[data-visual="assimilacao"] .ficha-painel { border-radius: 24px 8px 30px 12px; background-image: radial-gradient(ellipse at 95% 0%, #b45ec51f, transparent 55%); }
+[data-visual="opositores"] .ficha-painel { border-radius: 22px; border-top: 3px double var(--ficha-acento); background-image: radial-gradient(circle at 92% 8%, #d9c58d20, transparent 28%); }
+[data-visual="nova"] .ficha-painel { border-radius: 4px 20px; border-inline-start: 3px solid var(--ficha-acento); background-image: repeating-linear-gradient(90deg, transparent 0 30px, #ffffff04 30px 31px); }

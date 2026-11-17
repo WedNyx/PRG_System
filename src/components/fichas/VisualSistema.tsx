@@ -51,7 +51,7 @@ const num = (v: string) => v.trim() === '' || v.trim() === '-' ? 0 : Math.max(-9
 export function AtributoComMod({ id, nome, valor, mod, somenteLeitura, mudarValor, mudarMod, rolar }: {
   id: string; nome: string; valor: number; mod: number; somenteLeitura: boolean; mudarValor: (v: number) => void; mudarMod: (v: number) => void; rolar?: () => void
 }) {
-  return <div className="relative flex flex-col items-center rounded-[1.4rem] border-2 border-(--ficha-borda) bg-(--s-171325) px-1 pb-4 pt-2 text-center">
+  return <div className="ficha-atributo-mod relative flex flex-col items-center rounded-[1.4rem] border-2 border-(--ficha-borda) bg-(--s-171325) px-1 pb-4 pt-2 text-center">
     <p className="px-5 text-xs font-bold uppercase tracking-widest text-(--ficha-acento) [font-family:var(--ficha-fonte)]" title={nome}>{id}</p>
     <input type="number" aria-label={'Modificador de ' + nome} value={mod} disabled={somenteLeitura} onChange={e => mudarMod(num(e.target.value))}
       className="w-full bg-transparent text-center text-3xl font-black text-white outline-none disabled:opacity-80" />
@@ -66,7 +66,7 @@ export function AtributoComMod({ id, nome, valor, mod, somenteLeitura, mudarValo
 export function AtributoModificador({ id, nome, valor, somenteLeitura, mudar, rolar, sombrio }: {
   id: string; nome: string; valor: number; somenteLeitura: boolean; mudar: (v: number) => void; rolar?: () => void; sombrio?: boolean
 }) {
-  return <div className={'relative rounded-xl border-2 p-2 text-center ' + (sombrio ? 'border-(--ficha-acento) bg-black' : 'border-(--ficha-borda) bg-(--s-171325)')}>
+  return <div className={'ficha-atributo-base relative rounded-xl border-2 p-2 text-center ' + (sombrio ? 'border-(--ficha-acento) bg-black' : 'border-(--ficha-borda) bg-(--s-171325)')}>
     <p className={'text-xs font-black uppercase tracking-[0.2em] ' + (sombrio ? 'text-(--ficha-acento)' : 'text-(--ficha-acento) [font-family:var(--ficha-fonte)]')}>{id}</p>
     <input type="number" aria-label={nome} value={valor} disabled={somenteLeitura} onChange={e => mudar(num(e.target.value))}
       className={'w-full bg-transparent text-center font-black text-white outline-none disabled:opacity-80 ' + (sombrio ? 'text-4xl' : 'text-3xl')} />

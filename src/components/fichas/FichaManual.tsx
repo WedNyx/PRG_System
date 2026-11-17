@@ -19,9 +19,9 @@ import { expressaoParada, leituraBlades, leituraCoc, leituraD100 } from '@/lib/s
 import TesteAssimilacao from './TesteAssimilacao'
 import AtributosOrdem from './AtributosOrdem'
 import { Retrato } from './FichaGenerica'
-import { AcoesBlades, AtributoComMod, AtributoModificador, estiloDoSistema, estiloTema, GrauPericia, PiramideFate, ResumoOrdem, temaDoSistema } from './VisualSistema'
+import { AcoesBlades, AtributoComMod, AtributoModificador, estiloDoSistema, estiloTema, GrauPericia, identidadeVisual, PiramideFate, ResumoOrdem, temaDoSistema } from './VisualSistema'
 
-const card = 'rounded-2xl border border-(--ficha-borda) bg-(--ficha-cartao) p-4 sm:p-5'
+const card = 'ficha-painel rounded-2xl border border-(--ficha-borda) bg-(--ficha-cartao) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
 const sinal = (n: number | null | undefined) => n === null || n === undefined ? '—' : n >= 0 ? '+' + n : String(n)
 /** Campos que só existiam para as contas automáticas (a CA, a Defesa e os PV agora são digitados direto). Os dados continuam salvos. */
@@ -53,7 +53,8 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
 }) {
   const m: Manual = d.manual ?? { mods: {}, derivados: {}, pericias: {} }
   // Visual do sistema (v0.35.1): cores, letra dos títulos e o jeito de mostrar atributos e perícias.
-  const tema = temaDoSistema(s.id), visual = estiloDoSistema(s.id)
+  const identidade = identidadeVisual(s)
+  const tema = temaDoSistema(identidade), visual = estiloDoSistema(s.id)
   const c = useMemo(() => calcular(s, d), [s, d])
   // Inventário e poderes no modo genérico: sem catálogo nem conta automática de arma do D&D.
   const sInv = useMemo<Sistema>(() => s.id === 'dnd5e-srd' ? { ...s, id: 'dnd5e-manual' } : s, [s])
@@ -132,10 +133,10 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     <textarea rows={linhas} value={d.listas[l.id] ?? ''} disabled={somenteLeitura} maxLength={20000} onChange={e => set('listas', { ...d.listas, [l.id]: e.target.value })} className={input + ' mt-2'} />
   </label>
 
-  return <div style={estiloTema(tema)} data-visual={s.id} className={tema.sombrio ? 'ficha-sombria' : undefined}>
+  return <div style={estiloTema(tema)} data-visual={identidade} className={tema.sombrio ? 'ficha-sombria' : undefined}>
     <RolagemCentral ref={central} />
     {descansando && <JanelaDescanso s={s} d={d} onChange={onChange} rolarTotal={rolarTotal} fechar={() => setDescansando(false)} />}
-    <div className="sticky top-[57px] z-10 -mx-3 mb-4 border-b border-(--a-373251) bg-(--s-100d1c)/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-4" aria-label="Resumo do personagem">
+    <div className="ficha-resumo sticky top-[57px] z-10 -mx-3 mb-4 border-b border-(--a-373251) bg-(--s-100d1c)/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-4" aria-label="Resumo do personagem">
       <div className="flex items-center gap-3 overflow-x-auto" tabIndex={0} role="region" aria-label="Vida e recursos (role para o lado)">
         {recursoPrincipal && [recursoPrincipal, ...s.recursos.filter(r => r !== recursoPrincipal && maxDe(r.id))].slice(0, 3).map(r =>
           <MiniBarra key={r.id} nome={/^pv$/.test(r.id) ? 'PV' : r.nome.split(' (')[0]} cor={corDoRecurso(r.id, r.nome)} atual={Number(d.recursos[r.id]?.atual ?? 0) || 0} max={maxDe(r.id)} />)}
@@ -143,7 +144,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
       </div>
     </div>
     <div className="lg:flex lg:gap-6">
-      <nav aria-label="Seções da ficha" className="mb-4 lg:mb-0 lg:w-60 lg:shrink-0">
+      <nav aria-label="Seções da ficha" className="ficha-menu mb-4 lg:mb-0 lg:w-60 lg:shrink-0">
         <div ref={menu} className="flex gap-2 overflow-x-auto pb-1 lg:sticky lg:top-[120px] lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-(--a-55456e) lg:bg-(--s-201a32) lg:p-3">
           <p className="hidden px-2 pb-1 text-xs font-bold uppercase tracking-widest text-(--a-ed9cd8) lg:block">🌙 Menu da ficha</p>
           {SECOES.map(x => <button key={x.id} type="button" onClick={() => ir(x.id)} aria-current={secao === x.id ? 'page' : undefined}

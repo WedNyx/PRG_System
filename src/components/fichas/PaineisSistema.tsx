@@ -26,6 +26,15 @@ function usarMarcas({ d, onChange }: Props) {
 }
 const recurso = (d: DadosFicha, id: string) => ({ atual: Number(d.recursos[id]?.atual ?? 0) || 0, max: d.recursos[id]?.max === undefined || d.recursos[id]?.max === null ? null : Number(d.recursos[id]?.max) || 0 })
 const mudarRecurso = (p: Props, id: string, atual: number) => p.onChange({ ...p.d, recursos: { ...p.d.recursos, [id]: { ...p.d.recursos[id], atual } } })
+// Na ficha manual, o descanso e a mesa usam o máximo guardado aqui (não uma fórmula ao vivo) — por isso
+// cada painel precisa de um jeito de editar o máximo, e não só o atual (v0.35.9, achado do Codex).
+const mudarMax = (p: Props, id: string, max: number) => p.onChange({ ...p.d, recursos: { ...p.d.recursos, [id]: { ...p.d.recursos[id], atual: Math.min(Number(p.d.recursos[id]?.atual ?? 0) || 0, max), max } } })
+function CampoMax({ valor, mudar, rotulo, teto = 20, desabilitado, cor }: { valor: number | null; mudar: (n: number) => void; rotulo: string; teto?: number; desabilitado?: boolean; cor?: string }) {
+  return <label className="ml-auto flex items-center gap-1 text-[10px] font-normal" style={{ color: cor ?? 'var(--a-c4b6d4)' }}>máx
+    <input type="number" min={0} max={teto} value={valor ?? ''} disabled={desabilitado} aria-label={'Máximo de ' + rotulo}
+      onChange={e => mudar(Math.max(0, Math.min(teto, Math.round(Number(e.target.value)) || 0)))}
+      className="w-10 rounded border border-(--a-5e4b78) bg-(--s-151123) px-1 text-center text-white disabled:opacity-70" /></label>
+}
 
 /** Fileira de caixas: toca numa caixa para marcar até ela (ou desmarcar a última). */
 export function Caixas({ total, marcadas, mudar, rotulo, forma = 'quadrado', cor = 'var(--ficha-acento)', desabilitado }: {
@@ -91,9 +100,12 @@ function PainelPf2e(p: Props) {
       {!p.somenteLeitura && <button type="button" onClick={() => set({ acoes: null, reacao: null })} className="ml-auto inline-flex items-center gap-1 rounded-lg border border-(--a-5e4b78) px-2.5 py-1 text-xs hover:bg-(--s-34294f)"><RotateCcw size={13} /> Novo turno</button>}
     </div>
     <div className="mt-4 grid gap-3 sm:grid-cols-3">
-      <div><p className="mb-1 text-xs text-amber-200">Pontos de Heroísmo</p><Caixas total={3} marcadas={her.atual} mudar={n => mudarRecurso(p, 'heroismo', n)} rotulo="Pontos de Heroísmo" forma="circulo" cor="#fbbf24" desabilitado={p.somenteLeitura} /></div>
-      <div><p className="mb-1 text-xs text-red-200">Morrendo</p><Caixas total={4} marcadas={mor.atual} mudar={n => mudarRecurso(p, 'morrendo', n)} rotulo="Morrendo" forma="caveira" cor="#f87171" desabilitado={p.somenteLeitura} /></div>
-      <div><p className="mb-1 text-xs text-orange-200">Ferido</p><Caixas total={Math.max(3, fer.max ?? 3)} marcadas={fer.atual} mudar={n => mudarRecurso(p, 'ferido', n)} rotulo="Ferido" cor="#fb923c" desabilitado={p.somenteLeitura} /></div>
+      <div><p className="mb-1 flex items-center gap-1 text-xs text-amber-200">Pontos de Heroísmo<CampoMax valor={her.max} mudar={n => mudarMax(p, 'heroismo', n)} rotulo="Pontos de Heroísmo" teto={6} desabilitado={p.somenteLeitura} /></p>
+        <Caixas total={Math.max(1, her.max ?? 3)} marcadas={her.atual} mudar={n => mudarRecurso(p, 'heroismo', n)} rotulo="Pontos de Heroísmo" forma="circulo" cor="#fbbf24" desabilitado={p.somenteLeitura} /></div>
+      <div><p className="mb-1 flex items-center gap-1 text-xs text-red-200">Morrendo<CampoMax valor={mor.max} mudar={n => mudarMax(p, 'morrendo', n)} rotulo="Morrendo" teto={8} desabilitado={p.somenteLeitura} /></p>
+        <Caixas total={Math.max(1, mor.max ?? 4)} marcadas={mor.atual} mudar={n => mudarRecurso(p, 'morrendo', n)} rotulo="Morrendo" forma="caveira" cor="#f87171" desabilitado={p.somenteLeitura} /></div>
+      <div><p className="mb-1 flex items-center gap-1 text-xs text-orange-200">Ferido<CampoMax valor={fer.max} mudar={n => mudarMax(p, 'ferido', n)} rotulo="Ferido" teto={8} desabilitado={p.somenteLeitura} /></p>
+        <Caixas total={Math.max(1, fer.max ?? 3)} marcadas={fer.atual} mudar={n => mudarRecurso(p, 'ferido', n)} rotulo="Ferido" cor="#fb923c" desabilitado={p.somenteLeitura} /></div>
     </div>
   </section>
 }
@@ -114,9 +126,10 @@ function PainelFate(p: Props) {
     <h2 className={titulo}>✦ Destino, estresse e consequências</h2>
     <p className={dica}>Toque nas caixas de estresse para marcar. As consequências ficam escritas até se recuperar.</p>
     <div className="mb-4 flex flex-wrap items-center gap-2"><span className="text-sm">Pontos de destino</span>
-      <Caixas total={Math.max(pd.max ?? 3, pd.atual, 3)} marcadas={pd.atual} mudar={n => mudarRecurso(p, 'pontos_destino', n)} rotulo="Pontos de destino" forma="circulo" cor="#6cc4ff" desabilitado={p.somenteLeitura} />
+      <Caixas total={Math.max(1, pd.max ?? 3, pd.atual)} marcadas={pd.atual} mudar={n => mudarRecurso(p, 'pontos_destino', n)} rotulo="Pontos de destino" forma="circulo" cor="#6cc4ff" desabilitado={p.somenteLeitura} />
       {!p.somenteLeitura && <span className="flex items-center gap-1 text-(--a-c4b6d4)"><button type="button" onClick={() => mudarRecurso(p, 'pontos_destino', Math.max(0, pd.atual - 1))} className="rounded border border-(--a-5e4b78) px-1.5" aria-label="Menos um ponto de destino">−</button>
-        <button type="button" onClick={() => mudarRecurso(p, 'pontos_destino', pd.atual + 1)} className="rounded border border-(--a-5e4b78) px-1.5" aria-label="Mais um ponto de destino">+</button></span>}</div>
+        <button type="button" onClick={() => mudarRecurso(p, 'pontos_destino', pd.atual + 1)} className="rounded border border-(--a-5e4b78) px-1.5" aria-label="Mais um ponto de destino">+</button></span>}
+      <CampoMax valor={pd.max} mudar={n => mudarMax(p, 'pontos_destino', n)} rotulo="Pontos de destino" teto={10} desabilitado={p.somenteLeitura} /></div>
     <div className="grid gap-3 sm:grid-cols-2">{trilha('estresse_fisico', 'Estresse físico', '#f87171')}{trilha('estresse_mental', 'Estresse mental', '#a78bfa')}</div>
     <div className="mt-4 grid gap-2">{[['cons_suave', 'Suave (2)'], ['cons_moderada', 'Moderada (4)'], ['cons_severa', 'Severa (6)'], ['cons_extra', 'Extra (2)']].map(([k, nome]) =>
       <label key={k} className="flex items-center gap-2 text-sm"><span className="w-28 shrink-0 text-xs text-(--a-c4b6d4)">{nome}</span>
@@ -141,9 +154,11 @@ function PainelBlades(p: Props) {
     <section className={card} aria-label="Estresse e trauma">
       <h2 className={titulo}>⚡ Estresse e trauma</h2>
       <p className={dica}>Estresse vai até 9. Quando passar, marque um trauma (com 4, o personagem se aposenta).</p>
-      <Caixas total={Math.max(9, est.max ?? 9)} marcadas={est.atual} mudar={n => mudarRecurso(p, 'estresse', n)} rotulo="Estresse" cor="#9fdccb" desabilitado={p.somenteLeitura} />
+      <div className="mb-1 flex items-center gap-1"><CampoMax valor={est.max} mudar={n => mudarMax(p, 'estresse', n)} rotulo="Estresse" teto={16} desabilitado={p.somenteLeitura} /></div>
+      <Caixas total={Math.max(1, est.max ?? 9)} marcadas={est.atual} mudar={n => mudarRecurso(p, 'estresse', n)} rotulo="Estresse" cor="#9fdccb" desabilitado={p.somenteLeitura} />
       <div className="mt-4 flex flex-wrap items-center gap-2"><span className="text-xs text-(--a-c4b6d4)">Trauma</span>
-        <Caixas total={4} marcadas={tra.atual} mudar={n => mudarRecurso(p, 'trauma', n)} rotulo="Trauma" forma="circulo" cor="#f87171" desabilitado={p.somenteLeitura} /></div>
+        <Caixas total={Math.max(1, tra.max ?? 4)} marcadas={tra.atual} mudar={n => mudarRecurso(p, 'trauma', n)} rotulo="Trauma" forma="circulo" cor="#f87171" desabilitado={p.somenteLeitura} />
+        <CampoMax valor={tra.max} mudar={n => mudarMax(p, 'trauma', n)} rotulo="Trauma" teto={8} desabilitado={p.somenteLeitura} /></div>
       <div className="mt-3 flex flex-wrap gap-1.5">{TRAUMAS.map(t => { const k = 'trauma_' + t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
         return <button key={t} type="button" disabled={p.somenteLeitura} aria-pressed={sim(k)} onClick={() => set({ [k]: !sim(k) })}
           className={'rounded-full border px-2.5 py-1 text-xs ' + (sim(k) ? 'border-red-300 bg-red-500/30 text-red-100' : 'border-(--ficha-borda) text-(--a-cfc0df)')}>{t}</button> })}</div>
@@ -209,9 +224,10 @@ function PainelCondicoes(p: Props & { lista: string[]; tituloTexto: string }) {
 function PainelMorkBorg(p: Props) {
   const pr = recurso(p.d, 'pressagios'), inf = recurso(p.d, 'infectado')
   return <section aria-label="Presságios" className="-rotate-1 border-4 border-[#ffe600] bg-black p-4 text-[#ffe600]">
-    <h2 className="text-2xl font-black uppercase tracking-tight [transform:skewX(-8deg)]">Presságios</h2>
+    <div className="flex items-center gap-1"><h2 className="text-2xl font-black uppercase tracking-tight [transform:skewX(-8deg)]">Presságios</h2>
+      <CampoMax valor={pr.max} mudar={n => mudarMax(p, 'pressagios', n)} rotulo="Presságios" teto={12} cor="#ffe600" desabilitado={p.somenteLeitura} /></div>
     <p className="mb-3 text-xs text-[#ffe600]/70">Role no começo do dia. Gaste para rerrolar, baixar dano, ou o que o livro mandar.</p>
-    <Caixas total={Math.max(4, pr.max ?? 4)} marcadas={pr.atual} mudar={n => mudarRecurso(p, 'pressagios', n)} rotulo="Presságios" forma="caveira" cor="#ffe600" desabilitado={p.somenteLeitura} />
+    <Caixas total={Math.max(1, pr.max ?? 4)} marcadas={pr.atual} mudar={n => mudarRecurso(p, 'pressagios', n)} rotulo="Presságios" forma="caveira" cor="#ffe600" desabilitado={p.somenteLeitura} />
     <label className="mt-4 flex items-center gap-2 text-sm font-black uppercase"><input type="checkbox" checked={inf.atual > 0} disabled={p.somenteLeitura} onChange={e => mudarRecurso(p, 'infectado', e.target.checked ? 1 : 0)} className="h-5 w-5 accent-[#ffe600]" /> Infectado</label>
   </section>
 }
@@ -226,7 +242,10 @@ function PainelAssimilacao(p: Props) {
   return <section className={card} aria-label="Determinação e Assimilação">
     <h2 className={titulo}>🧬 Determinação × Assimilação</h2>
     <p className={dica}>As duas forças disputam o Infectado. Ajuste os pontos de cada lado.</p>
-    <div className="flex items-center justify-between text-sm font-bold"><span className="text-sky-300">Determinação {det.atual}</span><span className="text-fuchsia-300">{ass.atual} Assimilação</span></div>
+    <div className="flex flex-wrap items-center justify-between gap-2 text-sm font-bold">
+      <span className="flex items-center gap-1 text-sky-300">Determinação {det.atual}<CampoMax valor={det.max} mudar={n => mudarMax(p, 'determinacao', n)} rotulo="Determinação" teto={10} desabilitado={p.somenteLeitura} cor="#7dd3fc" /></span>
+      <span className="flex items-center gap-1 text-fuchsia-300">{ass.atual} Assimilação<CampoMax valor={ass.max} mudar={n => mudarMax(p, 'assimilacao', n)} rotulo="Assimilação" teto={10} desabilitado={p.somenteLeitura} cor="#f0abfc" /></span>
+    </div>
     <div className="relative mt-1 h-6 overflow-hidden rounded-full border-2 border-(--ficha-borda) bg-black/50" role="img" aria-label={`Determinação ${det.atual}, Assimilação ${ass.atual}`}>
       <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-sky-500 to-sky-300 transition-all" style={{ width: pd + '%' }} />
       <div className="absolute inset-y-0 right-0 bg-gradient-to-l from-fuchsia-600 to-fuchsia-400 transition-all" style={{ width: pa + '%' }} />

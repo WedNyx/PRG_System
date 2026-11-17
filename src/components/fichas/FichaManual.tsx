@@ -7,6 +7,7 @@ import { calcular } from '@/lib/sistemas/calculo'
 import type { DadosFicha, FichaManual as Manual, Sistema } from '@/lib/sistemas/tipos'
 import { montarRolagem, rolarExpressao } from '@/lib/dice'
 import AcoesRapidas from './AcoesRapidas'
+import PainelDoSistema, { FaixaDoSistema, RECURSOS_NO_PAINEL } from './PaineisSistema'
 import AtributosLua from './AtributosLua'
 import { AtributosGraus, PericiasGraus, RegrasDoSistema, TabelasDoSistema } from './FichaGraus'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
@@ -64,6 +65,10 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const parada = s.rolagem === 'parada' ? s.parada?.lados ?? 20 : null
   // Graus de dado (v0.35.6): atributos e perícias valem d4, d6, d8…
   const graus = s.rolagem === 'graus' && !!s.graus
+  // Investigação em d100 (v0.35.9): perícias num “dossiê”, com as frações do valor e a marca de experiência.
+  const dossie = s.id === 'brp' || s.leituraD100 === 'coc'
+  const marcas = d.marcas ?? {}
+  const marcar = (k: string, v: boolean) => { const n = { ...marcas }; if (v) n[k] = true; else delete n[k]; onChange({ ...d, marcas: n }) }
   const podeRolar = d20 || d100 || !!regra || !!parada
   const comMod = !!s.formulaModificador
   // Lua minguante (v0.35.8): só até 9 atributos cabem no desenho; além disso, cai no grid padrão.
@@ -152,6 +157,8 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
         {atual && <p className="flex gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-2 text-xs text-(--a-cfc0df)"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></p>}
 
         {secao === 'principal' && <>
+          {s.id !== 'faroeste-arcano' && <FaixaDoSistema s={s} nome={d.nome} />}
+          {s.id === 'faroeste-arcano' && <div data-painel-sistema><PainelDoSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} /></div>}
           {s.id === 'ordem-paranormal' && <ResumoOrdem nex={Number(d.campos.nex ?? 0) || 0} classe={String(d.campos.classe ?? '')} trilha={String(d.campos.trilha ?? '')} origem={String(d.campos.origem ?? '')}
             pe={{ atual: Number(d.recursos.pe?.atual ?? 0) || 0, max: maxDe('pe') }} san={{ atual: Number(d.recursos.san?.atual ?? 0) || 0, max: maxDe('san') }} />}
           <section className={card}>
@@ -172,6 +179,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               </label>)}
             </div>
           </section>
+          {s.id !== 'faroeste-arcano' && <div data-painel-sistema className="space-y-4 empty:hidden"><PainelDoSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} /></div>}
           {(s.derivados.length > 0 || s.recursos.length > 0) && <section className={card}>
             <div className="mb-3 flex flex-wrap items-center gap-2"><h2 className="flex-1 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">Valores e recursos</h2>
               {!somenteLeitura && s.recursos.length > 0 && <button type="button" onClick={() => setDescansando(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d4a23a]/70 px-3 py-1.5 text-sm text-amber-100 hover:bg-[#3a2a14]">🌙 Descanso</button>}</div>
@@ -183,7 +191,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               </label>)}
             </div>}
             {s.recursos.length > 0 && <div className="mt-3 grid gap-3 lg:grid-cols-2">
-              {s.recursos.map(r => {
+              {s.recursos.filter(r => !RECURSOS_NO_PAINEL[s.id]?.includes(r.id)).map(r => {
                 const atual = Number(d.recursos[r.id]?.atual ?? 0) || 0
                 return <div key={r.id}><BarraRecurso nome={r.nome} cor={corDoRecurso(r.id, r.nome)} atual={atual} max={maxDe(r.id)} maxEditavel somenteLeitura={somenteLeitura} contador={!!r.contador}
                   mudar={v => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual: v } })}
@@ -233,6 +241,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
                       onChange={e => setManual('mods', a.id, numero(e.target.value))}
                       className="w-12 rounded border border-(--a-5e4b78) bg-(--s-151123) px-1 text-center text-sm font-bold text-(--a-d4baff) disabled:opacity-70" /></label>}
                   <p className="mt-1 truncate text-[10px] text-(--a-a998bd)">{a.nome}</p>
+                  {s.leituraD100 === 'coc' && (() => { const v = Number(d.atributos[a.id] ?? a.padrao) || 0; return <p className="mt-0.5 text-[10px] text-(--ficha-acento)">½ {Math.floor(v / 2)} · ⅕ {Math.floor(v / 5)}</p> })()}
                 </div>)}
               </div>}
           </section>}
@@ -264,20 +273,23 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
                 mudar={(id, v) => onChange({ ...d, manual: { ...m, pericias: { ...m.pericias, [id]: v } }, pericias: { ...d.pericias, [id]: 'd' + v } })}
                 rolar={(nome, n) => void rolar(nome, 0, n)} rolarResistencia={(nome, n) => void rolar(nome, 0, n, true)} />
             </> : <>
+            {dossie && <p className="mb-2 text-xs text-(--a-a998bd)">☑ marca de experiência: marque a perícia usada com sucesso na sessão (para a fase de melhoria). {s.leituraD100 === 'coc' ? 'Embaixo de cada uma: a metade (sucesso difícil) e o quinto (extremo).' : 'Embaixo de cada uma: o sucesso especial (⅕) e o crítico (1/20).'}</p>}
             <p className="mb-3 text-xs text-(--a-a998bd)">{s.pericias.modo === 'valor' ? 'Digite o valor de cada uma.' : visual.pericias === 'graus' ? 'Toque no círculo para marcar o grau de treino e digite o total (bônus) de cada uma.' : 'Digite o total (bônus) de cada uma.'}{podeRolar ? ' Toque no dado para rolar.' : ''}</p>
             {[...grupos].map(([g, itens]) => <div key={g} className="mb-4">
               {g && <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{g}</h3>}
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {itens.map(p => { const valor = s.pericias!.modo === 'valor'
                   const tot = valor ? Number(d.pericias[p.id]) || 0 : m.pericias[p.id] ?? 0
-                  return <div key={p.id} className="flex items-center gap-2 rounded-lg bg-(--s-171325) px-3 py-2">
+                  return <div key={p.id} className={'flex items-center gap-2 rounded-lg px-3 py-2 ' + (dossie ? 'border border-[#b9a77e] bg-[#ece2c8] text-[#2a1f14] [font-family:ui-monospace,Courier,monospace]' : 'bg-(--s-171325)')}>
+                    {dossie && <input type="checkbox" checked={marcas['exp_' + p.id] === true} disabled={somenteLeitura} onChange={e => marcar('exp_' + p.id, e.target.checked)} aria-label={'Marca de experiência em ' + p.nome} title="Marca de experiência (usou com sucesso nesta sessão)" className="h-4 w-4 shrink-0 accent-[#5f4f35]" />}
                     {visual.pericias === 'graus' && <GrauPericia s={s} valor={String(d.pericias[p.id] ?? '')} nome={p.nome} somenteLeitura={somenteLeitura} mudar={v => set('pericias', { ...d.pericias, [p.id]: v })} />}
-                    <span className="min-w-0 flex-1 truncate text-sm">{p.nome}{p.atributo && <span className="ml-1 text-[10px] text-(--a-a998bd)">({p.atributo})</span>}</span>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-sm">{p.nome}{p.atributo && <span className="ml-1 text-[10px] text-(--a-a998bd)">({p.atributo})</span>}</span>
+                      {dossie && <span className="block text-[11px] text-[#5f4f35]">{s.leituraD100 === 'coc' ? `½ ${Math.floor(tot / 2)} · ⅕ ${Math.floor(tot / 5)}` : `especial ${Math.max(1, Math.round(tot / 5))} · crítico ${Math.max(1, Math.round(tot / 20))}`}</span>}</span>
                     <input type="number" aria-label={(valor ? 'Valor de ' : 'Total de ') + p.nome} value={valor ? d.pericias[p.id] ?? 0 : m.pericias[p.id] ?? ''} placeholder="0" disabled={somenteLeitura}
                       onChange={e => valor ? set('pericias', { ...d.pericias, [p.id]: numero(e.target.value) ?? 0 }) : setManual('pericias', p.id, numero(e.target.value))}
-                      className={input + ' !w-16 shrink-0 text-center'} />
+                      className={input + ' !w-16 shrink-0 text-center' + (dossie ? ' !border-[#8a7a55] !bg-[#f6efdc] !font-bold !text-[#2a1f14]' : '')} />
                     {s.rolagem !== 'assimilacao' && podeRolar && <button type="button" onClick={() => p.atributo || !parada ? rolar(p.nome, tot, dadosDe(p.atributo)) : rolar(p.nome, 0, tot)} aria-label={'Rolar ' + p.nome}
-                      className="shrink-0 rounded-lg bg-(--s-34294f) px-2 py-1.5 hover:bg-(--s-4b3a6e)"><Dice5 size={16} aria-hidden="true" /></button>}
+                      className={'shrink-0 rounded-lg px-2 py-1.5 ' + (dossie ? 'bg-[#5f4f35] text-[#f6efdc] hover:bg-[#7a6646]' : 'bg-(--s-34294f) hover:bg-(--s-4b3a6e)')}><Dice5 size={16} aria-hidden="true" /></button>}
                   </div> })}
               </div>
             </div>)}

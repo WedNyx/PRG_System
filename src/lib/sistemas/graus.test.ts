@@ -68,3 +68,21 @@ describe('combate na mesa com graus de dado', async () => {
     expect(regraDeAtaque(r.sistema, 1, t.dados, t.assim, t.graus).expressao).toBe('1d8+1d6+1')
   })
 })
+
+describe('marcações da ficha (v0.35.9)', async () => {
+  const { lerMarcas } = await import('./graus')
+  const { categoria } = await import('../nuvem/categorias')
+  it('guarda só chaves e valores simples', () => {
+    expect(lerMarcas({ ms_f: 2, cond_cego: true, recompensa: '$ 500', falso: false, vazio: '', 'chave ruim': 1, obj: { a: 1 }, grande: 1e9 })).toEqual({ ms_f: 2, cond_cego: true, recompensa: '$ 500', grande: 9999 })
+    expect(lerMarcas('lixo')).toEqual({})
+  })
+  it('a ficha normalizada mantém as marcações', () => {
+    const nova = JSON.parse(readFileSync(join(process.cwd(), 'supabase/sementes/nova.json'), 'utf8'))
+    const r = validarSistema(nova, { id: 'autoral-' + 'd'.repeat(32) }); if (!r.ok) throw new Error('inválido')
+    expect(normalizarFicha(r.sistema, { ...fichaVazia(r.sistema), marcas: { rel1_tam: 6, x: true } }).marcas).toEqual({ rel1_tam: 6, x: true })
+  })
+  it('marcações contam como PV e recursos (o jogador marca no jogo); perícias criadas, como perícias', () => {
+    expect(categoria('blades', 'marcas')).toBe('pv')
+    expect(categoria('autoral-x', 'periciasExtras')).toBe('pericias')
+  })
+})

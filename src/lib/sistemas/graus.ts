@@ -82,3 +82,15 @@ export function lerPericiasExtras(v: unknown): { id: string; nome: string }[] {
     vistos.add(id); return [{ id, nome }]
   })
 }
+
+/** Marcações da ficha (v0.35.9): chaves curtas e valores simples (sim/não, número ou texto curto). */
+export function lerMarcas(v: unknown): Record<string, boolean | number | string> {
+  const o = v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {}
+  return Object.fromEntries(Object.entries(o).slice(0, 300).flatMap(([k, x]): [string, boolean | number | string][] => {
+    if (!/^[a-z0-9_:-]{1,40}$/i.test(k)) return []
+    if (typeof x === 'boolean') return x ? [[k, true]] : []
+    if (typeof x === 'number' && Number.isFinite(x)) return [[k, Math.max(-9999, Math.min(9999, Math.round(x)))]]
+    if (typeof x === 'string') return x.trim() ? [[k, x.slice(0, 200)]] : []
+    return []
+  }))
+}

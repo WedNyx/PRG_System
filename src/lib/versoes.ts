@@ -27,6 +27,17 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.35.9', data: '2026-11-17',
+    titulo: 'Cada ficha com a cara do seu sistema',
+    itens: [
+      'Toda ficha ganhou uma faixa no alto com o clima do jogo, e uma parte própria para marcar o que é a cara de cada sistema. Nada é calculado sozinho: você marca.',
+      'D&D: salvaguardas contra a morte e espaços de magia para marcar. Pathfinder: três ações e a reação do turno, heroísmo, morrendo e ferido.',
+      'Fate: pontos de destino, caixas de estresse e consequências. Blades in the Dark: estresse de 9 casas, traumas e relógios de progresso.',
+      'Call of Cthulhu e BRP: perícias num dossiê, com a metade e o quinto do valor (CoC) ou o especial e o crítico (BRP), e a marca de experiência.',
+      'Faroeste Arcano: cartaz de PROCURADO com recompensa e crimes. Tormenta20 e Ordem Paranormal: condições para marcar. Mörk Borg: Presságios em caveiras. Assimilação: o cabo de guerra entre Determinação e Assimilação.',
+    ],
+  },
+  {
     versao: '0.35.8', data: '2026-11-17',
     titulo: 'Lunethernnyis: Opositores nos sistemas autorais',
     itens: [

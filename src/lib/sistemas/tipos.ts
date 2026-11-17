@@ -124,6 +124,8 @@ export type DadosFicha = {
   uso?: unknown
   /** Perícias que o próprio jogador criou (sistemas com perícias livres, v0.35.6); o valor fica em `pericias[id]`. */
   periciasExtras?: { id: string; nome: string }[]
+  /** Marcações da ficha que não calculam nada (v0.35.9): caixas de estresse, salvaguardas contra a morte, espaços de magia usados, relógios, condições… */
+  marcas?: Record<string, boolean | number | string>
   /** Livro do Jogador e suplementos escolhidos para ESTA ficha (mestre autoriza na campanha). */
   dndLivros?: import('./dndLivros').SelecaoLivrosDnd
   /** Atributos antes dos bônus raciais na criação 2014. Ausência = ficha antiga com totais manuais. */

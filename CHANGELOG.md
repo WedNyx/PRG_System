@@ -1,5 +1,10 @@
 # Changelog — PRG System
 
+## 0.35.10 — Dados de Assimilação
+
+- Faces simbólicas corrigidas, animação poliédrica e colisões aproximadas.
+- Assistência de rolagem livre na ficha e animação na mesa virtual.
+
 Também aparece no site em /novidades. Ao atualizar: aumente a versão no package.json e acrescente a entrada em src/lib/versoes.ts e aqui.
 
 ## v0.34.6 — Árvore explicativa e edição correta (2026-11-15)

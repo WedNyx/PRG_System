@@ -10,9 +10,9 @@ export type DadoAssim = { lados: LadoAssim; valor: number; face: Face }
 const F = (a: number, b: number, c: number): Face => ({ a, b, c })
 const VAZIA = F(0, 0, 0)
 /** Faces 1–10 iguais no d10 e no d12; o d12 tem mais duas. */
-const BASE = [VAZIA, VAZIA, F(0, 0, 1), F(0, 0, 1), F(0, 1, 1), F(1, 0, 0), F(2, 0, 0), F(1, 1, 0), F(1, 1, 1), F(2, 0, 1)]
+const BASE = [VAZIA, VAZIA, F(0, 0, 1), F(0, 1, 1), F(0, 1, 1), F(1, 0, 0), F(2, 0, 0), F(1, 1, 0), F(1, 1, 1), F(2, 0, 1)]
 export const FACES: Record<LadoAssim, Face[]> = {
-  6: [VAZIA, VAZIA, F(0, 0, 1), F(0, 0, 1), F(0, 1, 1), F(1, 0, 0)],
+  6: [VAZIA, VAZIA, F(0, 0, 1), F(0, 1, 1), F(0, 1, 1), F(1, 0, 0)],
   10: BASE,
   12: [...BASE, F(1, 2, 1), F(0, 0, 2)],
 }

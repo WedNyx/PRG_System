@@ -19,7 +19,7 @@ import { expressaoParada, leituraBlades, leituraCoc, leituraD100 } from '@/lib/s
 import TesteAssimilacao from './TesteAssimilacao'
 import AtributosOrdem from './AtributosOrdem'
 import { Retrato } from './FichaGenerica'
-import { AcoesBlades, AtributoComMod, AtributoModificador, estiloDoSistema, estiloTema, GrauPericia, identidadeVisual, PiramideFate, ResumoOrdem, temaDoSistema } from './VisualSistema'
+import { AcoesBlades, AtributoComMod, AtributoDnd, AtributoModificador, estiloDoSistema, estiloTema, GrauPericia, identidadeVisual, PiramideFate, ResumoOrdem, temaDoSistema } from './VisualSistema'
 
 const card = 'ficha-painel rounded-2xl border border-(--ficha-borda) bg-(--ficha-cartao) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
@@ -54,6 +54,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const m: Manual = d.manual ?? { mods: {}, derivados: {}, pericias: {} }
   // Visual do sistema (v0.35.1): cores, letra dos títulos e o jeito de mostrar atributos e perícias.
   const identidade = identidadeVisual(s)
+  const AtributoComposto = s.id === 'dnd5e-srd' ? AtributoDnd : AtributoComMod
   const simbolos: Record<string, string> = {
     'dnd5e-srd': 'M12 3L20 6V13Q20 18 12 22Q4 18 4 13V6Z M12 7V17 M9 10H15',
     pf2e: 'M12 2L22 12L12 22L2 12Z M12 6L18 12L12 18L6 12Z M12 2V6 M22 12H18 M12 18V22 M2 12H6',
@@ -258,8 +259,8 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
             : s.id === 'ordem-paranormal'
               ? <AtributosOrdem atributos={s.atributos} valores={d.atributos} nex={Number(d.campos.nex ?? 5)} somenteLeitura={somenteLeitura} semLimite
                 onChange={(id, valor) => set('atributos', { ...d.atributos, [id]: valor })} />
-              : visual.atributos === 'com-mod' ? <div className="grid grid-cols-3 gap-x-2 gap-y-5 pb-3 sm:grid-cols-6 sm:gap-3">
-                {s.atributos.map(a => <AtributoComMod key={a.id} id={a.id} nome={a.nome} valor={Number(d.atributos[a.id] ?? a.padrao)} mod={m.mods[a.id] ?? 0} somenteLeitura={somenteLeitura}
+              : visual.atributos === 'com-mod' ? <div className={s.id === 'dnd5e-srd' ? 'dnd-brasoes' : 'grid grid-cols-3 gap-x-2 gap-y-5 pb-3 sm:grid-cols-6 sm:gap-3'}>
+                {s.atributos.map(a => <AtributoComposto key={a.id} id={a.id} nome={a.nome} valor={Number(d.atributos[a.id] ?? a.padrao)} mod={m.mods[a.id] ?? 0} somenteLeitura={somenteLeitura}
                   mudarValor={v => set('atributos', { ...d.atributos, [a.id]: v })} mudarMod={v => setManual('mods', a.id, v)} rolar={d20 ? () => void rolar(a.nome, m.mods[a.id] ?? 0) : undefined} />)}
               </div>
               : visual.atributos === 'modificador' ? <div className={'grid gap-2 sm:gap-3 ' + (s.atributos.length === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 sm:grid-cols-6')}>

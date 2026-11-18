@@ -231,7 +231,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
             {s.recursos.length > 0 && <div className="ficha-recursos-grid mt-3 grid gap-3 lg:grid-cols-2">
               {s.recursos.filter(r => !RECURSOS_NO_PAINEL[s.id]?.includes(r.id)).map(r => {
                 const atual = Number(d.recursos[r.id]?.atual ?? 0) || 0
-                return <div key={r.id} data-recurso-principal={r === recursoPrincipal ? "sim" : undefined}><BarraRecurso nome={r.nome} cor={corDoRecurso(r.id, r.nome)} atual={atual} max={maxDe(r.id)} maxEditavel somenteLeitura={somenteLeitura} contador={!!r.contador}
+                return <div key={r.id} data-recurso-principal={r === recursoPrincipal ? "sim" : undefined} data-espaco-magia={s.id === "dnd5e-srd" && /^espacos_\d+$/.test(r.id) ? "sim" : undefined}>{s.id === "dnd5e-srd" && /^espacos_\d+$/.test(r.id) && (maxDe(r.id) ?? 0) > 0 && <div className="dnd-cristais" aria-hidden="true">{Array.from({ length: Math.min(20, Math.max(0, Math.floor(maxDe(r.id) ?? 0))) }, (_, i) => <svg key={i} viewBox="0 0 22 30" data-disponivel={i < atual ? "sim" : "nao"}><path d="M11 1L21 11L11 29L1 11Z"/><path d="M11 1L7 11L11 29L15 11Z M1 11H21" fill="none"/></svg>)}</div>}<BarraRecurso nome={r.nome} cor={corDoRecurso(r.id, r.nome)} atual={atual} max={maxDe(r.id)} maxEditavel somenteLeitura={somenteLeitura} contador={!!r.contador}
                   mudar={v => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual: v } })}
                   mudarMax={v => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual, max: v } })} />
                   {r.dica && <p className="mt-1 px-1 text-[11px] leading-snug text-(--a-a998bd)">{r.dica}</p>}</div>

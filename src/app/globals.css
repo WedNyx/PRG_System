@@ -318,3 +318,35 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 [data-visual="assimilacao"] :is(.ficha-item,.ficha-poder) { border-radius:24px 7px 26px 12px; background:radial-gradient(ellipse at top right,#66315e,#261c31 75%); }
 [data-visual="opositores"] :is(.ficha-item,.ficha-poder) { border-radius:20px 6px; background:radial-gradient(ellipse at top left,#403150,#211a34 75%); border-top:3px double var(--ficha-borda); }
 [data-visual="nova"] :is(.ficha-item,.ficha-poder) { border-radius:4px 20px; background:repeating-linear-gradient(90deg,#292033 0 32px,#34283e 32px 33px); }
+
+/* Composição principal: retrato, registro, recursos e mecânicas próprias. */
+.ficha-composicao { display:grid; gap:1rem; min-width:0; }
+.ficha-composicao > * { min-width:0; }
+.ficha-identidade-retrato { isolation:isolate; position:relative; }
+.ficha-identidade-campos label { min-width:0; }
+.ficha-paineis-especiais > section { border-color:var(--ficha-borda); }
+[data-visual="dnd5e-srd"] .ficha-identidade-retrato { padding:.8rem; border:3px double #ba905e; border-radius:8px 8px 24px 24px; background:#35232a; }
+[data-visual="pf2e"] .ficha-identidade-campos { border-top:2px solid var(--ficha-borda); padding-top:.8rem; }
+[data-visual="fate-core"] .ficha-identidade-retrato { flex-direction:column; align-items:stretch; }
+[data-visual="fate-core"] .ficha-identidade-campos label { border-left:3px solid var(--ficha-borda); padding-left:.5rem; }
+[data-visual="blades"] .ficha-identidade-campos { background:#1c202a; padding:.7rem; border:3px double var(--ficha-borda); }
+[data-visual="brp"] .ficha-identidade-campos label { border-bottom:1px solid var(--ficha-borda); padding-bottom:.35rem; }
+[data-visual="call-of-cthulhu"] .ficha-identidade-retrato { flex-direction:row-reverse; padding:.65rem; border:2px solid var(--ficha-borda); font-family:ui-monospace,monospace; }
+[data-visual="call-of-cthulhu"] .ficha-identidade-campos { font-family:ui-monospace,monospace; }
+[data-visual="faroeste-arcano"] .ficha-identidade-retrato { flex-direction:column; align-items:center; padding:.8rem; border:2px dashed var(--ficha-borda); }
+[data-visual="faroeste-arcano"] .ficha-identidade-retrato label { width:100%; }
+[data-visual="ordem-paranormal"] .ficha-identidade-retrato { border-left:5px solid var(--ficha-acento); padding:.7rem; background:#321f28; }
+[data-visual="ordem-paranormal"] .ficha-identidade-campos label { border-bottom:1px dashed var(--ficha-borda); padding-bottom:.5rem; }
+[data-visual="tormenta20"] .ficha-identidade-retrato { border:3px double var(--ficha-borda); border-radius:24px 6px; padding:.8rem; }
+[data-visual="mork-borg"] .ficha-identidade-retrato { flex-direction:column; align-items:stretch; border-bottom:5px solid #ffe600; padding-bottom:.8rem; }
+[data-visual="mork-borg"] .ficha-identidade-campos label { font-weight:800; }
+[data-visual="assimilacao"] .ficha-identidade-retrato { border:1px solid var(--ficha-borda); border-radius:35px 8px; padding:.8rem; background:radial-gradient(ellipse at left,#633361,#261b30); }
+[data-visual="opositores"] .ficha-identidade-retrato { flex-direction:column; align-items:center; border:3px double var(--ficha-borda); border-radius:40px 40px 12px 12px; padding:1rem; background:radial-gradient(ellipse at top,#503d69,#211a34 75%); }
+[data-visual="opositores"] .ficha-identidade-retrato label { width:100%; text-align:center; }
+[data-visual="nova"] .ficha-identidade-campos label { border-left:3px solid var(--ficha-borda); padding-left:.5rem; }
+[data-visual="nova"] .ficha-identidade-retrato { border:1px solid var(--ficha-acento); padding:.7rem; border-radius:4px 20px; }
+@media(min-width:1280px) {
+  :is([data-visual="pf2e"],[data-visual="ordem-paranormal"],[data-visual="blades"],[data-visual="nova"]) .ficha-composicao { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; }
+  :is([data-visual="pf2e"],[data-visual="ordem-paranormal"],[data-visual="blades"],[data-visual="nova"]) .ficha-composicao > * { grid-column:1/-1; }
+  :is([data-visual="pf2e"],[data-visual="ordem-paranormal"],[data-visual="blades"],[data-visual="nova"]) .ficha-composicao > :is(.ficha-identidade,.ficha-paineis-especiais) { grid-column:auto; }
+}

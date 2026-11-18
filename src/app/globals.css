@@ -383,3 +383,15 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 .dnd-brasao-rolar:hover {background:#ffffff14;}
 @media(min-width:1000px){.dnd-brasoes{grid-template-columns:repeat(6,minmax(0,1fr));}}
 @media(max-width:360px){.dnd-brasoes{grid-template-columns:repeat(2,minmax(0,1fr));}}
+
+/* D&D: registro de testes em couro e pergaminho escuro. */
+.dnd-testes {border:3px double #bc9764;}
+.dnd-registro-grupo > h3 {color:#eac38b;font-family:var(--ficha-fonte);border-bottom:1px solid #bc976488;padding:.5rem 0;letter-spacing:.08em;}
+.dnd-registro-lista {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:.4rem;}
+[data-visual="dnd5e-srd"] .dnd-registro-lista .ficha-pericia {background:#33232a;border:1px solid #805d49;border-radius:5px;padding:.55rem .65rem;min-height:48px;}
+[data-visual="dnd5e-srd"] .dnd-pericia-nome {white-space:normal;overflow-wrap:anywhere;color:#f4e4d2;}
+[data-visual="dnd5e-srd"] .dnd-pericia-nome > span {color:#c6a987;}
+[data-visual="dnd5e-srd"] .dnd-registro-lista .ficha-treino {border:1px solid #bc9764;border-radius:5px 5px 45% 45%;color:#eac38b;min-height:30px;min-width:28px;}
+[data-visual="dnd5e-srd"] .dnd-bonus {background:#21171c;border-color:#bc9764;color:#fff1d8;font-weight:800;font-variant-numeric:tabular-nums;}
+[data-visual="dnd5e-srd"] .dnd-registro-lista .ficha-pericia > button:last-child:not(.ficha-treino) {background:#60402f;color:#f6d49c;min-height:34px;min-width:34px;border:1px solid #bc9764;}
+@media(max-width:380px){.dnd-registro-lista .ficha-pericia{gap:.35rem;padding-inline:.35rem;}}

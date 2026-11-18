@@ -232,7 +232,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
                   mudar={v => set('atributos', { ...d.atributos, [a.id]: v })} rolar={d20 ? () => void rolar(a.nome, Number(d.atributos[a.id] ?? a.padrao)) : undefined} />)}
               </div>
               : <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6">
-                {s.atributos.map(a => <div key={a.id} className="rounded-xl border border-(--ficha-borda) bg-(--s-171325) p-2 text-center sm:p-3">
+                {s.atributos.map(a => <div key={a.id} className="ficha-atributo-percentual rounded-xl border border-(--ficha-borda) bg-(--s-171325) p-2 text-center sm:p-3">
                   <p className="text-xs uppercase tracking-wider text-(--a-c4b6d4)" title={a.nome}>{a.id}</p>
                   <input type="number" aria-label={a.nome} value={d.atributos[a.id] ?? a.padrao} disabled={somenteLeitura}
                     onChange={e => set('atributos', { ...d.atributos, [a.id]: numero(e.target.value) ?? 0 })}
@@ -281,7 +281,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {itens.map(p => { const valor = s.pericias!.modo === 'valor'
                   const tot = valor ? Number(d.pericias[p.id]) || 0 : m.pericias[p.id] ?? 0
-                  return <div key={p.id} className={'flex items-center gap-2 rounded-lg px-3 py-2 ' + (dossie ? 'border border-[#b9a77e] bg-[#ece2c8] text-[#2a1f14] [font-family:ui-monospace,Courier,monospace]' : 'bg-(--s-171325)')}>
+                  return <div key={p.id} className={'ficha-pericia flex items-center gap-2 rounded-lg px-3 py-2 ' + (dossie ? 'border border-[#b9a77e] bg-[#ece2c8] text-[#2a1f14] [font-family:ui-monospace,Courier,monospace]' : 'bg-(--s-171325)')}>
                     {dossie && <input type="checkbox" checked={marcas['exp_' + p.id] === true} disabled={somenteLeitura} onChange={e => marcar('exp_' + p.id, e.target.checked)} aria-label={'Marca de experiência em ' + p.nome} title="Marca de experiência (usou com sucesso nesta sessão)" className="h-4 w-4 shrink-0 accent-[#5f4f35]" />}
                     {visual.pericias === 'graus' && <GrauPericia s={s} valor={String(d.pericias[p.id] ?? '')} nome={p.nome} somenteLeitura={somenteLeitura} mudar={v => set('pericias', { ...d.pericias, [p.id]: v })} />}
                     <span className="min-w-0 flex-1"><span className="block truncate text-sm">{p.nome}{p.atributo && <span className="ml-1 text-[10px] text-(--a-a998bd)">({p.atributo})</span>}</span>

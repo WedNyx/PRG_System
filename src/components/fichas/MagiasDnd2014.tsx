@@ -110,6 +110,8 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
  }
  return <section aria-label="Grimório do Livro do Jogador 2014" className="dnd-grimorio space-y-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5">
   <h3 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><BookOpen size={19}/> Grimório de D&D 2014 · SRD 5.1</h3>
+    <div className="dnd-espacos-grimorio">{[...Array.from({length:9},(_,i)=>'espacos_'+(i+1)), 'pacto'].map(id=>{ const max=Math.max(0,Number(c.recursosMax[id]??0)||0), atual=Math.max(0,Number(d.recursos[id]?.atual??0)||0); if(!max)return null; return <div key={id} className="dnd-espaco-grimorio"><div className="flex justify-between gap-2 text-xs"><strong>{id==='pacto'?'Magia de Pacto':id.replace('espacos_','')+'º nível'}</strong><span>{atual} / {max}</span></div><div className="dnd-cristais" aria-hidden="true">{Array.from({length:Math.min(20,Math.floor(max))},(_,i)=><svg key={i} viewBox="0 0 22 30" data-disponivel={i<atual?'sim':'nao'}><path d="M11 1L21 11L11 29L1 11Z"/><path d="M11 1L7 11L11 29L15 11Z M1 11H21" fill="none"/></svg>)}</div></div>})}</div>
+
   <p className="text-xs text-(--a-c4b6d4)">Registre magias <strong>conhecidas, preparadas ou extras</strong> a partir do Livro do Jogador 2014 e dos suplementos liberados.
     A plataforma confere níveis e espaços da classe, mas não supõe que uma magia de mesmo nome tem efeito igual na edição 2024.
     Consulte o livro para dano, duração, componentes e regras; a expressão de dados é opcional.</p>

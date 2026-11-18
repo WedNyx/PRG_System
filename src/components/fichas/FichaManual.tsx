@@ -4,6 +4,8 @@ import { tituloSistemaNaFicha, edicaoEfetivaDaFicha } from '@/lib/sistemas/edica
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Dice5, Info } from 'lucide-react'
+import { classesDaFicha } from '@/lib/sistemas/dnd2024Classes'
+import { classesDaFicha2014 } from '@/lib/sistemas/dnd2014Multiclasse'
 import { calcular } from '@/lib/sistemas/calculo'
 import type { DadosFicha, FichaManual as Manual, Sistema } from '@/lib/sistemas/tipos'
 import { montarRolagem, rolarExpressao } from '@/lib/dice'
@@ -160,6 +162,27 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const iAtual = SECOES.findIndex(x => x.id === secao)
   const atual = SECOES[iAtual], proxima = SECOES[iAtual + 1]
   const maxDe = (id: string) => { const x = d.recursos[id]?.max; return x === undefined || x === null ? null : Number(x) || 0 }
+  const [mostrarTodosRecursos, setMostrarTodosRecursos] = useState(false)
+  const edicao2014 = edicaoEfetivaDaFicha(s, d) === '2014'
+  const classesDnd = s.id === 'dnd5e-srd' ? (edicao2014 ? classesDaFicha2014(d) : classesDaFicha(d)).lista : []
+  const nivelClasse = (id: string) => classesDnd.find(c => c.cls.id === id)?.nivel ?? 0
+  const recursosDeClasse: Record<string, boolean> = {
+    furias: nivelClasse('barbaro') >= 1,
+    inspiracao_bardo: nivelClasse('bardo') >= 1,
+    canalizar: nivelClasse('clerigo') >= 2 || nivelClasse('paladino') >= (edicao2014 ? 3 : 3),
+    forma_selvagem: nivelClasse('druida') >= 2,
+    retomar_folego: nivelClasse('guerreiro') >= 1,
+    surto_acao: nivelClasse('guerreiro') >= 2,
+    indomavel: nivelClasse('guerreiro') >= 9,
+    foco: nivelClasse('monge') >= 2,
+    feiticaria: nivelClasse('feiticeiro') >= 2,
+    cura_maos: nivelClasse('paladino') >= 1,
+    marca_cacador: !edicao2014 && nivelClasse('patrulheiro') >= 1,
+    pacto: nivelClasse('bruxo') >= 1,
+  }
+  const recursosDisponiveis = s.recursos.filter(r => !RECURSOS_NO_PAINEL[s.id]?.includes(r.id))
+  const recursoVisivel = (r: Sistema['recursos'][number]) => s.id !== 'dnd5e-srd' || !r.ocultarSemMax || (maxDe(r.id) ?? 0) > 0 || Number(d.recursos[r.id]?.atual ?? 0) !== 0 || recursosDeClasse[r.id] === true
+  const ocultos = recursosDisponiveis.filter(r => !recursoVisivel(r)).length
   const recursoPrincipal = s.recursos.find(r => /^(pv|vida)$/.test(r.id)) ?? s.recursos.find(r => maxDe(r.id))
   const defesa = s.derivados.find(x => /^(defesa|ca)$/.test(x.id))
   // Ordem Paranormal: rituais em destaque.
@@ -229,8 +252,9 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
                   onChange={e => setManual('derivados', x.id, numero(e.target.value))} className="mt-1 w-full bg-transparent text-2xl font-black text-white outline-none disabled:opacity-70" />
               </label>)}
             </div>}
+            {s.id === 'dnd5e-srd' && ocultos > 0 && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs"><span className="text-(--a-c4b6d4)">Recursos da classe e recursos preenchidos. Os limites continuam manuais.</span><button type="button" aria-pressed={mostrarTodosRecursos} onClick={() => setMostrarTodosRecursos(v => !v)} className="rounded-lg border border-[#bc9764] px-3 py-2 text-amber-100">{mostrarTodosRecursos ? 'Mostrar só os relevantes' : 'Mostrar todos os recursos (' + ocultos + ' ocultos)'}</button></div>}
             {s.recursos.length > 0 && <div className="ficha-recursos-grid mt-3 grid gap-3 lg:grid-cols-2">
-              {s.recursos.filter(r => !RECURSOS_NO_PAINEL[s.id]?.includes(r.id)).map(r => {
+              {recursosDisponiveis.filter(r => mostrarTodosRecursos || recursoVisivel(r)).map(r => {
                 const atual = Number(d.recursos[r.id]?.atual ?? 0) || 0
                 return <div key={r.id} data-recurso-principal={r === recursoPrincipal ? "sim" : undefined} data-espaco-magia={s.id === "dnd5e-srd" && /^espacos_\d+$/.test(r.id) ? "sim" : undefined}>{s.id === "dnd5e-srd" && /^espacos_\d+$/.test(r.id) && (maxDe(r.id) ?? 0) > 0 && <div className="dnd-cristais" aria-hidden="true">{Array.from({ length: Math.min(20, Math.max(0, Math.floor(maxDe(r.id) ?? 0))) }, (_, i) => <svg key={i} viewBox="0 0 22 30" data-disponivel={i < atual ? "sim" : "nao"}><path d="M11 1L21 11L11 29L1 11Z"/><path d="M11 1L7 11L11 29L15 11Z M1 11H21" fill="none"/></svg>)}</div>}<BarraRecurso nome={r.nome} cor={corDoRecurso(r.id, r.nome)} atual={atual} max={maxDe(r.id)} maxEditavel somenteLeitura={somenteLeitura} contador={!!r.contador}
                   mudar={v => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual: v } })}

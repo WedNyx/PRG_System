@@ -62,6 +62,23 @@ export function AtributoComMod({ id, nome, valor, mod, somenteLeitura, mudarValo
   </div>
 }
 
+/** Brasão D&D: mantém os mesmos valores manuais e ações do componente compartilhado. */
+export function AtributoDnd({ id, nome, valor, mod, somenteLeitura, mudarValor, mudarMod, rolar }: Parameters<typeof AtributoComMod>[0]) {
+  return <div className="dnd-brasao">
+    <svg aria-hidden="true" viewBox="0 0 120 150" preserveAspectRatio="none" className="dnd-brasao-fundo">
+      <path d="M4 4H116V94Q116 122 60 146Q4 122 4 94Z" fill="#352129" stroke="#bc9764" strokeWidth="2"/>
+      <path d="M10 11H110V94Q110 117 60 139Q10 117 10 94Z" fill="none" stroke="#bc9764" strokeOpacity=".45"/>
+    </svg>
+    <div className="dnd-brasao-conteudo">
+      <span className="dnd-brasao-id" title={nome}>{id}</span>
+      <span className="dnd-brasao-nome">{nome}</span>
+      <label className="dnd-brasao-mod"><span className="sr-only">Modificador de {nome}</span>{mod >= 0 && <span aria-hidden="true">+</span>}<input type="number" value={mod} disabled={somenteLeitura} onChange={e => mudarMod(num(e.target.value))}/></label>
+      <label className="dnd-brasao-valor"><span className="sr-only">{nome} (valor)</span><input type="number" value={valor} disabled={somenteLeitura} onChange={e => mudarValor(num(e.target.value))}/></label>
+      {rolar && <button type="button" onClick={rolar} aria-label={'Rolar ' + nome + ' (' + sinal(mod) + ')'} className="dnd-brasao-rolar"><Dice5 size={15}/></button>}
+    </div>
+  </div>
+}
+
 /** PF2e, Tormenta20 e MÖRK BORG: o atributo já é o modificador, num bloco grande com sinal. */
 export function AtributoModificador({ id, nome, valor, somenteLeitura, mudar, rolar, sombrio }: {
   id: string; nome: string; valor: number; somenteLeitura: boolean; mudar: (v: number) => void; rolar?: () => void; sombrio?: boolean

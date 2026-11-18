@@ -20,6 +20,9 @@ const nomeLivro=(id:string)=>id==='phb2014'?'Livro do Jogador 2014':suplementoDn
 type Props={d:DadosFicha;c:Calculo;onChange:(d:DadosFicha)=>void;somenteLeitura:boolean;rolar:(ex:string,rotulo:string)=>void}
 export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props) {
  const [nome,setNome]=useState('')
+  const [pagina,setPagina]=useState(-1)
+  const [buscaGrimorio,setBuscaGrimorio]=useState('')
+  const [modoGrimorio,setModoGrimorio]=useState('todos')
  const [buscaCatalogo,setBuscaCatalogo]=useState('')
  const [espacosEscolhidos,setEspacosEscolhidos]=useState<Record<string,number>>({})
  const [nivel,setNivel]=useState(0)
@@ -40,6 +43,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
  const fontes=[livros.base,...livros.suplementos]
  const {lista}=classesDaFicha2014(d)
  const magias=lerMagias2014(d.dnd2014Magias)
+  const visiveis = magias.filter(m => (pagina === -1 || m.nivel === pagina) && m.nome.toLocaleLowerCase('pt-BR').includes(buscaGrimorio.trim().toLocaleLowerCase('pt-BR')) && (modoGrimorio === 'todos' || m.modo === modoGrimorio))
  const resumos=resumoPreparacaoMagias2014(d,magias)
  const doCirculo=magiasCirculoTerra2014(d)
  const faltamCirculo=doCirculo.filter(x=>!magias.some(m=>
@@ -108,8 +112,10 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
    setAviso('Magia '+magia.nome+' conjurada com '+(pacto?'Magia de Pacto':'espaço')+' de '+n+'º nível.')
    if(magia.expressao)rolar(magia.expressao,magia.nome+' · magia 2014 (espaço '+n+'º)')
  }
- return <section aria-label="Grimório do Livro do Jogador 2014" className="space-y-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5">
+ return <section aria-label="Grimório do Livro do Jogador 2014" className="dnd-grimorio space-y-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5">
   <h3 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><BookOpen size={19}/> Grimório de D&D 2014 · SRD 5.1</h3>
+    <div className="dnd-espacos-grimorio">{[...Array.from({length:9},(_,i)=>'espacos_'+(i+1)), 'pacto'].map(id=>{ const max=Math.max(0,Number(c.recursosMax[id]??0)||0), atual=Math.max(0,Number(d.recursos[id]?.atual??0)||0); if(!max)return null; return <div key={id} className="dnd-espaco-grimorio"><div className="flex justify-between gap-2 text-xs"><strong>{id==='pacto'?'Magia de Pacto':id.replace('espacos_','')+'º nível'}</strong><span>{atual} / {max}</span></div><div className="dnd-cristais" aria-hidden="true">{Array.from({length:Math.min(20,Math.floor(max))},(_,i)=><svg key={i} viewBox="0 0 22 30" data-disponivel={i<atual?'sim':'nao'}><path d="M11 1L21 11L11 29L1 11Z"/><path d="M11 1L7 11L11 29L15 11Z M1 11H21" fill="none"/></svg>)}</div></div>})}</div>
+
   <p className="text-xs text-(--a-c4b6d4)">Registre magias <strong>conhecidas, preparadas ou extras</strong> a partir do Livro do Jogador 2014 e dos suplementos liberados.
     A plataforma confere níveis e espaços da classe, mas não supõe que uma magia de mesmo nome tem efeito igual na edição 2024.
     Consulte o livro para dano, duração, componentes e regras; a expressão de dados é opcional.</p>
@@ -269,10 +275,17 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
   {erro&&<p role="alert" className="text-xs text-amber-200">{erro}</p>}
   {aviso&&<p role="status" className="rounded-lg border border-sky-500/30 p-2 text-xs text-sky-200">{aviso}</p>}
   {magias.length===0&&<p className="text-xs text-(--a-c4b6d4)">Nenhuma magia de 2014 registrada nesta ficha.</p>}
-  <div className="grid gap-2 sm:grid-cols-2">{magias.map(m=><article key={m.id}
-    className="space-y-2 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+  <div className="dnd-indice-grimorio">
+    <label>Buscar no grimório<input value={buscaGrimorio} onChange={e=>setBuscaGrimorio(e.target.value)} placeholder="Nome da magia" /></label>
+    <label>Registro<select value={modoGrimorio} onChange={e=>setModoGrimorio(e.target.value)}><option value="todos">Todos</option><option value="conhecida">Conhecidas</option><option value="preparada">Preparadas</option><option value="extra">Extras</option></select></label>
+    <div className="dnd-indice-circulos" role="group" aria-label="Círculos do grimório">{[-1,0,1,2,3,4,5,6,7,8,9].map(n=><button key={n} type="button" aria-pressed={pagina===n} onClick={()=>setPagina(n)}>{n===-1?'Todos':n===0?'Truques':n+'º'} <small>{n===-1?magias.length:magias.filter(m=>m.nivel===n).length}</small></button>)}</div>
+    <p className="text-xs" role="status">{visiveis.length} de {magias.length} magias</p>
+  </div>
+  {magias.length>0&&visiveis.length===0&&<p className="text-xs">Nenhuma magia corresponde aos filtros.</p>}
+  <div className="grid gap-2 sm:grid-cols-2">{[...visiveis].sort((a,b)=>a.nivel-b.nivel||a.nome.localeCompare(b.nome)).map(m=><article key={m.id}
+    className="dnd-magia-pagina space-y-2 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <strong className="text-sm">{m.nome}</strong>
+      <strong className="text-sm"><span className="dnd-escola-selo" aria-hidden="true">{({'Abjuração':'◇','Adivinhação':'◉','Conjuração':'✧','Encantamento':'♡','Evocação':'✦','Ilusão':'◈','Necromancia':'☾','Transmutação':'⇄'} as Record<string,string>)[magiasDaClasse2014(m.classe).find(x=>normalizar(x.nome)===normalizar(m.nome)&&x.nivel===m.nivel)?.escola??'']??'✧'}</span> {m.nome}</strong>
       <span className="text-xs text-(--a-d3adf0)">{m.nivel===0?'Truque':m.nivel+'º nível'} · {m.modo}</span>
     </div>
     <p className="text-[11px] text-(--a-c4b6d4)">{m.classe} · {nomeLivro(m.fonte)}</p>

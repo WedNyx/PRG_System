@@ -13,7 +13,7 @@ import { rolarExpressao } from '@/lib/dice'
  * - regras escritas pelo autor e tabelas roláveis.
  */
 type Mostrar = (expr: string, rotulo: string, nota?: (r: { resultados: number[]; total: number }) => string | null) => Promise<void>
-const card = 'rounded-2xl border border-(--ficha-borda) bg-(--ficha-cartao) p-4 sm:p-5'
+const card = 'ficha-painel rounded-2xl border border-(--ficha-borda) bg-(--ficha-cartao) p-4 sm:p-5'
 const sel = 'rounded-lg border border-(--a-5e4b78) bg-(--s-151123) px-2 py-1.5 text-sm font-bold text-white disabled:opacity-70'
 const titulo = 'mb-2 flex items-center gap-2 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]'
 
@@ -34,7 +34,8 @@ export function AtributosGraus({ s, d, onChange, somenteLeitura, mostrar }: { s:
   return <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
     {s.atributos.map(a => {
       const v = grauValido(d.atributos[a.id] ?? a.padrao, g), dado = dadoDoGrau(v, g), ops = opcoesDeGrau(g).filter(o => o >= a.min && o <= a.max)
-      return <div key={a.id} className={'rounded-xl border p-3 text-center ' + (destaque === a.id ? 'border-(--ficha-acento) shadow-[0_0_16px_#a855f733]' : 'border-(--ficha-borda)') + ' bg-(--s-171325)'}>
+      return <div key={a.id} className={'ficha-dado rounded-xl border p-3 text-center ' + (destaque === a.id ? 'border-(--ficha-acento) shadow-[0_0_16px_#a855f733]' : 'border-(--ficha-borda)') + ' bg-(--s-171325)'}>
+        <div aria-hidden="true" className="ficha-dado-emblema mx-auto mb-2 flex h-12 w-12 items-center justify-center text-sm font-black text-(--ficha-acento)">{dado ? 'd' + dado : '—'}</div>
         <p className="font-semibold">{a.nome}{destaque === a.id && <span className="ml-1 text-xs text-amber-200" title="Atributo em destaque">✦</span>}</p>
         <select aria-label={'Grau de ' + a.nome} value={v} disabled={somenteLeitura} onChange={e => onChange({ ...d, atributos: { ...d.atributos, [a.id]: Number(e.target.value) } })} className={sel + ' mt-2 w-full text-center text-lg'}>
           {ops.map(o => <option key={o} value={o}>{rotuloGrau(o, g)}</option>)}</select>

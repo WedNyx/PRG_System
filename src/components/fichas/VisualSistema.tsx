@@ -11,19 +11,26 @@ import type { Sistema } from '@/lib/sistemas/tipos'
 export type Tema = { acento: string; borda: string; cartao: string; fonte?: string; sombrio?: boolean }
 const PADRAO: Tema = { acento: 'var(--a-ed9cd8)', borda: 'var(--a-55456e)', cartao: 'var(--s-201a32)' }
 const TEMAS: Record<string, Tema> = {
-  'dnd5e-srd': { acento: '#f0806f', borda: '#7a3a33', cartao: 'var(--s-201a32)', fonte: 'var(--font-cinzel), Georgia, serif' },
-  pf2e: { acento: '#e8b84a', borda: '#6b5420', cartao: 'var(--s-201a32)', fonte: 'var(--font-cinzel), Georgia, serif' },
-  'fate-core': { acento: '#6cc4ff', borda: '#24557a', cartao: 'var(--s-201a32)' },
-  blades: { acento: '#9fdccb', borda: '#2f5f56', cartao: 'var(--s-201a32)', fonte: 'var(--font-cormorant), Georgia, serif' },
-  brp: { acento: '#d6bf8f', borda: '#5f4f35', cartao: 'var(--s-201a32)', fonte: 'var(--font-cormorant), Georgia, serif' },
-  'faroeste-arcano': { acento: '#eab26a', borda: '#704a26', cartao: 'var(--s-201a32)', fonte: 'var(--font-cormorant), Georgia, serif' },
-  'ordem-paranormal': { acento: '#d8a6ff', borda: '#5b2a86', cartao: 'var(--s-201a32)' },
-  tormenta20: { acento: '#ff7a6b', borda: '#7f1d1d', cartao: 'var(--s-201a32)', fonte: 'var(--font-cinzel), Georgia, serif' },
+  'dnd5e-srd': { acento: '#f5a28e', borda: '#9a4545', cartao: '#24191f', fonte: 'var(--font-cinzel), Georgia, serif' },
+  pf2e: { acento: '#9ecaff', borda: '#426b9e', cartao: '#172335', fonte: 'var(--font-cinzel), Georgia, serif' },
+  'fate-core': { acento: '#c5b0ff', borda: '#7457ad', cartao: '#221b34' },
+  blades: { acento: '#c4c8ef', borda: '#62678d', cartao: '#1c202a', fonte: 'var(--font-cormorant), Georgia, serif' },
+  brp: { acento: '#a6dfc5', borda: '#45836b', cartao: '#172923', fonte: 'var(--font-cormorant), Georgia, serif' },
+  'faroeste-arcano': { acento: '#f1c184', borda: '#9a6637', cartao: '#302219', fonte: 'var(--font-cormorant), Georgia, serif' },
+  'ordem-paranormal': { acento: '#ff9da7', borda: '#923846', cartao: '#28191f' },
+  tormenta20: { acento: '#a9d1ff', borda: '#476b9b', cartao: '#1b2637', fonte: 'var(--font-cinzel), Georgia, serif' },
   'mork-borg': { acento: '#ffe600', borda: '#ffe600', cartao: '#0a0a0a', sombrio: true },
-  assimilacao: { acento: '#5eead4', borda: '#1f5c55', cartao: 'var(--s-201a32)' },
-  'call-of-cthulhu': { acento: '#9fd8c4', borda: '#2b5a50', cartao: 'var(--s-201a32)', fonte: 'var(--font-cormorant), Georgia, serif' },
+  assimilacao: { acento: '#e7a5f5', borda: '#8a459b', cartao: '#2c1b32' },
+  'call-of-cthulhu': { acento: '#a6e0d2', borda: '#427b76', cartao: '#182925', fonte: 'var(--font-cormorant), Georgia, serif' },
 }
 export const temaDoSistema = (id: string): Tema => TEMAS[id] ?? PADRAO
+export function identidadeVisual(s: Sistema): string {
+  if (/lunethernnyis|opositores/i.test(s.nome)) return 'opositores'
+  if (/projeto n\.?o\.?v\.?a/i.test(s.nome)) return 'nova'
+  return s.id
+}
+TEMAS.opositores = { acento: '#ddc58d', borda: '#826b9f', cartao: '#211a34', fonte: 'var(--font-cinzel), Georgia, serif' }
+TEMAS.nova = { acento: '#ffc18f', borda: '#925e59', cartao: '#292033' }
 /** Variáveis CSS que a ficha usa nos cartões e títulos. */
 export const estiloTema = (t: Tema) => ({ '--ficha-acento': t.acento, '--ficha-borda': t.borda, '--ficha-cartao': t.cartao, '--ficha-fonte': t.fonte ?? 'inherit' } as CSSProperties)
 
@@ -44,7 +51,7 @@ const num = (v: string) => v.trim() === '' || v.trim() === '-' ? 0 : Math.max(-9
 export function AtributoComMod({ id, nome, valor, mod, somenteLeitura, mudarValor, mudarMod, rolar }: {
   id: string; nome: string; valor: number; mod: number; somenteLeitura: boolean; mudarValor: (v: number) => void; mudarMod: (v: number) => void; rolar?: () => void
 }) {
-  return <div className="relative flex flex-col items-center rounded-[1.4rem] border-2 border-(--ficha-borda) bg-(--s-171325) px-1 pb-4 pt-2 text-center">
+  return <div className="ficha-atributo-mod relative flex flex-col items-center rounded-[1.4rem] border-2 border-(--ficha-borda) bg-(--s-171325) px-1 pb-4 pt-2 text-center">
     <p className="px-5 text-xs font-bold uppercase tracking-widest text-(--ficha-acento) [font-family:var(--ficha-fonte)]" title={nome}>{id}</p>
     <input type="number" aria-label={'Modificador de ' + nome} value={mod} disabled={somenteLeitura} onChange={e => mudarMod(num(e.target.value))}
       className="w-full bg-transparent text-center text-3xl font-black text-white outline-none disabled:opacity-80" />
@@ -55,11 +62,28 @@ export function AtributoComMod({ id, nome, valor, mod, somenteLeitura, mudarValo
   </div>
 }
 
+/** Brasão D&D: mantém os mesmos valores manuais e ações do componente compartilhado. */
+export function AtributoDnd({ id, nome, valor, mod, somenteLeitura, mudarValor, mudarMod, rolar }: Parameters<typeof AtributoComMod>[0]) {
+  return <div className="dnd-brasao">
+    <svg aria-hidden="true" viewBox="0 0 120 150" preserveAspectRatio="none" className="dnd-brasao-fundo">
+      <path d="M4 4H116V94Q116 122 60 146Q4 122 4 94Z" fill="#352129" stroke="#bc9764" strokeWidth="2"/>
+      <path d="M10 11H110V94Q110 117 60 139Q10 117 10 94Z" fill="none" stroke="#bc9764" strokeOpacity=".45"/>
+    </svg>
+    <div className="dnd-brasao-conteudo">
+      <span className="dnd-brasao-id" title={nome}>{id}</span>
+      <span className="dnd-brasao-nome">{nome}</span>
+      <label className="dnd-brasao-mod"><span className="sr-only">Modificador de {nome}</span>{mod >= 0 && <span aria-hidden="true">+</span>}<input type="number" value={mod} disabled={somenteLeitura} onChange={e => mudarMod(num(e.target.value))}/></label>
+      <label className="dnd-brasao-valor"><span className="sr-only">{nome} (valor)</span><input type="number" value={valor} disabled={somenteLeitura} onChange={e => mudarValor(num(e.target.value))}/></label>
+      {rolar && <button type="button" onClick={rolar} aria-label={'Rolar ' + nome + ' (' + sinal(mod) + ')'} className="dnd-brasao-rolar"><Dice5 size={15}/></button>}
+    </div>
+  </div>
+}
+
 /** PF2e, Tormenta20 e MÖRK BORG: o atributo já é o modificador, num bloco grande com sinal. */
 export function AtributoModificador({ id, nome, valor, somenteLeitura, mudar, rolar, sombrio }: {
   id: string; nome: string; valor: number; somenteLeitura: boolean; mudar: (v: number) => void; rolar?: () => void; sombrio?: boolean
 }) {
-  return <div className={'relative rounded-xl border-2 p-2 text-center ' + (sombrio ? 'border-(--ficha-acento) bg-black' : 'border-(--ficha-borda) bg-(--s-171325)')}>
+  return <div className={'ficha-atributo-base relative rounded-xl border-2 p-2 text-center ' + (sombrio ? 'border-(--ficha-acento) bg-black' : 'border-(--ficha-borda) bg-(--s-171325)')}>
     <p className={'text-xs font-black uppercase tracking-[0.2em] ' + (sombrio ? 'text-(--ficha-acento)' : 'text-(--ficha-acento) [font-family:var(--ficha-fonte)]')}>{id}</p>
     <input type="number" aria-label={nome} value={valor} disabled={somenteLeitura} onChange={e => mudar(num(e.target.value))}
       className={'w-full bg-transparent text-center font-black text-white outline-none disabled:opacity-80 ' + (sombrio ? 'text-4xl' : 'text-3xl')} />
@@ -84,7 +108,7 @@ export function GrauPericia({ s, valor, nome, somenteLeitura, mudar }: { s: Sist
   const ativo = i > 0
   return <button type="button" disabled={somenteLeitura} onClick={() => mudar(treinos[(i + 1) % treinos.length].id)}
     aria-label={`Grau em ${nome}: ${atual.nome} (toque para mudar)`} title={atual.nome}
-    className={'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-bold ' + (ativo ? 'border-(--ficha-acento) bg-(--ficha-acento)/20 text-(--ficha-acento)' : 'border-(--a-5e4b78) text-(--a-a998bd)')}>{simbolo}</button>
+    className={'ficha-treino flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-bold ' + (ativo ? 'border-(--ficha-acento) bg-(--ficha-acento)/20 text-(--ficha-acento)' : 'border-(--a-5e4b78) text-(--a-a998bd)')}>{simbolo}</button>
 }
 
 /** Escada do Fate, do maior para o menor (só os nomes; o número é o que está digitado). */
@@ -98,7 +122,7 @@ export function PiramideFate({ pericias, valores, somenteLeitura, mudar, rolar }
   const maior = Math.max(4, ...pericias.map(p => nivel(p.id)))
   const degraus = Array.from({ length: maior }, (_, i) => maior - i)
   return <div className="space-y-3">
-    <div className="space-y-1.5" role="list" aria-label="Pirâmide de perícias">
+    <div className="ficha-piramide space-y-1.5" role="list" aria-label="Pirâmide de perícias">
       {degraus.map(n => { const aqui = pericias.filter(p => nivel(p.id) === n)
         return <div key={n} role="listitem" className="flex items-center gap-2">
           <span className="w-24 shrink-0 text-right text-xs font-bold text-(--ficha-acento)">{ESCADA_FATE[n] ?? n} <span className="text-white">+{n}</span></span>
@@ -130,7 +154,7 @@ export function AcoesBlades({ grupos, valores, resistencias, somenteLeitura, mud
 }) {
   return <div className="grid gap-3 sm:grid-cols-3">
     {grupos.map(([g, acoes]) => { const r = resistencias[g]
-      return <div key={g} className="rounded-xl border-2 border-(--ficha-borda) bg-(--s-171325) p-2">
+      return <div key={g} className="ficha-acoes rounded-xl border-2 border-(--ficha-borda) bg-(--s-171325) p-2">
         <div className="mb-2 flex items-center gap-2 border-b border-(--ficha-borda) pb-1.5">
           <h3 className="flex-1 text-sm font-bold uppercase tracking-wider text-(--ficha-acento) [font-family:var(--ficha-fonte)]">{g}</h3>
           {r && <button type="button" onClick={() => rolarResistencia(g, r.valor)} className="rounded-md border border-(--ficha-borda) px-1.5 py-0.5 text-[11px] hover:bg-white/5" title="Rolar resistência">🛡️ {r.valor || 0}d6</button>}

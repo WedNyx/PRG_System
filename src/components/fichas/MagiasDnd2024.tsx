@@ -40,13 +40,17 @@ export default function MagiasDnd2024({ d, c, onChange, somenteLeitura = false, 
   const ls = conj.length ? conj : [principal]
   const l = ls[0]
   const [abrir, setAbrir] = useState(false)
+  const [pagina,setPagina]=useState(-1)
+  const [buscaGrimorio,setBuscaGrimorio]=useState('')
+  const [modoGrimorio,setModoGrimorio]=useState('todos')
   const prof = Number(c.vars.prof) || Number(c.derivados.prof) || Number(c.vars.dnd_prof) || 2
   const modDe = (x: LimitesMagia) => x.atributo ? Number(c.mods[x.atributo]) || 0 : 0
   /** Classe de uma magia da ficha (extra usa a inicial, ou a primeira conjuradora). */
   const limiteDa = (tipo: TipoMagia) => ls.find(x => x.classeId === classeDoTipo(tipo, principal.classeId)) ?? l
   const nivelPersonagem = Number(d.campos.nivel) || 1
   const lista = Object.keys(sel).map(id => magiaPorId(id)!).filter(Boolean).sort((a, b) => a.nivel - b.nivel || a.nome.localeCompare(b.nome))
-  const grupos = lista.reduce<Map<number, MagiaSrd[]>>((g, m) => g.set(m.nivel, [...(g.get(m.nivel) ?? []), m]), new Map())
+  const visiveis = lista.filter(m => (pagina === -1 || m.nivel === pagina) && m.nome.toLocaleLowerCase('pt-BR').includes(buscaGrimorio.trim().toLocaleLowerCase('pt-BR')) && (modoGrimorio === 'todos' || (modoGrimorio === 'extra' ? sel[m.id] === 'extra' : sel[m.id] !== 'extra')))
+  const grupos = visiveis.reduce<Map<number, MagiaSrd[]>>((g, m) => g.set(m.nivel, [...(g.get(m.nivel) ?? []), m]), new Map())
 
   function gravar(novo: Record<string, TipoMagia>) { onChange({ ...d, dndMagias: novo }) }
   function adicionar(m: MagiaSrd, tipo: 'preparada' | 'extra', lc: LimitesMagia) {
@@ -66,7 +70,7 @@ export default function MagiasDnd2024({ d, c, onChange, somenteLeitura = false, 
     if (e) rolar(e, `${m.nome}${m.nivel ? ` (espaço ${espaco}º)` : ''}: ${m.cura && !m.dano ? 'cura' : 'dano'}`)
   }
 
-  return <section aria-label="Magias de D&D 2024" className={card + ' space-y-4'}>
+  return <section aria-label="Magias de D&D 2024" className={card + ' dnd-grimorio space-y-4'}>
     <div className="flex flex-wrap items-start gap-3">
       <div className="min-w-0 flex-1">
         <h3 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Sparkles size={18} aria-hidden /> Magias</h3>
@@ -76,6 +80,8 @@ export default function MagiasDnd2024({ d, c, onChange, somenteLeitura = false, 
       </div>
       {!somenteLeitura && <button type="button" onClick={() => setAbrir(true)} className={btn + ' border-(--a-8b6cba) bg-(--s-2b2140) font-semibold text-white'}><Plus size={16} aria-hidden /> Adicionar magias</button>}
     </div>
+
+    <div className="dnd-espacos-grimorio">{[...Array.from({length:9},(_,i)=>'espacos_'+(i+1)), 'pacto'].map(id=>{ const max=Math.max(0,Number(c.recursosMax[id]??0)||0), atual=Math.max(0,Number(d.recursos[id]?.atual??0)||0); if(!max)return null; return <div key={id} className="dnd-espaco-grimorio"><div className="flex justify-between gap-2 text-xs"><strong>{id==='pacto'?'Magia de Pacto':id.replace('espacos_','')+'º nível'}</strong><span>{atual} / {max}</span></div><div className="dnd-cristais" aria-hidden="true">{Array.from({length:Math.min(20,Math.floor(max))},(_,i)=><svg key={i} viewBox="0 0 22 30" data-disponivel={i<atual?'sim':'nao'}><path d="M11 1L21 11L11 29L1 11Z"/><path d="M11 1L7 11L11 29L15 11Z M1 11H21" fill="none"/></svg>)}</div></div>})}</div>
     {l.atributo && ls.map(x => { const n = contarMagias(sel, x), atq = prof + modDe(x); return <div key={x.classeId} className="flex flex-wrap items-center gap-2">
       {ls.length > 1 && <span className="text-xs font-semibold text-(--a-e4d3ff)">{x.classeNome}</span>}
       <span className={chip}>CD <strong className="text-white">{8 + atq}</strong></span>
@@ -92,7 +98,14 @@ export default function MagiasDnd2024({ d, c, onChange, somenteLeitura = false, 
       <MagiasEspecieDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolar} />
     </>}
     {lista.length === 0 && <p className="rounded-xl border border-dashed border-(--a-55456e) p-4 text-sm text-(--a-c4b6d4)">Nenhuma magia preparada pela classe. {somenteLeitura ? '' : 'Toque em “Adicionar magias” para escolher pelo catálogo do SRD.'}</p>}
-    {[...grupos].map(([nivel, ms]) => <div key={nivel} className="space-y-2">
+    <div className="dnd-indice-grimorio">
+    <label>Buscar no grimório<input value={buscaGrimorio} onChange={e=>setBuscaGrimorio(e.target.value)} placeholder="Nome da magia" /></label>
+    <label>Registro<select value={modoGrimorio} onChange={e=>setModoGrimorio(e.target.value)}><option value="todos">Todos</option><option value="preparada">Da classe</option><option value="extra">Extras</option></select></label>
+    <div className="dnd-indice-circulos" role="group" aria-label="Círculos do grimório">{[-1,0,1,2,3,4,5,6,7,8,9].map(n=><button key={n} type="button" aria-pressed={pagina===n} onClick={()=>setPagina(n)}>{n===-1?'Todos':n===0?'Truques':n+'º'} <small>{n===-1?lista.length:lista.filter(m=>m.nivel===n).length}</small></button>)}</div>
+    <p className="text-xs" role="status">{visiveis.length} de {lista.length} magias</p>
+  </div>
+  {lista.length>0&&visiveis.length===0&&<p className="text-xs">Nenhuma magia corresponde aos filtros.</p>}
+  {[...grupos].map(([nivel, ms]) => <div key={nivel} className="dnd-circulo space-y-2">
       <h4 className="text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{nomeNivel(nivel)}</h4>
       {ms.map(m => { const lc = limiteDa(sel[m.id]); return <LinhaMagia key={m.id} m={m} tipo={sel[m.id]} l={lc} varias={ls.length > 1} ataque={prof + modDe(lc)} mod={modDe(lc)} nivelPersonagem={nivelPersonagem} d={d} somenteLeitura={somenteLeitura}
         rolar={rolar} conjurar={(mm, e) => conjurar(mm, e, lc)} remover={() => remover(m.id)} /> })}
@@ -125,10 +138,10 @@ function LinhaMagia({ m, tipo, l, varias, ataque, mod, nivelPersonagem, d, somen
     setAberto(a => !a)
     if (texto === null) { const t = await import('@/lib/sistemas/dnd2024MagiasTexto'); setTexto(t.TEXTO_MAGIAS_SRD[m.id] ?? '') }
   }
-  return <article className="rounded-xl border border-(--a-3d3152) bg-(--s-171325)/70 p-3">
+  return <article className="dnd-magia-pagina rounded-xl border border-(--a-3d3152) bg-(--s-171325)/70 p-3">
     <div className="flex flex-wrap items-start gap-2">
       <div className="min-w-0 flex-1">
-        <p className="flex flex-wrap items-center gap-1.5 font-semibold text-white">{m.nome} <Etiquetas m={m} />
+        <p className="flex flex-wrap items-center gap-1.5 font-semibold text-white"><span className="dnd-escola-selo" aria-hidden="true">{({'Abjuração':'◇','Adivinhação':'◉','Conjuração':'✧','Encantamento':'♡','Evocação':'✦','Ilusão':'◈','Necromancia':'☾','Transmutação':'⇄'} as Record<string,string>)[m.escola]??'✧'}</span>{m.nome} <Etiquetas m={m} />
           {varias && tipo !== 'extra' && <span className="rounded bg-(--s-2b2140) px-1.5 text-[11px] font-normal text-(--a-d3adf0)">{l.classeNome}</span>}
           {tipo === 'extra' && <span className="rounded bg-amber-500/15 px-1.5 text-[11px] font-normal text-amber-200" title="Não conta no limite">extra</span>}</p>
         <p className="text-[11px] text-(--a-a998bd)">{m.en} · {m.escola} · {m.execucao} · {m.alcance} · {m.duracao}</p>

@@ -44,7 +44,7 @@ export default function BarraRecurso({ nome, cor, atual, max, maxEditavel, somen
     if (Number.isFinite(v)) { if (editando === 'atual') mudar(limite(v)); else if (editando === 'max' && mudarMax) mudarMax(Math.max(0, v)) }
     setEditando(null)
   }
-  return <div className="rounded-xl bg-(--s-171325) p-3">
+  return <div className="ficha-recurso rounded-xl bg-(--s-171325) p-3">
     <div className="mb-1.5 flex items-center justify-between text-xs font-bold uppercase tracking-widest" style={{ color: cor.ate }}>
       <span>{cor.emoji} {nome}</span>
       {zerada ? <span className="text-red-300">💀 zerado</span> : contador && max ? <span className="tabular-nums text-(--a-a998bd)">{atual} de {max}</span> : max ? <span className={'tabular-nums ' + (baixa ? 'text-red-300' : 'text-(--a-a998bd)')}>{baixa ? '⚠️ ' : ''}{Math.round(pct)}%</span> : null}
@@ -52,7 +52,7 @@ export default function BarraRecurso({ nome, cor, atual, max, maxEditavel, somen
     <div className="relative flex items-center gap-1.5">
       {!somenteLeitura && <><button type="button" className={botao} aria-label={`${nome} −5`} disabled={atual <= 0} onClick={() => mudar(limite(atual - 5))}><ChevronsLeft size={16} /></button>
         <button type="button" className={botao} aria-label={`${nome} −1`} disabled={atual <= 0} onClick={() => mudar(limite(atual - 1))}><ChevronLeft size={16} /></button></>}
-      <div key={efeito && efeito.delta < 0 ? efeito.chave : 'barra'} className={'relative h-10 min-w-0 flex-1 overflow-hidden rounded-lg border bg-black/50 shadow-inner ' + (zerada ? 'border-red-500/70 ' : 'border-white/10 ') + (efeito && efeito.delta < 0 ? 'prg-treme' : '')}>
+      <div key={efeito && efeito.delta < 0 ? efeito.chave : 'barra'} className={'ficha-recurso-trilho relative h-10 min-w-0 flex-1 overflow-hidden rounded-lg border bg-black/50 shadow-inner ' + (zerada ? 'border-red-500/70 ' : 'border-white/10 ') + (efeito && efeito.delta < 0 ? 'prg-treme' : '')}>
         {/* rastro: o pedaço perdido fica claro e encolhe devagar */}
         {efeito && efeito.delta < 0 && <div key={'r' + efeito.chave} className="prg-rastro absolute inset-y-0 bg-white/70" style={{ left: pct + '%', width: Math.max(0, pctDe(efeito.de) - pct) + '%' }} />}
         <div className={'absolute inset-y-0 left-0 transition-[width] duration-500 ease-out ' + (baixa ? 'prg-baixa' : '')} style={{ width: pct + '%', background: `linear-gradient(90deg, ${cor.de}, ${cor.ate})`, boxShadow: `0 0 ${baixa ? 18 : 12}px ${cor.ate}${baixa ? 'aa' : '66'}` }} />

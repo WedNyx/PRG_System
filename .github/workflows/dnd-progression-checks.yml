@@ -11,7 +11,8 @@ permissions:
 
 jobs:
   testar:
-    runs-on: ubuntu-latest
+    # Playwright 1.56.1 suporta Ubuntu 24.04; ubuntu-latest pode migrar de versão.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4

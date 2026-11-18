@@ -122,11 +122,11 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
           const modLivre = referenciaDnd ? (c.mods[atributoLivre] ?? 0) : 0
           const danoNormalLivre = s.id === 'dnd5e-srd' && it.categoria === 'arma' && !armaDnd && it.dano ? expressaoDanoLivreDnd(it.dano, false, modLivre) : null
           const danoCriticoLivre = s.id === 'dnd5e-srd' && it.categoria === 'arma' && !armaDnd && it.dano ? expressaoDanoLivreDnd(it.dano, true, modLivre) : null
-          return <li key={it.id} data-equipado={eq ? 'sim' : 'nao'} className={'ficha-item rounded-xl border p-3 ' + (eq ? 'border-(--a-8b6cba) bg-(--s-2b2143)' : 'border-transparent bg-(--s-171325)') + (n <= 0 ? ' opacity-60' : '')}>
+          return <li key={it.id} data-categoria={it.categoria} data-equipado={eq ? 'sim' : 'nao'} className={'ficha-item rounded-xl border p-3 ' + (eq ? 'border-(--a-8b6cba) bg-(--s-2b2143)' : 'border-transparent bg-(--s-171325)') + (n <= 0 ? ' opacity-60' : '')}>
             <div className="flex items-center gap-3">
               <ArteItem item={it} tamanho={46} />
               <span className="min-w-0 flex-1">
-                <span className="block font-semibold">{it.nome}{eq && <span className="ml-2 rounded bg-(--a-5b4380) px-1.5 py-0.5 text-[10px]">equipado</span>}</span>
+                <span className="block font-semibold">{it.nome}{eq && <span className="ficha-equipado-selo ml-2 rounded bg-(--a-5b4380) px-1.5 py-0.5 text-[10px]">equipado</span>}</span>
                 <span className="block text-[11px]">{it.raridade && <strong style={{ color: corDaRaridade(it.raridade) }}>{RARIDADES.find(x => x.id === it.raridade)?.nome} · </strong>}<span className="text-(--a-c4b6d4)">{it.peso ? `${mostrarPeso(it.peso, c.carga.unidade)} cada` : ''}</span></span>
               </span>
             </div>
@@ -205,7 +205,8 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
           </li>
   }
 
-  return <section className={card}>
+  return <section className={card + (s.id === 'dnd5e-srd' ? ' dnd-arsenal' : '')}>
+    {s.id === 'dnd5e-srd' && <div className="dnd-bau" aria-hidden="true"><svg viewBox="0 0 120 84" fill="none"><path d="M8 40V25Q8 8 30 8H90Q112 8 112 25V40Z" fill="#49312a" stroke="#bc9764" strokeWidth="2"/><path d="M8 40H112V73H8Z" fill="#36221e" stroke="#bc9764" strokeWidth="2"/><path d="M24 10V73M96 10V73M8 48H112M8 65H112" stroke="#bc9764" strokeWidth="3"/><rect x="49" y="34" width="22" height="22" rx="3" fill="#bc9764"/><path d="M60 41V50" stroke="#36221e" strokeWidth="3"/></svg><span>Arsenal do aventureiro</span></div>}
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Backpack size={18} /> Inventário</h2>
       {!somenteLeitura && <div className="flex flex-wrap gap-2">
@@ -216,12 +217,12 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
     </div>
     <div className="mt-3 grid gap-3 sm:grid-cols-2">
       <div className="rounded-xl bg-(--s-171325) p-3 text-sm">
-        <p className="text-xs text-(--a-c4b6d4)">Carga{s.carga?.dica ? ' · ' + s.carga.dica : ''}</p>
+        <p className="ficha-carga-titulo text-xs text-(--a-c4b6d4)">Carga{s.carga?.dica ? ' · ' + s.carga.dica : ''}</p>
         <p className="text-lg font-bold">{c.carga.total.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} {c.carga.max !== null ? `/ ${c.carga.max.toLocaleString('pt-BR', { maximumFractionDigits: 3 })}` : ''} <span className="text-xs font-normal text-(--a-c4b6d4)">{c.carga.unidade}</span></p>
         {c.carga.max ? <div className="mt-1 h-2 overflow-hidden rounded-full bg-(--s-2b2140)"><div className={'h-full transition-all ' + (c.carga.total > c.carga.max ? 'bg-red-400' : 'bg-(--a-b06ad8)')} style={{ width: pct + '%' }} /></div> : null}
         {c.carga.max !== null && c.carga.total > c.carga.max && <p className="mt-1 text-xs text-red-200">Acima da capacidade!</p>}
       </div>
-      <label className="rounded-xl bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">💰 Carteira (moedas e valores)
+      <label className="ficha-carteira rounded-xl bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">💰 Carteira (moedas e valores)
         <input value={uso.carteira} disabled={somenteLeitura} maxLength={500} onChange={e => salvarUso({ ...uso, carteira: e.target.value })} placeholder="Ex.: 35 PO, 12 PP" className={input + ' mt-1 text-sm'} /></label>
     </div>
     {s.id === 'dnd5e-srd' && itens.length > 0 && <div className="mt-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
@@ -242,7 +243,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
     </div>}
     {abaAtual === 'todos' ? CATEGORIAS_ITEM.map(cat => {
       const lista = itensVisiveis.filter(i => i.categoria === cat.id && !i.magico); if (!lista.length) return null
-      return <div key={cat.id} className="mt-4">
+      return <div key={cat.id} className="ficha-compartimento mt-4">
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{cat.icone} {nomeCategoria(cat.id)}</h3>
         <ul className="ficha-lista-itens space-y-2">{lista.map(linhaItem)}</ul>
       </div>

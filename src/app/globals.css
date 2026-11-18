@@ -444,3 +444,9 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 .dnd-arsenal .ficha-item[data-categoria="arma"] {background:linear-gradient(135deg,#402831,#302129);}
 .dnd-arsenal .ficha-item[data-categoria="consumivel"] {background:linear-gradient(135deg,#29352f,#302129);}
 @media(max-width:480px){.dnd-bau{gap:.4rem;font-size:1.1rem;}.dnd-arsenal .ficha-compartimento{padding:.4rem;}}
+
+.dnd-espacos-grimorio {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr));gap:.65rem;}
+.dnd-espacos-grimorio:empty {display:none;}
+.dnd-espaco-grimorio {border:1px solid #805d49;border-radius:6px;padding:.65rem;color:#f5dfb9;background:#21171c;min-width:0;}
+.dnd-espaco-grimorio .dnd-cristais {border:0;background:none;padding:.35rem 0 0;}
+.dnd-brasao input:focus-visible,.dnd-arsenal button:focus-visible,.dnd-grimorio button:focus-visible {outline:2px solid #eac38b;outline-offset:2px;}

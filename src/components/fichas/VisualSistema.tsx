@@ -91,7 +91,7 @@ export function GrauPericia({ s, valor, nome, somenteLeitura, mudar }: { s: Sist
   const ativo = i > 0
   return <button type="button" disabled={somenteLeitura} onClick={() => mudar(treinos[(i + 1) % treinos.length].id)}
     aria-label={`Grau em ${nome}: ${atual.nome} (toque para mudar)`} title={atual.nome}
-    className={'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-bold ' + (ativo ? 'border-(--ficha-acento) bg-(--ficha-acento)/20 text-(--ficha-acento)' : 'border-(--a-5e4b78) text-(--a-a998bd)')}>{simbolo}</button>
+    className={'ficha-treino flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-bold ' + (ativo ? 'border-(--ficha-acento) bg-(--ficha-acento)/20 text-(--ficha-acento)' : 'border-(--a-5e4b78) text-(--a-a998bd)')}>{simbolo}</button>
 }
 
 /** Escada do Fate, do maior para o menor (só os nomes; o número é o que está digitado). */
@@ -105,7 +105,7 @@ export function PiramideFate({ pericias, valores, somenteLeitura, mudar, rolar }
   const maior = Math.max(4, ...pericias.map(p => nivel(p.id)))
   const degraus = Array.from({ length: maior }, (_, i) => maior - i)
   return <div className="space-y-3">
-    <div className="space-y-1.5" role="list" aria-label="Pirâmide de perícias">
+    <div className="ficha-piramide space-y-1.5" role="list" aria-label="Pirâmide de perícias">
       {degraus.map(n => { const aqui = pericias.filter(p => nivel(p.id) === n)
         return <div key={n} role="listitem" className="flex items-center gap-2">
           <span className="w-24 shrink-0 text-right text-xs font-bold text-(--ficha-acento)">{ESCADA_FATE[n] ?? n} <span className="text-white">+{n}</span></span>
@@ -137,7 +137,7 @@ export function AcoesBlades({ grupos, valores, resistencias, somenteLeitura, mud
 }) {
   return <div className="grid gap-3 sm:grid-cols-3">
     {grupos.map(([g, acoes]) => { const r = resistencias[g]
-      return <div key={g} className="rounded-xl border-2 border-(--ficha-borda) bg-(--s-171325) p-2">
+      return <div key={g} className="ficha-acoes rounded-xl border-2 border-(--ficha-borda) bg-(--s-171325) p-2">
         <div className="mb-2 flex items-center gap-2 border-b border-(--ficha-borda) pb-1.5">
           <h3 className="flex-1 text-sm font-bold uppercase tracking-wider text-(--ficha-acento) [font-family:var(--ficha-fonte)]">{g}</h3>
           {r && <button type="button" onClick={() => rolarResistencia(g, r.valor)} className="rounded-md border border-(--ficha-borda) px-1.5 py-0.5 text-[11px] hover:bg-white/5" title="Rolar resistência">🛡️ {r.valor || 0}d6</button>}

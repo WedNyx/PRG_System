@@ -64,6 +64,7 @@ function CarteiraDnd({ valor, mudar, somenteLeitura }: { valor: string; mudar: (
 }
 
 export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, passarItem, edicaoDnd = 'phb2024' }: Props) {
+  const temaDnd = s.id === 'dnd5e-srd' || s.id === 'dnd5e-manual'
   const itens = lerItens(d.itens), uso = lerUso(d.uso)
   const livrosDnd = lerLivrosDnd(d.dndLivros, edicaoDnd)
   const [editando, setEditando] = useState<Item | null>(null)
@@ -120,11 +121,11 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
   const nomeAlvo = Object.fromEntries(alvosDeBonus(s).map(a => [a.id, a.nome]))
   const [buscaItens, setBuscaItens] = useState('')
   const [estadoItens, setEstadoItens] = useState('todos')
-  const itensBuscados = s.id === 'dnd5e-srd' && buscaItens.trim()
+  const itensBuscados = temaDnd && buscaItens.trim()
     ? itens.filter(it => [it.nome, it.descricao ?? '', referenciaArmaDndPorId(it.armaRefDnd)?.livro ?? ''].join(' ')
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaItens.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))
     : itens
-  const itensVisiveis = s.id === 'dnd5e-srd' ? itensBuscados.filter(it=>estadoItens==='todos'||(estadoItens==='equipados'?!!uso.itens[it.id]?.equipado:estadoItens==='disponiveis'?qtd(it)>0:qtd(it)===0)) : itensBuscados
+  const itensVisiveis = temaDnd ? itensBuscados.filter(it=>estadoItens==='todos'||(estadoItens==='equipados'?!!uso.itens[it.id]?.equipado:estadoItens==='disponiveis'?qtd(it)>0:qtd(it)===0)) : itensBuscados
   const pct = c.carga.max ? Math.min(100, (c.carga.total / c.carga.max) * 100) : 0
   // Abas por tipo (os nomes seguem o sistema, quando ele tem os seus) e a ala dos itens mágicos.
   const [aba, setAba] = useState<'todos' | 'magico' | Item['categoria']>('todos')
@@ -233,8 +234,8 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
           </li>
   }
 
-  return <section className={card + (s.id === 'dnd5e-srd' ? ' dnd-arsenal' : '')}>
-    {s.id === 'dnd5e-srd' && <div className="dnd-bau" aria-hidden="true"><svg viewBox="0 0 120 84" fill="none"><path d="M8 40V25Q8 8 30 8H90Q112 8 112 25V40Z" fill="#49312a" stroke="#bc9764" strokeWidth="2"/><path d="M8 40H112V73H8Z" fill="#36221e" stroke="#bc9764" strokeWidth="2"/><path d="M24 10V73M96 10V73M8 48H112M8 65H112" stroke="#bc9764" strokeWidth="3"/><rect x="49" y="34" width="22" height="22" rx="3" fill="#bc9764"/><path d="M60 41V50" stroke="#36221e" strokeWidth="3"/></svg><span>Arsenal do aventureiro</span></div>}
+  return <section className={card + (temaDnd ? ' dnd-arsenal' : '')}>
+    {temaDnd && <div className="dnd-bau" aria-hidden="true"><svg viewBox="0 0 120 84" fill="none"><path d="M8 40V25Q8 8 30 8H90Q112 8 112 25V40Z" fill="#49312a" stroke="#bc9764" strokeWidth="2"/><path d="M8 40H112V73H8Z" fill="#36221e" stroke="#bc9764" strokeWidth="2"/><path d="M24 10V73M96 10V73M8 48H112M8 65H112" stroke="#bc9764" strokeWidth="3"/><rect x="49" y="34" width="22" height="22" rx="3" fill="#bc9764"/><path d="M60 41V50" stroke="#36221e" strokeWidth="3"/></svg><span>Arsenal do aventureiro</span></div>}
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Backpack size={18} /> Inventário</h2>
       {!somenteLeitura && <div className="flex flex-wrap gap-2">
@@ -250,10 +251,10 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
         {c.carga.max ? <div className="mt-1 h-2 overflow-hidden rounded-full bg-(--s-2b2140)"><div className={'h-full transition-all ' + (c.carga.total > c.carga.max ? 'bg-red-400' : 'bg-(--a-b06ad8)')} style={{ width: pct + '%' }} /></div> : null}
         {c.carga.max !== null && c.carga.total > c.carga.max && <p className="mt-1 text-xs text-red-200">Acima da capacidade!</p>}
       </div>
-      {s.id === 'dnd5e-srd' ? <CarteiraDnd valor={uso.carteira} mudar={carteira=>salvarUso({...uso,carteira})} somenteLeitura={!!somenteLeitura}/> : <label className="ficha-carteira rounded-xl bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">💰 Carteira (moedas e valores)
+      {temaDnd ? <CarteiraDnd valor={uso.carteira} mudar={carteira=>salvarUso({...uso,carteira})} somenteLeitura={!!somenteLeitura}/> : <label className="ficha-carteira rounded-xl bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">💰 Carteira (moedas e valores)
         <input value={uso.carteira} disabled={somenteLeitura} maxLength={500} onChange={e => salvarUso({ ...uso, carteira: e.target.value })} placeholder="Ex.: 35 PO, 12 PP" className={input + ' mt-1 text-sm'} /></label>}
     </div>
-    {s.id === 'dnd5e-srd' && itens.length > 0 && <div className="mt-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+    {temaDnd && itens.length > 0 && <div className="mt-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
       <label className="block text-xs font-semibold text-(--a-d3adf0)">🔎 Encontrar item na bolsa</label>
       <input type="search" value={buscaItens} onChange={e => setBuscaItens(e.target.value)}
         placeholder="Busque nome, descrição ou livro…" className={input + ' mt-1 text-sm'} />
@@ -386,6 +387,7 @@ function FotoDoItem({ it, setIt }: { it: Item; setIt: React.Dispatch<React.SetSt
 export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }: { s?: Sistema; inicial: Item; salvar: (i: Item) => void; fechar: () => void; edicaoDnd?: LivroBaseDnd }) {
   const [it, setIt] = useState<Item>(inicial)
   const dnd = s?.id === 'dnd5e-srd'
+  const temaDnd = dnd || s?.id === 'dnd5e-manual'
   const referencia = dnd ? referenciaArmaDndPorId(it.armaRefDnd) : null
   const armasEdicao = edicaoDnd === 'phb2014' ? ARMAS_DND_2014 : ARMAS_DND_2024
   // Ícones sugeridos pelo tipo do item (os outros ficam em “Ver todos”).
@@ -399,7 +401,7 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
     .sort((x, y) => icoCategoria.indexOf(x.id) - icoCategoria.indexOf(y.id))
   const alvos = s ? alvosDeBonus(s) : []
   const setB = (i: number, b: Partial<Bonus>) => setIt({ ...it, bonus: it.bonus.map((x, k) => k === i ? { ...x, ...b } : x) })
-  return <Janela titulo={dnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla temaDnd={dnd}>
+  return <Janela titulo={temaDnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla temaDnd={temaDnd}>
     <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return }
       if ((it.rolagens?.length ?? 0) > (v.rolagens?.length ?? 0)) toast.warning('Rolagens sem nome ou com dados inválidos ficaram de fora.')
       salvar({ ...v, id: inicial.id }) }}>
@@ -498,9 +500,9 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
 export function EditorPoder({ s, inicial, salvar, fechar }: { s?: Sistema; inicial: Poder; salvar: (p: Poder) => void; fechar: () => void }) {
   const [p, setP] = useState<Poder>(inicial)
   const recursos = s?.recursos ?? []
-  return <Janela titulo={inicial.nome ? 'Editar poder' : 'Novo poder'} fechar={fechar} temaDnd={s?.id === 'dnd5e-srd'}>
+  return <Janela titulo={inicial.nome ? 'Editar poder' : 'Novo poder'} fechar={fechar} temaDnd={s?.id === 'dnd5e-srd' || s?.id === 'dnd5e-manual'}>
     <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarPoder(p); if (!v) { toast.error('Dê um nome ao poder.'); return } salvar({ ...v, id: inicial.id }) }}>
-      {s?.id === 'dnd5e-srd' && <div className="dnd-editor-intro"><Sparkles size={22} aria-hidden="true"/><div><strong>{p.nome || 'Uma nova habilidade'}</strong><p>Registre sua técnica, magia ou poder personalizado.</p></div></div>}
+      {(s?.id === 'dnd5e-srd' || s?.id === 'dnd5e-manual') && <div className="dnd-editor-intro"><Sparkles size={22} aria-hidden="true"/><div><strong>{p.nome || 'Uma nova habilidade'}</strong><p>Registre sua técnica, magia ou poder personalizado.</p></div></div>}
       <label className="block">Nome<input autoFocus required value={p.nome} maxLength={120} onChange={e => setP({ ...p, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Bola de fogo" /></label>
       <label className="block">Tipo<select value={p.tipo} onChange={e => setP({ ...p, tipo: e.target.value as Poder['tipo'] })} className={input + ' mt-1'}>{TIPOS_PODER.map(t => <option key={t.id} value={t.id}>{t.icone} {t.nome}</option>)}</select></label>
       {recursos.length > 0 && <div className="grid grid-cols-2 gap-2">

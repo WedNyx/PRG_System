@@ -528,3 +528,10 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 [data-visual="ordem-paranormal"]{--ficha-acento:#ff4058!important;--ficha-borda:#72212d!important;--ficha-cartao:#160f12!important}
 [data-visual="ordem-paranormal"] .ficha-painel{border-radius:4px;border-color:#72212d;background:linear-gradient(135deg,#211217,#100d10)}
 [data-visual="ordem-paranormal"] .ficha-capitulo{border-color:#ad263d;background:linear-gradient(115deg,#350b16,#10090c);border-radius:3px}
+
+/* Proporções da arte aprovada; textos uniformes e independentes da ilustração. */
+.hexatombe-atributos{aspect-ratio:1;background:radial-gradient(ellipse at 48% 48%,#24060b,#080708 78%)}
+.hexatombe-no{width:17%;height:19%;gap:0;box-sizing:border-box}
+.hexatombe-no input{font-size:clamp(18px,7cqw,39px);height:8cqw;line-height:1;flex:none}
+.hexatombe-nome{font-size:2.15cqw;line-height:1.2;white-space:nowrap;letter-spacing:0}
+.hexatombe-no label{font-size:4.05cqw;line-height:1.05;letter-spacing:.015em}

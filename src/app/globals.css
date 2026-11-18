@@ -261,3 +261,34 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
   [data-visual] .ficha-recurso button { flex-shrink: 0; }
   [data-visual] .ficha-piramide [role="listitem"] { gap: 4px; }
 }
+
+/* Capítulos: cada universo tem linguagem, selo e composição próprios. */
+.ficha-capitulo { display:flex; align-items:center; gap:1rem; padding:1rem; border:1px solid var(--ficha-borda); background:var(--ficha-cartao); border-radius:12px; }
+.ficha-capitulo h2 { font-family:var(--ficha-fonte); font-size:clamp(1.15rem,3vw,1.75rem); font-weight:800; color:var(--ficha-acento); overflow-wrap:anywhere; }
+.ficha-capitulo-universo { font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; opacity:.85; }
+.ficha-capitulo-selo { display:grid; place-items:center; flex:0 0 3rem; height:3rem; border:2px solid var(--ficha-acento); font-weight:900; color:var(--ficha-acento); border-radius:50%; }
+.ficha-acervo { min-width:0; border-inline-start:2px solid var(--ficha-borda); padding-inline-start:.55rem; }
+[data-visual="dnd5e-srd"] .ficha-capitulo { border:3px double #ba905e; background:linear-gradient(110deg,#48282e,var(--ficha-cartao)); }
+[data-visual="dnd5e-srd"] .ficha-capitulo-selo { border-radius:5px 5px 45% 45%; border-color:#ba905e; }
+[data-visual="pf2e"] .ficha-capitulo { border-radius:3px 24px; background:linear-gradient(120deg,#253f65,var(--ficha-cartao)); }
+[data-visual="pf2e"] .ficha-capitulo-selo { border-radius:6px 18px; }
+[data-visual="fate-core"] .ficha-capitulo { border:0; border-bottom:3px solid var(--ficha-borda); border-radius:0; flex-direction:row-reverse; justify-content:space-between; }
+[data-visual="blades"] .ficha-capitulo { border-radius:0; border-block:5px double var(--ficha-borda); background:repeating-linear-gradient(135deg,#1c202a 0 15px,#222631 15px 16px); }
+[data-visual="blades"] .ficha-capitulo-selo { border-style:dashed; }
+[data-visual="brp"] .ficha-capitulo { border-radius:4px; border-left:8px solid var(--ficha-borda); }
+[data-visual="call-of-cthulhu"] .ficha-capitulo { border-radius:2px; background:#26392e; font-family:ui-monospace,monospace; border:3px double var(--ficha-borda); }
+[data-visual="call-of-cthulhu"] .ficha-capitulo h2 { font-family:inherit; }
+[data-visual="call-of-cthulhu"] .ficha-capitulo-selo { border-radius:2px; border-style:double; transform:rotate(-4deg); }
+[data-visual="faroeste-arcano"] .ficha-capitulo { border:2px dashed var(--ficha-borda); background:linear-gradient(100deg,#4e3120,#302219); }
+[data-visual="ordem-paranormal"] .ficha-capitulo { border-radius:0; border-left:6px solid var(--ficha-acento); background:linear-gradient(100deg,#3f1c25,#19171d); }
+[data-visual="ordem-paranormal"] .ficha-capitulo-selo { border-radius:0; border-style:double; }
+[data-visual="tormenta20"] .ficha-capitulo { border:3px double var(--ficha-borda); border-radius:22px 5px; background:linear-gradient(120deg,#293e60,#1b2637); }
+[data-visual="mork-borg"] .ficha-capitulo { border-radius:0; background:#0a0a0a; border:3px solid #ffe600; box-shadow:4px 4px #ffe600; }
+[data-visual="mork-borg"] .ficha-capitulo-selo { border-radius:0; background:#ffe600; color:#000; }
+[data-visual="assimilacao"] .ficha-capitulo { border-radius:35px 6px 28px 12px; background:radial-gradient(ellipse at top left,#633361,#261b30 75%); }
+[data-visual="assimilacao"] .ficha-capitulo-selo { border-radius:60% 40% 38% 62%; }
+[data-visual="opositores"] .ficha-capitulo { border-radius:28px; background:radial-gradient(ellipse at left,#46345e,#211a34 70%); }
+[data-visual="opositores"] .ficha-capitulo-selo { box-shadow:inset 5px 0 #ddc58d; }
+[data-visual="nova"] .ficha-capitulo { border-radius:4px 24px; background:repeating-linear-gradient(90deg,#292033 0 32px,#34283e 32px 33px); }
+[data-visual="nova"] .ficha-capitulo-selo { border-radius:4px 15px; }
+@media (max-width:420px) { .ficha-capitulo { padding:.75rem; gap:.65rem; } .ficha-capitulo-selo { flex-basis:2.3rem; height:2.3rem; } }

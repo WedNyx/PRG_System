@@ -20,7 +20,7 @@ import type { Item } from '@/lib/sistemas/inventario'
 import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
 import { expressaoParada, leituraBlades, leituraCoc, leituraD100 } from '@/lib/sistemas/combate'
 import TesteAssimilacao from './TesteAssimilacao'
-import AtributosOrdem from './AtributosOrdem'
+import AtributosOrdem, { SimboloElementoOrdem } from './AtributosOrdem'
 import { Retrato } from './FichaGenerica'
 import { AcoesBlades, AtributoComMod, AtributoDnd, AtributoModificador, estiloDoSistema, estiloTema, GrauPericia, identidadeVisual, PiramideFate, ResumoOrdem, temaDoSistema } from './VisualSistema'
 
@@ -330,7 +330,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
             {parada && <p className="mb-2 text-xs text-(--a-a998bd)">Rola um d{parada} para cada ponto do atributo e fica com o maior. Com 0, rola dois e fica com o menor.</p>}
             <div className={s.id === 'ordem-paranormal' ? 'ordem-testes-grid' : 'flex flex-wrap gap-2'}>{s.atributos.map(a => { const v = Number(d.atributos[a.id]) || 0, b = comMod ? m.mods[a.id] ?? 0 : v
               return <button key={a.id} type="button" onClick={() => parada ? rolar(a.nome, 0, v) : rolar(a.nome, b)}
-                className="rounded-lg border border-(--a-5e4b78) px-3 py-2 text-sm hover:bg-(--s-34294f)">{s.id === 'ordem-paranormal' ? <><Dice5 size={18} aria-hidden="true"/><strong>{a.id}</strong><span>{Math.max(0,v)||2}d{parada}{v===0 ? ' · menor' : ''}</span></> : <>{a.id} {parada ? `(${Math.max(0, v) || 2}d${parada})` : sinal(b)}</>}</button> })}</div>
+                className="rounded-lg border border-(--a-5e4b78) px-3 py-2 text-sm hover:bg-(--s-34294f)">{s.id === 'ordem-paranormal' ? <><SimboloElementoOrdem atributo={a.id} tamanho={52}/><strong>{a.id}</strong><span>{Math.max(0,v)||2}d{parada}{v===0 ? ' · menor' : ''}</span></> : <>{a.id} {parada ? `(${Math.max(0, v) || 2}d${parada})` : sinal(b)}</>}</button> })}</div>
           </section>}
           {parada && !!s.resistencias?.length && visual.pericias !== 'acoes' && <section className={card}>
             <h2 className="mb-1 flex items-center gap-2 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]"><Dice5 size={18} /> Resistência</h2>

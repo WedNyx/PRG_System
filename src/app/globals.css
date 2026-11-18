@@ -412,3 +412,15 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 [data-visual="dnd5e-srd"] .ficha-recurso button {border-color:#bc976466;}
 [data-visual="dnd5e-srd"] .ficha-recurso > div:nth-child(2) > button {background:#60402f;color:#f6d49c;}
 @media(max-width:480px){[data-visual="dnd5e-srd"] .ficha-recurso > div:nth-child(2){gap:3px;}[data-visual="dnd5e-srd"] .ficha-recurso > div:nth-child(2) > button{width:28px;min-width:28px;}[data-visual="dnd5e-srd"] .ficha-recursos-grid{grid-template-columns:minmax(0,1fr);}}
+
+/* D&D — grimórios das duas edições e indicadores de conjuração. */
+.dnd-grimorio {border:3px double #bc9764!important;background:linear-gradient(105deg,#37232c,#24191f 35%,#302129)!important;min-width:0;}
+.dnd-grimorio h3 {color:#eac38b;font-family:Georgia,serif;}
+.dnd-circulo > h4 {color:#eac38b;border-bottom:1px solid #bc976480;padding:.65rem 0;font-family:Georgia,serif;}
+.dnd-magia-pagina {border:1px solid #805d49!important;border-inline-start:5px double #bc9764!important;border-radius:4px 12px 12px 4px;background:linear-gradient(90deg,#49313b,#302127 18%)!important;overflow-wrap:anywhere;}
+.dnd-magia-pagina strong,.dnd-magia-pagina p.font-semibold {color:#f5dfb9;}
+.dnd-magia-pagina button {border-color:#bc976475;}
+.dnd-cristais {display:flex;flex-wrap:wrap;gap:.35rem;padding:.6rem .7rem;border:1px solid #805d49;border-bottom:0;border-radius:6px 6px 0 0;background:#2d202b;}
+.dnd-cristais svg {width:22px;height:30px;stroke:#bc9764;stroke-width:1;fill:#21171c;}
+.dnd-cristais svg[data-disponivel="sim"] {fill:#9763c5;stroke:#f0d1ff;filter:drop-shadow(0 0 3px #a879cf88);}
+[data-visual="dnd5e-srd"] [data-espaco-magia="sim"]:has(.dnd-cristais) .ficha-recurso {border-top-left-radius:0;border-top-right-radius:0;}

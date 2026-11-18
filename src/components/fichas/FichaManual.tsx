@@ -1,4 +1,5 @@
 'use client'
+import { tituloSistemaNaFicha, edicaoEfetivaDaFicha } from '@/lib/sistemas/edicaoFichaDnd'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -119,7 +120,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     return r.total
   }
   const [descansando, setDescansando] = useState(false)
-  const propsInv = { s: sInv, d, c, onChange, somenteLeitura, rolar: rolarExpr, abrirDescanso: somenteLeitura ? undefined : () => setDescansando(true) }
+  const propsInv = { edicaoDnd: edicaoEfetivaDaFicha(s, d) ?? undefined, s: sInv, d, c, onChange, somenteLeitura, rolar: rolarExpr, abrirDescanso: somenteLeitura ? undefined : () => setDescansando(true) }
 
   const grupos = new Map<string, NonNullable<Sistema['pericias']>['lista']>()
   for (const p of s.pericias?.lista ?? []) grupos.set(p.grupo ?? '', [...(grupos.get(p.grupo ?? '') ?? []), p])
@@ -190,7 +191,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
         </div>
       </nav>
       <div className="min-w-0 flex-1 space-y-4">
-        {atual && rubrica && <header className="ficha-capitulo"><span aria-hidden="true" className="ficha-capitulo-selo">{simbolos[identidade] ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" className="ficha-simbolo"><path d={simbolos[identidade]} /></svg> : String(indiceCapitulo(atual.id) + 1).padStart(2, "0")}</span><div className="min-w-0"><p className="ficha-capitulo-universo">{s.nome}</p><h2>{rubrica[indiceCapitulo(atual.id)]}</h2></div></header>}
+        {atual && rubrica && <header className="ficha-capitulo"><span aria-hidden="true" className="ficha-capitulo-selo">{simbolos[identidade] ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" className="ficha-simbolo"><path d={simbolos[identidade]} /></svg> : String(indiceCapitulo(atual.id) + 1).padStart(2, "0")}</span><div className="min-w-0"><p className="ficha-capitulo-universo">{tituloSistemaNaFicha(s, d)}</p><h2>{rubrica[indiceCapitulo(atual.id)]}</h2></div></header>}
         {atual && <p className="flex gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-2 text-xs text-(--a-cfc0df)"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></p>}
 
         {secao === 'principal' && <div className="ficha-composicao">

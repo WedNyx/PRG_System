@@ -163,13 +163,13 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const atual = SECOES[iAtual], proxima = SECOES[iAtual + 1]
   const maxDe = (id: string) => { const x = d.recursos[id]?.max; return x === undefined || x === null ? null : Number(x) || 0 }
   const [mostrarTodosRecursos, setMostrarTodosRecursos] = useState(false)
-  const edicao2014 = edicaoEfetivaDaFicha(s, d) === '2014'
+  const edicao2014 = edicaoEfetivaDaFicha(s, d) === 'phb2014'
   const classesDnd = s.id === 'dnd5e-srd' ? (edicao2014 ? classesDaFicha2014(d) : classesDaFicha(d)).lista : []
   const nivelClasse = (id: string) => classesDnd.find(c => c.cls.id === id)?.nivel ?? 0
   const recursosDeClasse: Record<string, boolean> = {
     furias: nivelClasse('barbaro') >= 1,
     inspiracao_bardo: nivelClasse('bardo') >= 1,
-    canalizar: nivelClasse('clerigo') >= 2 || nivelClasse('paladino') >= (edicao2014 ? 3 : 3),
+    canalizar: nivelClasse('clerigo') >= 2 || nivelClasse('paladino') >= 3,
     forma_selvagem: nivelClasse('druida') >= 2,
     retomar_folego: nivelClasse('guerreiro') >= 1,
     surto_acao: nivelClasse('guerreiro') >= 2,
@@ -256,7 +256,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
             {s.recursos.length > 0 && <div className="ficha-recursos-grid mt-3 grid gap-3 lg:grid-cols-2">
               {recursosDisponiveis.filter(r => mostrarTodosRecursos || recursoVisivel(r)).map(r => {
                 const atual = Number(d.recursos[r.id]?.atual ?? 0) || 0
-                return <div key={r.id} data-recurso-principal={r === recursoPrincipal ? "sim" : undefined} data-espaco-magia={s.id === "dnd5e-srd" && /^espacos_\d+$/.test(r.id) ? "sim" : undefined}>{s.id === "dnd5e-srd" && /^espacos_\d+$/.test(r.id) && (maxDe(r.id) ?? 0) > 0 && <div className="dnd-cristais" aria-hidden="true">{Array.from({ length: Math.min(20, Math.max(0, Math.floor(maxDe(r.id) ?? 0))) }, (_, i) => <svg key={i} viewBox="0 0 22 30" data-disponivel={i < atual ? "sim" : "nao"}><path d="M11 1L21 11L11 29L1 11Z"/><path d="M11 1L7 11L11 29L15 11Z M1 11H21" fill="none"/></svg>)}</div>}<BarraRecurso nome={r.nome} cor={corDoRecurso(r.id, r.nome)} atual={atual} max={maxDe(r.id)} maxEditavel somenteLeitura={somenteLeitura} contador={!!r.contador}
+                return <div key={r.id} data-recurso-principal={r === recursoPrincipal ? "sim" : undefined} data-espaco-magia={s.id === "dnd5e-srd" && /^espacos_\d+$/.test(r.id) ? "sim" : undefined}>{s.id === "dnd5e-srd" && /^espacos_\d+$/.test(r.id) && (maxDe(r.id) ?? 0) > 0 && <div className="dnd-cristais" aria-hidden="true">{Array.from({ length: Math.min(20, Math.max(0, Math.floor(maxDe(r.id) ?? 0))) }, (_, i) => <svg key={i} viewBox="0 0 22 30" data-disponivel={i < atual ? "sim" : "nao"}><path d="M11 1L21 11L11 29L1 11Z"/><path d="M11 1L7 11L11 29L15 11Z M1 11H21" fill="none"/></svg>)}</div>}<BarraRecurso nome={edicao2014 && r.id === 'foco' ? 'Pontos de Ki' : edicao2014 && r.id === 'inspiracao' ? 'Inspiração' : edicao2014 && r.id === 'exaustao' ? 'Exaustão' : r.nome} cor={corDoRecurso(r.id, r.nome)} atual={atual} max={maxDe(r.id)} maxEditavel somenteLeitura={somenteLeitura} contador={!!r.contador}
                   mudar={v => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual: v } })}
                   mudarMax={v => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual, max: v } })} />
                   {r.dica && <p className="mt-1 px-1 text-[11px] leading-snug text-(--a-a998bd)">{r.dica}</p>}</div>

@@ -108,7 +108,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
    setAviso('Magia '+magia.nome+' conjurada com '+(pacto?'Magia de Pacto':'espaço')+' de '+n+'º nível.')
    if(magia.expressao)rolar(magia.expressao,magia.nome+' · magia 2014 (espaço '+n+'º)')
  }
- return <section aria-label="Grimório do Livro do Jogador 2014" className="space-y-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5">
+ return <section aria-label="Grimório do Livro do Jogador 2014" className="dnd-grimorio space-y-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-4 sm:p-5">
   <h3 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><BookOpen size={19}/> Grimório de D&D 2014 · SRD 5.1</h3>
   <p className="text-xs text-(--a-c4b6d4)">Registre magias <strong>conhecidas, preparadas ou extras</strong> a partir do Livro do Jogador 2014 e dos suplementos liberados.
     A plataforma confere níveis e espaços da classe, mas não supõe que uma magia de mesmo nome tem efeito igual na edição 2024.
@@ -270,7 +270,7 @@ export default function MagiasDnd2014({d,c,onChange,somenteLeitura,rolar}:Props)
   {aviso&&<p role="status" className="rounded-lg border border-sky-500/30 p-2 text-xs text-sky-200">{aviso}</p>}
   {magias.length===0&&<p className="text-xs text-(--a-c4b6d4)">Nenhuma magia de 2014 registrada nesta ficha.</p>}
   <div className="grid gap-2 sm:grid-cols-2">{magias.map(m=><article key={m.id}
-    className="space-y-2 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+    className="dnd-magia-pagina space-y-2 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <strong className="text-sm">{m.nome}</strong>
       <span className="text-xs text-(--a-d3adf0)">{m.nivel===0?'Truque':m.nivel+'º nível'} · {m.modo}</span>

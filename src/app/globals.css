@@ -395,3 +395,20 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 [data-visual="dnd5e-srd"] .dnd-bonus {background:#21171c;border-color:#bc9764;color:#fff1d8;font-weight:800;font-variant-numeric:tabular-nums;}
 [data-visual="dnd5e-srd"] .dnd-registro-lista .ficha-pericia > button:last-child:not(.ficha-treino) {background:#60402f;color:#f6d49c;min-height:34px;min-width:34px;border:1px solid #bc9764;}
 @media(max-width:380px){.dnd-registro-lista .ficha-pericia{gap:.35rem;padding-inline:.35rem;}}
+
+/* D&D — painel de combate: escudo funcional e vida prioritária. */
+[data-visual="dnd5e-srd"] .ficha-recursos-gerais {border:3px double #bc9764;}
+[data-visual="dnd5e-srd"] .ficha-valores-grid {grid-template-columns:repeat(auto-fit,minmax(min(100%,112px),1fr));align-items:stretch;}
+[data-visual="dnd5e-srd"] .ficha-valor {position:relative;isolation:isolate;min-width:0;text-align:center;border:1px solid #805d49;background:#33232a;color:#f4e4d2;display:flex;flex-direction:column;justify-content:center;min-height:88px;}
+[data-visual="dnd5e-srd"] .ficha-valor input {text-align:center;color:#fff1d8;font-variant-numeric:tabular-nums;}
+[data-visual="dnd5e-srd"] .ficha-valor > span {color:#eac38b;overflow-wrap:anywhere;}
+[data-visual="dnd5e-srd"] .ficha-valor[data-defesa="sim"] {min-height:126px;border:none;background:none;padding:1rem .6rem 1.8rem;}
+.dnd-defesa-escudo {position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;}
+[data-visual="dnd5e-srd"] .ficha-defesa-resumo {border:1px solid #bc9764;background:#352129;color:#eac38b;}
+[data-visual="dnd5e-srd"] .ficha-recursos-grid > [data-recurso-principal="sim"] {grid-column:1/-1;}
+[data-visual="dnd5e-srd"] .ficha-recurso {background:#33232a;border:1px solid #805d49;border-radius:6px;min-width:0;}
+[data-visual="dnd5e-srd"] [data-recurso-principal="sim"] .ficha-recurso {border:3px double #bc9764;background:linear-gradient(135deg,#44252b,#26191f);}
+[data-visual="dnd5e-srd"] [data-recurso-principal="sim"] .ficha-recurso-trilho {height:52px;border:2px solid #bc9764;border-radius:8px;}
+[data-visual="dnd5e-srd"] .ficha-recurso button {border-color:#bc976466;}
+[data-visual="dnd5e-srd"] .ficha-recurso > div:nth-child(2) > button {background:#60402f;color:#f6d49c;}
+@media(max-width:480px){[data-visual="dnd5e-srd"] .ficha-recurso > div:nth-child(2){gap:3px;}[data-visual="dnd5e-srd"] .ficha-recurso > div:nth-child(2) > button{width:28px;min-width:28px;}[data-visual="dnd5e-srd"] .ficha-recursos-grid{grid-template-columns:minmax(0,1fr);}}

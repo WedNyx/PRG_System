@@ -233,3 +233,31 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 [data-visual="pf2e"] .ficha-atributo-base { border-radius: 5px 22px; background: linear-gradient(145deg,#253b58,#152031); }
 [data-visual="tormenta20"] .ficha-atributo-base { border-radius: 45% 45% 12px 12px; background: linear-gradient(145deg,#2a3c58,#1b2331); }
 [data-visual="mork-borg"] .ficha-atributo-base { border-radius: 0; box-shadow: 2px 2px #ffe600; }
+
+/* Segunda etapa: atributos, trilhos e perícias. Os controles continuam editáveis e acessíveis. */
+[data-visual] .ficha-recurso { border: 1px solid var(--ficha-borda); }
+[data-visual] .ficha-pericia { border-bottom: 1px solid var(--ficha-borda); }
+[data-visual] .ficha-dado-emblema { border: 2px solid var(--ficha-borda); border-radius: 30%; background: var(--ficha-cartao); }
+[data-visual="nova"] .ficha-dado { border-radius: 4px 20px; background: linear-gradient(145deg,#35263d,#191b2a); }
+[data-visual="nova"] .ficha-dado-emblema { clip-path: polygon(50% 0,95% 25%,95% 75%,50% 100%,5% 75%,5% 25%); border: 0; background: #68483f; }
+[data-visual="dnd5e-srd"] .ficha-recurso-trilho { border-radius: 16px; border-color: #ba905e; }
+[data-visual="pf2e"] .ficha-treino { border-radius: 4px; }
+[data-visual="tormenta20"] .ficha-treino { border-radius: 50% 50% 6px 6px; }
+[data-visual="fate-core"] .ficha-piramide [role="listitem"] { border-left: 3px solid var(--ficha-borda); padding-left: 5px; }
+[data-visual="fate-core"] .ficha-recurso-trilho { border-radius: 4px; }
+[data-visual="blades"] .ficha-acoes { border-radius: 3px; border-top: 5px double var(--ficha-borda); }
+[data-visual="blades"] .ficha-recurso-trilho { border-radius: 2px; }
+[data-visual="brp"] .ficha-atributo-percentual { border-radius: 6px; border-bottom: 3px solid var(--ficha-borda); }
+[data-visual="call-of-cthulhu"] .ficha-atributo-percentual { border-radius: 3px; background: #263b33; font-family: ui-monospace,monospace; border-top: 3px double var(--ficha-borda); }
+[data-visual="faroeste-arcano"] .ficha-recurso { border-style: dashed; }
+[data-visual="ordem-paranormal"] .ficha-treino { border-radius: 5px; }
+[data-visual="mork-borg"] :is(.ficha-recurso,.ficha-recurso-trilho,.ficha-pericia) { border-radius: 0; }
+[data-visual="assimilacao"] .ficha-atributo-percentual { border-radius: 25px 8px; background: radial-gradient(ellipse at top right,#66315e,#261c31); }
+[data-visual="assimilacao"] .ficha-recurso-trilho { border-radius: 20px 5px; }
+[data-visual="opositores"] .ficha-recurso-trilho { border-radius: 999px; border-color: #b5a4d0; }
+[data-visual="opositores"] .ficha-pericia { border-radius: 18px 5px; }
+@media (max-width: 420px) {
+  [data-visual] .ficha-recurso { padding: 8px; }
+  [data-visual] .ficha-recurso button { flex-shrink: 0; }
+  [data-visual] .ficha-piramide [role="listitem"] { gap: 4px; }
+}

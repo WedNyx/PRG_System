@@ -176,18 +176,18 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
         {atual && rubrica && <header className="ficha-capitulo"><span aria-hidden="true" className="ficha-capitulo-selo">{String(indiceCapitulo(atual.id) + 1).padStart(2, "0")}</span><div className="min-w-0"><p className="ficha-capitulo-universo">{s.nome}</p><h2>{rubrica[indiceCapitulo(atual.id)]}</h2></div></header>}
         {atual && <p className="flex gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-2 text-xs text-(--a-cfc0df)"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></p>}
 
-        {secao === 'principal' && <>
+        {secao === 'principal' && <div className="ficha-composicao">
           {s.id !== 'faroeste-arcano' && <FaixaDoSistema s={s} nome={d.nome} />}
           {s.id === 'faroeste-arcano' && <div data-painel-sistema><PainelDoSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} /></div>}
           {s.id === 'ordem-paranormal' && <ResumoOrdem nex={Number(d.campos.nex ?? 0) || 0} classe={String(d.campos.classe ?? '')} trilha={String(d.campos.trilha ?? '')} origem={String(d.campos.origem ?? '')}
             pe={{ atual: Number(d.recursos.pe?.atual ?? 0) || 0, max: maxDe('pe') }} san={{ atual: Number(d.recursos.san?.atual ?? 0) || 0, max: maxDe('san') }} />}
-          <section className={card}>
-            <div className="flex items-start gap-4">
+          <section className={card + " ficha-identidade"}>
+            <div className="ficha-identidade-retrato flex items-start gap-4">
               <Retrato url={d.retrato} nome={d.nome} somenteLeitura={somenteLeitura} onChange={u => onChange({ ...d, retrato: u ?? undefined })} />
               <label className="block min-w-0 flex-1 text-sm font-semibold">Nome do personagem
                 <input value={d.nome} maxLength={90} disabled={somenteLeitura} onChange={e => set('nome', e.target.value)} className={input + ' mt-1 text-lg font-bold'} placeholder="Ex.: Lyra Nyx" /></label>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3 lg:grid-cols-3">
+            <div className="ficha-identidade-campos mt-3 grid grid-cols-2 gap-x-3 gap-y-3 lg:grid-cols-3">
               {s.campos.filter(f => !SO_CALCULO[s.id]?.includes(f.id)).map(f => <label key={f.id} className={'flex flex-col justify-end text-sm text-(--a-d6c8e8) ' + (f.tipo === 'area' ? 'col-span-2 lg:col-span-3' : f.tipo === 'numero' ? '' : 'col-span-2 sm:col-span-1')}>{f.nome}
                 {f.tipo === 'area'
                   ? <textarea rows={3} value={String(d.campos[f.id] ?? '')} disabled={somenteLeitura} onChange={e => set('campos', { ...d.campos, [f.id]: e.target.value.slice(0, 4000) })} className={input + ' mt-1'} />
@@ -199,8 +199,8 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               </label>)}
             </div>
           </section>
-          {s.id !== 'faroeste-arcano' && <div data-painel-sistema className="space-y-4 empty:hidden"><PainelDoSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} /></div>}
-          {(s.derivados.length > 0 || s.recursos.length > 0) && <section className={card}>
+          {s.id !== 'faroeste-arcano' && <div data-painel-sistema className="ficha-paineis-especiais space-y-4 empty:hidden"><PainelDoSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} /></div>}
+          {(s.derivados.length > 0 || s.recursos.length > 0) && <section className={card + " ficha-recursos-gerais"}>
             <div className="mb-3 flex flex-wrap items-center gap-2"><h2 className="flex-1 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">Valores e recursos</h2>
               {!somenteLeitura && s.recursos.length > 0 && <button type="button" onClick={() => setDescansando(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d4a23a]/70 px-3 py-1.5 text-sm text-amber-100 hover:bg-[#3a2a14]">🌙 Descanso</button>}</div>
             {s.derivados.length > 0 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -220,8 +220,8 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               })}
             </div>}
           </section>}
-          <AcoesRapidas d={d} rolar={rolarExpr} irInventario={() => ir('equipamentos')} />
-        </>}
+          <div className="ficha-acoes-rapidas"><AcoesRapidas d={d} rolar={rolarExpr} irInventario={() => ir('equipamentos')} /></div>
+        </div>}
 
         {secao === 'atributos' && <>
           {graus && s.atributos.length > 0 && <section className={card}>

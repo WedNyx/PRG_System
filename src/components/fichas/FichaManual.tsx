@@ -296,7 +296,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
             <div className="flex flex-wrap gap-2">{s.resistencias.map(id => { const x = s.derivados.find(y => y.id === id); if (!x) return null; const n = Number(m.derivados[id]) || 0
               return <button key={id} type="button" onClick={() => rolar(x.nome.split(' (')[0], 0, n, true)} className="rounded-lg border border-(--a-5e4b78) px-3 py-2 text-sm hover:bg-(--s-34294f)">{x.nome.split(' (')[0]} ({n || 2}d{parada})</button> })}</div>
           </section>}
-          {!graus && s.pericias && <section className={card}>
+          {!graus && s.pericias && <section className={card + (s.id === 'dnd5e-srd' ? ' dnd-testes' : '')}>
             <h2 className="mb-1 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">{tituloPer}</h2>
             {visual.pericias === 'piramide' ? <>
               <p className="mb-3 text-xs text-(--a-a998bd)">Cada degrau mostra as perícias daquele nível. Toque numa perícia para rolar 4dF + o nível.</p>
@@ -312,19 +312,19 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
             </> : <>
             {dossie && <p className="mb-2 text-xs text-(--a-a998bd)">☑ marca de experiência: marque a perícia usada com sucesso na sessão (para a fase de melhoria). {s.leituraD100 === 'coc' ? 'Embaixo de cada uma: a metade (sucesso difícil) e o quinto (extremo).' : 'Embaixo de cada uma: o sucesso especial (⅕) e o crítico (1/20).'}</p>}
             <p className="mb-3 text-xs text-(--a-a998bd)">{s.pericias.modo === 'valor' ? 'Digite o valor de cada uma.' : visual.pericias === 'graus' ? 'Toque no círculo para marcar o grau de treino e digite o total (bônus) de cada uma.' : 'Digite o total (bônus) de cada uma.'}{podeRolar ? ' Toque no dado para rolar.' : ''}</p>
-            {[...grupos].map(([g, itens]) => <div key={g} className="mb-4">
+            {[...grupos].map(([g, itens]) => <div key={g} className={s.id === 'dnd5e-srd' ? "dnd-registro-grupo mb-4" : "mb-4"}>
               {g && <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{g}</h3>}
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div className={s.id === 'dnd5e-srd' ? "dnd-registro-lista" : "grid grid-cols-1 gap-2 sm:grid-cols-2"}>
                 {itens.map(p => { const valor = s.pericias!.modo === 'valor'
                   const tot = valor ? Number(d.pericias[p.id]) || 0 : m.pericias[p.id] ?? 0
                   return <div key={p.id} className={'ficha-pericia flex items-center gap-2 rounded-lg px-3 py-2 ' + (dossie ? 'border border-[#b9a77e] bg-[#ece2c8] text-[#2a1f14] [font-family:ui-monospace,Courier,monospace]' : 'bg-(--s-171325)')}>
                     {dossie && <input type="checkbox" checked={marcas['exp_' + p.id] === true} disabled={somenteLeitura} onChange={e => marcar('exp_' + p.id, e.target.checked)} aria-label={'Marca de experiência em ' + p.nome} title="Marca de experiência (usou com sucesso nesta sessão)" className="h-4 w-4 shrink-0 accent-[#5f4f35]" />}
                     {visual.pericias === 'graus' && <GrauPericia s={s} valor={String(d.pericias[p.id] ?? '')} nome={p.nome} somenteLeitura={somenteLeitura} mudar={v => set('pericias', { ...d.pericias, [p.id]: v })} />}
-                    <span className="min-w-0 flex-1"><span className="block truncate text-sm">{p.nome}{p.atributo && <span className="ml-1 text-[10px] text-(--a-a998bd)">({p.atributo})</span>}</span>
+                    <span className="min-w-0 flex-1"><span className={s.id === 'dnd5e-srd' ? "block text-sm dnd-pericia-nome" : "block truncate text-sm"}>{p.nome}{p.atributo && <span className="ml-1 text-[10px] text-(--a-a998bd)">({p.atributo})</span>}</span>
                       {dossie && <span className="block text-[11px] text-[#5f4f35]">{s.leituraD100 === 'coc' ? `½ ${Math.floor(tot / 2)} · ⅕ ${Math.floor(tot / 5)}` : `especial ${Math.max(1, Math.round(tot / 5))} · crítico ${Math.max(1, Math.round(tot / 20))}`}</span>}</span>
                     <input type="number" aria-label={(valor ? 'Valor de ' : 'Total de ') + p.nome} value={valor ? d.pericias[p.id] ?? 0 : m.pericias[p.id] ?? ''} placeholder="0" disabled={somenteLeitura}
                       onChange={e => valor ? set('pericias', { ...d.pericias, [p.id]: numero(e.target.value) ?? 0 }) : setManual('pericias', p.id, numero(e.target.value))}
-                      className={input + ' !w-16 shrink-0 text-center' + (dossie ? ' !border-[#8a7a55] !bg-[#f6efdc] !font-bold !text-[#2a1f14]' : '')} />
+                      className={input + ' !w-16 shrink-0 text-center' + (dossie ? ' !border-[#8a7a55] !bg-[#f6efdc] !font-bold !text-[#2a1f14]' : s.id === 'dnd5e-srd' ? ' dnd-bonus' : '')} />
                     {s.rolagem !== 'assimilacao' && podeRolar && <button type="button" onClick={() => p.atributo || !parada ? rolar(p.nome, tot, dadosDe(p.atributo)) : rolar(p.nome, 0, tot)} aria-label={'Rolar ' + p.nome}
                       className={'shrink-0 rounded-lg px-2 py-1.5 ' + (dossie ? 'bg-[#5f4f35] text-[#f6efdc] hover:bg-[#7a6646]' : 'bg-(--s-34294f) hover:bg-(--s-4b3a6e)')}><Dice5 size={16} aria-hidden="true" /></button>}
                   </div> })}

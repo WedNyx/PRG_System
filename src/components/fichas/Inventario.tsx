@@ -347,10 +347,10 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
   </section>
 }
 
-function Janela({ titulo, fechar, children, ampla = false }: { titulo: string; fechar: () => void; children: React.ReactNode; ampla?: boolean }) {
+function Janela({ titulo, fechar, children, ampla = false, temaDnd = false }: { titulo: string; fechar: () => void; children: React.ReactNode; ampla?: boolean; temaDnd?: boolean }) {
   return <NaTela><div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-2 sm:p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
-    <div role="dialog" aria-modal="true" aria-label={titulo} className={'w-full min-w-0 overflow-y-auto overscroll-contain rounded-2xl border border-(--a-6d5690) bg-(--s-1b1529) text-sm text-(--a-f2ebff) ' + (ampla ? 'max-h-[96dvh] max-w-2xl p-3 sm:p-5' : 'max-h-[88vh] max-w-lg p-5')}>
-      <div className="sticky top-0 z-10 mb-3 flex items-center justify-between rounded-lg bg-(--s-1b1529) py-2"><h2 className="text-lg font-bold">{titulo}</h2><button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1.5 hover:bg-(--s-38294d)"><X size={18} /></button></div>
+    <div role="dialog" aria-modal="true" aria-label={titulo} className={'w-full min-w-0 overflow-y-auto overscroll-contain rounded-2xl border border-(--a-6d5690) bg-(--s-1b1529) text-sm text-(--a-f2ebff) ' + (ampla ? 'max-h-[96dvh] max-w-2xl p-3 sm:p-5' : 'max-h-[88vh] max-w-lg p-5') + (temaDnd ? ' dnd-janela-editor' : '')}>
+      <div className="sticky top-0 z-10 mb-3 flex items-center justify-between rounded-lg bg-(--s-1b1529) py-2"><h2 className="text-lg font-bold">{temaDnd && <span className="dnd-editor-selo" aria-hidden="true"><Shield size={20}/></span>}{titulo}</h2><button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1.5 hover:bg-(--s-38294d)"><X size={18} /></button></div>
       {children}
     </div>
   </div></NaTela>
@@ -399,7 +399,7 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
     .sort((x, y) => icoCategoria.indexOf(x.id) - icoCategoria.indexOf(y.id))
   const alvos = s ? alvosDeBonus(s) : []
   const setB = (i: number, b: Partial<Bonus>) => setIt({ ...it, bonus: it.bonus.map((x, k) => k === i ? { ...x, ...b } : x) })
-  return <Janela titulo={dnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla>
+  return <Janela titulo={dnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla temaDnd={dnd}>
     <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return }
       if ((it.rolagens?.length ?? 0) > (v.rolagens?.length ?? 0)) toast.warning('Rolagens sem nome ou com dados inválidos ficaram de fora.')
       salvar({ ...v, id: inicial.id }) }}>
@@ -498,8 +498,9 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
 export function EditorPoder({ s, inicial, salvar, fechar }: { s?: Sistema; inicial: Poder; salvar: (p: Poder) => void; fechar: () => void }) {
   const [p, setP] = useState<Poder>(inicial)
   const recursos = s?.recursos ?? []
-  return <Janela titulo={inicial.nome ? 'Editar poder' : 'Novo poder'} fechar={fechar}>
+  return <Janela titulo={inicial.nome ? 'Editar poder' : 'Novo poder'} fechar={fechar} temaDnd={s?.id === 'dnd5e-srd'}>
     <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarPoder(p); if (!v) { toast.error('Dê um nome ao poder.'); return } salvar({ ...v, id: inicial.id }) }}>
+      {s?.id === 'dnd5e-srd' && <div className="dnd-editor-intro"><Sparkles size={22} aria-hidden="true"/><div><strong>{p.nome || 'Uma nova habilidade'}</strong><p>Registre sua técnica, magia ou poder personalizado.</p></div></div>}
       <label className="block">Nome<input autoFocus required value={p.nome} maxLength={120} onChange={e => setP({ ...p, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Bola de fogo" /></label>
       <label className="block">Tipo<select value={p.tipo} onChange={e => setP({ ...p, tipo: e.target.value as Poder['tipo'] })} className={input + ' mt-1'}>{TIPOS_PODER.map(t => <option key={t.id} value={t.id}>{t.icone} {t.nome}</option>)}</select></label>
       {recursos.length > 0 && <div className="grid grid-cols-2 gap-2">

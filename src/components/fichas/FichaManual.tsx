@@ -54,6 +54,22 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const m: Manual = d.manual ?? { mods: {}, derivados: {}, pericias: {} }
   // Visual do sistema (v0.35.1): cores, letra dos títulos e o jeito de mostrar atributos e perícias.
   const identidade = identidadeVisual(s)
+  const simbolos: Record<string, string> = {
+    'dnd5e-srd': 'M12 3L20 6V13Q20 18 12 22Q4 18 4 13V6Z M12 7V17 M9 10H15',
+    pf2e: 'M12 2L22 12L12 22L2 12Z M12 6L18 12L12 18L6 12Z M12 2V6 M22 12H18 M12 18V22 M2 12H6',
+    'fate-core': 'M3 8H11V4H21V12H13V16H3Z M3 20H21 M7 16V20 M17 12V20',
+    blades: 'M9 2H15V6L18 7L21 5L23 9L20 12L21 15L23 17L20 21L16 19L15 22H9L8 19L4 21L1 17L4 14V10L1 7L4 3L8 5Z M12 8A4 4 0 1 0 12 16A4 4 0 1 0 12 8',
+    brp: 'M4 20L20 4 M7 4A3 3 0 1 0 7 10A3 3 0 1 0 7 4 M17 14A3 3 0 1 0 17 20A3 3 0 1 0 17 14',
+    'call-of-cthulhu': 'M2 12Q12 0 22 12Q12 24 2 12Z M12 7A5 5 0 1 0 12 17A5 5 0 1 0 12 7 M12 9V15 M3 20L5 17 M21 20L19 17',
+    'faroeste-arcano': 'M12 2L15 8L22 9L17 14L18 21L12 18L6 21L7 14L2 9L9 8Z M12 8L15 12L12 16L9 12Z',
+    'ordem-paranormal': 'M12 2L22 19H2Z M12 6L18 17H6Z M12 10V15 M2 5L5 8 M22 5L19 8 M12 19V23',
+    tormenta20: 'M12 2L14 7L19 5L18 11L22 12L18 15L19 20L14 18L12 22L10 18L5 20L6 15L2 12L6 11L5 5L10 7Z M12 8V16 M8 12H16',
+    'mork-borg': 'M4 10A8 8 0 0 1 20 10V15L16 17V22H8V17L4 15Z M7 10L10 13M10 10L7 13M14 10L17 13M17 10L14 13M12 15V18M10 19V22M14 19V22',
+    assimilacao: 'M12 3Q22 3 20 12Q18 22 10 20Q1 18 4 9Q6 5 12 3Z M12 3Q8 12 16 19 M4 9Q12 8 20 12 M10 12L14 9M10 12L9 17',
+    opositores: 'M16 2A10 10 0 1 0 21 17A9 9 0 0 1 16 2Z M18 4V10 M15 7H21 M20 11V15 M18 13H22',
+    nova: 'M12 2L22 8V16L12 22L2 16V8Z M7 8H12V12H17V16 M7 6V10 M17 14V18 M12 2V5 M12 19V22',
+  }
+
   const tema = temaDoSistema(identidade), visual = estiloDoSistema(s.id)
   const c = useMemo(() => calcular(s, d), [s, d])
   // Inventário e poderes no modo genérico: sem catálogo nem conta automática de arma do D&D.
@@ -173,7 +189,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
         </div>
       </nav>
       <div className="min-w-0 flex-1 space-y-4">
-        {atual && rubrica && <header className="ficha-capitulo"><span aria-hidden="true" className="ficha-capitulo-selo">{String(indiceCapitulo(atual.id) + 1).padStart(2, "0")}</span><div className="min-w-0"><p className="ficha-capitulo-universo">{s.nome}</p><h2>{rubrica[indiceCapitulo(atual.id)]}</h2></div></header>}
+        {atual && rubrica && <header className="ficha-capitulo"><span aria-hidden="true" className="ficha-capitulo-selo">{simbolos[identidade] ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" className="ficha-simbolo"><path d={simbolos[identidade]} /></svg> : String(indiceCapitulo(atual.id) + 1).padStart(2, "0")}</span><div className="min-w-0"><p className="ficha-capitulo-universo">{s.nome}</p><h2>{rubrica[indiceCapitulo(atual.id)]}</h2></div></header>}
         {atual && <p className="flex gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-2 text-xs text-(--a-cfc0df)"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></p>}
 
         {secao === 'principal' && <div className="ficha-composicao">

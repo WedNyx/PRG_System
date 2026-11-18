@@ -66,7 +66,7 @@ export default function MagiasDnd2024({ d, c, onChange, somenteLeitura = false, 
     if (e) rolar(e, `${m.nome}${m.nivel ? ` (espaço ${espaco}º)` : ''}: ${m.cura && !m.dano ? 'cura' : 'dano'}`)
   }
 
-  return <section aria-label="Magias de D&D 2024" className={card + ' space-y-4'}>
+  return <section aria-label="Magias de D&D 2024" className={card + ' dnd-grimorio space-y-4'}>
     <div className="flex flex-wrap items-start gap-3">
       <div className="min-w-0 flex-1">
         <h3 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Sparkles size={18} aria-hidden /> Magias</h3>
@@ -92,7 +92,7 @@ export default function MagiasDnd2024({ d, c, onChange, somenteLeitura = false, 
       <MagiasEspecieDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolar} />
     </>}
     {lista.length === 0 && <p className="rounded-xl border border-dashed border-(--a-55456e) p-4 text-sm text-(--a-c4b6d4)">Nenhuma magia preparada pela classe. {somenteLeitura ? '' : 'Toque em “Adicionar magias” para escolher pelo catálogo do SRD.'}</p>}
-    {[...grupos].map(([nivel, ms]) => <div key={nivel} className="space-y-2">
+    {[...grupos].map(([nivel, ms]) => <div key={nivel} className="dnd-circulo space-y-2">
       <h4 className="text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{nomeNivel(nivel)}</h4>
       {ms.map(m => { const lc = limiteDa(sel[m.id]); return <LinhaMagia key={m.id} m={m} tipo={sel[m.id]} l={lc} varias={ls.length > 1} ataque={prof + modDe(lc)} mod={modDe(lc)} nivelPersonagem={nivelPersonagem} d={d} somenteLeitura={somenteLeitura}
         rolar={rolar} conjurar={(mm, e) => conjurar(mm, e, lc)} remover={() => remover(m.id)} /> })}
@@ -125,7 +125,7 @@ function LinhaMagia({ m, tipo, l, varias, ataque, mod, nivelPersonagem, d, somen
     setAberto(a => !a)
     if (texto === null) { const t = await import('@/lib/sistemas/dnd2024MagiasTexto'); setTexto(t.TEXTO_MAGIAS_SRD[m.id] ?? '') }
   }
-  return <article className="rounded-xl border border-(--a-3d3152) bg-(--s-171325)/70 p-3">
+  return <article className="dnd-magia-pagina rounded-xl border border-(--a-3d3152) bg-(--s-171325)/70 p-3">
     <div className="flex flex-wrap items-start gap-2">
       <div className="min-w-0 flex-1">
         <p className="flex flex-wrap items-center gap-1.5 font-semibold text-white">{m.nome} <Etiquetas m={m} />

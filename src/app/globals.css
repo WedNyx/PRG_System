@@ -450,3 +450,10 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 .dnd-espaco-grimorio {border:1px solid #805d49;border-radius:6px;padding:.65rem;color:#f5dfb9;background:#21171c;min-width:0;}
 .dnd-espaco-grimorio .dnd-cristais {border:0;background:none;padding:.35rem 0 0;}
 .dnd-brasao input:focus-visible,.dnd-arsenal button:focus-visible,.dnd-grimorio button:focus-visible {outline:2px solid #eac38b;outline-offset:2px;}
+
+[data-visual="dnd5e-srd"] .ficha-valor[data-defesa="sim"] > span {max-width:65%;align-self:center;font-size:.72rem;line-height:1.15;}
+.dnd-cristais-interativos {display:flex;flex-wrap:wrap;gap:4px;}
+.dnd-cristais-interativos button {width:34px;height:44px;padding:4px;border-radius:5px;}
+.dnd-cristais-interativos svg {width:100%;height:100%;fill:#21171c;stroke:#bc9764;}
+.dnd-cristais-interativos svg[data-disponivel="sim"] {fill:#9763c5;stroke:#f0d1ff;}
+.dnd-cristais-interativos button:focus-visible {outline:2px solid #eac38b;}

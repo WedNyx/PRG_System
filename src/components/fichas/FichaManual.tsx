@@ -388,7 +388,15 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
           <section className="grid gap-4">{listasDe('equipamentos').map(l => lista(l))}</section>
         </>}
         {secao === 'anotacoes' && <>
-          <section className="grid gap-4">{listasDe('anotacoes').map(l => lista(l))}</section>
+          {s.id === 'dnd5e-srd' ? <section className="dnd-diario" aria-label="Páginas do diário">
+            <header className="dnd-diario-capa"><span aria-hidden="true">✦</span><div><h3>Memórias do aventureiro</h3><p>Registre conhecimentos, histórias e lembranças da jornada.</p></div><span aria-hidden="true">✦</span></header>
+            {listasDe('anotacoes').map((l,i) => <label key={l.id} className="dnd-diario-pagina">
+              <span className="dnd-diario-capitulo">Capítulo {String(i+1).padStart(2,'0')}</span>
+              <span className="dnd-diario-titulo">{l.nome}</span>
+              <textarea rows={/hist.ria|anota/i.test(l.nome)?10:6} value={d.listas[l.id] ?? ''} disabled={somenteLeitura} maxLength={20000} onChange={e=>set('listas',{...d.listas,[l.id]:e.target.value})} placeholder={/profici|idioma/i.test(l.nome)?'Registre armas, armaduras, ferramentas e idiomas…':'Escreva as memórias da sua jornada…'} className="dnd-diario-texto"/>
+              <span className="dnd-diario-rodape"><span aria-hidden="true">◇ ─ ◇</span><span>{(d.listas[l.id]??'').length.toLocaleString('pt-BR')} / 20.000</span></span>
+            </label>)}
+          </section> : <section className="grid gap-4">{listasDe('anotacoes').map(l => lista(l))}</section>}
           <TabelasDoSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolarNaCampanha={rolarNaCampanha} />
           <RegrasDoSistema s={s} />
           {s.autor && <section className={card + ' text-sm'}><p>✍️ <strong className="text-(--a-ed9cd8)">{s.nome}</strong> é um sistema autoral criado por <strong className="text-(--a-e4d3ff)">{s.autor}</strong>.</p></section>}

@@ -37,6 +37,32 @@ type Props = { s: Sistema; d: DadosFicha; c: Calculo; onChange: (d: DadosFicha) 
   edicaoDnd?: LivroBaseDnd }
 
 /** Seção “Inventário”: itens com quantidade, peso, equipado, dano e bônus automáticos. */
+/** Mantém o registro textual da carteira e não converte anotações livres. */
+function CarteiraDnd({ valor, mudar, somenteLeitura }: { valor: string; mudar: (v: string) => void; somenteLeitura: boolean }) {
+  const moedas = [{ id: 'PC', nome: 'Cobre', fator: 0.01 }, { id: 'PP', nome: 'Prata', fator: 0.1 }, { id: 'PE', nome: 'Electro', fator: 0.5 }, { id: 'PO', nome: 'Ouro', fator: 1 }, { id: 'PL', nome: 'Platina', fator: 10 }]
+  const saldo: Record<string, number> = {}
+  const partes = valor.trim() ? valor.trim().split(/[,;\s]+(?=\d)/) : []
+  const reconhecida = partes.every(p => {
+    const m = p.trim().match(/^(\d+)\s*(PC|PP|PE|PO|PL)$/i)
+    if (!m || !Number.isSafeInteger(Number(m[1])) || Number(m[1]) > 999999999) return false
+    const id = m[2].toUpperCase()
+    if (id in saldo) return false
+    saldo[id] = Number(m[1])
+    return true
+  })
+  const total = moedas.reduce((acc,m)=>acc+(saldo[m.id]??0)*m.fator,0)
+  function ajustar(id: string, texto: string) {
+    const n = Number(texto)
+    if (!reconhecida || somenteLeitura || !Number.isSafeInteger(n) || n < 0 || n > 999999999) return
+    mudar(moedas.map(m=>({id:m.id,n:m.id===id?n:saldo[m.id]??0})).filter(m=>m.n>0).map(m=>m.n+' '+m.id).join(', '))
+  }
+  return <div className="dnd-carteira">
+    <h3 className="font-semibold">Tesouraria do aventureiro</h3>
+    {reconhecida ? <><div className="dnd-moedas">{moedas.map(m=><label key={m.id}><span className="dnd-moeda" data-moeda={m.id} aria-hidden="true">{m.id}</span><span>{m.nome}</span><input type="number" min={0} max={999999999} step={1} aria-label={'Moedas de '+m.nome} value={saldo[m.id]??0} disabled={somenteLeitura} onChange={e=>ajustar(m.id,e.target.value)}/></label>)}</div><p className="text-xs">Valor equivalente: <strong>{total.toLocaleString('pt-BR',{maximumFractionDigits:2})} PO</strong></p></> : <p className="text-xs">Carteira com anotações livres. Edite o registro abaixo para usar os contadores (ex.: 35 PO, 12 PP). Nenhum valor foi convertido.</p>}
+    <label className="block text-xs">Registro da carteira<input value={valor} disabled={somenteLeitura} maxLength={500} onChange={e=>mudar(e.target.value)} className={input+' mt-1'} placeholder="35 PO, 12 PP"/></label>
+  </div>
+}
+
 export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, passarItem, edicaoDnd = 'phb2024' }: Props) {
   const itens = lerItens(d.itens), uso = lerUso(d.uso)
   const livrosDnd = lerLivrosDnd(d.dndLivros, edicaoDnd)
@@ -93,10 +119,12 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
   }
   const nomeAlvo = Object.fromEntries(alvosDeBonus(s).map(a => [a.id, a.nome]))
   const [buscaItens, setBuscaItens] = useState('')
-  const itensVisiveis = s.id === 'dnd5e-srd' && buscaItens.trim()
+  const [estadoItens, setEstadoItens] = useState('todos')
+  const itensBuscados = s.id === 'dnd5e-srd' && buscaItens.trim()
     ? itens.filter(it => [it.nome, it.descricao ?? '', referenciaArmaDndPorId(it.armaRefDnd)?.livro ?? ''].join(' ')
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaItens.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))
     : itens
+  const itensVisiveis = s.id === 'dnd5e-srd' ? itensBuscados.filter(it=>estadoItens==='todos'||(estadoItens==='equipados'?!!uso.itens[it.id]?.equipado:estadoItens==='disponiveis'?qtd(it)>0:qtd(it)===0)) : itensBuscados
   const pct = c.carga.max ? Math.min(100, (c.carga.total / c.carga.max) * 100) : 0
   // Abas por tipo (os nomes seguem o sistema, quando ele tem os seus) e a ala dos itens mágicos.
   const [aba, setAba] = useState<'todos' | 'magico' | Item['categoria']>('todos')
@@ -222,13 +250,14 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
         {c.carga.max ? <div className="mt-1 h-2 overflow-hidden rounded-full bg-(--s-2b2140)"><div className={'h-full transition-all ' + (c.carga.total > c.carga.max ? 'bg-red-400' : 'bg-(--a-b06ad8)')} style={{ width: pct + '%' }} /></div> : null}
         {c.carga.max !== null && c.carga.total > c.carga.max && <p className="mt-1 text-xs text-red-200">Acima da capacidade!</p>}
       </div>
-      <label className="ficha-carteira rounded-xl bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">💰 Carteira (moedas e valores)
-        <input value={uso.carteira} disabled={somenteLeitura} maxLength={500} onChange={e => salvarUso({ ...uso, carteira: e.target.value })} placeholder="Ex.: 35 PO, 12 PP" className={input + ' mt-1 text-sm'} /></label>
+      {s.id === 'dnd5e-srd' ? <CarteiraDnd valor={uso.carteira} mudar={carteira=>salvarUso({...uso,carteira})} somenteLeitura={!!somenteLeitura}/> : <label className="ficha-carteira rounded-xl bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">💰 Carteira (moedas e valores)
+        <input value={uso.carteira} disabled={somenteLeitura} maxLength={500} onChange={e => salvarUso({ ...uso, carteira: e.target.value })} placeholder="Ex.: 35 PO, 12 PP" className={input + ' mt-1 text-sm'} /></label>}
     </div>
     {s.id === 'dnd5e-srd' && itens.length > 0 && <div className="mt-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
       <label className="block text-xs font-semibold text-(--a-d3adf0)">🔎 Encontrar item na bolsa</label>
       <input type="search" value={buscaItens} onChange={e => setBuscaItens(e.target.value)}
         placeholder="Busque nome, descrição ou livro…" className={input + ' mt-1 text-sm'} />
+      <div className="dnd-filtros-arsenal" role="group" aria-label="Estado dos equipamentos">{[['todos','Todos'],['equipados','Equipados'],['disponiveis','Disponíveis'],['esgotados','Esgotados']].map(([id,nome])=><button key={id} type="button" aria-pressed={estadoItens===id} onClick={()=>setEstadoItens(id)}>{nome}</button>)}</div>
       <p className="mt-1 text-[11px] text-(--a-c4b6d4)">{itensVisiveis.length} de {itens.length} itens encontrados</p>
     </div>}
     {Object.keys(c.bonus).length > 0 && <p className="mt-3 rounded-lg bg-[#1f3a2c] p-2 text-xs text-[#a9f0c8]">Itens equipados somando: {Object.entries(c.bonus).map(([a, v]) => `${nomeAlvo[a] ?? a} ${v >= 0 ? '+' : ''}${v}`).join(' · ')}</p>}

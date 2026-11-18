@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { SimboloElementoOrdem } from './AtributosOrdem'
 import { toast } from 'sonner'
 import { enviarImagemNuvem, ErroNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 import ArteItem from './ArteItem'
@@ -327,7 +328,7 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
     {!poderes.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">Nenhum poder ainda.{!somenteLeitura && ' Toque em “Novo poder”.'}</p>}
     {grupos.filter(g => !ordem || g.itens.length || g.titulo === "Rituais").map(g => <div key={g.titulo} className={ordem ? "ordem-grupo-poderes" : undefined}>
       {ordem && <h3>{g.titulo}</h3>}
-      {ordem && g.titulo === "Rituais" && <div className="ordem-filtros" role="group" aria-label="Filtrar rituais por elemento">{["Todos", ...ELEMENTOS_ORDEM].map(e => <button key={e} type="button" data-elemento={e} aria-pressed={elemento === e} onClick={() => setElemento(e)}>{e}</button>)}</div>}
+      {ordem && g.titulo === "Rituais" && <div className="ordem-filtros" role="group" aria-label="Filtrar rituais por elemento">{["Todos", ...ELEMENTOS_ORDEM].map(e => <button key={e} type="button" data-elemento={e} aria-pressed={elemento === e} onClick={() => setElemento(e)}>{e !== "Todos" && <SimboloElementoOrdem elemento={e} tamanho={28}/>}<span>{e}</span></button>)}</div>}
       {ordem && !g.itens.length && <p className="text-sm">Nenhum ritual neste filtro.</p>}
       <ul className="ficha-lista-poderes mt-3 space-y-2">{g.itens.map(p => {
       const tipo = TIPOS_PODER.find(t => t.id === p.tipo)!, gastos = uso.poderes[p.id] ?? 0

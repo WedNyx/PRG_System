@@ -574,3 +574,14 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 .ordem-testes-grid button svg {max-width:100%;height:auto;aspect-ratio:1}
 .ordem-filtros button {display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:44px}
 @media(max-width:420px){.ordem-testes-grid button strong{font-size:.8rem}.ordem-testes-grid button span{font-size:.65rem}.ordem-testes-grid button svg{width:36px}}
+
+/* Registro operacional: perícias de Ordem. */
+[data-visual="ordem-paranormal"] .ordem-pericias-cabecalho,[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-pericia{display:grid;grid-template-columns:44px minmax(0,1fr) 64px 44px;gap:8px;align-items:center;padding:10px 8px}
+.ordem-pericias-cabecalho{font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:#e5bbc4;text-align:center;border-bottom:1px solid #a72b43;margin-bottom:8px}
+.ordem-pericias-cabecalho span:nth-child(2){text-align:left}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-pericia{border:1px solid #813044;border-radius:8px;background:linear-gradient(110deg,#221017,#130e12);min-height:72px}
+.ordem-pericia-elemento{display:flex;align-items:center;gap:5px;font-size:.65rem;letter-spacing:.08em;color:#cdb6c1;margin-top:3px}
+.ordem-pericia-elemento svg{flex-shrink:0}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-pericia>button{min-height:44px;display:grid;place-items:center}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-treino{border-radius:50%;width:34px;height:34px;justify-self:center}
+@media(max-width:420px){[data-visual="ordem-paranormal"] .ordem-pericias-cabecalho,[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-pericia{grid-template-columns:36px minmax(0,1fr) 48px 40px;gap:5px;padding-inline:5px}.ordem-pericias-lista .ficha-pericia>input[type=number]{width:100%!important}.ordem-pericias-cabecalho{font-size:.57rem}}

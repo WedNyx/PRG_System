@@ -117,6 +117,24 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou ícone, ou pegue prontos no 📦 Arsenal. Itens equipados com rolagem aparecem nas ações rápidas.', ok: true },
     { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ajuda: 'Espaço livre para a história do personagem, aliados, segredos e lembretes.', ok: true },
   ] as const).filter(x => x.ok).map(x => s.nomesSecoes?.[x.id] ? { ...x, nome: s.nomesSecoes[x.id]! } : x)
+  // Vocabulário editorial: subtítulos temáticos sem substituir os nomes definidos pelo autor.
+  const capitulos: Record<string, readonly string[]> = {
+    'dnd5e-srd': ['Crônica do herói', 'Provas e talentos', 'Grimório e técnicas', 'Equipamento de viagem', 'Diário de aventuras'],
+    pf2e: ['Registro do aventureiro', 'Maestria e proficiência', 'Tradições e talentos', 'Arsenal de Golarion', 'Crônicas'],
+    'fate-core': ['Conceito e identidade', 'Escada de competências', 'Façanhas e extras', 'Pertences narrativos', 'História compartilhada'],
+    blades: ['Registro do canalha', 'Ações e resistência', 'Truques e capacidades', 'Carga da operação', 'Diário de golpes'],
+    brp: ['Registro do personagem', 'Competências percentuais', 'Capacidades especiais', 'Pertences', 'Registro de jornada'],
+    'call-of-cthulhu': ['Arquivo do investigador', 'Competências e investigação', 'Conhecimentos e capacidades', 'Evidências e pertences', 'Caderno de ocorrências'],
+    'faroeste-arcano': ['Registro da fronteira', 'Provas de coragem', 'Truques e artes arcanas', 'Alforjes e arsenal', 'Relatos da fronteira'],
+    'ordem-paranormal': ['Dossiê do agente', 'Avaliação operacional', 'Protocolos e rituais', 'Material de missão', 'Arquivo confidencial'],
+    tormenta20: ['Crônica de Arton', 'Aptidões heroicas', 'Poderes e magias', 'Arsenal do herói', 'Memórias de aventura'],
+    'mork-borg': ['O condenado', 'Provas do fim', 'Dons e maldições', 'Despojos', 'Crônica da ruína'],
+    assimilacao: ['Registro do sobrevivente', 'Adaptações e competências', 'Mutações e capacidades', 'Suprimentos', 'Diário de sobrevivência'],
+    opositores: ['Identidade lunar', 'Constelação de atributos', 'Legado e poderes', 'Relíquias e pertences', 'Memórias sob a lua'],
+    nova: ['Perfil N.O.V.A', 'Matriz de competências', 'Protocolos e capacidades', 'Módulos e suprimentos', 'Registro de operações'],
+  }
+  const rubrica = capitulos[identidade]
+  const indiceCapitulo = (id: string) => ['principal','atributos','habilidades','equipamentos','anotacoes'].indexOf(id)
   const [secao, setSecao] = useState<string>('principal')
   const ir = (id: string) => { setSecao(id); window.scrollTo({ top: 0, behavior: 'smooth' }) }
   const menu = useRef<HTMLDivElement>(null)
@@ -150,11 +168,12 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
           {SECOES.map(x => <button key={x.id} type="button" onClick={() => ir(x.id)} aria-current={secao === x.id ? 'page' : undefined}
             className={'shrink-0 rounded-xl px-3 py-2 text-left text-sm transition lg:w-full ' + (secao === x.id ? 'bg-(--a-5b4380) text-white' : 'bg-(--s-201a32) text-(--a-d6c8e8) hover:bg-(--s-2b2140) lg:bg-transparent')}>
             <span className="whitespace-nowrap">{x.icone} {x.nome}</span>
-            <span className="hidden text-xs text-(--a-c4b6d4) lg:block">{x.sub}</span>
+            <span className="hidden text-xs text-(--a-c4b6d4) lg:block">{rubrica?.[indiceCapitulo(x.id)] ?? x.sub}</span>
           </button>)}
         </div>
       </nav>
       <div className="min-w-0 flex-1 space-y-4">
+        {atual && rubrica && <header className="ficha-capitulo"><span aria-hidden="true" className="ficha-capitulo-selo">{String(indiceCapitulo(atual.id) + 1).padStart(2, "0")}</span><div className="min-w-0"><p className="ficha-capitulo-universo">{s.nome}</p><h2>{rubrica[indiceCapitulo(atual.id)]}</h2></div></header>}
         {atual && <p className="flex gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-2 text-xs text-(--a-cfc0df)"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></p>}
 
         {secao === 'principal' && <>
@@ -306,12 +325,12 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
             <div className="grid gap-3 sm:grid-cols-2">{TALENTOS_PF2E.map(([id, nome]) => <label key={id} className="block rounded-xl border border-(--ficha-borda) bg-(--s-171325) p-2 text-sm font-semibold">{nome}
               <textarea rows={4} value={d.listas[id] ?? ''} disabled={somenteLeitura} maxLength={8000} onChange={e => set('listas', { ...d.listas, [id]: e.target.value })} className={input + ' mt-1 font-normal'} /></label>)}</div>
           </section>}
-          <PoderesFicha {...propsInv} />
+          <div className="ficha-acervo ficha-acervo-poderes"><PoderesFicha {...propsInv} /></div>
           {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
           <section className="grid gap-4">{listasDe('habilidades').filter(l => !destaque(l.id) && !(s.id === 'pf2e' && l.id === 'talentos' && !d.listas.talentos?.trim())).map(l => lista(s.id === 'pf2e' && l.id === 'talentos' ? { ...l, nome: 'Outros talentos' } : l))}</section>
         </>}
         {secao === 'equipamentos' && <>
-          <InventarioFicha {...propsInv} passarItem={passarItem} />
+          <div className="ficha-acervo ficha-acervo-inventario"><InventarioFicha {...propsInv} passarItem={passarItem} /></div>
           {listasDe('equipamentos').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
           <section className="grid gap-4">{listasDe('equipamentos').map(l => lista(l))}</section>
         </>}

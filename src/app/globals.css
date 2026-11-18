@@ -424,3 +424,23 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 .dnd-cristais svg {width:22px;height:30px;stroke:#bc9764;stroke-width:1;fill:#21171c;}
 .dnd-cristais svg[data-disponivel="sim"] {fill:#9763c5;stroke:#f0d1ff;filter:drop-shadow(0 0 3px #a879cf88);}
 [data-visual="dnd5e-srd"] [data-espaco-magia="sim"]:has(.dnd-cristais) .ficha-recurso {border-top-left-radius:0;border-top-right-radius:0;}
+
+/* D&D — arsenal: couro, madeira, latão e divisórias. */
+.dnd-arsenal {border:3px double #bc9764!important;background:linear-gradient(120deg,#352129,#24191f 65%)!important;min-width:0;}
+.dnd-bau {display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:1rem;padding:.75rem;margin-bottom:1rem;border:1px solid #805d49;background:repeating-linear-gradient(0deg,#34221e,#34221e 18px,#3d2923 19px,#3d2923 21px);border-radius:8px;color:#f5dfb9;font:700 1.25rem Georgia,serif;text-align:center;}
+.dnd-bau svg {width:96px;height:68px;flex-shrink:0;}
+.dnd-arsenal h2,.dnd-arsenal .ficha-carga-titulo,.dnd-arsenal .ficha-carteira {color:#eac38b;}
+.dnd-arsenal .ficha-carteira {border:1px solid #bc9764;background:#33232a;}
+.dnd-arsenal .ficha-carteira input {background:#21171c;border-color:#805d49;color:#fff1d8;}
+.dnd-arsenal .ficha-categorias button {border-color:#805d49;background:#33232a;border-radius:5px;min-height:34px;color:#ecd5ba;}
+.dnd-arsenal .ficha-categorias button[aria-pressed="true"] {background:#60402f;border-color:#bc9764;color:#fff1d8;}
+.dnd-arsenal .ficha-compartimento {padding:.75rem;border:1px solid #805d49;border-radius:6px;background:#21171c;}
+.dnd-arsenal .ficha-compartimento h3 {color:#eac38b;border-bottom:1px solid #805d49;padding-bottom:.5rem;font-family:Georgia,serif;}
+.dnd-arsenal .ficha-lista-itens {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:.65rem;}
+.dnd-arsenal .ficha-lista-itens > li {margin-block:0;min-width:0;overflow-wrap:anywhere;background:#33232a;border:1px solid #805d49;}
+.dnd-arsenal .ficha-item[data-equipado="sim"] {border-color:#bc9764;box-shadow:inset 3px 0 #bc9764;}
+.dnd-arsenal .ficha-equipado-selo {background:#574527;color:#f5dfb9;border:1px solid #bc9764;white-space:nowrap;}
+.dnd-arsenal .ficha-item button {border-color:#805d49;}
+.dnd-arsenal .ficha-item[data-categoria="arma"] {background:linear-gradient(135deg,#402831,#302129);}
+.dnd-arsenal .ficha-item[data-categoria="consumivel"] {background:linear-gradient(135deg,#29352f,#302129);}
+@media(max-width:480px){.dnd-bau{gap:.4rem;font-size:1.1rem;}.dnd-arsenal .ficha-compartimento{padding:.4rem;}}

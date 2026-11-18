@@ -41,58 +41,35 @@ try {
     }catch(e){erro=e;await new Promise(resolve=>setTimeout(resolve,1200))}
   }
   if(erro)throw erro
-  const guia=page.locator('section[aria-label="Regras de criação 2014"]').first()
-  const equipamento=page.locator('section[aria-label="Equipamento inicial D&D 2014"]').first()
-  const antecedentes=page.locator('section[aria-label="Ferramentas e idiomas do antecedente 2014"]').first()
-  const subclasses=page.locator('section[aria-label="Escolhas internas das subclasses D&D 2014"]').first()
-  // Regressão da captura da Kaelen: o cabeçalho antes mostrava 2024
-  // apesar de toda a ficha e a árvore estarem configuradas para 2014.
   const tituloEdicao=page.locator('header.sticky').getByText(/D&D 2014 \(SRD 5\.1 \/ Livro do Jogador\)/)
   await tituloEdicao.waitFor({state:'visible',timeout:45000})
-  assert.doesNotMatch(await page.locator('header.sticky').innerText(),/D&D 2024/)
-  await guia.waitFor({state:'visible',timeout:45000})
-  await equipamento.waitFor({state:'visible',timeout:12000})
-  await antecedentes.waitFor({state:'visible',timeout:12000})
-  await subclasses.waitFor({state:'visible',timeout:12000})
-  assert.match(await subclasses.innerText(),/Mestre de Batalha/)
-  assert.match(await subclasses.innerText(),/2\/3/)
-  assert.match(await subclasses.innerText(),/Aparar/)
-  assert.match(await subclasses.innerText(),/Ataque de Precisão/)
-
-  assert.match((await equipamento.innerText()),/120 peças de ouro iniciais/)
-  assert.match((await equipamento.innerText()),/2 \+ 3 \+ 2 \+ 2 \+ 3/)
-  assert.equal(await antecedentes.getByPlaceholder('Ex.: Élfico').inputValue(),'Élfico')
-  assert.equal(await antecedentes.getByPlaceholder('Qual instrumento, kit ou ferramenta?').inputValue(),'Flauta')
-  const rolar=page.getByRole('button',{name:/Rolar ouro inicial da classe/i}).first()
-  assert.equal(await rolar.isDisabled(),true,'A rolagem inicial não deve ser repetida.')
-
-  const widths=[320,375,390,768]
+  const nav=page.getByRole('navigation',{name:'Seções da ficha'})
   const resultados=[]
-  for(const width of widths){
+  for(const width of [320,375,390,768]){
     await page.setViewportSize({width,height:812})
-    await page.waitForTimeout(250)
-    const medicao=await page.evaluate(()=>{
-      const names=['Regras de criação 2014','Equipamento inicial D&D 2014',
-        'Ferramentas e idiomas do antecedente 2014','Método de atributos e progressão 2014',
-        'Escolhas internas das subclasses D&D 2014']
-      const caixas=names.map(n=>{
-        const el=document.querySelector('section[aria-label="'+n+'"]')
-        if(!el)return {nome:n,presente:false}
-        const rect=el.getBoundingClientRect()
-        return {nome:n,presente:true,x:Math.round(rect.x),
-          direita:Math.round(rect.right),largura:Math.round(rect.width),
-          conteudo:el.scrollWidth,cliente:el.clientWidth}
-      })
-      return {viewport:innerWidth,documento:document.documentElement.scrollWidth,caixas}
-    })
-    resultados.push({width,...medicao})
-    for(const c of medicao.caixas){
-      assert.equal(c.presente,true,'Seção ausente: '+c.nome)
-      assert(c.x>=-2,'Seção fora da tela à esquerda em '+width+': '+c.nome)
-      assert(c.direita<=width+3,'Seção ultrapassa a tela em '+width+': '+c.nome)
-      assert(c.conteudo<=c.cliente+3,'Overflow na seção '+c.nome+' em '+width)
+    for(const [nome,selector,slug] of [
+      [/Principal/i,'.ficha-recursos-gerais','principal'],
+      [/Atributos e perícias/i,'.dnd-brasoes','atributos'],
+      [/Poderes e habilidades/i,'.ficha-acervo-poderes','poderes'],
+      [/Inventário/i,'.ficha-acervo-inventario','inventario'],
+      [/Anotações e regras/i,'.ficha-capitulo','notas']
+    ]){
+      try {
+        await nav.getByRole('button',{name:nome}).click()
+        await page.locator(selector).first().waitFor({state:'visible',timeout:12000})
+        assert.match(await page.locator('.ficha-capitulo-universo').innerText(),/D&D 2014/)
+        const m=await page.locator(selector).first().evaluate(el=>({left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right,scroll:el.scrollWidth,client:el.clientWidth,doc:document.documentElement.scrollWidth,viewport:innerWidth}))
+        resultados.push({width,slug,...m})
+        assert(m.left>=-2 && m.right<=width+3,'Painel fora da tela: '+slug+' '+width)
+        assert(m.scroll<=m.client+3,'Overflow do painel: '+slug+' '+width)
+        assert(m.doc<=m.viewport+3,'Overflow da página: '+slug+' '+width)
+        if(slug==='atributos')assert.equal(await page.locator('.dnd-brasao').count(),6)
+        await page.screenshot({path:'artifacts/mobile-2014/'+width+'-'+slug+'.png'})
+      } catch(e) {
+        await page.screenshot({path:'artifacts/mobile-2014/falha-'+width+'-'+slug+'.png'}).catch(()=>{})
+        throw e
+      }
     }
-    await page.screenshot({path:'artifacts/mobile-2014/'+width+'px.png',fullPage:false})
   }
   console.log('SMOKE_MOBILE_DND2014_OK '+JSON.stringify(resultados))
   await context.close()

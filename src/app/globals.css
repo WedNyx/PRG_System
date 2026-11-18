@@ -490,3 +490,14 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 .dnd-escola-selo{display:inline-grid;place-items:center;width:1.7rem;height:1.7rem;flex-shrink:0;border:1px solid #bd9864;border-radius:50%;color:#efd198;background:#39242c;font-size:1rem;vertical-align:middle}
 .dnd-magia-pagina{overflow-wrap:anywhere;min-width:0}
 .dnd-indice-grimorio :focus-visible{outline:2px solid #efd198;outline-offset:2px}
+
+/* Tesouraria e filtros do arsenal D&D */
+.dnd-carteira{min-width:0;display:grid;gap:.65rem;padding:.85rem;border:3px double #a88857;border-radius:12px;background:#302128;color:#f0d8b2}
+.dnd-moedas{display:grid;grid-template-columns:repeat(auto-fit,minmax(76px,1fr));gap:.5rem}
+.dnd-moedas label{display:grid;justify-items:center;gap:.3rem;min-width:0;font-size:.72rem}
+.dnd-moeda{display:grid;place-items:center;width:42px;height:42px;border:3px double currentColor;border-radius:50%;font-family:Georgia,serif;font-weight:bold;background:radial-gradient(circle at 35% 25%,#ffffff30,transparent 70%),#35252a;color:#d99b78}
+.dnd-moeda[data-moeda=PP]{color:#ced5df}.dnd-moeda[data-moeda=PE]{color:#a9cead}.dnd-moeda[data-moeda=PO]{color:#f3cd76}.dnd-moeda[data-moeda=PL]{color:#dce9f2}
+.dnd-moedas input{width:100%;min-width:0;min-height:44px;text-align:center;color:#fff1d8;background:#21171e;border:1px solid #947151;border-radius:6px;padding:.25rem;font-variant-numeric:tabular-nums}
+.dnd-filtros-arsenal{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem}.dnd-filtros-arsenal button{min-height:44px;padding:.4rem .65rem;border:1px solid #947151;border-radius:6px;color:#efd9b5;background:#281b22;font-size:.75rem}.dnd-filtros-arsenal button[aria-pressed=true]{background:#765239;color:#fff1d8;border-color:#efd198}
+.dnd-arsenal .ficha-item{min-width:0;overflow-wrap:anywhere}.dnd-arsenal .ficha-compartimento>h3{border-bottom:1px solid #947151;padding-bottom:.55rem;color:#eac38b;letter-spacing:.12em}
+.dnd-carteira :focus-visible,.dnd-filtros-arsenal :focus-visible{outline:2px solid #efd198;outline-offset:2px}

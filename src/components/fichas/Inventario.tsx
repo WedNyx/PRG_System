@@ -122,7 +122,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
           const modLivre = referenciaDnd ? (c.mods[atributoLivre] ?? 0) : 0
           const danoNormalLivre = s.id === 'dnd5e-srd' && it.categoria === 'arma' && !armaDnd && it.dano ? expressaoDanoLivreDnd(it.dano, false, modLivre) : null
           const danoCriticoLivre = s.id === 'dnd5e-srd' && it.categoria === 'arma' && !armaDnd && it.dano ? expressaoDanoLivreDnd(it.dano, true, modLivre) : null
-          return <li key={it.id} className={'rounded-xl border p-3 ' + (eq ? 'border-(--a-8b6cba) bg-(--s-2b2143)' : 'border-transparent bg-(--s-171325)') + (n <= 0 ? ' opacity-60' : '')}>
+          return <li key={it.id} data-equipado={eq ? 'sim' : 'nao'} className={'ficha-item rounded-xl border p-3 ' + (eq ? 'border-(--a-8b6cba) bg-(--s-2b2143)' : 'border-transparent bg-(--s-171325)') + (n <= 0 ? ' opacity-60' : '')}>
             <div className="flex items-center gap-3">
               <ArteItem item={it} tamanho={46} />
               <span className="min-w-0 flex-1">
@@ -232,21 +232,21 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
     </div>}
     {Object.keys(c.bonus).length > 0 && <p className="mt-3 rounded-lg bg-[#1f3a2c] p-2 text-xs text-[#a9f0c8]">Itens equipados somando: {Object.entries(c.bonus).map(([a, v]) => `${nomeAlvo[a] ?? a} ${v >= 0 ? '+' : ''}${v}`).join(' · ')}</p>}
     {!itensVisiveis.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">{itens.length ? 'Nenhum item corresponde à busca.' : 'Nenhum item ainda.'}{!itens.length && !somenteLeitura && ' Toque em “Novo item” ou pegue um pronto no “Arsenal pronto”.'}</p>}
-    {itensVisiveis.length > 0 && <nav aria-label="Tipos de item" className="mt-4 flex gap-1.5 overflow-x-auto pb-1">
+    {itensVisiveis.length > 0 && <nav aria-label="Tipos de item" className="ficha-categorias mt-4 flex gap-1.5 overflow-x-auto pb-1">
       {abasItens.map(a => <button key={a.id} type="button" onClick={() => setAba(a.id)} aria-pressed={abaAtual === a.id}
         className={'shrink-0 rounded-full border px-3 py-1 text-xs ' + (abaAtual === a.id ? (a.id === 'magico' ? 'border-[#f0c46a] bg-(--s-3a2c58) text-amber-100' : 'border-(--a-b99bff) bg-(--s-3a2c58) text-white') : 'border-(--a-3d3152) text-(--a-cfc0df)')}>{a.nome} <span className="opacity-70">({a.n})</span></button>)}
     </nav>}
     {abaAtual === 'todos' && magicos.length > 0 && <div className="mt-3 rounded-2xl border border-[#f0c46a]/50 bg-gradient-to-br from-(--s-2e2147) to-(--s-1a1428) p-3 shadow-[0_0_18px_#b99bff33]">
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-200">{nomeMagico}</h3>
-      <ul className="space-y-2">{magicos.map(linhaItem)}</ul>
+      <ul className="ficha-lista-itens space-y-2">{magicos.map(linhaItem)}</ul>
     </div>}
     {abaAtual === 'todos' ? CATEGORIAS_ITEM.map(cat => {
       const lista = itensVisiveis.filter(i => i.categoria === cat.id && !i.magico); if (!lista.length) return null
       return <div key={cat.id} className="mt-4">
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{cat.icone} {nomeCategoria(cat.id)}</h3>
-        <ul className="space-y-2">{lista.map(linhaItem)}</ul>
+        <ul className="ficha-lista-itens space-y-2">{lista.map(linhaItem)}</ul>
       </div>
-    }) : <ul className="mt-3 space-y-2">{itensVisiveis.filter(i => abaAtual === 'magico' ? i.magico : i.categoria === abaAtual).map(linhaItem)}</ul>}
+    }) : <ul className="ficha-lista-itens mt-3 space-y-2">{itensVisiveis.filter(i => abaAtual === 'magico' ? i.magico : i.categoria === abaAtual).map(linhaItem)}</ul>}
     {editando && <EditorItem s={s} edicaoDnd={edicaoDnd} inicial={editando} salvar={salvarItem} fechar={() => setEditando(null)} />}
     {arsenalAberto && <ArsenalPronto fechar={() => setArsenalAberto(false)} adicionar={x => {
       if (itens.length >= 300) { toast.error('O inventário já chegou ao limite de 300 itens.'); return }
@@ -291,11 +291,11 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
     </div>
     {s.id === 'dnd5e-srd' && <p className="mt-2 text-xs text-(--a-c4b6d4)">Habilidades de raça/espécie, classe e antecedente são geradas nos hexágonos oficiais da Árvore. Adicione aqui apenas poderes aprendidos ou concedidos além daqueles naturais.</p>}
     {!poderes.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">Nenhum poder ainda.{!somenteLeitura && ' Toque em “Novo poder”.'}</p>}
-    <ul className="mt-3 space-y-2">{poderes.map(p => {
+    <ul className="ficha-lista-poderes mt-3 space-y-2">{poderes.map(p => {
       const tipo = TIPOS_PODER.find(t => t.id === p.tipo)!, gastos = uso.poderes[p.id] ?? 0
       const atual = p.recurso ? d.recursos[p.recurso]?.atual ?? 0 : undefined
       const ok = podeUsar(p, uso, atual).ok
-      return <li key={p.id} className="rounded-xl bg-(--s-171325) p-3">
+      return <li key={p.id} className="ficha-poder rounded-xl bg-(--s-171325) p-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="min-w-0 flex-1 font-semibold">{tipo.icone} {p.nome}</span>
           <span className="rounded bg-(--s-2b2140) px-1.5 py-0.5 text-[10px] text-(--a-d6c8e8)">{tipo.nome}</span>

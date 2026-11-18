@@ -292,3 +292,29 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 [data-visual="nova"] .ficha-capitulo { border-radius:4px 24px; background:repeating-linear-gradient(90deg,#292033 0 32px,#34283e 32px 33px); }
 [data-visual="nova"] .ficha-capitulo-selo { border-radius:4px 15px; }
 @media (max-width:420px) { .ficha-capitulo { padding:.75rem; gap:.65rem; } .ficha-capitulo-selo { flex-basis:2.3rem; height:2.3rem; } }
+
+/* Acervos: composição dos itens e poderes, apenas dentro de fichas temáticas. */
+[data-visual] .ficha-acervo > section { border-color:var(--ficha-borda); background-color:var(--ficha-cartao); }
+[data-visual] .ficha-acervo h2 { color:var(--ficha-acento); font-family:var(--ficha-fonte); }
+[data-visual] :is(.ficha-item,.ficha-poder) { min-width:0; overflow-wrap:anywhere; border:1px solid var(--ficha-borda); }
+[data-visual] .ficha-item[data-equipado="sim"] { border-inline-start:4px solid var(--ficha-acento); }
+[data-visual] .ficha-categorias button { border-radius:6px; }
+@media (min-width:768px) {
+  :is([data-visual="dnd5e-srd"],[data-visual="pf2e"],[data-visual="tormenta20"],[data-visual="nova"],[data-visual="assimilacao"],[data-visual="opositores"]) :is(.ficha-lista-itens,.ficha-lista-poderes) { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); gap:.75rem; align-items:start; }
+  :is([data-visual="dnd5e-srd"],[data-visual="pf2e"],[data-visual="tormenta20"],[data-visual="nova"],[data-visual="assimilacao"],[data-visual="opositores"]) :is(.ficha-lista-itens,.ficha-lista-poderes)>li { margin-block:0; }
+}
+[data-visual="dnd5e-srd"] .ficha-item { border-radius:8px 8px 18px 18px; border-top:3px double #ba905e; background-color:#302127; }
+[data-visual="dnd5e-srd"] .ficha-poder { border-radius:3px 12px 12px 3px; border-left:6px double #ba905e; background-image:linear-gradient(90deg,#b58c4914,transparent 24%); }
+[data-visual="pf2e"] :is(.ficha-item,.ficha-poder) { border-radius:4px 20px; background-image:linear-gradient(135deg,#33588a40,transparent 55%); }
+[data-visual="fate-core"] .ficha-poder { border-radius:8px; border-top:4px solid var(--ficha-acento); background:#2b2140; }
+[data-visual="fate-core"] .ficha-item { border-radius:5px; border-left:4px solid var(--ficha-borda); }
+[data-visual="blades"] :is(.ficha-item,.ficha-poder) { border-radius:2px; border-block:3px double var(--ficha-borda); background:#232630; }
+[data-visual="brp"] :is(.ficha-item,.ficha-poder) { border-radius:4px; background:#20332b; }
+[data-visual="call-of-cthulhu"] :is(.ficha-item,.ficha-poder) { border-radius:2px; border-left:5px double var(--ficha-borda); background:#26392e; font-family:ui-monospace,monospace; }
+[data-visual="faroeste-arcano"] :is(.ficha-item,.ficha-poder) { border-radius:6px; border-style:dashed; background:#39291e; }
+[data-visual="ordem-paranormal"] :is(.ficha-item,.ficha-poder) { border-radius:0; border-left:4px solid var(--ficha-borda); background:#301e26; }
+[data-visual="tormenta20"] :is(.ficha-item,.ficha-poder) { border-radius:18px 5px; border-top:3px double var(--ficha-borda); background:#24344c; }
+[data-visual="mork-borg"] :is(.ficha-item,.ficha-poder) { border-radius:0; background:#0a0a0a; border:2px solid #ffe600; box-shadow:3px 3px #ffe600; }
+[data-visual="assimilacao"] :is(.ficha-item,.ficha-poder) { border-radius:24px 7px 26px 12px; background:radial-gradient(ellipse at top right,#66315e,#261c31 75%); }
+[data-visual="opositores"] :is(.ficha-item,.ficha-poder) { border-radius:20px 6px; background:radial-gradient(ellipse at top left,#403150,#211a34 75%); border-top:3px double var(--ficha-borda); }
+[data-visual="nova"] :is(.ficha-item,.ficha-poder) { border-radius:4px 20px; background:repeating-linear-gradient(90deg,#292033 0 32px,#34283e 32px 33px); }

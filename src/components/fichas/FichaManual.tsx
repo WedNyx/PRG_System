@@ -175,7 +175,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
       <div className="flex items-center gap-3 overflow-x-auto" tabIndex={0} role="region" aria-label="Vida e recursos (role para o lado)">
         {recursoPrincipal && [recursoPrincipal, ...s.recursos.filter(r => r !== recursoPrincipal && maxDe(r.id))].slice(0, 3).map(r =>
           <MiniBarra key={r.id} nome={/^pv$/.test(r.id) ? 'PV' : r.nome.split(' (')[0]} cor={corDoRecurso(r.id, r.nome)} atual={Number(d.recursos[r.id]?.atual ?? 0) || 0} max={maxDe(r.id)} />)}
-        {defesa && <span className="shrink-0 whitespace-nowrap rounded-lg border border-(--a-62527e) bg-(--s-201a32) px-3 py-1 text-sm" title={defesa.nome}>🛡️ {/^classe de armadura/i.test(defesa.nome) ? 'CA' : defesa.nome.split(' (')[0]} <strong>{m.derivados[defesa.id] ?? '—'}</strong></span>}
+        {defesa && <span className="ficha-defesa-resumo shrink-0 whitespace-nowrap rounded-lg border border-(--a-62527e) bg-(--s-201a32) px-3 py-1 text-sm" title={defesa.nome}>🛡️ {/^classe de armadura/i.test(defesa.nome) ? 'CA' : defesa.nome.split(' (')[0]} <strong>{m.derivados[defesa.id] ?? '—'}</strong></span>}
       </div>
     </div>
     <div className="lg:flex lg:gap-6">
@@ -220,17 +220,18 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
           {(s.derivados.length > 0 || s.recursos.length > 0) && <section className={card + " ficha-recursos-gerais"}>
             <div className="mb-3 flex flex-wrap items-center gap-2"><h2 className="flex-1 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">Valores e recursos</h2>
               {!somenteLeitura && s.recursos.length > 0 && <button type="button" onClick={() => setDescansando(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d4a23a]/70 px-3 py-1.5 text-sm text-amber-100 hover:bg-[#3a2a14]">🌙 Descanso</button>}</div>
-            {s.derivados.length > 0 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              {s.derivados.map(x => <label key={x.id} className="rounded-xl bg-(--s-171325) p-3">
+            {s.derivados.length > 0 && <div className="ficha-valores-grid grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {s.derivados.map(x => <label key={x.id} className="ficha-valor rounded-xl bg-(--s-171325) p-3" data-defesa={x.id === defesa?.id ? "sim" : undefined}>
+                {s.id === "dnd5e-srd" && x.id === defesa?.id && <svg aria-hidden="true" viewBox="0 0 80 92" className="dnd-defesa-escudo"><path d="M3 3H77V51Q77 72 40 89Q3 72 3 51Z" fill="#352129" stroke="#bc9764" strokeWidth="2"/><path d="M9 10H71V51Q71 68 40 81Q9 68 9 51Z" fill="none" stroke="#bc9764" strokeOpacity=".45"/></svg>}
                 <span className="block text-xs text-(--a-c4b6d4)">{x.nome}</span>
                 <input type="number" value={m.derivados[x.id] ?? ''} disabled={somenteLeitura} placeholder="—" aria-label={x.nome}
                   onChange={e => setManual('derivados', x.id, numero(e.target.value))} className="mt-1 w-full bg-transparent text-2xl font-black text-white outline-none disabled:opacity-70" />
               </label>)}
             </div>}
-            {s.recursos.length > 0 && <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            {s.recursos.length > 0 && <div className="ficha-recursos-grid mt-3 grid gap-3 lg:grid-cols-2">
               {s.recursos.filter(r => !RECURSOS_NO_PAINEL[s.id]?.includes(r.id)).map(r => {
                 const atual = Number(d.recursos[r.id]?.atual ?? 0) || 0
-                return <div key={r.id}><BarraRecurso nome={r.nome} cor={corDoRecurso(r.id, r.nome)} atual={atual} max={maxDe(r.id)} maxEditavel somenteLeitura={somenteLeitura} contador={!!r.contador}
+                return <div key={r.id} data-recurso-principal={r === recursoPrincipal ? "sim" : undefined}><BarraRecurso nome={r.nome} cor={corDoRecurso(r.id, r.nome)} atual={atual} max={maxDe(r.id)} maxEditavel somenteLeitura={somenteLeitura} contador={!!r.contador}
                   mudar={v => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual: v } })}
                   mudarMax={v => set('recursos', { ...d.recursos, [r.id]: { ...d.recursos[r.id], atual, max: v } })} />
                   {r.dica && <p className="mt-1 px-1 text-[11px] leading-snug text-(--a-a998bd)">{r.dica}</p>}</div>

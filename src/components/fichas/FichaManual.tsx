@@ -3,7 +3,7 @@ import { tituloSistemaNaFicha, edicaoEfetivaDaFicha } from '@/lib/sistemas/edica
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { Dice5, Info } from 'lucide-react'
+import { Dice5, Info, Heart, Shield, Sparkles, User, BookOpen, Backpack, ScrollText } from 'lucide-react'
 import { classesDaFicha } from '@/lib/sistemas/dnd2024Classes'
 import { classesDaFicha2014 } from '@/lib/sistemas/dnd2014Multiclasse'
 import { calcular } from '@/lib/sistemas/calculo'
@@ -196,19 +196,25 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     <RolagemCentral ref={central} />
     {descansando && <JanelaDescanso s={s} d={d} onChange={onChange} rolarTotal={rolarTotal} fechar={() => setDescansando(false)} />}
     <div className="ficha-resumo sticky top-[57px] z-10 -mx-3 mb-4 border-b border-(--a-373251) bg-(--s-100d1c)/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-4" aria-label="Resumo do personagem">
-      <div className="flex items-center gap-3 overflow-x-auto" tabIndex={0} role="region" aria-label="Vida e recursos (role para o lado)">
+      {identidade === 'dnd5e-srd' ? <div className="dnd-resumo-compacto" aria-label="Recursos principais">
+        {recursoPrincipal && [recursoPrincipal, ...s.recursos.filter(r => r !== recursoPrincipal && maxDe(r.id))].slice(0, 3).map((r,i) => {
+          const Icone = i === 0 ? Heart : /dado/i.test(r.nome) ? Dice5 : Sparkles
+          return <div key={r.id} className="dnd-resumo-celula" title={r.nome}><Icone size={16} aria-hidden="true"/><strong>{Number(d.recursos[r.id]?.atual ?? 0) || 0}/{maxDe(r.id) ?? '—'}</strong><span>{i === 0 ? 'Vida' : /dado/i.test(r.nome) ? 'Dados' : /inspira/i.test(r.nome) ? 'Inspiração' : r.nome}</span></div>
+        })}
+        {defesa && <div className="dnd-resumo-celula" title={defesa.nome}><Shield size={16} aria-hidden="true"/><strong>{m.derivados[defesa.id] ?? '—'}</strong><span>Defesa</span></div>}
+      </div> : <div className="flex items-center gap-3 overflow-x-auto" tabIndex={0} role="region" aria-label="Vida e recursos (role para o lado)">
         {recursoPrincipal && [recursoPrincipal, ...s.recursos.filter(r => r !== recursoPrincipal && maxDe(r.id))].slice(0, 3).map(r =>
           <MiniBarra key={r.id} nome={/^pv$/.test(r.id) ? 'PV' : r.nome.split(' (')[0]} cor={corDoRecurso(r.id, r.nome)} atual={Number(d.recursos[r.id]?.atual ?? 0) || 0} max={maxDe(r.id)} />)}
         {defesa && <span className="ficha-defesa-resumo shrink-0 whitespace-nowrap rounded-lg border border-(--a-62527e) bg-(--s-201a32) px-3 py-1 text-sm" title={defesa.nome}>🛡️ {/^classe de armadura/i.test(defesa.nome) ? 'CA' : defesa.nome.split(' (')[0]} <strong>{m.derivados[defesa.id] ?? '—'}</strong></span>}
-      </div>
+      </div>}
     </div>
     <div className="lg:flex lg:gap-6">
       <nav aria-label="Seções da ficha" className="ficha-menu mb-4 lg:mb-0 lg:w-60 lg:shrink-0">
         <div ref={menu} className="flex gap-2 overflow-x-auto pb-1 lg:sticky lg:top-[120px] lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-(--a-55456e) lg:bg-(--s-201a32) lg:p-3">
           <p className="hidden px-2 pb-1 text-xs font-bold uppercase tracking-widest text-(--a-ed9cd8) lg:block">🌙 Menu da ficha</p>
-          {SECOES.map(x => <button key={x.id} type="button" onClick={() => ir(x.id)} aria-current={secao === x.id ? 'page' : undefined}
+          {SECOES.map(x => <button key={x.id} type="button" onClick={() => ir(x.id)} aria-label={x.nome} aria-current={secao === x.id ? 'page' : undefined}
             className={'shrink-0 rounded-xl px-3 py-2 text-left text-sm transition lg:w-full ' + (secao === x.id ? 'bg-(--a-5b4380) text-white' : 'bg-(--s-201a32) text-(--a-d6c8e8) hover:bg-(--s-2b2140) lg:bg-transparent')}>
-            <span className="whitespace-nowrap">{x.icone} {x.nome}</span>
+            {identidade === 'dnd5e-srd' ? <span className="dnd-menu-label">{(() => { const Icone = [User,Dice5,BookOpen,Backpack,ScrollText][indiceCapitulo(x.id)] ?? Info; return <Icone size={19} aria-hidden="true"/> })()}<span className="dnd-menu-curto">{['Principal','Atributos','Poderes','Itens','Diário'][indiceCapitulo(x.id)] ?? x.nome}</span><span className="dnd-menu-longo">{x.nome}</span></span> : <span className="whitespace-nowrap">{x.icone} {x.nome}</span>}
             <span className="hidden text-xs text-(--a-c4b6d4) lg:block">{rubrica?.[indiceCapitulo(x.id)] ?? x.sub}</span>
           </button>)}
         </div>

@@ -457,3 +457,12 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 .dnd-cristais-interativos svg {width:100%;height:100%;fill:#21171c;stroke:#bc9764;}
 .dnd-cristais-interativos svg[data-disponivel="sim"] {fill:#9763c5;stroke:#f0d1ff;}
 .dnd-cristais-interativos button:focus-visible {outline:2px solid #eac38b;}
+
+/* Brasões: a largura disponível do painel, não apenas a viewport, define as colunas. */
+.dnd-brasoes {grid-template-columns:repeat(auto-fit,minmax(min(100%, 100px),1fr));min-width:0;}
+.dnd-brasao {width:100%;max-width:100%;}
+.dnd-brasao-conteudo {min-width:0;padding-inline:4px;}
+.dnd-brasao-mod,.dnd-brasao-valor {max-width:100%;min-width:0;}
+.dnd-brasao-mod input {flex:0 1 2.2ch;max-width:100%;padding-inline:0;}
+.dnd-brasao-valor input {max-width:100%;padding-inline:0;}
+@media(max-width:420px){.dnd-brasao-mod{font-size:1.5rem;}}

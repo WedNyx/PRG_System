@@ -535,3 +535,18 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 .hexatombe-no input{font-size:clamp(18px,7cqw,39px);height:8cqw;line-height:1;flex:none}
 .hexatombe-nome{font-size:2.15cqw;line-height:1.2;white-space:nowrap;letter-spacing:0}
 .hexatombe-no label{font-size:4.05cqw;line-height:1.05;letter-spacing:.015em}
+
+/* Hexatombe: testes e registros operacionais */
+.ordem-testes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:.5rem}
+.ordem-testes-grid button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;min-height:88px;padding:.5rem .125rem;border:1px solid #87283b;border-radius:3px;background:#140c10;color:#fff0f3}
+.ordem-testes-grid button svg{color:#ff3455}
+.ordem-testes-grid button strong{font-size:1rem;letter-spacing:.1em}
+.ordem-testes-grid button span{font-size:.72rem;color:#edb9c3}
+.ordem-testes-grid button:hover{background:#39121d;border-color:#ff3455}
+.ordem-pericias-lista{display:grid;gap:.4rem;grid-template-columns:minmax(0,1fr)}
+.ordem-pericias .ficha-pericia{background:#140d11;border:1px solid #55202c;border-left:3px solid #b82740;border-radius:3px;padding:.55rem .45rem;min-width:0;gap:.4rem}
+.ordem-pericias .ficha-pericia input[type=number]{background:#080708;border-color:#73303e;color:#fff0f3;width:3rem!important}
+.ordem-pericias .ficha-pericia button[aria-label^="Rolar"]{background:#681428;border:1px solid #a32a40;color:#fff;border-radius:3px;min-width:36px;min-height:36px}
+.ordem-pericias .ficha-treino{border-color:#a32a40;color:#ffb1be}
+.ordem-pericias h3{color:#ff8096;border-bottom:1px solid #652332;padding-bottom:.4rem}
+@media(min-width:1100px){.ordem-pericias-lista{grid-template-columns:repeat(2,minmax(0,1fr))}}

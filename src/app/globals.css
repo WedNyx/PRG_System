@@ -567,3 +567,10 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 .ordem-pericias .ficha-treino{border-color:#a32a40;color:#ffb1be}
 .ordem-pericias h3{color:#ff8096;border-bottom:1px solid #652332;padding-bottom:.4rem}
 @media(min-width:1100px){.ordem-pericias-lista{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Ordem: ícones elementais compartilhados, sem alterar a rolagem. */
+.ordem-testes-grid {grid-template-columns:repeat(5,minmax(0,1fr));gap:.4rem}
+.ordem-testes-grid button {min-width:0;padding:.5rem .15rem}
+.ordem-testes-grid button svg {max-width:100%;height:auto;aspect-ratio:1}
+.ordem-filtros button {display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:44px}
+@media(max-width:420px){.ordem-testes-grid button strong{font-size:.8rem}.ordem-testes-grid button span{font-size:.65rem}.ordem-testes-grid button svg{width:36px}}

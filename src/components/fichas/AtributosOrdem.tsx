@@ -1,9 +1,9 @@
 'use client'
 
 import type { AtributoDef } from '@/lib/sistemas/tipos'
-import { limiteSomaAtributosOrdem, POSICOES_HEXAGONOS_ORDEM, somaAtributosOrdem } from '@/lib/sistemas/ordemCriacao'
+import { limiteSomaAtributosOrdem, somaAtributosOrdem } from '@/lib/sistemas/ordemCriacao'
 
-const HEXAGONO = 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)'
+const POSICOES: Record<string, [number, number]> = { AGI: [50, 21], FOR: [24, 40], INT: [76, 40], PRE: [31, 73], VIG: [69, 73] }
 
 /**
  * Cinco hexágonos em uma disposição circular, exclusiva de Ordem Paranormal.
@@ -22,24 +22,34 @@ export default function AtributosOrdem({ atributos, valores, nex, somenteLeitura
   const limite = limiteSomaAtributosOrdem(nex)
 
   return <div className="space-y-3">
-    <div role="group" aria-label="Cinco atributos de Ordem Paranormal" className="mx-auto grid aspect-square w-full max-w-[380px] grid-cols-3 grid-rows-3 place-items-center gap-1 sm:gap-2">
-      {atributos.map(a => <div key={a.id} className={`relative aspect-square w-full min-w-0 max-w-[120px] ${POSICOES_HEXAGONOS_ORDEM[a.id] ?? ''}`}>
-        <div className="absolute inset-0 bg-gradient-to-b from-violet-300 via-fuchsia-500 to-violet-800" style={{ clipPath: HEXAGONO }} aria-hidden="true" />
-        <div className="absolute inset-[2px] flex flex-col items-center justify-center bg-[#21152f] px-2 text-white" style={{ clipPath: HEXAGONO }}>
-          <label htmlFor={`ordem-atributo-${a.id}`} className="text-[10px] font-bold tracking-widest text-violet-200 sm:text-xs">{a.id}</label>
+    <div role="group" aria-label="Cinco atributos de Ordem Paranormal" className="hexatombe-atributos">
+      <svg viewBox="0 0 500 460" className="hexatombe-sigilo" aria-hidden="true">
+        <g fill="#f20b30" stroke="#f20b30" strokeLinejoin="round">
+          <circle cx="250" cy="220" r="111" fill="none" strokeWidth="13"/>
+          <circle cx="250" cy="220" r="94" fill="none" strokeWidth="8"/>
+          <path d="M250 52L354 336L85 166L415 166L146 336Z" fill="none" strokeWidth="12"/>
+          {Object.values(POSICOES).map(([x,y],i) => <g key={i} transform={`translate(${x*5} ${y*4.6})`}>
+            <path d="M-45 -42 Q-82 -67 -53 -100 Q-62 -65 -27 -61 L-9 -77 Q-3 -58 10 -72 Q18 -55 28 -67 Q35 -47 43 -64 Q70 -78 57 -103 Q86 -69 47 -39Z" stroke="none"/>
+            <path d="M0 -58L60 -29V29L0 58L-60 29V-29Z" fill="#080708" strokeWidth="12"/>
+          </g>)}
+          <path d="M250 289 L250 433 L238 309Z M180 243L42 294L164 262Z M320 243L458 294L336 262Z M183 166L115 55L204 154Z M317 166L385 55L296 154Z" stroke="none"/>
+          <circle cx="250" cy="220" r="66" stroke="none"/>
+        </g>
+        <text x="250" y="225" textAnchor="middle" fill="#080708" fontSize="25" fontWeight="900" fontFamily="Georgia, serif" textLength="121" lengthAdjust="spacingAndGlyphs">ATRIBUTOS</text>
+        <text x="250" y="245" textAnchor="middle" fill="#080708" fontSize="11" fontWeight="bold">NEX {nex}%</text>
+      </svg>
+      {atributos.map((a, i) => {
+        const [x,y] = POSICOES[a.id] ?? Object.values(POSICOES)[i % 5]
+        return <div key={a.id} className="hexatombe-no" style={{ left: x+'%', top: y+'%' }}>
           <input id={`ordem-atributo-${a.id}`} type="number" inputMode="numeric"
             aria-label={`${a.nome} (${a.id})`} min={a.min} max={a.max} step={1}
             value={valores[a.id] ?? a.padrao} disabled={somenteLeitura}
             onChange={e => onChange(a.id, Math.max(a.min, Math.min(a.max, Math.trunc(Number(e.target.value) || 0))))}
-            className="w-full max-w-14 bg-transparent text-center text-xl font-black text-white outline-offset-2 outline-violet-300 sm:text-2xl disabled:opacity-70"
           />
-          <span className="max-w-full truncate text-[9px] text-violet-200 sm:text-[10px]" title={a.nome}>{a.nome}</span>
+          <span className="hexatombe-nome">{a.nome}</span>
+          <label htmlFor={`ordem-atributo-${a.id}`}>{a.id}</label>
         </div>
-      </div>)}
-      <div className="col-start-2 row-start-2 flex h-full w-full flex-col items-center justify-center text-center" aria-hidden="true">
-        <span className="text-[9px] font-bold uppercase tracking-widest text-violet-300 sm:text-xs">Atributos</span>
-        <span className="text-xs text-violet-100">NEX {nex}%</span>
-      </div>
+      })}
     </div>
     {!semLimite && <p role="status" aria-live="polite" className={`text-center text-xs ${soma > limite ? 'text-amber-300' : 'text-violet-200'}`}>
       Total de atributos: <strong>{soma}</strong> / {limite} (limite básico para este NEX).

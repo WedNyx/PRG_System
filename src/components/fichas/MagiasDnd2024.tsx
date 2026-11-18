@@ -76,6 +76,8 @@ export default function MagiasDnd2024({ d, c, onChange, somenteLeitura = false, 
       </div>
       {!somenteLeitura && <button type="button" onClick={() => setAbrir(true)} className={btn + ' border-(--a-8b6cba) bg-(--s-2b2140) font-semibold text-white'}><Plus size={16} aria-hidden /> Adicionar magias</button>}
     </div>
+
+    <div className="dnd-espacos-grimorio">{[...Array.from({length:9},(_,i)=>'espacos_'+(i+1)), 'pacto'].map(id=>{ const max=Math.max(0,Number(c.recursosMax[id]??0)||0), atual=Math.max(0,Number(d.recursos[id]?.atual??0)||0); if(!max)return null; return <div key={id} className="dnd-espaco-grimorio"><div className="flex justify-between gap-2 text-xs"><strong>{id==='pacto'?'Magia de Pacto':id.replace('espacos_','')+'º nível'}</strong><span>{atual} / {max}</span></div><div className="dnd-cristais" aria-hidden="true">{Array.from({length:Math.min(20,Math.floor(max))},(_,i)=><svg key={i} viewBox="0 0 22 30" data-disponivel={i<atual?'sim':'nao'}><path d="M11 1L21 11L11 29L1 11Z"/><path d="M11 1L7 11L11 29L15 11Z M1 11H21" fill="none"/></svg>)}</div></div>})}</div>
     {l.atributo && ls.map(x => { const n = contarMagias(sel, x), atq = prof + modDe(x); return <div key={x.classeId} className="flex flex-wrap items-center gap-2">
       {ls.length > 1 && <span className="text-xs font-semibold text-(--a-e4d3ff)">{x.classeNome}</span>}
       <span className={chip}>CD <strong className="text-white">{8 + atq}</strong></span>

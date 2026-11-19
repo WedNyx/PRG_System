@@ -585,3 +585,18 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 [data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-pericia>button{min-height:44px;display:grid;place-items:center}
 [data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-treino{border-radius:50%;width:34px;height:34px;justify-self:center}
 @media(max-width:420px){[data-visual="ordem-paranormal"] .ordem-pericias-cabecalho,[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-pericia{grid-template-columns:36px minmax(0,1fr) 48px 40px;gap:5px;padding-inline:5px}.ordem-pericias-lista .ficha-pericia>input[type=number]{width:100%!important}.ordem-pericias-cabecalho{font-size:.57rem}}
+
+/* Selos ritualísticos das perícias: marca de fundo sem ocupar coluna. */
+[data-visual="ordem-paranormal"] .ordem-pericias-lista{grid-template-columns:minmax(0,1fr)}
+.ordem-pericias-lista .ficha-pericia{position:relative;isolation:isolate}
+.ordem-pericias-lista .ficha-pericia>:not(.ordem-selo-marca){position:relative;z-index:1}
+.ordem-selo-marca{position:absolute;left:52%;top:50%;transform:translate(-50%,-50%);height:90%;width:auto;max-width:25%;color:#f93657;opacity:.13;pointer-events:none;transition:opacity .25s ease}
+.ordem-selo-marca[data-grau="1"]{opacity:.20}.ordem-selo-marca[data-grau="2"]{opacity:.28}.ordem-selo-marca[data-grau="3"]{opacity:.36}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-treino{border:0;background:transparent;width:100%;height:44px;padding:2px;color:#89747c;transition:color .25s ease,filter .25s ease}
+.ordem-selo-treino{width:100%;height:100%;max-width:40px}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-treino[data-grau="1"]{color:#ff3658}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-treino[data-grau="2"]{color:#ff3658;filter:drop-shadow(0 0 3px #e62949)}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-treino[data-grau="3"]{color:#ff7187;filter:drop-shadow(0 0 6px #ff294e)}
+.ordem-pericias-lista .ficha-treino:focus-visible{outline:2px solid #ff7187;outline-offset:2px}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-pericia>input[type=number]{width:100%!important;min-width:0}
+@media(prefers-reduced-motion:reduce){.ordem-selo-marca,.ordem-pericias-lista .ficha-treino{transition:none}}

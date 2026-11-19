@@ -379,7 +379,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
         </>}
 
         {secao === 'habilidades' && <>
-          {s.id === 'ordem-paranormal' && listasDe('habilidades').filter(l => destaque(l.id)).map(l => lista(l, 8))}
+          
           {s.id === 'pf2e' && <section className={card}>
             <h2 className="mb-1 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">Talentos por categoria</h2>
             <p className="mb-3 text-xs text-(--a-a998bd)">Um talento por linha, com o nível em que foi escolhido (ex.: “1 · Golpe Duplo”).</p>
@@ -387,8 +387,8 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               <textarea rows={4} value={d.listas[id] ?? ''} disabled={somenteLeitura} maxLength={8000} onChange={e => set('listas', { ...d.listas, [id]: e.target.value })} className={input + ' mt-1 font-normal'} /></label>)}</div>
           </section>}
           <div className="ficha-acervo ficha-acervo-poderes"><PoderesFicha {...propsInv} /></div>
-          {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
-          <section className="grid gap-4">{listasDe('habilidades').filter(l => !destaque(l.id) && !(s.id === 'pf2e' && l.id === 'talentos' && !d.listas.talentos?.trim())).map(l => lista(s.id === 'pf2e' && l.id === 'talentos' ? { ...l, nome: 'Outros talentos' } : l))}</section>
+          {s.id !== 'ordem-paranormal' && listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
+          <section className="grid gap-4">{s.id === 'ordem-paranormal' ? <details className="ordem-consulta"><summary>Anotações livres do agente</summary>{listasDe('habilidades').map(l => lista(l, 4))}</details> : listasDe('habilidades').filter(l => !destaque(l.id) && !(s.id === 'pf2e' && l.id === 'talentos' && !d.listas.talentos?.trim())).map(l => lista(s.id === 'pf2e' && l.id === 'talentos' ? { ...l, nome: 'Outros talentos' } : l))}</section>
         </>}
         {secao === 'equipamentos' && <>
           <div className="ficha-acervo ficha-acervo-inventario"><InventarioFicha {...propsInv} passarItem={passarItem} /></div>

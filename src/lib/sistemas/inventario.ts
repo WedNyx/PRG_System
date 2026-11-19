@@ -19,7 +19,8 @@ export type TipoPoder = 'magia' | 'habilidade' | 'talento' | 'tecnica' | 'outro'
 export type Bonus = { alvo: string; valor: number }
 /** `alcance` em metros (ataques na mesa); sem alcance = corpo a corpo (1,5 m). */
 /** `arte`: desenho antigo da Forja (só lido para achar o ícone); `raridade` dá a cor da moldura. */
-export type Item = { id: string; nome: string; categoria: CategoriaItem; peso: number; dano?: string; alcance?: number; bonus: Bonus[]; descricao?: string; arte?: ArteItem; raridade?: Raridade
+export type DadosItemOrdem = { grupo?: string; categoria?: string; critico?: string; tipoDano?: string; modificacoes?: string; maldicoes?: string }
+export type Item = { ordem?: DadosItemOrdem; id: string; nome: string; categoria: CategoriaItem; peso: number; dano?: string; alcance?: number; bonus: Bonus[]; descricao?: string; arte?: ArteItem; raridade?: Raridade
   /** Foto enviada (v0.32.5); sem foto, usa o ícone do Game-Icons. */
   imagem?: string
   /** Item mágico: aparece na ala ✨ do inventário. */
@@ -85,8 +86,10 @@ export function normalizarItem(v: unknown): Item | null {
   const armaDnd = categoria === 'arma' ? armaDndPorIdEdicao(o.armaDnd) : null
   const armaRefDnd = categoria === 'arma' ? referenciaArmaDndPorId(o.armaRefDnd) : null
   const rolagens = lerRolagensItem(o.rolagens)
+  const dadosOrdem = o.ordem && typeof o.ordem === 'object' ? o.ordem as Record<string, unknown> : null
+  const ordem: DadosItemOrdem | undefined = dadosOrdem ? { grupo: txt(dadosOrdem.grupo,40), categoria: txt(dadosOrdem.categoria,10), critico: txt(dadosOrdem.critico,20), tipoDano: txt(dadosOrdem.tipoDano,60), modificacoes: txt(dadosOrdem.modificacoes,1000), maldicoes: txt(dadosOrdem.maldicoes,1000) } : undefined
   const bonusArma = armaDnd && typeof o.bonusArma === 'number' && Number.isInteger(o.bonusArma) && o.bonusArma >= 1 && o.bonusArma <= 3 ? o.bonusArma : 0
-  return { id: id(o.id), nome, categoria, peso: Math.round(num(o.peso, 0, 100000) * 1000) / 1000, ...(dano && EXPR.test(dano) ? { dano } : {}), ...(Number(o.alcance) > 0 ? { alcance: num(o.alcance, 0, 1000) } : {}), bonus, ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}),
+  return { ...(ordem ? {ordem} : {}), id: id(o.id), nome, categoria, peso: Math.round(num(o.peso, 0, 100000) * 1000) / 1000, ...(dano && EXPR.test(dano) ? { dano } : {}), ...(Number(o.alcance) > 0 ? { alcance: num(o.alcance, 0, 1000) } : {}), bonus, ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}),
     ...(iconeBiblioteca ? { iconeBiblioteca } : {}), ...(raridade ? { raridade } : {}), ...(imagemDaPlataforma(o.imagem) ? { imagem: o.imagem } : {}), ...(o.magico === true || bonusArma > 0 ? { magico: true } : {}),
     ...(armaDnd ? { armaDnd: armaDnd.id } : {}), ...(armaRefDnd ? { armaRefDnd: armaRefDnd.id } : {}), ...(bonusArma > 0 ? { bonusArma } : {}), ...(rolagens.length ? { rolagens } : {}) }
 }
@@ -171,7 +174,7 @@ export function podeUsar(p: Poder, uso: Uso, recursoAtual?: number): { ok: boole
 
 /** Mesmo item “de verdade” (para empilhar na hora de receber). */
 const mesmoItem = (a: Item, b: Item) => a.nome.trim().toLowerCase() === b.nome.trim().toLowerCase() && a.categoria === b.categoria
-  && (a.dano ?? '') === (b.dano ?? '') && (a.raridade ?? '') === (b.raridade ?? '') && (a.armaDnd ?? '') === (b.armaDnd ?? '') && (a.armaRefDnd ?? '') === (b.armaRefDnd ?? '') && (a.iconeBiblioteca ?? '') === (b.iconeBiblioteca ?? '') && (a.bonusArma ?? 0) === (b.bonusArma ?? 0) && JSON.stringify(a.bonus) === JSON.stringify(b.bonus)
+  && (a.dano ?? '') === (b.dano ?? '') && (a.raridade ?? '') === (b.raridade ?? '') && (a.armaDnd ?? '') === (b.armaDnd ?? '') && (a.armaRefDnd ?? '') === (b.armaRefDnd ?? '') && (a.iconeBiblioteca ?? '') === (b.iconeBiblioteca ?? '') && (a.bonusArma ?? 0) === (b.bonusArma ?? 0) && JSON.stringify(a.bonus) === JSON.stringify(b.bonus) && JSON.stringify(a.ordem ?? null) === JSON.stringify(b.ordem ?? null)
 
 export type ComItens = { itens?: unknown[]; uso?: unknown }
 /**

@@ -600,3 +600,10 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 .ordem-pericias-lista .ficha-treino:focus-visible{outline:2px solid #ff7187;outline-offset:2px}
 [data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-pericia>input[type=number]{width:100%!important;min-width:0}
 @media(prefers-reduced-motion:reduce){.ordem-selo-marca,.ordem-pericias-lista .ficha-treino{transition:none}}
+
+/* Dossiê e grimório de Ordem Paranormal */
+.ordem-circulo-filtro{display:flex;align-items:center;gap:12px;margin-block:12px;font-size:.8rem;color:#e5bbc4}.ordem-circulo-filtro select{flex:1;min-width:0}
+.ordem-grupo-poderes .ordem-ritual-card{--ritual-cor:#ff3658;border:1px solid var(--ritual-cor);border-left:4px solid var(--ritual-cor);background:linear-gradient(135deg,color-mix(in srgb,var(--ritual-cor) 12%,#100d13),#100d13);overflow-wrap:anywhere}
+.ordem-ritual-card[data-elemento="Sangue"]{--ritual-cor:#ff304d}.ordem-ritual-card[data-elemento="Morte"]{--ritual-cor:#ece8eb}.ordem-ritual-card[data-elemento="Energia"]{--ritual-cor:#df83ff}.ordem-ritual-card[data-elemento="Conhecimento"]{--ritual-cor:#ffdc78}.ordem-ritual-card[data-elemento="Medo"]{--ritual-cor:#fff}
+.ordem-grupo-poderes .ordem-ritual-card>div:first-child{color:var(--ritual-cor)}.ordem-grupo-poderes .ordem-ritual-card>div:first-child>svg{flex-shrink:0}.ordem-grupo-poderes .ordem-poder-card{border:1px solid #813044;border-left:4px solid #b82740;background:linear-gradient(110deg,#251119,#110d12)}
+.ordem-ritual-card button,.ordem-poder-card button{min-height:44px}.ordem-ritual-card .ordem-consulta,.ordem-poder-card .ordem-consulta{margin-top:8px;padding:8px;border-top:1px solid #69303e}

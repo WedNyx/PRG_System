@@ -301,7 +301,7 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
   const grupos = ordem ? abaOrdem === 'poderes'
     ? FONTES_ORDEM.map(f => ({ titulo: f === 'Outro' ? 'Outros poderes' : 'Poderes de ' + f.toLowerCase(), itens: poderes.filter(p => p.tipo !== 'magia' && (p.fonteOrdem ?? 'Outro') === f) }))
     : [...ELEMENTOS_ORDEM, 'Sem elemento'].filter(e => elemento === 'Todos' || elemento === e).flatMap(e =>
-        ['1','2','3','4','Sem círculo'].filter(n => circulo === 'Todos' || circulo === n).map(n => ({
+        ['1','2','3','4','Sem círculo'].filter(n => (circulo === 'Todos' || circulo === n) && ((e !== 'Sem elemento' && n !== 'Sem círculo') || rituais.some(p => (p.elementoOrdem || 'Sem elemento') === e && (p.circuloOrdem ? String(p.circuloOrdem) : 'Sem círculo') === n))).map(n => ({
           titulo: e + ' · ' + (n === 'Sem círculo' ? n : n + 'º círculo'),
           itens: rituais.filter(p => (p.elementoOrdem || 'Sem elemento') === e && (p.circuloOrdem ? String(p.circuloOrdem) : 'Sem círculo') === n).sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
         })))
@@ -336,15 +336,16 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
     </div>
     {s.id === 'dnd5e-srd' && <p className="mt-2 text-xs text-(--a-c4b6d4)">Habilidades de raça/espécie, classe e antecedente são geradas nos hexágonos oficiais da Árvore. Adicione aqui apenas poderes aprendidos ou concedidos além daqueles naturais.</p>}
     {!poderes.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">Nenhum poder ainda.{!somenteLeitura && ' Toque em “Novo poder”.'}</p>}
-    {ordem && <div className="ordem-acervo-abas" role="group" aria-label="Seção do acervo">
-      <button type="button" aria-pressed={abaOrdem === 'poderes'} onClick={() => setAbaOrdem('poderes')}>Poderes ({poderes.length - rituais.length})</button>
-      <button type="button" aria-pressed={abaOrdem === 'rituais'} onClick={() => setAbaOrdem('rituais')}>Rituais ({rituais.length})</button>
+    {ordem && <div className="ordem-acervo-abas mt-3 grid grid-cols-2 gap-2" role="group" aria-label="Seção do acervo">
+      <button type="button" className={botao + (abaOrdem === "poderes" ? " !border-red-500 !bg-red-950" : "")} aria-pressed={abaOrdem === 'poderes'} onClick={() => setAbaOrdem('poderes')}>Poderes ({poderes.length - rituais.length})</button>
+      <button type="button" className={botao + (abaOrdem === "rituais" ? " !border-red-500 !bg-red-950" : "")} aria-pressed={abaOrdem === 'rituais'} onClick={() => setAbaOrdem('rituais')}>Rituais ({rituais.length})</button>
     </div>}
       {ordem && abaOrdem === "rituais" && <div className="ordem-filtros" role="group" aria-label="Filtrar rituais por elemento">{["Todos", ...ELEMENTOS_ORDEM].map(e => <button key={e} type="button" data-elemento={e} aria-pressed={elemento === e} onClick={() => setElemento(e)}>{e !== "Todos" && <SimboloElementoOrdem elemento={e} tamanho={28}/>}<span>{e}</span></button>)}</div>}
       {ordem && abaOrdem === "rituais" && <label className="ordem-circulo-filtro">Círculo<select value={circulo} onChange={e => setCirculo(e.target.value)} className={input}>{["Todos","1","2","3","4"].map(n => <option key={n} value={n}>{n === "Todos" ? n : n + "º círculo"}</option>)}</select></label>}
     {ordem && !grupos.some(g => g.itens.length) && <p className="mt-3 text-sm">Nenhum {abaOrdem === 'rituais' ? 'ritual neste filtro' : 'poder cadastrado'}.</p>}
-    {grupos.filter(g => !ordem || g.itens.length).map(g => <div key={g.titulo} className={ordem ? "ordem-grupo-poderes" : undefined}>
-      {ordem && <h3>{g.titulo}</h3>}
+    {grupos.filter(g => !ordem || abaOrdem === "rituais" || g.itens.length).map(g => <div key={g.titulo} className={ordem ? "ordem-grupo-poderes" : undefined}>
+      {ordem && <h3>{g.titulo} <span className="text-xs opacity-70">({g.itens.length})</span></h3>}
+      {ordem && abaOrdem === "rituais" && !g.itens.length && <p className="text-xs opacity-75">Nenhum ritual aprendido neste grupo.</p>}
       <ul className="ficha-lista-poderes mt-3 space-y-2">{g.itens.map(p => {
       const tipo = TIPOS_PODER.find(t => t.id === p.tipo)!, gastos = uso.poderes[p.id] ?? 0
       const atual = p.recurso ? d.recursos[p.recurso]?.atual ?? 0 : undefined

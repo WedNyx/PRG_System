@@ -296,7 +296,16 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
   const ordem = s.id === 'ordem-paranormal'
   const [elemento, setElemento] = useState('Todos')
   const [circulo, setCirculo] = useState('Todos')
-  const grupos = ordem ? [...FONTES_ORDEM.map(f => ({ titulo: f === 'Outro' ? 'Outros poderes' : 'Poderes de ' + f.toLowerCase(), itens: poderes.filter(p => p.tipo !== 'magia' && (p.fonteOrdem ?? 'Outro') === f) })), { titulo: 'Rituais', itens: poderes.filter(p => p.tipo === 'magia' && (elemento === 'Todos' || p.elementoOrdem === elemento) && (circulo === 'Todos' || String(p.circuloOrdem) === circulo)) }] : [{ titulo: '', itens: poderes }]
+  const [abaOrdem, setAbaOrdem] = useState<'poderes' | 'rituais'>('poderes')
+  const rituais = poderes.filter(p => p.tipo === 'magia')
+  const grupos = ordem ? abaOrdem === 'poderes'
+    ? FONTES_ORDEM.map(f => ({ titulo: f === 'Outro' ? 'Outros poderes' : 'Poderes de ' + f.toLowerCase(), itens: poderes.filter(p => p.tipo !== 'magia' && (p.fonteOrdem ?? 'Outro') === f) }))
+    : [...ELEMENTOS_ORDEM, 'Sem elemento'].filter(e => elemento === 'Todos' || elemento === e).flatMap(e =>
+        ['1','2','3','4','Sem círculo'].filter(n => circulo === 'Todos' || circulo === n).map(n => ({
+          titulo: e + ' · ' + (n === 'Sem círculo' ? n : n + 'º círculo'),
+          itens: rituais.filter(p => (p.elementoOrdem || 'Sem elemento') === e && (p.circuloOrdem ? String(p.circuloOrdem) : 'Sem círculo') === n).sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
+        })))
+    : [{ titulo: '', itens: poderes }]
   function salvarPoder(p: Poder) {
     onChange({ ...d, poderes: poderes.some(x => x.id === p.id) ? poderes.map(x => x.id === p.id ? p : x) : [...poderes, p] }); setEditando(null)
   }
@@ -322,16 +331,20 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
       <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Sparkles size={18} /> {s.id === 'dnd5e-srd' ? 'Poderes extras e personalizados' : ordem ? 'Poderes e rituais' : 'Poderes e magias'}</h2>
       <div className="flex gap-2">
         {comUsos && !somenteLeitura && <button type="button" className={botao} onClick={descansar} title="Zera os usos gastos"><Moon size={14} /> Descansar</button>}
-        {!somenteLeitura && <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', tipo: 'habilidade' })}><Plus size={14} /> Novo poder</button>}
+        {!somenteLeitura && <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', tipo: ordem && abaOrdem === 'rituais' ? 'magia' : 'habilidade' })}><Plus size={14} /> {ordem && abaOrdem === 'rituais' ? 'Novo ritual' : 'Novo poder'}</button>}
       </div>
     </div>
     {s.id === 'dnd5e-srd' && <p className="mt-2 text-xs text-(--a-c4b6d4)">Habilidades de raça/espécie, classe e antecedente são geradas nos hexágonos oficiais da Árvore. Adicione aqui apenas poderes aprendidos ou concedidos além daqueles naturais.</p>}
     {!poderes.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">Nenhum poder ainda.{!somenteLeitura && ' Toque em “Novo poder”.'}</p>}
-    {grupos.filter(g => !ordem || g.itens.length || g.titulo === "Rituais").map(g => <div key={g.titulo} className={ordem ? "ordem-grupo-poderes" : undefined}>
+    {ordem && <div className="ordem-acervo-abas" role="group" aria-label="Seção do acervo">
+      <button type="button" aria-pressed={abaOrdem === 'poderes'} onClick={() => setAbaOrdem('poderes')}>Poderes ({poderes.length - rituais.length})</button>
+      <button type="button" aria-pressed={abaOrdem === 'rituais'} onClick={() => setAbaOrdem('rituais')}>Rituais ({rituais.length})</button>
+    </div>}
+      {ordem && abaOrdem === "rituais" && <div className="ordem-filtros" role="group" aria-label="Filtrar rituais por elemento">{["Todos", ...ELEMENTOS_ORDEM].map(e => <button key={e} type="button" data-elemento={e} aria-pressed={elemento === e} onClick={() => setElemento(e)}>{e !== "Todos" && <SimboloElementoOrdem elemento={e} tamanho={28}/>}<span>{e}</span></button>)}</div>}
+      {ordem && abaOrdem === "rituais" && <label className="ordem-circulo-filtro">Círculo<select value={circulo} onChange={e => setCirculo(e.target.value)} className={input}>{["Todos","1","2","3","4"].map(n => <option key={n} value={n}>{n === "Todos" ? n : n + "º círculo"}</option>)}</select></label>}
+    {ordem && !grupos.some(g => g.itens.length) && <p className="mt-3 text-sm">Nenhum {abaOrdem === 'rituais' ? 'ritual neste filtro' : 'poder cadastrado'}.</p>}
+    {grupos.filter(g => !ordem || g.itens.length).map(g => <div key={g.titulo} className={ordem ? "ordem-grupo-poderes" : undefined}>
       {ordem && <h3>{g.titulo}</h3>}
-      {ordem && g.titulo === "Rituais" && <div className="ordem-filtros" role="group" aria-label="Filtrar rituais por elemento">{["Todos", ...ELEMENTOS_ORDEM].map(e => <button key={e} type="button" data-elemento={e} aria-pressed={elemento === e} onClick={() => setElemento(e)}>{e !== "Todos" && <SimboloElementoOrdem elemento={e} tamanho={28}/>}<span>{e}</span></button>)}</div>}
-      {ordem && g.titulo === "Rituais" && <label className="ordem-circulo-filtro">Círculo<select value={circulo} onChange={e => setCirculo(e.target.value)} className={input}>{["Todos","1","2","3","4"].map(n => <option key={n} value={n}>{n === "Todos" ? n : n + "º círculo"}</option>)}</select></label>}
-      {ordem && !g.itens.length && <p className="text-sm">Nenhum ritual neste filtro.</p>}
       <ul className="ficha-lista-poderes mt-3 space-y-2">{g.itens.map(p => {
       const tipo = TIPOS_PODER.find(t => t.id === p.tipo)!, gastos = uso.poderes[p.id] ?? 0
       const atual = p.recurso ? d.recursos[p.recurso]?.atual ?? 0 : undefined

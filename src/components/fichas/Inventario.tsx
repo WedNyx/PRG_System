@@ -135,7 +135,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
   const [aba, setAba] = useState<'todos' | 'magico' | 'municao' | Item['categoria']>('todos')
   const nomeCategoria = (id: Item['categoria']) => (temaOrdem && id === 'arma' ? 'Armas' : temaOrdem && id === 'consumivel' ? 'Consumíveis' : undefined) ?? s.nomesItens?.[id] ?? CATEGORIAS_ITEM.find(c => c.id === id)!.nome
   const nomeMagico = s.nomesItens?.magico ?? '✨ Itens mágicos'
-  const municao = (it: Item) => temaOrdem && it.categoria === 'equipamento' && (/^Munição\s*·/i.test(it.descricao ?? '') || /^(balas curtas|balas longas|flechas|cartuchos)$/i.test(it.nome.trim()))
+  const municao = (it: Item) => temaOrdem && (it.ordem?.grupo === 'Munição' || (it.categoria === 'equipamento' && (/^Munição\s*·/i.test(it.descricao ?? '') || /^(balas curtas|balas longas|flechas|cartuchos)$/i.test(it.nome.trim()))))
   const magicos = itensVisiveis.filter(i => i.magico)
   const abasItens = [{ id: 'todos' as const, nome: 'Todos', n: itensVisiveis.length },
     ...CATEGORIAS_ITEM.map(c => ({ id: c.id, nome: temaOrdem ? nomeCategoria(c.id) : `${c.icone} ${nomeCategoria(c.id)}`, n: itensVisiveis.filter(i => i.categoria === c.id && !municao(i)).length })).filter(x => x.n),
@@ -166,6 +166,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
                 <span className="block text-[11px]">{it.raridade && <strong style={{ color: corDaRaridade(it.raridade) }}>{RARIDADES.find(x => x.id === it.raridade)?.nome} · </strong>}<span className="text-(--a-c4b6d4)">{it.peso ? `${mostrarPeso(it.peso, c.carga.unidade)} cada` : ''}</span></span>
               </span>
             </div>
+            {temaOrdem && it.ordem && <div className="mt-2 grid grid-cols-2 gap-2 text-xs">{Object.entries({Grupo:it.ordem.grupo,Categoria:it.ordem.categoria,Crítico:it.ordem.critico,'Tipo de dano':it.ordem.tipoDano,Modificações:it.ordem.modificacoes,Maldições:it.ordem.maldicoes}).filter(([,v])=>v).map(([k,v])=><div key={k} className="rounded border border-zinc-700 p-2 break-words"><span className="block text-zinc-400">{k}</span>{v}</div>)}</div>}
             {fichaArma && <div className="mt-3 grid grid-cols-2 gap-2 text-xs">{[['Dano',it.dano ?? '—'],['Crítico',fichaArma[2].replace('Crítico ','')],['Categoria',fichaArma[1].replace('Categoria ','')],['Tipo de dano',fichaArma[3]],['Alcance',it.alcance ? it.alcance+' m' : 'Corpo a corpo']].map(([k,v])=><div key={k} className="rounded border border-zinc-700 bg-zinc-900 p-2"><span className="block text-zinc-400">{k}</span><strong>{v}</strong></div>)}<p className="col-span-2 text-zinc-400">Dados em revisão · confirme com o mestre</p></div>}
             {(it.bonus.length > 0 || (it.descricao && !fichaArma)) && <p className="mt-1 text-xs text-(--a-c9bcd9)">{it.bonus.map(b => `${nomeAlvo[b.alvo] ?? b.alvo} ${b.valor >= 0 ? '+' : ''}${b.valor}`).join(' · ')}{it.bonus.length && it.descricao ? ' — ' : ''}{!fichaArma && it.descricao}</p>}
             {referenciaDnd && <p className="mt-1 text-[11px] font-medium text-(--a-d3adf0)">📖 {referenciaDnd.livro} · {referenciaDnd.edicao}</p>}
@@ -469,6 +470,9 @@ function FotoDoItem({ it, setIt }: { it: Item; setIt: React.Dispatch<React.SetSt
 
 export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }: { s?: Sistema; inicial: Item; salvar: (i: Item) => void; fechar: () => void; edicaoDnd?: LivroBaseDnd }) {
   const [it, setIt] = useState<Item>(inicial)
+  const ordem = s?.id === 'ordem-paranormal'
+  const dados = it.ordem ?? {}
+  const campoOrdem = (k: keyof NonNullable<Item['ordem']>, v:string) => setIt(old=>({...old,ordem:{...old.ordem,[k]:v}}))
   const dnd = s?.id === 'dnd5e-srd'
   const temaDnd = dnd || s?.id === 'dnd5e-manual'
   const referencia = dnd ? referenciaArmaDndPorId(it.armaRefDnd) : null
@@ -484,8 +488,8 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
     .sort((x, y) => icoCategoria.indexOf(x.id) - icoCategoria.indexOf(y.id))
   const alvos = s ? alvosDeBonus(s) : []
   const setB = (i: number, b: Partial<Bonus>) => setIt({ ...it, bonus: it.bonus.map((x, k) => k === i ? { ...x, ...b } : x) })
-  return <Janela titulo={temaDnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla temaDnd={temaDnd}>
-    <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return }
+  return <Janela titulo={ordem ? (inicial.nome ? 'Editar equipamento' : 'Registrar equipamento') : temaDnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla temaDnd={temaDnd}>
+    <form noValidate className={ordem ? "space-y-3 [&_input]:!border-zinc-600 [&_select]:!border-zinc-600 [&_textarea]:!border-zinc-600" : "space-y-3"} onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return }
       if ((it.rolagens?.length ?? 0) > (v.rolagens?.length ?? 0)) toast.warning('Rolagens sem nome ou com dados inválidos ficaram de fora.')
       salvar({ ...v, id: inicial.id }) }}>
       <div className="flex items-center gap-3 rounded-xl border border-(--a-62527e) bg-gradient-to-r from-(--s-2b2143) to-(--s-171325) p-3">
@@ -497,11 +501,22 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
         </div>
       </div>
       <FotoDoItem it={it} setIt={setIt} />
-      <label className="block">Nome<input required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Espada longa" /></label>
+      <label className="block">Nome<input required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder={ordem ? "Ex.: Lanterna tática" : "Ex.: Espada longa"} /></label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block">Tipo<select value={it.categoria} onChange={e => setIt({ ...it, categoria: e.target.value as Item['categoria'] })} className={input + ' mt-1'}>{CATEGORIAS_ITEM.map(c => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></label>
         <CampoPeso valor={it.peso} unidade={s?.carga?.unidade ?? 'kg'} mudar={peso => setIt({ ...it, peso })} />
       </div>
+      {ordem && <fieldset className="space-y-3 rounded-lg border border-zinc-700 bg-zinc-950 p-3">
+        <legend className="px-2 text-xs uppercase tracking-wider text-red-300">Registro operacional</legend>
+        <div className="grid grid-cols-2 gap-2">
+          <label>Grupo<select className={input} value={dados.grupo ?? ''} onChange={e=>campoOrdem('grupo',e.target.value)}><option value="">Não definido</option>{['Arma','Proteção','Munição','Equipamento geral','Componente ritualístico','Item amaldiçoado','Consumível'].map(v=><option key={v}>{v}</option>)}</select></label>
+          <label>Categoria<select className={input} value={dados.categoria ?? ''} onChange={e=>campoOrdem('categoria',e.target.value)}><option value="">Não definida</option>{['0','I','II','III','IV'].map(v=><option key={v}>{v}</option>)}</select></label>
+        </div>
+        {it.categoria==='arma' && <div className="grid grid-cols-2 gap-2"><label>Crítico<input className={input} value={dados.critico ?? ''} maxLength={20} placeholder="19/x2" onChange={e=>campoOrdem('critico',e.target.value)}/></label><label>Tipo de dano<input className={input} value={dados.tipoDano ?? ''} maxLength={60} placeholder="Corte" onChange={e=>campoOrdem('tipoDano',e.target.value)}/></label></div>}
+        <label className="block">Modificações<textarea className={input} rows={2} maxLength={1000} value={dados.modificacoes ?? ''} onChange={e=>campoOrdem('modificacoes',e.target.value)}/></label>
+        <label className="block">Maldições<textarea className={input} rows={2} maxLength={1000} value={dados.maldicoes ?? ''} onChange={e=>campoOrdem('maldicoes',e.target.value)}/></label>
+        <p className="text-xs text-zinc-400">Registro manual: efeitos, limites de patente e crítico automático ainda não são aplicados por estes campos.</p>
+      </fieldset>}
       {dnd && it.categoria === 'arma' && <div className="space-y-2 rounded-lg border border-(--a-55456e) bg-(--s-171325) p-3 text-xs">
         {referencia && <p className="rounded-lg border border-(--a-8b6cba)/50 bg-(--s-241a3a) p-2">📖 <strong>{referencia.nome}</strong> · {referencia.livro} ({referencia.edicao}). Efeitos exclusivos devem ser conferidos no livro.</p>}
         <label className="block">Modelo físico da arma (opcional)

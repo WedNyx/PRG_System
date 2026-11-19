@@ -100,6 +100,10 @@ const SIMBOLOS: Record<string, Record<string, string>> = {
   tormenta20: { destreinado: '○', treinado: '●' },
 }
 /** Botão do grau de treino: toca para passar ao próximo grau. */
+export function SeloPericiaOrdem({ grau = 0, marca = false }: { grau?: number; marca?: boolean }) {
+  return <svg aria-hidden="true" viewBox="0 0 60 60" className={marca ? "ordem-selo-marca" : "ordem-selo-treino"} data-grau={grau} fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="30" cy="30" r="25"/><circle cx="30" cy="30" r="20"/><path d="M30 3 L54 43 L6 43 Z M30 57 L6 17 L54 17 Z M30 10 V50 M10 30 H50"/><circle cx="30" cy="30" r="5" fill={grau > 0 ? "currentColor" : "none"}/></svg>
+}
+
 export function GrauPericia({ s, valor, nome, somenteLeitura, mudar }: { s: Sistema; valor: string; nome: string; somenteLeitura: boolean; mudar: (v: string) => void }) {
   const treinos = s.pericias?.treinos ?? []
   if (!treinos.length) return null
@@ -108,7 +112,7 @@ export function GrauPericia({ s, valor, nome, somenteLeitura, mudar }: { s: Sist
   const ativo = i > 0
   return <button type="button" disabled={somenteLeitura} onClick={() => mudar(treinos[(i + 1) % treinos.length].id)}
     aria-label={`Grau em ${nome}: ${atual.nome} (toque para mudar)`} title={atual.nome}
-    className={'ficha-treino flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-bold ' + (ativo ? 'border-(--ficha-acento) bg-(--ficha-acento)/20 text-(--ficha-acento)' : 'border-(--a-5e4b78) text-(--a-a998bd)')}>{simbolo}</button>
+    data-grau={s.id === "ordem-paranormal" ? i : undefined} className={'ficha-treino flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-bold ' + (ativo ? 'border-(--ficha-acento) bg-(--ficha-acento)/20 text-(--ficha-acento)' : 'border-(--a-5e4b78) text-(--a-a998bd)')}>{s.id === "ordem-paranormal" ? <SeloPericiaOrdem grau={i}/> : simbolo}</button>
 }
 
 /** Escada do Fate, do maior para o menor (só os nomes; o número é o que está digitado). */

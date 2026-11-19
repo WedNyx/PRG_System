@@ -295,7 +295,8 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
   const nomeRecurso = Object.fromEntries(s.recursos.map(r => [r.id, r.nome]))
   const ordem = s.id === 'ordem-paranormal'
   const [elemento, setElemento] = useState('Todos')
-  const grupos = ordem ? [...FONTES_ORDEM.map(f => ({ titulo: f === 'Outro' ? 'Outros poderes' : 'Poderes de ' + f.toLowerCase(), itens: poderes.filter(p => p.tipo !== 'magia' && (p.fonteOrdem ?? 'Outro') === f) })), { titulo: 'Rituais', itens: poderes.filter(p => p.tipo === 'magia' && (elemento === 'Todos' || p.elementoOrdem === elemento)) }] : [{ titulo: '', itens: poderes }]
+  const [circulo, setCirculo] = useState('Todos')
+  const grupos = ordem ? [...FONTES_ORDEM.map(f => ({ titulo: f === 'Outro' ? 'Outros poderes' : 'Poderes de ' + f.toLowerCase(), itens: poderes.filter(p => p.tipo !== 'magia' && (p.fonteOrdem ?? 'Outro') === f) })), { titulo: 'Rituais', itens: poderes.filter(p => p.tipo === 'magia' && (elemento === 'Todos' || p.elementoOrdem === elemento) && (circulo === 'Todos' || String(p.circuloOrdem) === circulo)) }] : [{ titulo: '', itens: poderes }]
   function salvarPoder(p: Poder) {
     onChange({ ...d, poderes: poderes.some(x => x.id === p.id) ? poderes.map(x => x.id === p.id ? p : x) : [...poderes, p] }); setEditando(null)
   }
@@ -329,14 +330,16 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
     {grupos.filter(g => !ordem || g.itens.length || g.titulo === "Rituais").map(g => <div key={g.titulo} className={ordem ? "ordem-grupo-poderes" : undefined}>
       {ordem && <h3>{g.titulo}</h3>}
       {ordem && g.titulo === "Rituais" && <div className="ordem-filtros" role="group" aria-label="Filtrar rituais por elemento">{["Todos", ...ELEMENTOS_ORDEM].map(e => <button key={e} type="button" data-elemento={e} aria-pressed={elemento === e} onClick={() => setElemento(e)}>{e !== "Todos" && <SimboloElementoOrdem elemento={e} tamanho={28}/>}<span>{e}</span></button>)}</div>}
+      {ordem && g.titulo === "Rituais" && <label className="ordem-circulo-filtro">Círculo<select value={circulo} onChange={e => setCirculo(e.target.value)} className={input}>{["Todos","1","2","3","4"].map(n => <option key={n} value={n}>{n === "Todos" ? n : n + "º círculo"}</option>)}</select></label>}
       {ordem && !g.itens.length && <p className="text-sm">Nenhum ritual neste filtro.</p>}
       <ul className="ficha-lista-poderes mt-3 space-y-2">{g.itens.map(p => {
       const tipo = TIPOS_PODER.find(t => t.id === p.tipo)!, gastos = uso.poderes[p.id] ?? 0
       const atual = p.recurso ? d.recursos[p.recurso]?.atual ?? 0 : undefined
       const ok = podeUsar(p, uso, atual).ok
-      return <li key={p.id} data-elemento={ordem ? p.elementoOrdem : undefined} className="ficha-poder rounded-xl bg-(--s-171325) p-3">
+      return <li key={p.id} data-elemento={ordem ? p.elementoOrdem : undefined} className={"ficha-poder rounded-xl bg-(--s-171325) p-3" + (ordem ? p.tipo === "magia" ? " ordem-ritual-card" : " ordem-poder-card" : "")}>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="min-w-0 flex-1 font-semibold">{tipo.icone} {p.nome}</span>
+          {ordem && p.tipo === "magia" && p.elementoOrdem && <SimboloElementoOrdem elemento={p.elementoOrdem} tamanho={36}/>}
+          <span className="min-w-0 flex-1 font-semibold">{!ordem && tipo.icone} {p.nome}</span>
           <span className="rounded bg-(--s-2b2140) px-1.5 py-0.5 text-[10px] text-(--a-d6c8e8)">{ordem && p.tipo === "magia" ? [p.elementoOrdem ?? "Ritual", p.circuloOrdem ? p.circuloOrdem + "º círculo" : ""].filter(Boolean).join(" · ") : tipo.nome}</span>
           {p.id.startsWith('arv-') && <span className="rounded bg-(--s-3b2b57) px-1.5 py-0.5 text-[10px] text-amber-200" title="Vem de um hexágono liberado; muda na Árvore de habilidades">🌠 Árvore</span>}
         </div>

@@ -359,7 +359,36 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
     {ordem && abaOrdem === 'rituais' && <div className="mt-3 space-y-3">
       <div className="grid grid-cols-2 gap-2"><button type="button" className={botao} aria-pressed={verGrimorio} onClick={()=>setVerGrimorio(true)}>Grimório</button><button type="button" className={botao} aria-pressed={!verGrimorio} onClick={()=>setVerGrimorio(false)}>Meus rituais</button></div>
       {verGrimorio && <><p className="text-xs">Catálogo inicial • Livro de Regras v1.2 • detalhes em revisão</p><input className={input} aria-label="Buscar ritual" placeholder="Buscar ritual…" value={buscaRitual} onChange={e=>setBuscaRitual(e.target.value)}/>
-      {ELEMENTOS_ORDEM.filter(e=>elemento==='Todos'||elemento===e).map(e=><div key={e} className="ordem-grupo-poderes"><h3><SimboloElementoOrdem elemento={e} tamanho={24}/> {e}</h3>{[1,2,3,4].filter(n=>circulo==='Todos'||circulo===String(n)).map(n=>{const itens=catalogoInicial.filter(r=>r.elemento===e&&r.circulo===n&&r.nome.toLocaleLowerCase('pt-BR').includes(buscaRitual.toLocaleLowerCase('pt-BR')));return <details key={n} className="ordem-consulta" open={n===1?true:undefined}><summary>{n}º círculo · {itens.length}</summary>{itens.length===0?<p className="text-xs">Sem registros conferidos nesta etapa.</p>:itens.map(r=><div key={r.nome} className="ordem-ritual-card ficha-poder mt-2 rounded-lg p-3" data-elemento={e}><strong>{r.nome}</strong><p className="text-xs">{custosRituais[n]} PE · Livro de Regras v1.2</p>{detalhesRitual(r) && <details className="ordem-consulta"><summary>Consultar ritual</summary><p>{detalhesRitual(r)}</p></details>}<button type="button" className={botao} disabled={somenteLeitura||conhecidos(r)} onClick={()=>setEditando({id:novoId(),nome:r.nome,tipo:'magia',elementoOrdem:r.elemento,circuloOrdem:r.circulo,recurso:pe?.id,custo:custosRituais[n],descricao:detalhesRitual(r)})}>{conhecidos(r)?'Aprendido':'Aprender ritual'}</button></div>)}</details>})}</div>)}</>}
+      {ELEMENTOS_ORDEM.filter(e=>elemento==='Todos'||elemento===e).map(e=>{
+        const cor = {Sangue:'#ff536b',Morte:'#ded7df',Conhecimento:'#ffdc78',Energia:'#df83ff',Medo:'#ffffff'}[e]
+        const filtrados = catalogoInicial.filter(r=>r.elemento===e && (circulo==='Todos'||circulo===String(r.circulo)) && r.nome.toLocaleLowerCase('pt-BR').includes(buscaRitual.toLocaleLowerCase('pt-BR')))
+        if(buscaRitual.trim() && !filtrados.length) return null
+        return <section key={e} className="mt-4 space-y-3" style={{borderTop:'1px solid '+cor+'44',paddingTop:16}}>
+          <header className="flex items-center gap-3" style={{color:cor}}>
+            <span className="flex items-center justify-center rounded-xl shrink-0" style={{width:44,height:44,background:cor+'15',border:'1px solid '+cor+'44'}}><SimboloElementoOrdem elemento={e} tamanho={30}/></span>
+            <div className="min-w-0 flex-1"><div className="text-xs uppercase tracking-widest opacity-70">Elemento</div><h3 style={{color:cor,margin:0,fontSize:20}}>{e}</h3></div>
+            <span className="text-xs">{filtrados.length} {filtrados.length===1?'ritual':'rituais'}</span>
+          </header>
+          {[1,2,3,4].filter(n=>circulo==='Todos'||circulo===String(n)).map(n=>{
+            const itens=filtrados.filter(r=>r.circulo===n)
+            if(buscaRitual.trim()&&!itens.length)return null
+            return <details key={n} open={itens.length>0?true:undefined} className="rounded-xl overflow-hidden" style={{border:'1px solid '+cor+'33',background:cor+'05'}}>
+              <summary className="flex items-center justify-between gap-2 cursor-pointer px-3 py-3" style={{color:cor,listStyle:'none'}}><span className="font-semibold">{n}º círculo <span className="text-xs opacity-70">· {custosRituais[n]} PE</span></span><span className="text-xs opacity-80">{itens.length} {itens.length===1?'ritual':'rituais'} ▾</span></summary>
+              <div className="px-2 pb-2 space-y-2">{itens.length===0?<p className="text-xs opacity-70 px-2 py-2">Catálogo em revisão.</p>:itens.map(r=><article key={r.nome} className="rounded-xl p-3 space-y-3" style={{background:'rgba(10,8,14,.65)',border:'1px solid '+cor+'44'}}>
+                <div className="flex items-start gap-2"><div className="flex-1 min-w-0"><strong className="text-base leading-tight block">{r.nome}</strong><span className="text-xs opacity-70">Livro de Regras v1.2</span></div><span className="shrink-0 rounded-lg px-2 py-1 text-sm font-bold" style={{color:cor,background:cor+'18'}}>{custosRituais[n]} PE</span></div>
+                {detalhesRitual(r)?<details className="rounded-lg" style={{border:'1px solid '+cor+'33'}}><summary className="cursor-pointer px-3 py-2 text-sm font-medium" style={{color:cor}}>Ficha do ritual</summary><div className="p-3 space-y-3">
+                  <div className="grid grid-cols-2 gap-2">{[['Execução','Ação padrão'],['Alcance','Toque'],['Alvo','Arma corpo a corpo ou pacote de munição'],['Duração','Cena']].map(([label,value])=><div key={label} className="rounded-lg p-2" style={{background:cor+'09'}}><div className="text-xs opacity-70">{label}</div><div className="text-sm break-words">{value}</div></div>)}</div>
+                  <p className="text-sm leading-relaxed">A arma ou munição recebe dano adicional de Sangue ao atacar durante a cena.</p>
+                  <div className="text-xs uppercase tracking-widest opacity-70">Aprimoramentos</div>
+                  {[['Normal','1 PE','+1d6','1º círculo'],['Discente','3 PE','+2d6','2º círculo'],['Verdadeiro','6 PE','+4d6','3º círculo e afinidade']].map(([nome,custo,dano,requisito])=><div key={nome} className="rounded-lg p-2" style={{border:'1px solid '+cor+'33'}}><div className="flex justify-between items-center gap-2"><strong className="text-sm">{nome}</strong><span className="text-sm font-semibold" style={{color:cor}}>{custo}</span></div><div className="text-sm mt-1">{dano} de Sangue</div><div className="text-xs opacity-70 mt-1">Requisito: {requisito}</div></div>)}
+                  <p className="text-xs opacity-60">Valores totais de PE · Livro de Regras v1.2</p>
+                </div></details>:<p className="text-xs opacity-70">Detalhes em revisão.</p>}
+                <button type="button" className={botao+' w-full'} style={{borderColor:cor+'66',color:cor,background:cor+'12'}} disabled={somenteLeitura||conhecidos(r)} onClick={()=>setEditando({id:novoId(),nome:r.nome,tipo:'magia',elementoOrdem:r.elemento,circuloOrdem:r.circulo,recurso:pe?.id,custo:custosRituais[n],descricao:detalhesRitual(r)})}>{conhecidos(r)?'✓ Ritual aprendido':'+ Aprender ritual'}</button>
+              </article>)}</div>
+            </details>
+          })}
+        </section>
+      })}</>}
     </div>}
     {ordem && (abaOrdem !== "rituais" || !verGrimorio) && !grupos.some(g => g.itens.length) && <p className="mt-3 text-sm">Nenhum {abaOrdem === 'rituais' ? 'ritual neste filtro' : 'poder cadastrado'}.</p>}
     {grupos.filter(g => !ordem || (abaOrdem === "rituais" ? !verGrimorio : g.itens.length)).map(g => <div key={g.titulo} className={ordem ? "ordem-grupo-poderes" : undefined}>

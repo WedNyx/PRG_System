@@ -298,6 +298,19 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
   const [circulo, setCirculo] = useState('Todos')
   const [abaOrdem, setAbaOrdem] = useState<'poderes' | 'rituais'>('rituais')
   const rituais = poderes.filter(p => p.tipo === 'magia')
+  const [verGrimorio, setVerGrimorio] = useState(true)
+  const [buscaRitual, setBuscaRitual] = useState('')
+  const custosRituais = [0,1,3,6,10]
+  const catalogoInicial: { nome: string; elemento: NonNullable<Poder['elementoOrdem']>; circulo: number }[] = [
+    ...(['Conhecimento','Energia','Morte','Sangue'] as const).map(elemento => ({nome:'Amaldiçoar Arma',elemento,circulo:1})),
+    ...['Compreensão Paranormal','Enfeitiçar','Perturbação','Ouvir os Sussurros','Tecer Ilusão','Terceiro Olho'].map(nome=>({nome,elemento:'Conhecimento' as const,circulo:1})),
+    ...['Amaldiçoar Tecnologia','Coincidência Forçada','Eletrocussão','Embaralhar','Luz','Polarização Caótica'].map(nome=>({nome,elemento:'Energia' as const,circulo:1})),
+    {nome:'Cicatrização',elemento:'Morte',circulo:1},
+    {nome:'Cinerária',elemento:'Medo',circulo:1}
+  ]
+  const pe = s.recursos.find(r => r.id.toLowerCase() === 'pe' || /pontos de esforço/i.test(r.nome) || r.nome.toUpperCase() === 'PE')
+  const conhecidos = (r: typeof catalogoInicial[number]) => rituais.some(p=>p.nome.toLocaleLowerCase('pt-BR')===r.nome.toLocaleLowerCase('pt-BR') && p.elementoOrdem===r.elemento)
+
   const grupos = ordem ? abaOrdem === 'poderes'
     ? FONTES_ORDEM.map(f => ({ titulo: f === 'Outro' ? 'Outros poderes' : 'Poderes de ' + f.toLowerCase(), itens: poderes.filter(p => p.tipo !== 'magia' && (p.fonteOrdem ?? 'Outro') === f) }))
     : [...ELEMENTOS_ORDEM, 'Sem elemento'].filter(e => elemento === 'Todos' || elemento === e).flatMap(e =>
@@ -342,8 +355,13 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
     </div>}
       {ordem && abaOrdem === "rituais" && <div className="ordem-filtros" role="group" aria-label="Filtrar rituais por elemento">{["Todos", ...ELEMENTOS_ORDEM].map(e => <button key={e} type="button" data-elemento={e} aria-pressed={elemento === e} onClick={() => setElemento(e)}>{e !== "Todos" && <SimboloElementoOrdem elemento={e} tamanho={28}/>}<span>{e}</span></button>)}</div>}
       {ordem && abaOrdem === "rituais" && <label className="ordem-circulo-filtro">Círculo<select value={circulo} onChange={e => setCirculo(e.target.value)} className={input}>{["Todos","1","2","3","4"].map(n => <option key={n} value={n}>{n === "Todos" ? n : n + "º círculo"}</option>)}</select></label>}
-    {ordem && !grupos.some(g => g.itens.length) && <p className="mt-3 text-sm">Nenhum {abaOrdem === 'rituais' ? 'ritual neste filtro' : 'poder cadastrado'}.</p>}
-    {grupos.filter(g => !ordem || abaOrdem === "rituais" || g.itens.length).map(g => <div key={g.titulo} className={ordem ? "ordem-grupo-poderes" : undefined}>
+    {ordem && abaOrdem === 'rituais' && <div className="mt-3 space-y-3">
+      <div className="grid grid-cols-2 gap-2"><button type="button" className={botao} aria-pressed={verGrimorio} onClick={()=>setVerGrimorio(true)}>Grimório</button><button type="button" className={botao} aria-pressed={!verGrimorio} onClick={()=>setVerGrimorio(false)}>Meus rituais</button></div>
+      {verGrimorio && <><p className="text-xs">Catálogo inicial • Livro de Regras v1.2 • detalhes em revisão</p><input className={input} aria-label="Buscar ritual" placeholder="Buscar ritual…" value={buscaRitual} onChange={e=>setBuscaRitual(e.target.value)}/>
+      {ELEMENTOS_ORDEM.filter(e=>elemento==='Todos'||elemento===e).map(e=><div key={e} className="ordem-grupo-poderes"><h3><SimboloElementoOrdem elemento={e} tamanho={24}/> {e}</h3>{[1,2,3,4].filter(n=>circulo==='Todos'||circulo===String(n)).map(n=>{const itens=catalogoInicial.filter(r=>r.elemento===e&&r.circulo===n&&r.nome.toLocaleLowerCase('pt-BR').includes(buscaRitual.toLocaleLowerCase('pt-BR')));return <details key={n} className="ordem-consulta" open={n===1?true:undefined}><summary>{n}º círculo · {itens.length}</summary>{itens.length===0?<p className="text-xs">Sem registros conferidos nesta etapa.</p>:itens.map(r=><div key={r.nome} className="ordem-ritual-card ficha-poder mt-2 rounded-lg p-3" data-elemento={e}><strong>{r.nome}</strong><p className="text-xs">{custosRituais[n]} PE · Livro de Regras v1.2</p><button type="button" className={botao} disabled={somenteLeitura||conhecidos(r)} onClick={()=>setEditando({id:novoId(),nome:r.nome,tipo:'magia',elementoOrdem:r.elemento,circuloOrdem:r.circulo,recurso:pe?.id,custo:custosRituais[n]})}>{conhecidos(r)?'Aprendido':'Aprender ritual'}</button></div>)}</details>})}</div>)}</>}
+    </div>}
+    {ordem && (abaOrdem !== "rituais" || !verGrimorio) && !grupos.some(g => g.itens.length) && <p className="mt-3 text-sm">Nenhum {abaOrdem === 'rituais' ? 'ritual neste filtro' : 'poder cadastrado'}.</p>}
+    {grupos.filter(g => !ordem || (abaOrdem === "rituais" ? !verGrimorio : g.itens.length)).map(g => <div key={g.titulo} className={ordem ? "ordem-grupo-poderes" : undefined}>
       {ordem && <h3>{g.titulo} <span className="text-xs opacity-70">({g.itens.length})</span></h3>}
       {ordem && abaOrdem === "rituais" && !g.itens.length && <p className="text-xs opacity-75">Nenhum ritual aprendido neste grupo.</p>}
       <ul className="ficha-lista-poderes mt-3 space-y-2">{g.itens.map(p => {

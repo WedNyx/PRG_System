@@ -242,7 +242,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
       <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Backpack size={18} /> {temaOrdem ? 'Equipamentos do agente' : 'Inventário'}</h2>
       {!somenteLeitura && <div className="flex flex-wrap gap-2">
         {s.id === 'dnd5e-srd' && <button type="button" className={botao + ' border-(--a-b99bff) min-h-10'} onClick={() => setCatalogoAberto(true)}><Dice5 size={14} /> Arsenais por livro ({arsenaisPermitidosDnd(edicaoDnd, livrosDnd.suplementos).length})</button>}
-        <button type="button" className={botao} onClick={() => setArsenalAberto(true)}><Package size={14} /> Arsenal pronto</button>
+        <button type="button" className={botao} onClick={() => setArsenalAberto(true)}><Package size={14} /> {temaOrdem ? 'Arsenal da Ordem' : 'Arsenal pronto'}</button>
         <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', categoria: 'equipamento', peso: 0, bonus: [] })}><Plus size={14} /> Novo item</button>
       </div>}
     </div>
@@ -282,7 +282,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
       </div>
     }) : <ul className="ficha-lista-itens mt-3 space-y-2">{itensVisiveis.filter(i => abaAtual === 'magico' ? i.magico : i.categoria === abaAtual).map(linhaItem)}</ul>}
     {editando && <EditorItem s={s} edicaoDnd={edicaoDnd} inicial={editando} salvar={salvarItem} fechar={() => setEditando(null)} />}
-    {arsenalAberto && <ArsenalPronto fechar={() => setArsenalAberto(false)} adicionar={x => {
+    {arsenalAberto && <ArsenalPronto ordem={temaOrdem} fechar={() => setArsenalAberto(false)} adicionar={x => {
       if (itens.length >= 300) { toast.error('O inventário já chegou ao limite de 300 itens.'); return }
       salvarItem(itemDoArsenal(x, novoId)); toast.success(x.nome + ' entrou no inventário!')
     }} />}

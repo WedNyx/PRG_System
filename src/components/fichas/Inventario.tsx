@@ -128,18 +128,23 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaItens.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))
     : itens
   const itensVisiveis = (temaDnd || temaOrdem) ? itensBuscados.filter(it=>estadoItens==='todos'||(estadoItens==='equipados'?!!uso.itens[it.id]?.equipado:estadoItens==='disponiveis'?qtd(it)>0:qtd(it)===0)) : itensBuscados
-  const pct = c.carga.max ? Math.min(100, (c.carga.total / c.carga.max) * 100) : 0
+  const forcaOrdem = Number(d.atributos?.FOR ?? 1)
+  const capacidade = temaOrdem && c.carga.max === null ? (Number.isFinite(forcaOrdem) && forcaOrdem > 0 ? forcaOrdem * 5 : 2) : c.carga.max
+  const pct = capacidade ? Math.min(100, (c.carga.total / capacidade) * 100) : 0
   // Abas por tipo (os nomes seguem o sistema, quando ele tem os seus) e a ala dos itens mágicos.
-  const [aba, setAba] = useState<'todos' | 'magico' | Item['categoria']>('todos')
+  const [aba, setAba] = useState<'todos' | 'magico' | 'municao' | Item['categoria']>('todos')
   const nomeCategoria = (id: Item['categoria']) => (temaOrdem && id === 'arma' ? 'Armas' : temaOrdem && id === 'consumivel' ? 'Consumíveis' : undefined) ?? s.nomesItens?.[id] ?? CATEGORIAS_ITEM.find(c => c.id === id)!.nome
   const nomeMagico = s.nomesItens?.magico ?? '✨ Itens mágicos'
+  const municao = (it: Item) => temaOrdem && it.categoria === 'equipamento' && (/^Munição\s*·/i.test(it.descricao ?? '') || /^(balas curtas|balas longas|flechas|cartuchos)$/i.test(it.nome.trim()))
   const magicos = itensVisiveis.filter(i => i.magico)
   const abasItens = [{ id: 'todos' as const, nome: 'Todos', n: itensVisiveis.length },
-    ...CATEGORIAS_ITEM.map(c => ({ id: c.id, nome: temaOrdem ? nomeCategoria(c.id) : `${c.icone} ${nomeCategoria(c.id)}`, n: itensVisiveis.filter(i => i.categoria === c.id).length })).filter(x => x.n),
+    ...CATEGORIAS_ITEM.map(c => ({ id: c.id, nome: temaOrdem ? nomeCategoria(c.id) : `${c.icone} ${nomeCategoria(c.id)}`, n: itensVisiveis.filter(i => i.categoria === c.id && !municao(i)).length })).filter(x => x.n),
+    ...(temaOrdem && itensVisiveis.some(municao) ? [{id:'municao' as const,nome:'Munições',n:itensVisiveis.filter(municao).length}] : []),
     ...(magicos.length ? [{ id: 'magico' as const, nome: nomeMagico, n: magicos.length }] : [])]
   const abaAtual = abasItens.some(x => x.id === aba) ? aba : 'todos'
   const linhaItem = (it: Item) => {
           const eq = !!uso.itens[it.id]?.equipado, n = qtd(it)
+          const fichaArma = temaOrdem && it.categoria==='arma' ? /^(Categoria [^·]+) · (Crítico [^·]+) · ([^·]+) · (.+)$/.exec(it.descricao ?? '') : null
           const armaDnd = s.id === 'dnd5e-srd' && it.categoria === 'arma' ? armaDndPorIdEdicao(it.armaDnd) : null
           const referenciaDnd = s.id === 'dnd5e-srd' && it.categoria === 'arma' ? referenciaArmaDndPorId(it.armaRefDnd) : null
           const armaForaDaEdicao = !!armaDnd && (edicaoDnd === 'phb2014'
@@ -161,7 +166,8 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
                 <span className="block text-[11px]">{it.raridade && <strong style={{ color: corDaRaridade(it.raridade) }}>{RARIDADES.find(x => x.id === it.raridade)?.nome} · </strong>}<span className="text-(--a-c4b6d4)">{it.peso ? `${mostrarPeso(it.peso, c.carga.unidade)} cada` : ''}</span></span>
               </span>
             </div>
-            {(it.bonus.length > 0 || it.descricao) && <p className="mt-1 text-xs text-(--a-c9bcd9)">{it.bonus.map(b => `${nomeAlvo[b.alvo] ?? b.alvo} ${b.valor >= 0 ? '+' : ''}${b.valor}`).join(' · ')}{it.bonus.length && it.descricao ? ' — ' : ''}{it.descricao}</p>}
+            {fichaArma && <div className="mt-3 grid grid-cols-2 gap-2 text-xs">{[['Dano',it.dano ?? '—'],['Crítico',fichaArma[2].replace('Crítico ','')],['Categoria',fichaArma[1].replace('Categoria ','')],['Tipo de dano',fichaArma[3]],['Alcance',it.alcance ? it.alcance+' m' : 'Corpo a corpo']].map(([k,v])=><div key={k} className="rounded border border-zinc-700 bg-zinc-900 p-2"><span className="block text-zinc-400">{k}</span><strong>{v}</strong></div>)}<p className="col-span-2 text-zinc-400">Dados em revisão · confirme com o mestre</p></div>}
+            {(it.bonus.length > 0 || (it.descricao && !fichaArma)) && <p className="mt-1 text-xs text-(--a-c9bcd9)">{it.bonus.map(b => `${nomeAlvo[b.alvo] ?? b.alvo} ${b.valor >= 0 ? '+' : ''}${b.valor}`).join(' · ')}{it.bonus.length && it.descricao ? ' — ' : ''}{!fichaArma && it.descricao}</p>}
             {referenciaDnd && <p className="mt-1 text-[11px] font-medium text-(--a-d3adf0)">📖 {referenciaDnd.livro} · {referenciaDnd.edicao}</p>}
             {armaForaDaEdicao && <p role="alert" className="mt-2 rounded-lg border border-amber-500/40 p-2 text-xs text-amber-200">
               ⚠️ Arma registrada com regras de outra edição. Escolha o modelo correspondente ao livro atual antes de rolar.
@@ -173,9 +179,9 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
                 <span className="min-w-8 text-center text-sm tabular-nums" aria-label="Quantidade">{n}</span>
                 <button type="button" disabled={somenteLeitura} onClick={() => mudarQtd(it, 1)} aria-label={'Mais ' + it.nome} className="px-2 py-1 disabled:opacity-40"><Plus size={13} /></button>
               </span>
-              {it.categoria !== 'consumivel' && it.categoria !== 'tesouro' && <button type="button" className={botao} disabled={somenteLeitura || n <= 0} onClick={() => equipar(it)}><Shield size={13} /> {eq ? 'Desequipar' : 'Equipar'}</button>}
+              {it.categoria !== 'consumivel' && it.categoria !== 'tesouro' && !municao(it) && <button type="button" className={botao} disabled={somenteLeitura || n <= 0} onClick={() => equipar(it)}><Shield size={13} /> {eq ? 'Desequipar' : 'Equipar'}</button>}
               {it.categoria === 'consumivel' && <button type="button" className={botao} disabled={somenteLeitura || n <= 0} onClick={() => void usarConsumivel(it)}><Sparkles size={13} /> Usar</button>}
-              {it.dano && it.categoria !== 'consumivel' && !armaDnd && !(s.id === 'dnd5e-srd' && it.categoria === 'arma') && <button type="button" className={botao} onClick={() => void rolar(it.dano!, it.nome)}><Dice5 size={13} /> {it.dano}</button>}
+              {it.dano && it.categoria !== 'consumivel' && !armaDnd && !(s.id === 'dnd5e-srd' && it.categoria === 'arma') && <button type="button" className={botao} disabled={n <= 0} onClick={() => void rolar(it.dano!, it.nome)}><Dice5 size={13} /> {it.dano}</button>}
               {passarItem && !somenteLeitura && n > 0 && <button type="button" className={botao} onClick={() => passarItem(it, n)} aria-label={'Passar ' + it.nome + ' para outro personagem'}><Gift size={13} /> Passar</button>}
               {!somenteLeitura && <><button type="button" className={botao} onClick={() => setEditando(it)} aria-label={'Editar ' + it.nome}><Pencil size={13} /></button>
                 <button type="button" className={botao} onClick={() => remover(it)} aria-label={'Remover ' + it.nome}><Trash2 size={13} /></button></>}
@@ -248,11 +254,11 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
     </div>
     {temaOrdem && <p className="mt-2 border-l-2 border-red-800 pl-3 text-xs uppercase tracking-widest text-zinc-400">Registro de campo · Inventário operacional</p>}
     <div className="mt-3 grid gap-3 sm:grid-cols-2">
-      <div className="rounded-xl bg-(--s-171325) p-3 text-sm">
+      <div className={temaOrdem ? "rounded-xl border border-zinc-700 bg-zinc-900 p-3 text-sm" : "rounded-xl bg-(--s-171325) p-3 text-sm"}>
         <p className="ficha-carga-titulo text-xs text-(--a-c4b6d4)">{temaOrdem ? 'Espaços ocupados' : 'Carga'}{s.carga?.dica ? ' · ' + s.carga.dica : ''}</p>
-        <p className="text-lg font-bold">{c.carga.total.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} {c.carga.max !== null ? `/ ${c.carga.max.toLocaleString('pt-BR', { maximumFractionDigits: 3 })}` : ''} <span className="text-xs font-normal text-(--a-c4b6d4)">{c.carga.unidade}</span></p>
-        {c.carga.max ? <div className="mt-1 h-2 overflow-hidden rounded-full bg-(--s-2b2140)"><div className={'h-full transition-all ' + (c.carga.total > c.carga.max ? 'bg-red-400' : 'bg-(--a-b06ad8)')} style={{ width: pct + '%' }} /></div> : null}
-        {c.carga.max !== null && c.carga.total > c.carga.max && <p className="mt-1 text-xs text-red-200">Acima da capacidade!</p>}
+        <p className="text-lg font-bold">{c.carga.total.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} {capacidade !== null ? `/ ${capacidade.toLocaleString('pt-BR', { maximumFractionDigits: 3 })}` : ''} <span className="text-xs font-normal text-(--a-c4b6d4)">{c.carga.unidade}</span></p>
+        {capacidade ? <div className="mt-1 h-2 overflow-hidden rounded-full bg-(--s-2b2140)"><div className={'h-full transition-all ' + (c.carga.total > capacidade ? 'bg-red-400' : 'bg-(--a-b06ad8)')} style={{ width: pct + '%' }} /></div> : null}
+        {capacidade !== null && c.carga.total > capacidade && <p className="mt-1 text-xs text-red-200">Acima da capacidade!</p>}
       </div>
       {temaDnd ? <CarteiraDnd valor={uso.carteira} mudar={carteira=>salvarUso({...uso,carteira})} somenteLeitura={!!somenteLeitura}/> : temaOrdem ? <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-3 text-sm"><p className="text-xs uppercase tracking-wider text-zinc-400">Resumo operacional</p><p className="mt-1">{itens.filter(it=>qtd(it)>0).length} tipos de item · {itens.filter(it=>qtd(it)>0&&uso.itens[it.id]?.equipado).length} equipados</p><details className="mt-2 text-xs text-zinc-400"><summary>Registro livre de valores</summary><input aria-label="Registro livre de valores" value={uso.carteira} disabled={somenteLeitura} maxLength={500} onChange={e=>salvarUso({...uso,carteira:e.target.value})} className={input+" mt-1"}/></details></div> : <label className="ficha-carteira rounded-xl bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">💰 Carteira (moedas e valores)
         <input value={uso.carteira} disabled={somenteLeitura} maxLength={500} onChange={e => salvarUso({ ...uso, carteira: e.target.value })} placeholder="Ex.: 35 PO, 12 PP" className={input + ' mt-1 text-sm'} /></label>}
@@ -261,7 +267,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
       <label className="block text-xs font-semibold text-(--a-d3adf0)">{temaOrdem ? 'Localizar equipamento' : '🔎 Encontrar item na bolsa'}</label>
       <input type="search" value={buscaItens} onChange={e => setBuscaItens(e.target.value)}
         placeholder={temaOrdem ? "Nome ou descrição…" : "Busque nome, descrição ou livro…"} className={input + ' mt-1 text-sm'} />
-      <div className={temaOrdem ? "mt-2 flex flex-wrap gap-2 [&>button]:rounded [&>button]:border [&>button]:border-zinc-600 [&>button]:px-2 [&>button]:py-2 [&>button[aria-pressed=true]]:bg-red-950" : "dnd-filtros-arsenal"} role="group" aria-label="Estado dos equipamentos">{[['todos','Todos'],['equipados','Equipados'],['disponiveis','Disponíveis'],['esgotados','Esgotados']].map(([id,nome])=><button key={id} type="button" aria-pressed={estadoItens===id} onClick={()=>setEstadoItens(id)}>{nome}</button>)}</div>
+      <div className={temaOrdem ? "mt-2 grid grid-cols-2 gap-1.5 text-xs [&>button]:rounded [&>button]:border [&>button]:border-zinc-600 [&>button]:px-2 [&>button]:py-2 [&>button[aria-pressed=true]]:bg-red-950" : "dnd-filtros-arsenal"} role="group" aria-label="Estado dos equipamentos">{[['todos','Todos'],['equipados','Equipados'],['disponiveis','Disponíveis'],['esgotados','Esgotados']].map(([id,nome])=><button key={id} type="button" aria-pressed={estadoItens===id} onClick={()=>setEstadoItens(id)}>{nome}</button>)}</div>
       <p className="mt-1 text-[11px] text-(--a-c4b6d4)">{itensVisiveis.length} de {itens.length} itens encontrados</p>
     </div>}
     {Object.keys(c.bonus).length > 0 && <p className="mt-3 rounded-lg bg-[#1f3a2c] p-2 text-xs text-[#a9f0c8]">Itens equipados somando: {Object.entries(c.bonus).map(([a, v]) => `${nomeAlvo[a] ?? a} ${v >= 0 ? '+' : ''}${v}`).join(' · ')}</p>}
@@ -274,13 +280,14 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-200">{nomeMagico}</h3>
       <ul className="ficha-lista-itens space-y-2">{magicos.map(linhaItem)}</ul>
     </div>}
+    {abaAtual === 'todos' && itensVisiveis.some(municao) && <div className="mt-4"><h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-300">Munições</h3><ul className="space-y-2">{itensVisiveis.filter(it=>municao(it)&&!it.magico).map(linhaItem)}</ul></div>}
     {abaAtual === 'todos' ? CATEGORIAS_ITEM.map(cat => {
-      const lista = itensVisiveis.filter(i => i.categoria === cat.id && !i.magico); if (!lista.length) return null
+      const lista = itensVisiveis.filter(i => i.categoria === cat.id && !i.magico && !municao(i)); if (!lista.length) return null
       return <div key={cat.id} className="ficha-compartimento mt-4">
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{!temaOrdem && cat.icone} {nomeCategoria(cat.id)}</h3>
         <ul className="ficha-lista-itens space-y-2">{lista.map(linhaItem)}</ul>
       </div>
-    }) : <ul className="ficha-lista-itens mt-3 space-y-2">{itensVisiveis.filter(i => abaAtual === 'magico' ? i.magico : i.categoria === abaAtual).map(linhaItem)}</ul>}
+    }) : <ul className="ficha-lista-itens mt-3 space-y-2">{itensVisiveis.filter(i => abaAtual === 'magico' ? i.magico : abaAtual === 'municao' ? municao(i) : i.categoria === abaAtual && !municao(i)).map(linhaItem)}</ul>}
     {editando && <EditorItem s={s} edicaoDnd={edicaoDnd} inicial={editando} salvar={salvarItem} fechar={() => setEditando(null)} />}
     {arsenalAberto && <ArsenalPronto ordem={temaOrdem} fechar={() => setArsenalAberto(false)} adicionar={x => {
       if (itens.length >= 300) { toast.error('O inventário já chegou ao limite de 300 itens.'); return }

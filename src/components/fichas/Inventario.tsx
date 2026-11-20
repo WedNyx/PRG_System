@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { SimboloElementoOrdem } from './AtributosOrdem'
 import { toast } from 'sonner'
 import { enviarImagemNuvem, ErroNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 import ArteItem from './ArteItem'
@@ -13,7 +14,7 @@ import { Backpack, Dice5, Gift, Minus, Moon, Package, Pencil, Plus, Shield, Spar
 import type { Calculo } from '@/lib/sistemas/calculo'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import type { LivroBaseDnd } from '@/lib/sistemas/dndLivros'
-import { alvosDeBonus, CATEGORIAS_ITEM, lerItens, lerPeso, lerPoderes, mostrarPeso, lerUso, MAX_ROLAGENS_ITEM, normalizarItem, normalizarPoder, podeUsar, TIPOS_PODER, type Bonus, type Item, type Poder, type RolagemItem, type Uso } from '@/lib/sistemas/inventario'
+import { alvosDeBonus, CATEGORIAS_ITEM, ELEMENTOS_ORDEM, FONTES_ORDEM, lerItens, lerPeso, lerPoderes, mostrarPeso, lerUso, MAX_ROLAGENS_ITEM, normalizarItem, normalizarPoder, podeUsar, TIPOS_PODER, type Bonus, type Item, type Poder, type RolagemItem, type Uso } from '@/lib/sistemas/inventario'
 import NaTela from '@/components/NaTela'
 import CatalogoArmasDnd2024 from './CatalogoArmasDnd2024'
 import { alcanceEmMetrosArmaDnd, atributoParaArmaDnd, descricaoArmaDnd, expressaoDanoArmaDnd, expressaoDanoLivreDnd, pesoEmKgArmaDnd, type ArmaDnd2024 } from '@/lib/sistemas/dnd2024Armas'
@@ -64,6 +65,7 @@ function CarteiraDnd({ valor, mudar, somenteLeitura }: { valor: string; mudar: (
 }
 
 export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, passarItem, edicaoDnd = 'phb2024' }: Props) {
+  const temaOrdem = s.id === 'ordem-paranormal'
   const temaDnd = s.id === 'dnd5e-srd' || s.id === 'dnd5e-manual'
   const itens = lerItens(d.itens), uso = lerUso(d.uso)
   const livrosDnd = lerLivrosDnd(d.dndLivros, edicaoDnd)
@@ -121,23 +123,28 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
   const nomeAlvo = Object.fromEntries(alvosDeBonus(s).map(a => [a.id, a.nome]))
   const [buscaItens, setBuscaItens] = useState('')
   const [estadoItens, setEstadoItens] = useState('todos')
-  const itensBuscados = temaDnd && buscaItens.trim()
+  const itensBuscados = (temaDnd || temaOrdem) && buscaItens.trim()
     ? itens.filter(it => [it.nome, it.descricao ?? '', referenciaArmaDndPorId(it.armaRefDnd)?.livro ?? ''].join(' ')
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaItens.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))
     : itens
-  const itensVisiveis = temaDnd ? itensBuscados.filter(it=>estadoItens==='todos'||(estadoItens==='equipados'?!!uso.itens[it.id]?.equipado:estadoItens==='disponiveis'?qtd(it)>0:qtd(it)===0)) : itensBuscados
-  const pct = c.carga.max ? Math.min(100, (c.carga.total / c.carga.max) * 100) : 0
+  const itensVisiveis = (temaDnd || temaOrdem) ? itensBuscados.filter(it=>estadoItens==='todos'||(estadoItens==='equipados'?!!uso.itens[it.id]?.equipado:estadoItens==='disponiveis'?qtd(it)>0:qtd(it)===0)) : itensBuscados
+  const forcaOrdem = Number(d.atributos?.FOR ?? 1)
+  const capacidade = temaOrdem && c.carga.max === null ? (Number.isFinite(forcaOrdem) && forcaOrdem > 0 ? forcaOrdem * 5 : 2) : c.carga.max
+  const pct = capacidade ? Math.min(100, (c.carga.total / capacidade) * 100) : 0
   // Abas por tipo (os nomes seguem o sistema, quando ele tem os seus) e a ala dos itens mágicos.
-  const [aba, setAba] = useState<'todos' | 'magico' | Item['categoria']>('todos')
-  const nomeCategoria = (id: Item['categoria']) => s.nomesItens?.[id] ?? CATEGORIAS_ITEM.find(c => c.id === id)!.nome
+  const [aba, setAba] = useState<'todos' | 'magico' | 'municao' | Item['categoria']>('todos')
+  const nomeCategoria = (id: Item['categoria']) => (temaOrdem && id === 'arma' ? 'Armas' : temaOrdem && id === 'consumivel' ? 'Consumíveis' : undefined) ?? s.nomesItens?.[id] ?? CATEGORIAS_ITEM.find(c => c.id === id)!.nome
   const nomeMagico = s.nomesItens?.magico ?? '✨ Itens mágicos'
+  const municao = (it: Item) => temaOrdem && (it.ordem?.grupo === 'Munição' || (it.categoria === 'equipamento' && (/^Munição\s*·/i.test(it.descricao ?? '') || /^(balas curtas|balas longas|flechas|cartuchos)$/i.test(it.nome.trim()))))
   const magicos = itensVisiveis.filter(i => i.magico)
   const abasItens = [{ id: 'todos' as const, nome: 'Todos', n: itensVisiveis.length },
-    ...CATEGORIAS_ITEM.map(c => ({ id: c.id, nome: `${c.icone} ${nomeCategoria(c.id)}`, n: itensVisiveis.filter(i => i.categoria === c.id).length })).filter(x => x.n),
+    ...CATEGORIAS_ITEM.map(c => ({ id: c.id, nome: temaOrdem ? nomeCategoria(c.id) : `${c.icone} ${nomeCategoria(c.id)}`, n: itensVisiveis.filter(i => i.categoria === c.id && !municao(i)).length })).filter(x => x.n),
+    ...(temaOrdem && itensVisiveis.some(municao) ? [{id:'municao' as const,nome:'Munições',n:itensVisiveis.filter(municao).length}] : []),
     ...(magicos.length ? [{ id: 'magico' as const, nome: nomeMagico, n: magicos.length }] : [])]
   const abaAtual = abasItens.some(x => x.id === aba) ? aba : 'todos'
   const linhaItem = (it: Item) => {
           const eq = !!uso.itens[it.id]?.equipado, n = qtd(it)
+          const fichaArma = temaOrdem && it.categoria==='arma' ? /^(Categoria [^·]+) · (Crítico [^·]+) · ([^·]+) · (.+)$/.exec(it.descricao ?? '') : null
           const armaDnd = s.id === 'dnd5e-srd' && it.categoria === 'arma' ? armaDndPorIdEdicao(it.armaDnd) : null
           const referenciaDnd = s.id === 'dnd5e-srd' && it.categoria === 'arma' ? referenciaArmaDndPorId(it.armaRefDnd) : null
           const armaForaDaEdicao = !!armaDnd && (edicaoDnd === 'phb2014'
@@ -151,7 +158,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
           const modLivre = referenciaDnd ? (c.mods[atributoLivre] ?? 0) : 0
           const danoNormalLivre = s.id === 'dnd5e-srd' && it.categoria === 'arma' && !armaDnd && it.dano ? expressaoDanoLivreDnd(it.dano, false, modLivre) : null
           const danoCriticoLivre = s.id === 'dnd5e-srd' && it.categoria === 'arma' && !armaDnd && it.dano ? expressaoDanoLivreDnd(it.dano, true, modLivre) : null
-          return <li key={it.id} data-categoria={it.categoria} data-equipado={eq ? 'sim' : 'nao'} className={'ficha-item rounded-xl border p-3 ' + (eq ? 'border-(--a-8b6cba) bg-(--s-2b2143)' : 'border-transparent bg-(--s-171325)') + (n <= 0 ? ' opacity-60' : '')}>
+          return <li key={it.id} data-categoria={it.categoria} data-equipado={eq ? 'sim' : 'nao'} className={'ficha-item rounded-xl border p-3 ' + (temaOrdem ? (eq ? 'border-red-800 bg-zinc-900' : 'border-zinc-800 bg-zinc-950') : eq ? 'border-(--a-8b6cba) bg-(--s-2b2143)' : 'border-transparent bg-(--s-171325)') + (n <= 0 ? ' opacity-60' : '')}>
             <div className="flex items-center gap-3">
               <ArteItem item={it} tamanho={46} />
               <span className="min-w-0 flex-1">
@@ -159,7 +166,9 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
                 <span className="block text-[11px]">{it.raridade && <strong style={{ color: corDaRaridade(it.raridade) }}>{RARIDADES.find(x => x.id === it.raridade)?.nome} · </strong>}<span className="text-(--a-c4b6d4)">{it.peso ? `${mostrarPeso(it.peso, c.carga.unidade)} cada` : ''}</span></span>
               </span>
             </div>
-            {(it.bonus.length > 0 || it.descricao) && <p className="mt-1 text-xs text-(--a-c9bcd9)">{it.bonus.map(b => `${nomeAlvo[b.alvo] ?? b.alvo} ${b.valor >= 0 ? '+' : ''}${b.valor}`).join(' · ')}{it.bonus.length && it.descricao ? ' — ' : ''}{it.descricao}</p>}
+            {temaOrdem && it.ordem && <div className="mt-2 grid grid-cols-2 gap-2 text-xs">{Object.entries({Grupo:it.ordem.grupo,Categoria:it.ordem.categoria,Crítico:it.ordem.critico,'Tipo de dano':it.ordem.tipoDano,Modificações:it.ordem.modificacoes,Maldições:it.ordem.maldicoes}).filter(([,v])=>v).map(([k,v])=><div key={k} className="rounded border border-zinc-700 p-2 break-words"><span className="block text-zinc-400">{k}</span>{v}</div>)}</div>}
+            {fichaArma && <div className="mt-3 grid grid-cols-2 gap-2 text-xs">{[['Dano',it.dano ?? '—'],['Crítico',fichaArma[2].replace('Crítico ','')],['Categoria',fichaArma[1].replace('Categoria ','')],['Tipo de dano',fichaArma[3]],['Alcance',it.alcance ? it.alcance+' m' : 'Corpo a corpo']].map(([k,v])=><div key={k} className="rounded border border-zinc-700 bg-zinc-900 p-2"><span className="block text-zinc-400">{k}</span><strong>{v}</strong></div>)}<p className="col-span-2 text-zinc-400">Dados em revisão · confirme com o mestre</p></div>}
+            {(it.bonus.length > 0 || (it.descricao && !fichaArma)) && <p className="mt-1 text-xs text-(--a-c9bcd9)">{it.bonus.map(b => `${nomeAlvo[b.alvo] ?? b.alvo} ${b.valor >= 0 ? '+' : ''}${b.valor}`).join(' · ')}{it.bonus.length && it.descricao ? ' — ' : ''}{!fichaArma && it.descricao}</p>}
             {referenciaDnd && <p className="mt-1 text-[11px] font-medium text-(--a-d3adf0)">📖 {referenciaDnd.livro} · {referenciaDnd.edicao}</p>}
             {armaForaDaEdicao && <p role="alert" className="mt-2 rounded-lg border border-amber-500/40 p-2 text-xs text-amber-200">
               ⚠️ Arma registrada com regras de outra edição. Escolha o modelo correspondente ao livro atual antes de rolar.
@@ -171,9 +180,9 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
                 <span className="min-w-8 text-center text-sm tabular-nums" aria-label="Quantidade">{n}</span>
                 <button type="button" disabled={somenteLeitura} onClick={() => mudarQtd(it, 1)} aria-label={'Mais ' + it.nome} className="px-2 py-1 disabled:opacity-40"><Plus size={13} /></button>
               </span>
-              {it.categoria !== 'consumivel' && it.categoria !== 'tesouro' && <button type="button" className={botao} disabled={somenteLeitura || n <= 0} onClick={() => equipar(it)}><Shield size={13} /> {eq ? 'Desequipar' : 'Equipar'}</button>}
+              {it.categoria !== 'consumivel' && it.categoria !== 'tesouro' && !municao(it) && <button type="button" className={botao} disabled={somenteLeitura || n <= 0} onClick={() => equipar(it)}><Shield size={13} /> {eq ? 'Desequipar' : 'Equipar'}</button>}
               {it.categoria === 'consumivel' && <button type="button" className={botao} disabled={somenteLeitura || n <= 0} onClick={() => void usarConsumivel(it)}><Sparkles size={13} /> Usar</button>}
-              {it.dano && it.categoria !== 'consumivel' && !armaDnd && !(s.id === 'dnd5e-srd' && it.categoria === 'arma') && <button type="button" className={botao} onClick={() => void rolar(it.dano!, it.nome)}><Dice5 size={13} /> {it.dano}</button>}
+              {it.dano && it.categoria !== 'consumivel' && !armaDnd && !(s.id === 'dnd5e-srd' && it.categoria === 'arma') && <button type="button" className={botao} disabled={n <= 0} onClick={() => void rolar(it.dano!, it.nome)}><Dice5 size={13} /> {it.dano}</button>}
               {passarItem && !somenteLeitura && n > 0 && <button type="button" className={botao} onClick={() => passarItem(it, n)} aria-label={'Passar ' + it.nome + ' para outro personagem'}><Gift size={13} /> Passar</button>}
               {!somenteLeitura && <><button type="button" className={botao} onClick={() => setEditando(it)} aria-label={'Editar ' + it.nome}><Pencil size={13} /></button>
                 <button type="button" className={botao} onClick={() => remover(it)} aria-label={'Remover ' + it.nome}><Trash2 size={13} /></button></>}
@@ -234,31 +243,32 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
           </li>
   }
 
-  return <section className={card + (temaDnd ? ' dnd-arsenal' : '')}>
+  return <section className={card + (temaDnd ? ' dnd-arsenal' : '') + (temaOrdem ? ' !border-zinc-700 !bg-zinc-950 text-zinc-100' : '')}>
     {temaDnd && <div className="dnd-bau" aria-hidden="true"><svg viewBox="0 0 120 84" fill="none"><path d="M8 40V25Q8 8 30 8H90Q112 8 112 25V40Z" fill="#49312a" stroke="#bc9764" strokeWidth="2"/><path d="M8 40H112V73H8Z" fill="#36221e" stroke="#bc9764" strokeWidth="2"/><path d="M24 10V73M96 10V73M8 48H112M8 65H112" stroke="#bc9764" strokeWidth="3"/><rect x="49" y="34" width="22" height="22" rx="3" fill="#bc9764"/><path d="M60 41V50" stroke="#36221e" strokeWidth="3"/></svg><span>Arsenal do aventureiro</span></div>}
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Backpack size={18} /> Inventário</h2>
+      <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Backpack size={18} /> {temaOrdem ? 'Equipamentos do agente' : 'Inventário'}</h2>
       {!somenteLeitura && <div className="flex flex-wrap gap-2">
         {s.id === 'dnd5e-srd' && <button type="button" className={botao + ' border-(--a-b99bff) min-h-10'} onClick={() => setCatalogoAberto(true)}><Dice5 size={14} /> Arsenais por livro ({arsenaisPermitidosDnd(edicaoDnd, livrosDnd.suplementos).length})</button>}
-        <button type="button" className={botao} onClick={() => setArsenalAberto(true)}><Package size={14} /> Arsenal pronto</button>
+        <button type="button" className={botao} onClick={() => setArsenalAberto(true)}><Package size={14} /> {temaOrdem ? 'Arsenal da Ordem' : 'Arsenal pronto'}</button>
         <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', categoria: 'equipamento', peso: 0, bonus: [] })}><Plus size={14} /> Novo item</button>
       </div>}
     </div>
+    {temaOrdem && <p className="mt-2 border-l-2 border-red-800 pl-3 text-xs uppercase tracking-widest text-zinc-400">Registro de campo · Inventário operacional</p>}
     <div className="mt-3 grid gap-3 sm:grid-cols-2">
-      <div className="rounded-xl bg-(--s-171325) p-3 text-sm">
-        <p className="ficha-carga-titulo text-xs text-(--a-c4b6d4)">Carga{s.carga?.dica ? ' · ' + s.carga.dica : ''}</p>
-        <p className="text-lg font-bold">{c.carga.total.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} {c.carga.max !== null ? `/ ${c.carga.max.toLocaleString('pt-BR', { maximumFractionDigits: 3 })}` : ''} <span className="text-xs font-normal text-(--a-c4b6d4)">{c.carga.unidade}</span></p>
-        {c.carga.max ? <div className="mt-1 h-2 overflow-hidden rounded-full bg-(--s-2b2140)"><div className={'h-full transition-all ' + (c.carga.total > c.carga.max ? 'bg-red-400' : 'bg-(--a-b06ad8)')} style={{ width: pct + '%' }} /></div> : null}
-        {c.carga.max !== null && c.carga.total > c.carga.max && <p className="mt-1 text-xs text-red-200">Acima da capacidade!</p>}
+      <div className={temaOrdem ? "rounded-xl border border-zinc-700 bg-zinc-900 p-3 text-sm" : "rounded-xl bg-(--s-171325) p-3 text-sm"}>
+        <p className="ficha-carga-titulo text-xs text-(--a-c4b6d4)">{temaOrdem ? 'Espaços ocupados' : 'Carga'}{s.carga?.dica ? ' · ' + s.carga.dica : ''}</p>
+        <p className="text-lg font-bold">{c.carga.total.toLocaleString('pt-BR', { maximumFractionDigits: 3 })} {capacidade !== null ? `/ ${capacidade.toLocaleString('pt-BR', { maximumFractionDigits: 3 })}` : ''} <span className="text-xs font-normal text-(--a-c4b6d4)">{c.carga.unidade}</span></p>
+        {capacidade ? <div className="mt-1 h-2 overflow-hidden rounded-full bg-(--s-2b2140)"><div className={'h-full transition-all ' + (c.carga.total > capacidade ? 'bg-red-400' : 'bg-(--a-b06ad8)')} style={{ width: pct + '%' }} /></div> : null}
+        {capacidade !== null && c.carga.total > capacidade && <p className="mt-1 text-xs text-red-200">Acima da capacidade!</p>}
       </div>
-      {temaDnd ? <CarteiraDnd valor={uso.carteira} mudar={carteira=>salvarUso({...uso,carteira})} somenteLeitura={!!somenteLeitura}/> : <label className="ficha-carteira rounded-xl bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">💰 Carteira (moedas e valores)
+      {temaDnd ? <CarteiraDnd valor={uso.carteira} mudar={carteira=>salvarUso({...uso,carteira})} somenteLeitura={!!somenteLeitura}/> : temaOrdem ? <div className="rounded-xl border border-zinc-700 bg-zinc-900 p-3 text-sm"><p className="text-xs uppercase tracking-wider text-zinc-400">Resumo operacional</p><p className="mt-1">{itens.filter(it=>qtd(it)>0).length} tipos de item · {itens.filter(it=>qtd(it)>0&&uso.itens[it.id]?.equipado).length} equipados</p><details className="mt-2 text-xs text-zinc-400"><summary>Registro livre de valores</summary><input aria-label="Registro livre de valores" value={uso.carteira} disabled={somenteLeitura} maxLength={500} onChange={e=>salvarUso({...uso,carteira:e.target.value})} className={input+" mt-1"}/></details></div> : <label className="ficha-carteira rounded-xl bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">💰 Carteira (moedas e valores)
         <input value={uso.carteira} disabled={somenteLeitura} maxLength={500} onChange={e => salvarUso({ ...uso, carteira: e.target.value })} placeholder="Ex.: 35 PO, 12 PP" className={input + ' mt-1 text-sm'} /></label>}
     </div>
-    {temaDnd && itens.length > 0 && <div className="mt-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
-      <label className="block text-xs font-semibold text-(--a-d3adf0)">🔎 Encontrar item na bolsa</label>
+    {(temaDnd || temaOrdem) && itens.length > 0 && <div className="mt-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+      <label className="block text-xs font-semibold text-(--a-d3adf0)">{temaOrdem ? 'Localizar equipamento' : '🔎 Encontrar item na bolsa'}</label>
       <input type="search" value={buscaItens} onChange={e => setBuscaItens(e.target.value)}
-        placeholder="Busque nome, descrição ou livro…" className={input + ' mt-1 text-sm'} />
-      <div className="dnd-filtros-arsenal" role="group" aria-label="Estado dos equipamentos">{[['todos','Todos'],['equipados','Equipados'],['disponiveis','Disponíveis'],['esgotados','Esgotados']].map(([id,nome])=><button key={id} type="button" aria-pressed={estadoItens===id} onClick={()=>setEstadoItens(id)}>{nome}</button>)}</div>
+        placeholder={temaOrdem ? "Nome ou descrição…" : "Busque nome, descrição ou livro…"} className={input + ' mt-1 text-sm'} />
+      <div className={temaOrdem ? "mt-2 grid grid-cols-2 gap-1.5 text-xs [&>button]:rounded [&>button]:border [&>button]:border-zinc-600 [&>button]:px-2 [&>button]:py-2 [&>button[aria-pressed=true]]:bg-red-950" : "dnd-filtros-arsenal"} role="group" aria-label="Estado dos equipamentos">{[['todos','Todos'],['equipados','Equipados'],['disponiveis','Disponíveis'],['esgotados','Esgotados']].map(([id,nome])=><button key={id} type="button" aria-pressed={estadoItens===id} onClick={()=>setEstadoItens(id)}>{nome}</button>)}</div>
       <p className="mt-1 text-[11px] text-(--a-c4b6d4)">{itensVisiveis.length} de {itens.length} itens encontrados</p>
     </div>}
     {Object.keys(c.bonus).length > 0 && <p className="mt-3 rounded-lg bg-[#1f3a2c] p-2 text-xs text-[#a9f0c8]">Itens equipados somando: {Object.entries(c.bonus).map(([a, v]) => `${nomeAlvo[a] ?? a} ${v >= 0 ? '+' : ''}${v}`).join(' · ')}</p>}
@@ -271,15 +281,16 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-200">{nomeMagico}</h3>
       <ul className="ficha-lista-itens space-y-2">{magicos.map(linhaItem)}</ul>
     </div>}
+    {abaAtual === 'todos' && itensVisiveis.some(municao) && <div className="mt-4"><h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-300">Munições</h3><ul className="space-y-2">{itensVisiveis.filter(it=>municao(it)&&!it.magico).map(linhaItem)}</ul></div>}
     {abaAtual === 'todos' ? CATEGORIAS_ITEM.map(cat => {
-      const lista = itensVisiveis.filter(i => i.categoria === cat.id && !i.magico); if (!lista.length) return null
+      const lista = itensVisiveis.filter(i => i.categoria === cat.id && !i.magico && !municao(i)); if (!lista.length) return null
       return <div key={cat.id} className="ficha-compartimento mt-4">
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{cat.icone} {nomeCategoria(cat.id)}</h3>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{!temaOrdem && cat.icone} {nomeCategoria(cat.id)}</h3>
         <ul className="ficha-lista-itens space-y-2">{lista.map(linhaItem)}</ul>
       </div>
-    }) : <ul className="ficha-lista-itens mt-3 space-y-2">{itensVisiveis.filter(i => abaAtual === 'magico' ? i.magico : i.categoria === abaAtual).map(linhaItem)}</ul>}
+    }) : <ul className="ficha-lista-itens mt-3 space-y-2">{itensVisiveis.filter(i => abaAtual === 'magico' ? i.magico : abaAtual === 'municao' ? municao(i) : i.categoria === abaAtual && !municao(i)).map(linhaItem)}</ul>}
     {editando && <EditorItem s={s} edicaoDnd={edicaoDnd} inicial={editando} salvar={salvarItem} fechar={() => setEditando(null)} />}
-    {arsenalAberto && <ArsenalPronto fechar={() => setArsenalAberto(false)} adicionar={x => {
+    {arsenalAberto && <ArsenalPronto ordem={temaOrdem} fechar={() => setArsenalAberto(false)} adicionar={x => {
       if (itens.length >= 300) { toast.error('O inventário já chegou ao limite de 300 itens.'); return }
       salvarItem(itemDoArsenal(x, novoId)); toast.success(x.nome + ' entrou no inventário!')
     }} />}
@@ -292,6 +303,33 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
   const poderes = lerPoderes(d.poderes), uso = lerUso(d.uso)
   const [editando, setEditando] = useState<Poder | null>(null)
   const nomeRecurso = Object.fromEntries(s.recursos.map(r => [r.id, r.nome]))
+  const ordem = s.id === 'ordem-paranormal'
+  const [elemento, setElemento] = useState('Todos')
+  const [circulo, setCirculo] = useState('Todos')
+  const [abaOrdem, setAbaOrdem] = useState<'poderes' | 'rituais'>('rituais')
+  const rituais = poderes.filter(p => p.tipo === 'magia')
+  const [verGrimorio, setVerGrimorio] = useState(true)
+  const [buscaRitual, setBuscaRitual] = useState('')
+  const custosRituais = [0,1,3,6,10]
+  const catalogoInicial: { nome: string; elemento: NonNullable<Poder['elementoOrdem']>; circulo: number }[] = [
+    ...(['Conhecimento','Energia','Morte','Sangue'] as const).map(elemento => ({nome:'Amaldiçoar Arma',elemento,circulo:1})),
+    ...['Compreensão Paranormal','Enfeitiçar','Perturbação','Ouvir os Sussurros','Tecer Ilusão','Terceiro Olho'].map(nome=>({nome,elemento:'Conhecimento' as const,circulo:1})),
+    ...['Amaldiçoar Tecnologia','Coincidência Forçada','Eletrocussão','Embaralhar','Luz','Polarização Caótica'].map(nome=>({nome,elemento:'Energia' as const,circulo:1})),
+    {nome:'Cicatrização',elemento:'Morte',circulo:1},
+    {nome:'Cinerária',elemento:'Medo',circulo:1}
+  ]
+  const detalhesRitual = (r: typeof catalogoInicial[number]) => r.nome === 'Amaldiçoar Arma' && r.elemento === 'Sangue' ? 'Livro de Regras v1.2, p. 124. Ação padrão; toque; arma corpo a corpo ou pacote de munição; duração: cena. A arma recebe dano extra de Sangue. Normal: 1 PE, +1d6. Discente: 3 PE no total, +2d6, requer 2º círculo. Verdadeiro: 6 PE no total, +4d6, requer 3º círculo e afinidade. O dano é adicional ao ataque, não causado na conjuração.' : undefined
+  const pe = s.recursos.find(r => r.id.toLowerCase() === 'pe' || /pontos de esforço/i.test(r.nome) || r.nome.toUpperCase() === 'PE')
+  const conhecidos = (r: typeof catalogoInicial[number]) => rituais.some(p=>p.nome.toLocaleLowerCase('pt-BR')===r.nome.toLocaleLowerCase('pt-BR') && p.elementoOrdem===r.elemento)
+
+  const grupos = ordem ? abaOrdem === 'poderes'
+    ? FONTES_ORDEM.map(f => ({ titulo: f === 'Outro' ? 'Outros poderes' : 'Poderes de ' + f.toLowerCase(), itens: poderes.filter(p => p.tipo !== 'magia' && (p.fonteOrdem ?? 'Outro') === f) }))
+    : [...ELEMENTOS_ORDEM, 'Sem elemento'].filter(e => elemento === 'Todos' || elemento === e).flatMap(e =>
+        ['1','2','3','4','Sem círculo'].filter(n => (circulo === 'Todos' || circulo === n) && ((e !== 'Sem elemento' && n !== 'Sem círculo') || rituais.some(p => (p.elementoOrdem || 'Sem elemento') === e && (p.circuloOrdem ? String(p.circuloOrdem) : 'Sem círculo') === n))).map(n => ({
+          titulo: e + ' · ' + (n === 'Sem círculo' ? n : n + 'º círculo'),
+          itens: rituais.filter(p => (p.elementoOrdem || 'Sem elemento') === e && (p.circuloOrdem ? String(p.circuloOrdem) : 'Sem círculo') === n).sort((a,b) => a.nome.localeCompare(b.nome,'pt-BR'))
+        })))
+    : [{ titulo: '', itens: poderes }]
   function salvarPoder(p: Poder) {
     onChange({ ...d, poderes: poderes.some(x => x.id === p.id) ? poderes.map(x => x.id === p.id ? p : x) : [...poderes, p] }); setEditando(null)
   }
@@ -314,36 +352,82 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
 
   return <section className={card}>
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Sparkles size={18} /> {s.id === 'dnd5e-srd' ? 'Poderes extras e personalizados' : 'Poderes e magias'}</h2>
+      <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Sparkles size={18} /> {s.id === 'dnd5e-srd' ? 'Poderes extras e personalizados' : ordem ? 'Poderes e rituais' : 'Poderes e magias'}</h2>
       <div className="flex gap-2">
         {comUsos && !somenteLeitura && <button type="button" className={botao} onClick={descansar} title="Zera os usos gastos"><Moon size={14} /> Descansar</button>}
-        {!somenteLeitura && <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', tipo: 'habilidade' })}><Plus size={14} /> Novo poder</button>}
+        {!somenteLeitura && <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', tipo: ordem && abaOrdem === 'rituais' ? 'magia' : 'habilidade' })}><Plus size={14} /> {ordem && abaOrdem === 'rituais' ? 'Novo ritual' : 'Novo poder'}</button>}
       </div>
     </div>
     {s.id === 'dnd5e-srd' && <p className="mt-2 text-xs text-(--a-c4b6d4)">Habilidades de raça/espécie, classe e antecedente são geradas nos hexágonos oficiais da Árvore. Adicione aqui apenas poderes aprendidos ou concedidos além daqueles naturais.</p>}
-    {!poderes.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">Nenhum poder ainda.{!somenteLeitura && ' Toque em “Novo poder”.'}</p>}
-    <ul className="ficha-lista-poderes mt-3 space-y-2">{poderes.map(p => {
+    {!ordem && !poderes.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">Nenhum poder ainda.{!somenteLeitura && ' Toque em “Novo poder”.'}</p>}
+    {ordem && <div className="ordem-acervo-abas mt-3 grid grid-cols-2 gap-2" role="group" aria-label="Seção do acervo">
+      <button type="button" className={botao + (abaOrdem === "poderes" ? " !border-red-500 !bg-red-950" : "")} aria-pressed={abaOrdem === 'poderes'} onClick={() => setAbaOrdem('poderes')}>Poderes ({poderes.length - rituais.length})</button>
+      <button type="button" className={botao + (abaOrdem === "rituais" ? " !border-red-500 !bg-red-950" : "")} aria-pressed={abaOrdem === 'rituais'} onClick={() => setAbaOrdem('rituais')}>Rituais ({rituais.length})</button>
+    </div>}
+      {ordem && abaOrdem === "rituais" && <div className="ordem-filtros" role="group" aria-label="Filtrar rituais por elemento">{["Todos", ...ELEMENTOS_ORDEM].map(e => <button key={e} type="button" data-elemento={e} aria-pressed={elemento === e} onClick={() => setElemento(e)}>{e !== "Todos" && <SimboloElementoOrdem elemento={e} tamanho={28}/>}<span>{e}</span></button>)}</div>}
+      {ordem && abaOrdem === "rituais" && <label className="ordem-circulo-filtro">Círculo<select value={circulo} onChange={e => setCirculo(e.target.value)} className={input}>{["Todos","1","2","3","4"].map(n => <option key={n} value={n}>{n === "Todos" ? n : n + "º círculo"}</option>)}</select></label>}
+    {ordem && abaOrdem === 'rituais' && <div className="mt-3 space-y-3">
+      <div className="grid grid-cols-2 gap-2"><button type="button" className={botao} aria-pressed={verGrimorio} onClick={()=>setVerGrimorio(true)}>Grimório</button><button type="button" className={botao} aria-pressed={!verGrimorio} onClick={()=>setVerGrimorio(false)}>Meus rituais</button></div>
+      {verGrimorio && <><p className="text-xs">Catálogo inicial • Livro de Regras v1.2 • detalhes em revisão</p><input className={input} aria-label="Buscar ritual" placeholder="Buscar ritual…" value={buscaRitual} onChange={e=>setBuscaRitual(e.target.value)}/>
+      {ELEMENTOS_ORDEM.filter(e=>elemento==='Todos'||elemento===e).map(e=>{
+        const cor = {Sangue:'#ff536b',Morte:'#ded7df',Conhecimento:'#ffdc78',Energia:'#df83ff',Medo:'#ffffff'}[e]
+        const filtrados = catalogoInicial.filter(r=>r.elemento===e && (circulo==='Todos'||circulo===String(r.circulo)) && r.nome.toLocaleLowerCase('pt-BR').includes(buscaRitual.toLocaleLowerCase('pt-BR')))
+        if(buscaRitual.trim() && !filtrados.length) return null
+        return <section key={e} className="mt-4 space-y-3" style={{borderTop:'1px solid '+cor+'44',paddingTop:16}}>
+          <header className="flex items-center gap-3" style={{color:cor}}>
+            <span className="flex items-center justify-center rounded-xl shrink-0" style={{width:44,height:44,background:cor+'15',border:'1px solid '+cor+'44'}}><SimboloElementoOrdem elemento={e} tamanho={30}/></span>
+            <div className="min-w-0 flex-1"><div className="text-xs uppercase tracking-widest opacity-70">Elemento</div><h3 style={{color:cor,margin:0,fontSize:20}}>{e}</h3></div>
+            <span className="text-xs">{filtrados.length} {filtrados.length===1?'ritual':'rituais'}</span>
+          </header>
+          {[1,2,3,4].filter(n=>circulo==='Todos'||circulo===String(n)).map(n=>{
+            const itens=filtrados.filter(r=>r.circulo===n)
+            if(buscaRitual.trim()&&!itens.length)return null
+            return <details key={n} open={itens.length>0?true:undefined} className="rounded-xl overflow-hidden" style={{border:'1px solid '+cor+'33',background:cor+'05'}}>
+              <summary className="flex items-center justify-between gap-2 cursor-pointer px-3 py-3" style={{color:cor,listStyle:'none'}}><span className="font-semibold">{n}º círculo <span className="text-xs opacity-70">· {custosRituais[n]} PE</span></span><span className="text-xs opacity-80">{itens.length} {itens.length===1?'ritual':'rituais'} ▾</span></summary>
+              <div className="px-2 pb-2 space-y-2">{itens.length===0?<p className="text-xs opacity-70 px-2 py-2">Catálogo em revisão.</p>:itens.map(r=><article key={r.nome} className="rounded-xl p-3 space-y-3" style={{background:'rgba(10,8,14,.65)',border:'1px solid '+cor+'44'}}>
+                <div className="flex items-start gap-2"><div className="flex-1 min-w-0"><strong className="text-base leading-tight block">{r.nome}</strong><span className="text-xs opacity-70">Livro de Regras v1.2</span></div><span className="shrink-0 rounded-lg px-2 py-1 text-sm font-bold" style={{color:cor,background:cor+'18'}}>{custosRituais[n]} PE</span></div>
+                {detalhesRitual(r)?<details className="rounded-lg" style={{border:'1px solid '+cor+'33'}}><summary className="cursor-pointer px-3 py-2 text-sm font-medium" style={{color:cor}}>Ficha do ritual</summary><div className="p-3 space-y-3">
+                  <div className="grid grid-cols-2 gap-2">{[['Execução','Ação padrão'],['Alcance','Toque'],['Alvo','Arma corpo a corpo ou pacote de munição'],['Duração','Cena']].map(([label,value])=><div key={label} className="rounded-lg p-2" style={{background:cor+'09'}}><div className="text-xs opacity-70">{label}</div><div className="text-sm break-words">{value}</div></div>)}</div>
+                  <p className="text-sm leading-relaxed">A arma ou munição recebe dano adicional de Sangue ao atacar durante a cena.</p>
+                  <div className="text-xs uppercase tracking-widest opacity-70">Aprimoramentos</div>
+                  {[['Normal','1 PE','+1d6','1º círculo'],['Discente','3 PE','+2d6','2º círculo'],['Verdadeiro','6 PE','+4d6','3º círculo e afinidade']].map(([nome,custo,dano,requisito])=><div key={nome} className="rounded-lg p-2" style={{border:'1px solid '+cor+'33'}}><div className="flex justify-between items-center gap-2"><strong className="text-sm">{nome}</strong><span className="text-sm font-semibold" style={{color:cor}}>{custo}</span></div><div className="text-sm mt-1">{dano} de Sangue</div><div className="text-xs opacity-70 mt-1">Requisito: {requisito}</div></div>)}
+                  <p className="text-xs opacity-60">Valores totais de PE · Livro de Regras v1.2</p>
+                </div></details>:<p className="text-xs opacity-70">Detalhes em revisão.</p>}
+                <button type="button" className={botao+' w-full'} style={{borderColor:cor+'66',color:cor,background:cor+'12'}} disabled={somenteLeitura||conhecidos(r)} onClick={()=>setEditando({id:novoId(),nome:r.nome,tipo:'magia',elementoOrdem:r.elemento,circuloOrdem:r.circulo,recurso:pe?.id,custo:custosRituais[n],descricao:detalhesRitual(r)})}>{conhecidos(r)?'✓ Ritual aprendido':'+ Aprender ritual'}</button>
+              </article>)}</div>
+            </details>
+          })}
+        </section>
+      })}</>}
+    </div>}
+    {ordem && (abaOrdem !== "rituais" || !verGrimorio) && !grupos.some(g => g.itens.length) && <p className="mt-3 text-sm">Nenhum {abaOrdem === 'rituais' ? 'ritual neste filtro' : 'poder cadastrado'}.</p>}
+    {grupos.filter(g => !ordem || (abaOrdem === "rituais" ? !verGrimorio : g.itens.length)).map(g => <div key={g.titulo} className={ordem ? "ordem-grupo-poderes" : undefined}>
+      {ordem && <h3>{g.titulo} <span className="text-xs opacity-70">({g.itens.length})</span></h3>}
+      {ordem && abaOrdem === "rituais" && !g.itens.length && <p className="text-xs opacity-75">Nenhum ritual aprendido neste grupo.</p>}
+      <ul className="ficha-lista-poderes mt-3 space-y-2">{g.itens.map(p => {
       const tipo = TIPOS_PODER.find(t => t.id === p.tipo)!, gastos = uso.poderes[p.id] ?? 0
       const atual = p.recurso ? d.recursos[p.recurso]?.atual ?? 0 : undefined
       const ok = podeUsar(p, uso, atual).ok
-      return <li key={p.id} className="ficha-poder rounded-xl bg-(--s-171325) p-3">
+      return <li key={p.id} data-elemento={ordem ? p.elementoOrdem : undefined} className={"ficha-poder rounded-xl bg-(--s-171325) p-3" + (ordem ? p.tipo === "magia" ? " ordem-ritual-card" : " ordem-poder-card" : "")}>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="min-w-0 flex-1 font-semibold">{tipo.icone} {p.nome}</span>
-          <span className="rounded bg-(--s-2b2140) px-1.5 py-0.5 text-[10px] text-(--a-d6c8e8)">{tipo.nome}</span>
+          {ordem && p.tipo === "magia" && p.elementoOrdem && <SimboloElementoOrdem elemento={p.elementoOrdem} tamanho={36}/>}
+          <span className="min-w-0 flex-1 font-semibold">{!ordem && tipo.icone} {p.nome}</span>
+          <span className="rounded bg-(--s-2b2140) px-1.5 py-0.5 text-[10px] text-(--a-d6c8e8)">{ordem && p.tipo === "magia" ? [p.elementoOrdem ?? "Ritual", p.circuloOrdem ? p.circuloOrdem + "º círculo" : ""].filter(Boolean).join(" · ") : tipo.nome}</span>
           {p.id.startsWith('arv-') && <span className="rounded bg-(--s-3b2b57) px-1.5 py-0.5 text-[10px] text-amber-200" title="Vem de um hexágono liberado; muda na Árvore de habilidades">🌠 Árvore</span>}
         </div>
         <p className="mt-1 text-xs text-(--a-c9bcd9)">
           {[p.recurso && p.custo ? `Custo: ${p.custo} ${nomeRecurso[p.recurso] ?? p.recurso}` : '', p.usosMax ? `Usos: ${p.usosMax - gastos}/${p.usosMax} (${p.recarga === 'curto' ? 'descanso curto' : 'descanso longo'})` : '', p.expressao ? `Rolagem: ${p.expressao}` : ''].filter(Boolean).join(' · ')}
-          {p.descricao && <span className="mt-1 block whitespace-pre-wrap">{p.descricao}</span>}
+          {p.descricao && !ordem && <span className="mt-1 block whitespace-pre-wrap">{p.descricao}</span>}
         </p>
+        {ordem && <details className="ordem-consulta"><summary>Consultar</summary><p className="whitespace-pre-wrap">{p.descricao || "Nenhuma descrição cadastrada."}</p></details>}
         <div className="mt-2 flex flex-wrap gap-1.5">
-          <button type="button" className={botao} disabled={somenteLeitura || !ok} onClick={() => void usar(p)}><Sparkles size={13} /> Usar</button>
+          <button type="button" className={botao} disabled={somenteLeitura || !ok} onClick={() => void usar(p)}><Sparkles size={13} /> {ordem && p.tipo === "magia" ? "Conjurar" : "Usar"}</button>
           {p.expressao && <button type="button" className={botao} onClick={() => void rolar(p.expressao!, p.nome)}><Dice5 size={13} /> Só rolar</button>}
           {!somenteLeitura && !p.id.startsWith('arv-') && <><button type="button" className={botao} onClick={() => setEditando(p)} aria-label={'Editar ' + p.nome}><Pencil size={13} /></button>
             <button type="button" className={botao} onClick={() => remover(p)} aria-label={'Remover ' + p.nome}><Trash2 size={13} /></button></>}
         </div>
       </li>
-    })}</ul>
+    })}</ul></div>)}
     {c && editando && <EditorPoder s={s} inicial={editando} salvar={salvarPoder} fechar={() => setEditando(null)} />}
   </section>
 }
@@ -386,6 +470,9 @@ function FotoDoItem({ it, setIt }: { it: Item; setIt: React.Dispatch<React.SetSt
 
 export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }: { s?: Sistema; inicial: Item; salvar: (i: Item) => void; fechar: () => void; edicaoDnd?: LivroBaseDnd }) {
   const [it, setIt] = useState<Item>(inicial)
+  const ordem = s?.id === 'ordem-paranormal'
+  const dados = it.ordem ?? {}
+  const campoOrdem = (k: keyof NonNullable<Item['ordem']>, v:string) => setIt(old=>({...old,ordem:{...old.ordem,[k]:v}}))
   const dnd = s?.id === 'dnd5e-srd'
   const temaDnd = dnd || s?.id === 'dnd5e-manual'
   const referencia = dnd ? referenciaArmaDndPorId(it.armaRefDnd) : null
@@ -401,8 +488,8 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
     .sort((x, y) => icoCategoria.indexOf(x.id) - icoCategoria.indexOf(y.id))
   const alvos = s ? alvosDeBonus(s) : []
   const setB = (i: number, b: Partial<Bonus>) => setIt({ ...it, bonus: it.bonus.map((x, k) => k === i ? { ...x, ...b } : x) })
-  return <Janela titulo={temaDnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla temaDnd={temaDnd}>
-    <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return }
+  return <Janela titulo={ordem ? (inicial.nome ? 'Editar equipamento' : 'Registrar equipamento') : temaDnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla temaDnd={temaDnd}>
+    <form noValidate className={ordem ? "space-y-3 [&_input]:!border-zinc-600 [&_select]:!border-zinc-600 [&_textarea]:!border-zinc-600" : "space-y-3"} onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return }
       if ((it.rolagens?.length ?? 0) > (v.rolagens?.length ?? 0)) toast.warning('Rolagens sem nome ou com dados inválidos ficaram de fora.')
       salvar({ ...v, id: inicial.id }) }}>
       <div className="flex items-center gap-3 rounded-xl border border-(--a-62527e) bg-gradient-to-r from-(--s-2b2143) to-(--s-171325) p-3">
@@ -414,11 +501,22 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
         </div>
       </div>
       <FotoDoItem it={it} setIt={setIt} />
-      <label className="block">Nome<input required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Espada longa" /></label>
+      <label className="block">Nome<input required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder={ordem ? "Ex.: Lanterna tática" : "Ex.: Espada longa"} /></label>
       <div className="grid grid-cols-2 gap-2">
         <label className="block">Tipo<select value={it.categoria} onChange={e => setIt({ ...it, categoria: e.target.value as Item['categoria'] })} className={input + ' mt-1'}>{CATEGORIAS_ITEM.map(c => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></label>
         <CampoPeso valor={it.peso} unidade={s?.carga?.unidade ?? 'kg'} mudar={peso => setIt({ ...it, peso })} />
       </div>
+      {ordem && <fieldset className="space-y-3 rounded-lg border border-zinc-700 bg-zinc-950 p-3">
+        <legend className="px-2 text-xs uppercase tracking-wider text-red-300">Registro operacional</legend>
+        <div className="grid grid-cols-2 gap-2">
+          <label>Grupo<select className={input} value={dados.grupo ?? ''} onChange={e=>campoOrdem('grupo',e.target.value)}><option value="">Não definido</option>{['Arma','Proteção','Munição','Equipamento geral','Componente ritualístico','Item amaldiçoado','Consumível'].map(v=><option key={v}>{v}</option>)}</select></label>
+          <label>Categoria<select className={input} value={dados.categoria ?? ''} onChange={e=>campoOrdem('categoria',e.target.value)}><option value="">Não definida</option>{['0','I','II','III','IV'].map(v=><option key={v}>{v}</option>)}</select></label>
+        </div>
+        {it.categoria==='arma' && <div className="grid grid-cols-2 gap-2"><label>Crítico<input className={input} value={dados.critico ?? ''} maxLength={20} placeholder="19/x2" onChange={e=>campoOrdem('critico',e.target.value)}/></label><label>Tipo de dano<input className={input} value={dados.tipoDano ?? ''} maxLength={60} placeholder="Corte" onChange={e=>campoOrdem('tipoDano',e.target.value)}/></label></div>}
+        <label className="block">Modificações<textarea className={input} rows={2} maxLength={1000} value={dados.modificacoes ?? ''} onChange={e=>campoOrdem('modificacoes',e.target.value)}/></label>
+        <label className="block">Maldições<textarea className={input} rows={2} maxLength={1000} value={dados.maldicoes ?? ''} onChange={e=>campoOrdem('maldicoes',e.target.value)}/></label>
+        <p className="text-xs text-zinc-400">Registro manual: efeitos, limites de patente e crítico automático ainda não são aplicados por estes campos.</p>
+      </fieldset>}
       {dnd && it.categoria === 'arma' && <div className="space-y-2 rounded-lg border border-(--a-55456e) bg-(--s-171325) p-3 text-xs">
         {referencia && <p className="rounded-lg border border-(--a-8b6cba)/50 bg-(--s-241a3a) p-2">📖 <strong>{referencia.nome}</strong> · {referencia.livro} ({referencia.edicao}). Efeitos exclusivos devem ser conferidos no livro.</p>}
         <label className="block">Modelo físico da arma (opcional)
@@ -500,11 +598,12 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
 export function EditorPoder({ s, inicial, salvar, fechar }: { s?: Sistema; inicial: Poder; salvar: (p: Poder) => void; fechar: () => void }) {
   const [p, setP] = useState<Poder>(inicial)
   const recursos = s?.recursos ?? []
-  return <Janela titulo={inicial.nome ? 'Editar poder' : 'Novo poder'} fechar={fechar} temaDnd={s?.id === 'dnd5e-srd' || s?.id === 'dnd5e-manual'}>
+  return <Janela titulo={s?.id === "ordem-paranormal" && p.tipo === "magia" ? (inicial.nome ? "Editar ritual" : "Ritual personalizado") : inicial.nome ? "Editar poder" : "Novo poder"} fechar={fechar} temaDnd={s?.id === 'dnd5e-srd' || s?.id === 'dnd5e-manual'}>
     <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarPoder(p); if (!v) { toast.error('Dê um nome ao poder.'); return } salvar({ ...v, id: inicial.id }) }}>
       {(s?.id === 'dnd5e-srd' || s?.id === 'dnd5e-manual') && <div className="dnd-editor-intro"><Sparkles size={22} aria-hidden="true"/><div><strong>{p.nome || 'Uma nova habilidade'}</strong><p>Registre sua técnica, magia ou poder personalizado.</p></div></div>}
-      <label className="block">Nome<input autoFocus required value={p.nome} maxLength={120} onChange={e => setP({ ...p, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Bola de fogo" /></label>
-      <label className="block">Tipo<select value={p.tipo} onChange={e => setP({ ...p, tipo: e.target.value as Poder['tipo'] })} className={input + ' mt-1'}>{TIPOS_PODER.map(t => <option key={t.id} value={t.id}>{t.icone} {t.nome}</option>)}</select></label>
+      <label className="block">Nome<input autoFocus required value={p.nome} maxLength={120} onChange={e => setP({ ...p, nome: e.target.value })} className={input + ' mt-1'} placeholder={s?.id === "ordem-paranormal" ? "Nome do poder ou ritual" : "Ex.: Bola de fogo"} /></label>
+      <label className="block">Tipo<select value={p.tipo} onChange={e => setP({ ...p, tipo: e.target.value as Poder['tipo'] })} className={input + ' mt-1'}>{TIPOS_PODER.map(t => <option key={t.id} value={t.id}>{t.icone} {s?.id === "ordem-paranormal" && t.id === "magia" ? "Ritual" : t.nome}</option>)}</select></label>
+      {s?.id === "ordem-paranormal" && (p.tipo === "magia" ? <div className="grid grid-cols-2 gap-2"><label>Elemento<select className={input} value={p.elementoOrdem ?? ""} onChange={e => setP({...p, elementoOrdem: (e.target.value || undefined) as Poder["elementoOrdem"]})}><option value="">Não definido</option>{ELEMENTOS_ORDEM.map(e => <option key={e}>{e}</option>)}</select></label><label>Círculo<select className={input} value={p.circuloOrdem ?? ""} onChange={e => setP({...p, circuloOrdem: Number(e.target.value) || undefined})}><option value="">Não definido</option>{[1,2,3,4].map(n => <option key={n} value={n}>{n}º</option>)}</select></label></div> : <label>Origem do poder<select className={input} value={p.fonteOrdem ?? ""} onChange={e => setP({...p, fonteOrdem: (e.target.value || undefined) as Poder["fonteOrdem"]})}><option value="">Não definida</option>{FONTES_ORDEM.map(f => <option key={f}>{f}</option>)}</select></label>)}
       {recursos.length > 0 && <div className="grid grid-cols-2 gap-2">
         <label className="block">Gasta<select value={p.recurso ?? ''} onChange={e => setP({ ...p, recurso: e.target.value || undefined, custo: e.target.value ? p.custo ?? 1 : undefined })} className={input + ' mt-1'}>
           <option value="">Nada</option>{recursos.map(r => <option key={r.id} value={r.id}>{r.nome}</option>)}</select></label>

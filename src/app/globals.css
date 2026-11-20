@@ -514,3 +514,96 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 /* Navegação D&D: resumo compacto e cinco destinos visíveis. */
 .dnd-resumo-compacto{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:.35rem;color:#efd1a1}.dnd-resumo-celula{min-width:0;display:grid;justify-items:center;align-content:center;gap:.12rem;padding:.25rem .1rem;background:#33232b;border:1px solid #79563f;border-radius:6px;text-align:center}.dnd-resumo-celula strong{font-size:.95rem;color:#fff0dc;overflow-wrap:anywhere}.dnd-resumo-celula span{font-size:.65rem;line-height:1.2;overflow-wrap:anywhere}.dnd-resumo-celula:first-child svg{color:#ef7777}.dnd-menu-label{display:flex;align-items:center;gap:.45rem;color:inherit}.dnd-menu-curto{display:none}.dnd-menu-longo{display:inline}
 @media(max-width:1023px){[data-visual="dnd5e-srd"] .ficha-menu>div{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.2rem;overflow:visible;padding:.25rem;background:#281c22;border:1px solid #947151;border-radius:9px}[data-visual="dnd5e-srd"] .ficha-menu button{min-width:0;min-height:48px;padding:.3rem .1rem;border-radius:5px;color:#efd1a1;background:transparent;text-align:center}[data-visual="dnd5e-srd"] .ficha-menu button[aria-current="page"]{background:#674a35;box-shadow:inset 0 -2px #d5ae74}.dnd-menu-label{flex-direction:column;gap:.2rem;justify-content:center}.dnd-menu-curto{display:block;font-size:clamp(.57rem,2.2vw,.75rem);line-height:1.2;overflow-wrap:anywhere}.dnd-menu-longo{display:none}}
+
+/* Ordem: arquivo ocultista, sem alterar a mecânica de uso. */
+[data-visual="ordem-paranormal"] .ordem-grupo-poderes{margin-top:1rem;border-top:1px solid #8b243b;padding-top:1rem;min-width:0}
+.ordem-grupo-poderes h3{color:#ff4968;font-family:var(--ficha-fonte,serif);font-size:1.15rem;text-transform:uppercase;letter-spacing:.04em}
+.ordem-filtros{display:flex;flex-wrap:wrap;gap:.45rem;margin:.75rem 0}
+.ordem-filtros button{border:1px solid var(--elemento,#fa3658);color:var(--elemento,#fa3658);border-radius:.65rem;padding:.45rem .75rem;min-height:44px;background:#160b10}
+.ordem-filtros button[aria-pressed="true"]{box-shadow:inset 0 0 0 1px currentColor,0 0 9px currentColor}
+.ordem-grupo-poderes [data-elemento="Sangue"]{--elemento:#ff5163}
+.ordem-grupo-poderes [data-elemento="Morte"]{--elemento:#b8b4b9}
+.ordem-grupo-poderes [data-elemento="Conhecimento"]{--elemento:#f4c65c}
+.ordem-grupo-poderes [data-elemento="Energia"]{--elemento:#dc85ff}
+.ordem-grupo-poderes [data-elemento="Medo"]{--elemento:#fff}
+[data-visual="ordem-paranormal"] .ordem-grupo-poderes .ficha-poder{border:1px solid #96283f;border-inline-start:4px solid var(--elemento,#fa3658);background:linear-gradient(115deg,#311019,#10090e 65%);border-radius:.75rem}
+.ordem-grupo-poderes .ficha-poder[data-elemento] > div:first-child > span:nth-child(2){color:var(--elemento,#fff)}
+.ordem-consulta{margin-top:.45rem;font-size:.85rem;color:#f2cbd0}
+.ordem-consulta summary{cursor:pointer;width:fit-content;padding:.35rem .75rem;border:1px solid #a93450;border-radius:.5rem;min-height:36px}
+.ordem-consulta p{margin-top:.5rem;overflow-wrap:anywhere}
+
+/* Hexatombe — símbolo vetorial, controles HTML e identidade exclusiva de Ordem. */
+.hexatombe-atributos{position:relative;isolation:isolate;aspect-ratio:500/460;width:100%;max-width:560px;margin-inline:auto;container-type:inline-size;background:radial-gradient(ellipse at 48% 48%,#320910 0%,#10090b 65%,#080708 100%);border-radius:8px}
+.hexatombe-sigilo{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.hexatombe-no{position:absolute;transform:translate(-50%,-50%);width:21%;height:23%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;color:#fff;line-height:1.1;text-align:center}
+.hexatombe-no input{appearance:textfield;-moz-appearance:textfield;width:85%;min-width:0;text-align:center;background:transparent;border:0;color:#fff;font-family:Georgia,serif;font-size:clamp(19px,8cqw,44px);line-height:1.1;padding:0;margin:0}
+.hexatombe-no input::-webkit-inner-spin-button,.hexatombe-no input::-webkit-outer-spin-button{appearance:none;margin:0}
+.hexatombe-no input:focus-visible{outline:2px solid #fff;outline-offset:1px;border-radius:2px}
+.hexatombe-no input:disabled{opacity:.85}
+.hexatombe-nome{font-size:clamp(7px,2.25cqw,13px);text-transform:uppercase;font-weight:600}
+.hexatombe-no label{font-family:Georgia,serif;font-size:clamp(12px,4cqw,23px);font-weight:bold}
+[data-visual="ordem-paranormal"]{--ficha-acento:#ff4058!important;--ficha-borda:#72212d!important;--ficha-cartao:#160f12!important}
+[data-visual="ordem-paranormal"] .ficha-painel{border-radius:4px;border-color:#72212d;background:linear-gradient(135deg,#211217,#100d10)}
+[data-visual="ordem-paranormal"] .ficha-capitulo{border-color:#ad263d;background:linear-gradient(115deg,#350b16,#10090c);border-radius:3px}
+
+/* Proporções da arte aprovada; textos uniformes e independentes da ilustração. */
+.hexatombe-atributos{aspect-ratio:1;background:radial-gradient(ellipse at 48% 48%,#24060b,#080708 78%)}
+.hexatombe-no{width:17%;height:19%;gap:0;box-sizing:border-box}
+.hexatombe-no input{font-size:clamp(18px,7cqw,39px);height:8cqw;line-height:1;flex:none}
+.hexatombe-nome{font-size:2.15cqw;line-height:1.2;white-space:nowrap;letter-spacing:0}
+.hexatombe-no label{font-size:4.05cqw;line-height:1.05;letter-spacing:.015em}
+
+/* Hexatombe: testes e registros operacionais */
+.ordem-testes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:.5rem}
+.ordem-testes-grid button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;min-height:88px;padding:.5rem .125rem;border:1px solid #87283b;border-radius:3px;background:#140c10;color:#fff0f3}
+.ordem-testes-grid button svg{color:#ff3455}
+.ordem-testes-grid button strong{font-size:1rem;letter-spacing:.1em}
+.ordem-testes-grid button span{font-size:.72rem;color:#edb9c3}
+.ordem-testes-grid button:hover{background:#39121d;border-color:#ff3455}
+.ordem-pericias-lista{display:grid;gap:.4rem;grid-template-columns:minmax(0,1fr)}
+.ordem-pericias .ficha-pericia{background:#140d11;border:1px solid #55202c;border-left:3px solid #b82740;border-radius:3px;padding:.55rem .45rem;min-width:0;gap:.4rem}
+.ordem-pericias .ficha-pericia input[type=number]{background:#080708;border-color:#73303e;color:#fff0f3;width:3rem!important}
+.ordem-pericias .ficha-pericia button[aria-label^="Rolar"]{background:#681428;border:1px solid #a32a40;color:#fff;border-radius:3px;min-width:36px;min-height:36px}
+.ordem-pericias .ficha-treino{border-color:#a32a40;color:#ffb1be}
+.ordem-pericias h3{color:#ff8096;border-bottom:1px solid #652332;padding-bottom:.4rem}
+@media(min-width:1100px){.ordem-pericias-lista{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Ordem: ícones elementais compartilhados, sem alterar a rolagem. */
+.ordem-testes-grid {grid-template-columns:repeat(5,minmax(0,1fr));gap:.4rem}
+.ordem-testes-grid button {min-width:0;padding:.5rem .15rem}
+.ordem-testes-grid button svg {max-width:100%;height:auto;aspect-ratio:1}
+.ordem-filtros button {display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-height:44px}
+@media(max-width:420px){.ordem-testes-grid button strong{font-size:.8rem}.ordem-testes-grid button span{font-size:.65rem}.ordem-testes-grid button svg{width:36px}}
+
+/* Registro operacional: perícias de Ordem. */
+[data-visual="ordem-paranormal"] .ordem-pericias-cabecalho,[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-pericia{display:grid;grid-template-columns:44px minmax(0,1fr) 64px 44px;gap:8px;align-items:center;padding:10px 8px}
+.ordem-pericias-cabecalho{font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:#e5bbc4;text-align:center;border-bottom:1px solid #a72b43;margin-bottom:8px}
+.ordem-pericias-cabecalho span:nth-child(2){text-align:left}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-pericia{border:1px solid #813044;border-radius:8px;background:linear-gradient(110deg,#221017,#130e12);min-height:72px}
+.ordem-pericia-elemento{display:flex;align-items:center;gap:5px;font-size:.65rem;letter-spacing:.08em;color:#cdb6c1;margin-top:3px}
+.ordem-pericia-elemento svg{flex-shrink:0}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-pericia>button{min-height:44px;display:grid;place-items:center}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-treino{border-radius:50%;width:34px;height:34px;justify-self:center}
+@media(max-width:420px){[data-visual="ordem-paranormal"] .ordem-pericias-cabecalho,[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-pericia{grid-template-columns:36px minmax(0,1fr) 48px 40px;gap:5px;padding-inline:5px}.ordem-pericias-lista .ficha-pericia>input[type=number]{width:100%!important}.ordem-pericias-cabecalho{font-size:.57rem}}
+
+/* Selos ritualísticos das perícias: marca de fundo sem ocupar coluna. */
+[data-visual="ordem-paranormal"] .ordem-pericias-lista{grid-template-columns:minmax(0,1fr)}
+.ordem-pericias-lista .ficha-pericia{position:relative;isolation:isolate}
+.ordem-pericias-lista .ficha-pericia>:not(.ordem-selo-marca){position:relative;z-index:1}
+.ordem-selo-marca{position:absolute;left:52%;top:50%;transform:translate(-50%,-50%);height:90%;width:auto;max-width:25%;color:#f93657;opacity:.13;pointer-events:none;transition:opacity .25s ease}
+.ordem-selo-marca[data-grau="1"]{opacity:.20}.ordem-selo-marca[data-grau="2"]{opacity:.28}.ordem-selo-marca[data-grau="3"]{opacity:.36}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-treino{border:0;background:transparent;width:100%;height:44px;padding:2px;color:#89747c;transition:color .25s ease,filter .25s ease}
+.ordem-selo-treino{width:100%;height:100%;max-width:40px}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-treino[data-grau="1"]{color:#ff3658}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-treino[data-grau="2"]{color:#ff3658;filter:drop-shadow(0 0 3px #e62949)}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-treino[data-grau="3"]{color:#ff7187;filter:drop-shadow(0 0 6px #ff294e)}
+.ordem-pericias-lista .ficha-treino:focus-visible{outline:2px solid #ff7187;outline-offset:2px}
+[data-visual="ordem-paranormal"] .ordem-pericias-lista .ficha-pericia>input[type=number]{width:100%!important;min-width:0}
+@media(prefers-reduced-motion:reduce){.ordem-selo-marca,.ordem-pericias-lista .ficha-treino{transition:none}}
+
+/* Dossiê e grimório de Ordem Paranormal */
+.ordem-circulo-filtro{display:flex;align-items:center;gap:12px;margin-block:12px;font-size:.8rem;color:#e5bbc4}.ordem-circulo-filtro select{flex:1;min-width:0}
+.ordem-grupo-poderes .ordem-ritual-card{--ritual-cor:#ff3658;border:1px solid var(--ritual-cor);border-left:4px solid var(--ritual-cor);background:linear-gradient(135deg,color-mix(in srgb,var(--ritual-cor) 12%,#100d13),#100d13);overflow-wrap:anywhere}
+.ordem-ritual-card[data-elemento="Sangue"]{--ritual-cor:#ff304d}.ordem-ritual-card[data-elemento="Morte"]{--ritual-cor:#ece8eb}.ordem-ritual-card[data-elemento="Energia"]{--ritual-cor:#df83ff}.ordem-ritual-card[data-elemento="Conhecimento"]{--ritual-cor:#ffdc78}.ordem-ritual-card[data-elemento="Medo"]{--ritual-cor:#fff}
+.ordem-grupo-poderes .ordem-ritual-card>div:first-child{color:var(--ritual-cor)}.ordem-grupo-poderes .ordem-ritual-card>div:first-child>svg{flex-shrink:0}.ordem-grupo-poderes .ordem-poder-card{border:1px solid #813044;border-left:4px solid #b82740;background:linear-gradient(110deg,#251119,#110d12)}
+.ordem-ritual-card button,.ordem-poder-card button{min-height:44px}.ordem-ritual-card .ordem-consulta,.ordem-poder-card .ordem-consulta{margin-top:8px;padding:8px;border-top:1px solid #69303e}

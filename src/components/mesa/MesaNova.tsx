@@ -490,7 +490,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
         </div>}
         <p className="flex shrink-0 items-start gap-1.5 border-b border-(--a-2b2540) bg-(--s-15122a) px-3 py-1.5 text-[11px] leading-snug text-(--a-a99bbb)"><CircleHelp size={13} className="mt-px shrink-0" /> {parteAtual.ajuda}</p>
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
-          {parteAtual.id === 'chat' && <Chat e={e} nomes={nomes} papelDe={papelDe} admin={admin} espectador={espectador} acao={acao} destacar={destacar} abrirHistorico={() => setHistorico(true)} />}
+          {parteAtual.id === 'chat' && <Chat campanhaId={campanhaId} e={e} nomes={nomes} papelDe={papelDe} admin={admin} espectador={espectador} acao={acao} destacar={destacar} abrirHistorico={() => setHistorico(true)} />}
           {parteAtual.id === 'fichas' && <PainelFichas fichas={fichasMesa} carregar={() => void carregarFichas()} tokens={e.tokens} admin={admin} cenaId={cena?.id ?? null} acao={acao} atacarCom={iniciarAtaque} abrirFicha={setFichaAberta} />}
           {parteAtual.id === 'tokens' && <PainelTokens e={e} admin={admin} acao={acao} campanhaId={campanhaId} abrir={setTokenAberto} />}
           {parteAtual.id === 'iniciativa' && <PainelIniciativa e={e} admin={admin} acao={acao} fichas={fichasMesa} atacar={iniciarAtaque} />}
@@ -760,8 +760,10 @@ function ListaAreas({ areas, tokens, eu, admin, espectador, tirar, limpar, dano 
   </section>
 }
 
-function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHistorico }: { e: Estado; nomes: Record<string, string>; papelDe: Record<string, string>; admin: boolean; espectador: boolean; acao: Acao; destacar: (ev: Evento) => void; abrirHistorico: () => void }) {
+function Chat({ campanhaId, e, nomes, papelDe, admin, espectador, acao, destacar, abrirHistorico }: { campanhaId: string; e: Estado; nomes: Record<string, string>; papelDe: Record<string, string>; admin: boolean; espectador: boolean; acao: Acao; destacar: (ev: Evento) => void; abrirHistorico: () => void }) {
   const [texto, setTexto] = useState('')
+  const [recolhido, setRecolhido] = useState(false)
+  const [enviandoImagem, setEnviandoImagem] = useState(false)
   const [expr, setExpr] = useState('1d20')
   const [vis, setVis] = useState<'publica' | 'mestre' | 'privada'>('publica')
   const [dest, setDest] = useState('')
@@ -793,7 +795,19 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
     if (/^\/r(oll)?\s+/i.test(texto)) { await rolar(texto.replace(/^\/r(oll)?\s+/i, '')); setTexto(''); toast(`🎲 A rolagem foi para “${combateAgora ? 'Combate' : admin ? 'Mestre' : 'Dados'}”.`); return }
     await acao({ acao: 'evento', tipo: 'chat', texto, visibilidade: vis, destinatarioId: dest, personagem: pers }).then(() => setTexto('')).catch(() => {})
   }
+  async function enviarFoto(arq?: File) {
+    if (!arq) return
+    if (!arq.type.startsWith('image/')) { toast.error('Escolha uma imagem.'); return }
+    setEnviandoImagem(true)
+    try {
+      const { url } = await enviarImagem(campanhaId, e.eu, arq)
+      await acao({ acao: 'evento', tipo: 'chat', texto: url, visibilidade: vis, destinatarioId: dest, personagem: pers })
+      toast.success('Imagem enviada ao chat.')
+    } catch (err) { toast.error(msg(err)) } finally { setEnviandoImagem(false) }
+  }
   return <div className="flex min-h-full flex-col gap-3">
+    <button type="button" onClick={() => setRecolhido(v => !v)} aria-expanded={!recolhido} className={btn + ' w-full justify-center'}>{recolhido ? 'Mostrar conversa' : 'Recolher conversa'} {recolhido ? '▾' : '▴'}</button>
+    {!recolhido && <>
     <p className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]" aria-label="Legenda das cores">{(['mestre', 'jogador', 'espectador'] as const).map(p => <span key={p} className={PAPEL_ESTILO[p].cor}>{PAPEL_ESTILO[p].icone} {PAPEL_ESTILO[p].nome}</span>)}</p>
     <div className="flex items-center justify-between"><p className="text-xs text-(--a-b4aeca)">{espectador ? 'Você está assistindo: pode conversar no chat.' : ''}</p>
       <button type="button" onClick={abrirHistorico} className={btn}><History size={14} /> Histórico</button></div>
@@ -811,6 +825,7 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
         : ev.tipo === 'rolagem' ? <p><span className="text-(--a-b99bff)">🎲 {ev.expressao}</span> → [{ev.resultados?.join(', ')}] = <strong className="text-lg text-(--a-ed9cd8)">{ev.total}</strong>
         {ev.expressao?.includes('d20') && ev.resultados?.[0] === 20 && ' ✨ 20 natural!'}{ev.expressao?.includes('d20') && ev.resultados?.[0] === 1 && ' 💀 1 natural'}{ev.texto && <span className="block text-xs text-(--a-c4b6d4)">{ev.texto}</span>}</p>
         : ev.tipo === 'ataque' && ev.dados ? <CartaoAtaque d={ev.dados} admin={admin} rolagem={ev.expressao && ev.resultados ? { expressao: ev.expressao, resultados: ev.resultados } : undefined} />
+        : ev.tipo === 'chat' && ev.texto && /^https:\/\/[^\s]+\.(?:png|jpe?g|gif|webp)(?:\?[^\s]*)?$/i.test(ev.texto) ? <a href={ev.texto} target="_blank" rel="noopener noreferrer" className="block"><img src={ev.texto} alt="Imagem enviada no chat" loading="lazy" className="max-h-72 max-w-full rounded-lg object-contain" /></a>
         : <p className="whitespace-pre-wrap break-words">{ev.texto}</p>}
     </li>)}<li ref={fim} aria-hidden className="h-0 list-none" /></ul>
     {lista.length === 0 && <p className="text-center text-sm text-(--a-b4aeca)">{aba === 'conversa' ? 'Ninguém falou ainda. Mande um oi!' : aba === 'combate' ? 'Nenhum combate por enquanto.' : aba === 'mestre' ? 'O mestre ainda não rolou nada.' : 'Nada por aqui ainda. Role um dado!'}</p>}
@@ -827,12 +842,14 @@ function Chat({ e, nomes, papelDe, admin, espectador, acao, destacar, abrirHisto
         <input aria-label="Expressão de dados" value={expr} onChange={x => setExpr(x.target.value)} maxLength={80} placeholder="2d6+3, 4d6kh3, 2d20kh1" className={input} />
         <button type="submit" className="rounded-lg bg-(--a-7654bb) px-3 text-sm font-semibold"><Dices size={18} /></button>
       </form></>}
+      {aba === 'conversa' && <label className={btn + ' cursor-pointer justify-center'}><ImageIcon size={15} /> {enviandoImagem ? 'Enviando imagem…' : 'Enviar imagem (até 5 MB)'}<input type="file" accept="image/*" className="sr-only" disabled={enviandoImagem} onChange={ev => { const arq = ev.target.files?.[0]; ev.target.value = ''; void enviarFoto(arq) }} /></label>}
       {aba === 'conversa' && <form onSubmit={x => { x.preventDefault(); void enviar() }} className="flex gap-2">
         <input aria-label="Mensagem" value={texto} onChange={x => setTexto(x.target.value)} maxLength={1000} placeholder={espectador ? 'Mensagem' : 'Mensagem (ou /r 1d20+2)'} className={input} />
         <button type="submit" aria-label="Enviar" className="rounded-lg bg-(--a-7654bb) px-3"><Send size={18} /></button>
       </form>}
       {aba !== 'conversa' && espectador && <p className="text-xs text-(--a-b4aeca)">Espectadores assistem às rolagens; para falar, use a Conversa.</p>}
     </div>
+    </>}
   </div>
 }
 

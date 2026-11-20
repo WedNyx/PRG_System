@@ -874,7 +874,7 @@ export const SISTEMAS: Sistema[] = [
       { id: 'essencia', nome: 'Pontos de Essência' },
       { id: 'sanidade', nome: 'Sanidade' },
     ],
-    pericias: { titulo: 'Perícias', lista: p([
+    pericias: { titulo: 'Perícias', modo: 'valor', livres: true, lista: p([
       ['Luta', 'forca'], ['Esquiva','velocidade'], ['Percepção','inteligencia'],
       ['Percepção espiritual','essencia'], ['Atletismo','forca'], ['Sobrevivência','inteligencia'],
       ['Negociação','carisma'], ['Resistência a veneno','vigor'],

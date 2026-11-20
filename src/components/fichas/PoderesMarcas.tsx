@@ -30,7 +30,7 @@ export default function PoderesMarcas({ d, onChange, somenteLeitura, rolar }: { 
   const criar = () => salvar([...poderes, { id: crypto.randomUUID(), nome: 'Novo poder', dano: '', custo: null, usosMax: null, descricao: '', tipo: 'habilidade' }])
   return <section className="space-y-3 rounded-2xl border border-(--ficha-borda) bg-(--ficha-cartao) p-4" aria-label="Poderes estruturados de Marcas">
     <h2 className="text-lg font-bold">⚔️ Poderes e usos por combate</h2>
-    <p className="text-xs text-(--a-a998bd)">Registre dados, custos e limites. O botão Usar registra a utilização e desconta essência quando houver custo definido e recurso suficiente. Rolagem é independente e não consome recursos. Um limite vazio significa uso não definido, não ilimitado.</p>
+    <p className="text-xs text-(--a-a998bd)">Registre dados, custos e limites. O botão Usar registra a utilização e desconta essência quando houver custo definido e recurso suficiente. Rolagem é independente e não consome recursos. Desfazer o contador não devolve essência; ajuste o recurso manualmente se necessário. Um limite vazio significa uso não definido, não ilimitado.</p>
     {poderes.map(p => <div key={p.id} className="space-y-2 rounded-xl border border-(--a-5e4b78) p-3">
       <label className="block text-xs">Nome<input className={cls} value={p.nome} disabled={somenteLeitura} onChange={e => editar(p.id, { nome: e.target.value })}/></label>
       <div className="grid grid-cols-2 gap-2">

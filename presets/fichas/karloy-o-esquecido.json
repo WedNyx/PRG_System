@@ -1,0 +1,171 @@
+{
+  "formato": "prg-ficha",
+  "versao": 1,
+  "exportadoEm": "2026-11-20T00:00:00.000Z",
+  "sistema": "livre",
+  "sistemaNome": "Ficha livre",
+  "nome": "Karloy, o Esquecido",
+  "dados": {
+    "sistema": "livre",
+    "nome": "Karloy, o Esquecido",
+    "campos": {
+      "sistema_nome": "Ficha livre — chefe de masmorra",
+      "conceito": "Fantasma de um reino destruído; Guardião do Desconhecido",
+      "atributos_texto": "Força 4\nVelocidade 3\nInteligência 2\nVigor 4\nCarisma 2",
+      "pericias_texto": "Luta\nEsquiva\nPercepção"
+    },
+    "atributos": {},
+    "pericias": {},
+    "recursos": {
+      "vida": {
+        "atual": 350,
+        "max": 350
+      },
+      "energia": {
+        "atual": 100,
+        "max": 100
+      },
+      "mente": {
+        "atual": 0,
+        "max": 0
+      }
+    },
+    "listas": {
+      "habilidades": "",
+      "inventario": "",
+      "anotacoes": "Karloy é o fantasma de um reino que caiu por causa de um homem. Abomina humanos que tentam descobrir a verdade da queda. Guarda o desconhecido nas ruínas. Os custos de MP e o cálculo de perícias ainda não foram definidos pelo criador; não aplicar bônus automáticos."
+    },
+    "itens": [
+      {
+        "id": "karloy-espada",
+        "nome": "Espada Negra",
+        "categoria": "arma",
+        "peso": 0,
+        "dano": "1d12",
+        "bonus": [],
+        "rolagens": [
+          {
+            "nome": "Dano",
+            "expr": "1d12"
+          }
+        ],
+        "descricao": "Espada negra colossal com runas violetas."
+      },
+      {
+        "id": "karloy-adagas",
+        "nome": "Adagas de Arremesso",
+        "categoria": "arma",
+        "peso": 0,
+        "dano": "1d6",
+        "bonus": [],
+        "rolagens": [
+          {
+            "nome": "Dano",
+            "expr": "1d6"
+          }
+        ],
+        "descricao": "4 adagas disponíveis."
+      },
+      {
+        "id": "karloy-bombas",
+        "nome": "Bombas de Arremesso",
+        "categoria": "consumivel",
+        "peso": 0,
+        "dano": "1d20",
+        "bonus": [],
+        "rolagens": [
+          {
+            "nome": "Explosão",
+            "expr": "1d20"
+          }
+        ],
+        "descricao": "2 bombas disponíveis."
+      },
+      {
+        "id": "karloy-capa",
+        "nome": "Capa do Esquecimento",
+        "categoria": "equipamento",
+        "peso": 0,
+        "bonus": [],
+        "magico": true,
+        "descricao": "Desvia completamente de qualquer golpe; um único uso por combate. Requer ativação manual."
+      }
+    ],
+    "poderes": [
+      {
+        "id": "karloy-poder-1",
+        "nome": "Lâmina Espectral",
+        "tipo": "habilidade",
+        "expressao": "1d8",
+        "descricao": "Um corte rápido imbuído de energia do esquecimento. Uso livre."
+      },
+      {
+        "id": "karloy-poder-2",
+        "nome": "Estilhaço Sombrio",
+        "tipo": "habilidade",
+        "expressao": "1d10",
+        "usosMax": 3,
+        "descricao": "Lança lâminas de escuridão que rasgam o terreno. Até 3 usos por combate."
+      },
+      {
+        "id": "karloy-poder-3",
+        "nome": "Passo do Esquecido",
+        "tipo": "habilidade",
+        "expressao": "1d12",
+        "usosMax": 2,
+        "descricao": "Um avanço veloz que atravessa o alvo, deixando um rastro de energia profana. Até 2 usos por combate."
+      },
+      {
+        "id": "karloy-poder-4",
+        "nome": "Abraço da Ruína",
+        "tipo": "habilidade",
+        "expressao": "1d14",
+        "usosMax": 2,
+        "descricao": "Ergue estacas de sombra do solo, prendendo e ferindo os inimigos ao redor. Até 2 usos por combate."
+      },
+      {
+        "id": "karloy-poder-5",
+        "nome": "Selo do Vazio",
+        "tipo": "habilidade",
+        "expressao": "1d16",
+        "usosMax": 1,
+        "descricao": "Marca o alvo com a Morte Profunda, causando dano contínuo e reduzindo sua resistência; duração e efeitos dependem do mestre. Até 1 uso por combate."
+      },
+      {
+        "id": "karloy-poder-6",
+        "nome": "Morte Profunda",
+        "tipo": "habilidade",
+        "expressao": "1d20+1d6",
+        "usosMax": 1,
+        "descricao": "Libera todo o poder do esquecimento em um único golpe. Dano bruto, sem redução por armadura ou resistência. Uso único por combate."
+      }
+    ],
+    "uso": {
+      "itens": {
+        "karloy-espada": {
+          "qtd": 1,
+          "equipado": true
+        },
+        "karloy-adagas": {
+          "qtd": 4,
+          "equipado": false
+        },
+        "karloy-bombas": {
+          "qtd": 2,
+          "equipado": false
+        },
+        "karloy-capa": {
+          "qtd": 1,
+          "equipado": true
+        }
+      },
+      "poderes": {},
+      "carteira": ""
+    },
+    "manual": {
+      "mods": {},
+      "derivados": {},
+      "pericias": {}
+    }
+  }
+}

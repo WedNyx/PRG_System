@@ -11,6 +11,7 @@ import type { DadosFicha, FichaManual as Manual, Sistema } from '@/lib/sistemas/
 import { montarRolagem, rolarExpressao } from '@/lib/dice'
 import AcoesRapidas from './AcoesRapidas'
 import TransformacoesMarcas from './TransformacoesMarcas'
+import PoderesMarcas from './PoderesMarcas'
 import PainelDoSistema, { FaixaDoSistema, RECURSOS_NO_PAINEL } from './PaineisSistema'
 import AtributosLua from './AtributosLua'
 import { AtributosGraus, PericiasGraus, RegrasDoSistema, TabelasDoSistema } from './FichaGraus'
@@ -225,6 +226,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
         {atual && rubrica && <header className="ficha-capitulo"><span aria-hidden="true" className="ficha-capitulo-selo">{simbolos[identidade] ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" className="ficha-simbolo"><path d={simbolos[identidade]} /></svg> : String(indiceCapitulo(atual.id) + 1).padStart(2, "0")}</span><div className="min-w-0"><p className="ficha-capitulo-universo">{tituloSistemaNaFicha(s, d)}</p><h2>{rubrica[indiceCapitulo(atual.id)]}</h2></div></header>}
         {atual && <p className="flex gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-2 text-xs text-(--a-cfc0df)"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></p>}
 
+        {secao === 'habilidades' && (s.id === 'marcas' || (s.id === 'livre' && /marcas/i.test(String(d.campos.sistema_nome ?? '')))) && <PoderesMarcas d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
         {secao === 'transformacoes' && <TransformacoesMarcas d={d} onChange={onChange} somenteLeitura={somenteLeitura} />}
         {secao === 'principal' && <div className="ficha-composicao">
           {s.id !== 'faroeste-arcano' && <FaixaDoSistema s={s} nome={d.nome} />}

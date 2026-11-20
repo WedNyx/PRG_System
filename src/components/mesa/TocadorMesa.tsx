@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Music2, Volume2, VolumeX } from 'lucide-react'
+import { Music2, Volume2, VolumeX, ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 import { posicaoAtual, type EstadoMusica } from '@/lib/nuvem/musica'
 
 /* Tipos mínimos da API de iframe do YouTube (https://developers.google.com/youtube/iframe_api_reference). */
@@ -43,7 +43,8 @@ export default function TocadorMesa({ estado, desvio, aoTerminar }: { estado: Es
   const [volume, setVolume] = useState(lerVolume)
   const [mudo, setMudo] = useState(lerMudo)
   const [bloqueado, setBloqueado] = useState(false)
-  const [aberto, setAberto] = useState(true)
+  const [aberto, setAberto] = useState(() => { try { return localStorage.getItem('prg-musica-compacta') !== '1' } catch { return true } })
+  useEffect(() => { try { localStorage.setItem('prg-musica-compacta', aberto ? '0' : '1') } catch {} }, [aberto])
   const desvioRef = useRef(desvio)
   const fimRef = useRef(aoTerminar)
   useEffect(() => { desvioRef.current = desvio }, [desvio])
@@ -164,14 +165,15 @@ export default function TocadorMesa({ estado, desvio, aoTerminar }: { estado: Es
   }
 
   const ehYt = tocando && estado?.tipo === 'youtube'
-  return <div className={'absolute right-2 top-2 z-20 w-[220px] overflow-hidden rounded-xl border border-(--a-5e4b78) bg-(--s-19172c)/95 text-xs shadow-xl ' + (tocando ? '' : 'hidden')} aria-label="Música da mesa">
+  return <div className={'absolute right-2 top-2 z-20 w-[min(220px,calc(100vw-1rem))] overflow-hidden rounded-xl border border-(--a-5e4b78) bg-(--s-19172c)/95 text-xs shadow-xl ' + (tocando ? '' : 'hidden')} aria-label="Música da mesa">
     <div className="flex items-center gap-1 px-2 py-1.5">
       <Music2 size={14} className="shrink-0 text-(--a-b99bff)" />
       <button type="button" onClick={() => setAberto(a => !a)} className="min-w-0 flex-1 truncate text-left" title={estado?.titulo}>{estado?.pausado ? '⏸ ' : estado?.loop ? '🔁 ' : ''}{estado?.titulo ?? 'Música'}</button>
+      <button type="button" onClick={() => setAberto(a => !a)} aria-expanded={aberto} aria-label={aberto ? 'Compactar música' : 'Expandir música'} title={aberto ? 'Compactar player' : 'Expandir player'} className="rounded p-0.5 hover:bg-(--s-34294f)">{aberto ? <ChevronsDownUp size={14} /> : <ChevronsUpDown size={14} />}</button>
       <button type="button" onClick={() => setMudo(m => !m)} aria-label={mudo ? 'Ativar som' : 'Silenciar só para mim'} className="rounded p-0.5 hover:bg-(--s-34294f)">{mudo ? <VolumeX size={14} /> : <Volume2 size={14} />}</button>
     </div>
-    {/* O player do YouTube fica sempre visível enquanto toca (regra do YouTube); “recolher” só esconde o volume. */}
-    <div className={ehYt ? 'relative aspect-video w-full' : 'hidden'}>
+    {/* Mantém o iframe do YouTube montado e visível em miniatura ao compactar, sem interromper a música. */}
+    <div className={ehYt ? (aberto ? 'relative aspect-video w-full' : 'relative ml-auto mr-2 mb-1 aspect-video w-24') : 'hidden'}>
       <div ref={caixaYt} className="absolute inset-0" />
       {/* Camada por cima: ninguém pausa ou pula pelo vídeo; os controles são do mestre. */}
       <div className="absolute inset-0" aria-hidden="true" />

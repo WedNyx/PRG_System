@@ -646,7 +646,17 @@ function PainelTokens({ e, admin, acao, campanhaId, abrir }: { e: Estado; admin:
         <span className="h-6 w-6 shrink-0 rounded-full bg-cover bg-center" style={{ background: t.imagem_url ? `center/cover url(${t.imagem_url})` : t.cor }} />
         <span className="flex-1 truncate">{t.nome}{t.dono_id === e.eu && ' (meu)'}</span>
         <span className="text-[11px] text-(--a-b4aeca)">{t.movimento === 'mestre' ? '🔒' : t.movimento === 'todos' ? '👥' : ''}{!t.visivel && ' 🙈'}{t.hp_max ? ` ${t.hp_atual}/${t.hp_max}` : ''}</span>
-      </button></li>)}</ul>
+      </button>
+      {admin && <button type="button" className={btn + ' mt-1 !px-2 !py-1 text-xs'} title={'Duplicar ' + t.nome} onClick={() => {
+        const fichaId = t.npc ? (t.ficha_modelo ?? t.ficha_id) : null
+        void acao({ acao: 'token_criar', cenaId: cena.id, nome: t.nome + ' (cópia)',
+          ...(fichaId ? { fichaId, copia: true } : {}),
+          npc: t.npc, cor: t.cor, imagem_url: t.imagem_url, hp_max: t.hp_max,
+          visivel: t.visivel, movimento: t.movimento, tamanho: t.tamanho, luz: t.luz,
+          x: Math.min(cena.grid_cols - 1, t.x + 1), y: t.y
+        }).then(() => toast.success('Token duplicado na cena.')).catch(err => toast.error(msg(err)))
+      }}><Plus size={12} /> Duplicar token</button>}
+      </li>)}</ul>
     {lista.length === 0 && <p className="text-(--a-b4aeca)">Nenhum token nesta cena.</p>}
     <form className="space-y-2 rounded-lg border border-(--a-373251) p-2" onSubmit={x => {
       x.preventDefault()

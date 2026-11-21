@@ -27,6 +27,18 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.36.5', data: '2026-11-21',
+    titulo: 'Repaginação (teste): identidade lunar, navegação nova e Mesa de Som',
+    itens: [
+      'Identidade nova: tema Noite lunar (azul-noturno, violeta e dourado) como padrão, letra Inter no texto e botões e abas padronizados. Os temas antigos continuam em Aparência.',
+      'Central em cinco lugares: Início, Personagens, Campanhas, Ferramentas e Meu perfil. Menu lateral recolhível no computador e barra embaixo no celular.',
+      'Busca universal: 🔎 ou Ctrl+K acha fichas, campanhas, mesas, ferramentas e configurações.',
+      'Meu perfil separado em Aparência (com Reduzir movimento e Efeitos leves), Jogabilidade (dados 3D, sons, confetes), Notificações e Dados e privacidade.',
+      'Ficha com modos: 🎲 Jogo (ações e recursos primeiro), ✏️ Criação (passos com ✓) e 📖 Consulta (só leitura). Nada é calculado.',
+      'Mesa de Som do mestre (Música › Mesa de som): 24 efeitos, 8 ambientes em camadas e cenas prontas (taverna, tempestade, masmorra…). Sons gerados pela própria plataforma; cada um escolhe o volume e pode desligar os sons de susto.',
+    ],
+  },
+  {
     versao: '0.36.4', data: '2026-11-21',
     titulo: 'Mesa mais fácil',
     itens: [

@@ -53,7 +53,31 @@ const numero = (v: string) => v.trim() === '' || v.trim() === '-' ? null : Math.
  * Nada é calculado nem conferido: o jogador e o mestre digitam atributos, modificadores, valores,
  * perícias e máximos. Os dados rolam com os números digitados.
  */
-export default function FichaManual({ sistema: s, dados: d, onChange, somenteLeitura = false, rolarNaCampanha, passarItem, mestre = false }: {
+type ModoFicha = 'jogo' | 'criacao' | 'consulta'
+const CHAVE_MODO = 'prg-ficha-modo-v1'
+const MODOS: { id: ModoFicha; icone: string; nome: string; dica: string }[] = [
+  { id: 'jogo', icone: '🎲', nome: 'Jogo', dica: 'Ações rápidas e recursos primeiro; a identidade fica resumida.' },
+  { id: 'criacao', icone: '✏️', nome: 'Criação', dica: 'Passo a passo com as orientações de cada parte.' },
+  { id: 'consulta', icone: '📖', nome: 'Consulta', dica: 'Só leitura: consulte sem mudar nada sem querer.' },
+]
+/** Ficha sem nome começa em Criação; as outras, no último modo usado neste aparelho (Criação = o jeito de sempre). */
+function modoInicial(d: DadosFicha): ModoFicha {
+  if (!d.nome?.trim()) return 'criacao'
+  try { const x = localStorage.getItem(CHAVE_MODO); if (x === 'jogo' || x === 'criacao' || x === 'consulta') return x } catch { /* servidor ou sem acesso */ }
+  return 'criacao'
+}
+/** Parte da ficha já tem algo escrito? (só para marcar ✓ nos passos da criação; não confere regras). */
+function preenchida(id: string, s: Sistema, d: DadosFicha): boolean {
+  const temTexto = (sec: RegExp) => s.listas.some(l => sec.test(l.id) && (d.listas[l.id] ?? '').trim().length > 0)
+  if (id === 'principal') return !!d.nome?.trim() && Object.values(d.campos).some(v => String(v ?? '').trim() !== '' && v !== 0)
+  if (id === 'atributos') return s.atributos.some(a => Number(d.atributos[a.id] ?? a.padrao) !== Number(a.padrao)) || Object.values(d.pericias).some(v => String(v ?? '').trim() !== '' && v !== 0)
+  if (id === 'habilidades') return (d.poderes?.length ?? 0) > 0 || temTexto(/habilidade|tecnica|talento|magia|poder|facanha|transforma|rituais|tracos/)
+  if (id === 'equipamentos') return (d.itens?.length ?? 0) > 0
+  if (id === 'anotacoes') return temTexto(/hist|anota|aliad|objetiv|apar|person|idioma|profici/)
+  return false
+}
+
+export default function FichaManual({ sistema: s, dados: d, onChange, somenteLeitura: bloqueada = false, rolarNaCampanha, passarItem, mestre = false }: {
   sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean
   /** Quem abre é o mestre (ou o dono de uma ficha avulsa): pode conceder e montar habilidades na árvore. */
   mestre?: boolean
@@ -63,6 +87,12 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   passarItem?: (it: Item, tem: number) => void
 }) {
   const m: Manual = d.manual ?? { mods: {}, derivados: {}, pericias: {} }
+  // Modos da ficha (v0.36.5): Jogo (o que se usa na sessão primeiro), Criação (passo a passo) e Consulta (só leitura).
+  // Nada é calculado em nenhum modo: muda só a ordem e o que aparece primeiro.
+  const [modo, setModoBruto] = useState<ModoFicha>(() => modoInicial(d))
+  const setModo = (x: ModoFicha) => { setModoBruto(x); try { localStorage.setItem(CHAVE_MODO, x) } catch { /* sem espaço */ } }
+  const somenteLeitura = bloqueada || modo === 'consulta'
+  const [detalhes, setDetalhes] = useState(false)
   // Visual do sistema (v0.35.1): cores, letra dos títulos e o jeito de mostrar atributos e perícias.
   const identidade = identidadeVisual(s)
   const AtributoComposto = s.id === 'dnd5e-srd' ? AtributoDnd : AtributoComMod
@@ -218,9 +248,28 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     <textarea rows={linhas} value={d.listas[l.id] ?? ''} disabled={somenteLeitura} maxLength={20000} onChange={e => set('listas', { ...d.listas, [l.id]: e.target.value })} className={input + ' mt-2'} />
   </label>
 
-  return <div style={estiloTema(tema)} data-visual={identidade} className={tema.sombrio ? 'ficha-sombria' : undefined}>
+  const passos = SECOES.filter(x => ['principal', 'atributos', 'habilidades', 'equipamentos', 'anotacoes'].includes(x.id))
+  const feitos = passos.filter(x => preenchida(x.id, s, d)).length
+  return <div style={estiloTema(tema)} data-visual={identidade} data-modo={bloqueada ? 'consulta' : modo} className={tema.sombrio ? 'ficha-sombria' : undefined}>
     <RolagemCentral ref={central} />
     {descansando && <JanelaDescanso s={s} d={d} onChange={onChange} rolarTotal={rolarTotal} fechar={() => setDescansando(false)} />}
+    {!bloqueada && <div className="ficha-modos mb-3 flex flex-wrap items-center gap-2">
+      <div role="radiogroup" aria-label="Modo da ficha" className="flex gap-1 rounded-2xl border border-(--a-55456e) bg-(--s-171325)/90 p-1">
+        {MODOS.map(x => <button key={x.id} type="button" role="radio" aria-checked={modo === x.id} onClick={() => setModo(x.id)} title={x.dica}
+          className={'rounded-xl px-3 py-1.5 text-sm font-semibold transition ' + (modo === x.id ? 'bg-(--a-5b4380) text-white shadow-[inset_0_-2px_0_var(--ouro)]' : 'text-(--a-cfc0df) hover:bg-(--s-2b2140)')}>{x.icone} {x.nome}</button>)}
+      </div>
+      <p className="hidden min-w-0 flex-1 text-xs text-(--a-a99bbb) sm:block">{MODOS.find(x => x.id === modo)?.dica}</p>
+    </div>}
+    {!bloqueada && modo === 'criacao' && <nav aria-label="Passos da criação" className="mb-3 rounded-2xl border border-(--a-55456e) bg-(--s-171325)/90 p-3">
+      <div className="mb-2 flex items-center gap-2 text-xs"><span className="font-semibold uppercase tracking-wider text-(--a-c4b6d4)">Passos da criação</span><span className="ml-auto tabular-nums text-(--a-cfc0df)">{feitos}/{passos.length}</span></div>
+      <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-black/40"><div className="h-full rounded-full bg-(--ouro) transition-[width]" style={{ width: (passos.length ? feitos / passos.length * 100 : 0) + '%' }} /></div>
+      <ol className="relative flex gap-1.5 overflow-x-auto pb-1">
+        {passos.map((x, i) => { const ok = preenchida(x.id, s, d)
+          return <li key={x.id} className="shrink-0"><button type="button" onClick={() => ir(x.id)} aria-current={secao === x.id ? 'step' : undefined}
+            className={'flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs ' + (secao === x.id ? 'border-(--a-e4d3ff) bg-(--s-3a2c58) text-white' : 'border-(--a-55456e) text-(--a-cfc0df) hover:bg-(--s-2b2140)')}>
+            <span aria-hidden="true" className={'flex size-4 items-center justify-center rounded-full text-[10px] ' + (ok ? 'bg-emerald-500/80 text-white' : 'bg-black/40')}>{ok ? '✓' : i + 1}</span>{x.nome}<span className="sr-only">{ok ? ' (já tem algo)' : ' (vazio)'}</span></button></li> })}
+      </ol>
+    </nav>}
     <div className={`ficha-resumo sticky top-[57px] z-10 max-sm:[&_.dnd-resumo-celula]:min-h-0 max-sm:[&_.dnd-resumo-celula]:py-1 ${resumoCompacto ? 'max-sm:!py-1 max-sm:[&_.dnd-resumo-celula]:!py-0 max-sm:[&_.dnd-resumo-celula_span]:hidden max-sm:[&_.dnd-resumo-celula_svg]:size-3.5' : ''} -mx-3 mb-4 border-b border-(--a-373251) bg-(--s-100d1c)/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-4`} aria-label="Resumo do personagem">
       {identidade === 'dnd5e-srd' ? <div className="dnd-resumo-compacto" aria-label="Recursos principais">
         {recursoPrincipal && [recursoPrincipal, ...s.recursos.filter(r => r !== recursoPrincipal && maxDe(r.id))].slice(0, 3).map((r,i) => {
@@ -247,7 +296,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
       </nav>
       <div className="min-w-0 flex-1 space-y-4">
         {atual && rubrica && <header className="ficha-capitulo"><span aria-hidden="true" className="ficha-capitulo-selo">{simbolos[identidade] ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" className="ficha-simbolo"><path d={simbolos[identidade]} /></svg> : String(iAtual + 1).padStart(2, "0")}</span><div className="min-w-0"><p className="ficha-capitulo-universo">{tituloSistemaNaFicha(s, d)}</p><h2>{rubrica[indiceCapitulo(atual.id)] ?? atual.nome}</h2></div></header>}
-        {atual && <aside aria-label="Orientações da seção" className="flex items-start gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-3 text-xs leading-relaxed text-(--a-cfc0df)"><span aria-hidden="true" className="shrink-0 text-base">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></aside>}
+        {atual && modo !== 'jogo' && <aside aria-label="Orientações da seção" className="ficha-orientacao flex items-start gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-3 text-xs leading-relaxed text-(--a-cfc0df)"><span aria-hidden="true" className="shrink-0 text-base">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></aside>}
 
         {secao === 'marcas' && <SecaoMarcas s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolarExpr} />}
         {secao === 'formas' && <SecaoFormas s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolarExpr} />}
@@ -265,7 +314,8 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               <label className="block min-w-0 flex-1 text-sm font-semibold">Nome do personagem
                 <input value={d.nome} maxLength={90} disabled={somenteLeitura} onChange={e => set('nome', e.target.value)} className={input + ' mt-1 text-lg font-bold'} placeholder="Ex.: Lyra Nyx" /></label>
             </div>
-            <div className="ficha-identidade-campos mt-3 grid grid-cols-2 gap-x-3 gap-y-3 lg:grid-cols-3">
+            {modo === 'jogo' && !detalhes && <button type="button" onClick={() => setDetalhes(true)} className="mt-3 text-xs text-(--a-b99bff) hover:underline">Mostrar os detalhes da identidade ({s.campos.filter(f => !SO_CALCULO[s.id]?.includes(f.id)).length})</button>}
+            {(modo !== 'jogo' || detalhes) && <div className="ficha-identidade-campos mt-3 grid grid-cols-2 gap-x-3 gap-y-3 lg:grid-cols-3">
               {s.campos.filter(f => !SO_CALCULO[s.id]?.includes(f.id)).map(f => <label key={f.id} className={'flex flex-col justify-end text-sm text-(--a-d6c8e8) ' + (f.tipo === 'area' ? 'col-span-2 lg:col-span-3' : f.tipo === 'numero' ? '' : 'col-span-2 sm:col-span-1')}>{f.nome}
                 {f.tipo === 'area'
                   ? <textarea rows={3} value={String(d.campos[f.id] ?? '')} disabled={somenteLeitura} onChange={e => set('campos', { ...d.campos, [f.id]: e.target.value.slice(0, 4000) })} className={input + ' mt-1'} />
@@ -275,7 +325,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
                 {f.tipo === 'escolha' && !!f.opcoes?.length && <datalist id={'sugestoes-' + f.id}>{f.opcoes.map(o => <option key={o.nome} value={o.nome} />)}</datalist>}
                 {f.dica && <span className="mt-1 text-[11px] leading-snug text-(--a-a998bd)">{f.dica}</span>}
               </label>)}
-            </div>
+            </div>}
           </section>
           {s.id !== 'faroeste-arcano' && <div data-painel-sistema className="ficha-paineis-especiais space-y-4 empty:hidden"><PainelDoSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} /></div>}
           {(s.derivados.length > 0 || s.recursos.length > 0) && <section className={card + " ficha-recursos-gerais"}>

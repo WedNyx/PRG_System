@@ -3,7 +3,7 @@
  * Fica salva no perfil (coluna prg_public_adventurers.visual) e numa cópia local para aplicar antes de desenhar a página.
  */
 import { imagemDaPlataforma } from './imagens'
-import { TEMAS, type Tema } from './tema'
+import { TEMA_PADRAO, TEMAS, type Tema } from './tema'
 
 export type Fonte = 'fantasia' | 'elegante' | 'simples'
 export type Tamanho = 'p' | 'm' | 'g'
@@ -27,6 +27,10 @@ export type Visual = {
   cartaoAlfa?: number
   fonte?: Fonte
   tamanho?: Tamanho
+  /** Conforto (v0.36.5): 'reduzido' corta animações e transições da plataforma. */
+  movimento?: 'reduzido'
+  /** Conforto (v0.36.5): 'leves' tira o vidro desfocado e os brilhos (mais leve em aparelhos simples). */
+  efeitos?: 'leves'
 }
 
 export const FONTES: { id: Fonte; nome: string; descricao: string }[] = [
@@ -63,6 +67,8 @@ export function limparVisual(v: unknown): Visual {
   const a = num(o.cartaoAlfa, 0.45, 1); if (a !== undefined) r.cartaoAlfa = Math.round(a * 100) / 100
   if (FONTES.some(f => f.id === o.fonte)) r.fonte = o.fonte as Fonte
   if (TAMANHOS.some(t => t.id === o.tamanho)) r.tamanho = o.tamanho as Tamanho
+  if (o.movimento === 'reduzido') r.movimento = 'reduzido'
+  if (o.efeitos === 'leves') r.efeitos = 'leves'
   return r
 }
 
@@ -87,7 +93,7 @@ export function variaveisDoVisual(v: Visual): Record<string, string> {
  * Aplica no <html>. Escrito sem dependências para também rodar no script que vem antes da página (SCRIPT_VISUAL).
  * `vars` já vem calculado por variaveisDoVisual.
  */
-export function aplicarNoHtml(el: HTMLElement, vars: Record<string, string>, fonte?: string, tamanho?: string) {
+export function aplicarNoHtml(el: HTMLElement, vars: Record<string, string>, fonte?: string, tamanho?: string, movimento?: string, efeitos?: string) {
   const velhas = (el.dataset.visualVars || '').split(',').filter(Boolean)
   for (const k of velhas) el.style.removeProperty(k)
   const novas = Object.keys(vars)
@@ -95,6 +101,8 @@ export function aplicarNoHtml(el: HTMLElement, vars: Record<string, string>, fon
   el.dataset.visualVars = novas.join(',')
   if (fonte && fonte !== 'fantasia') el.dataset.fonte = fonte; else delete el.dataset.fonte
   if (tamanho && tamanho !== 'm') el.dataset.tamanho = tamanho; else delete el.dataset.tamanho
+  if (movimento === 'reduzido') el.dataset.movimento = 'reduzido'; else delete el.dataset.movimento
+  if (efeitos === 'leves') el.dataset.efeitos = 'leves'; else delete el.dataset.efeitos
 }
 
 const CHAVE = 'prg-visual-'
@@ -102,8 +110,8 @@ const CHAVE = 'prg-visual-'
 export function aplicarVisual(perfilId: string | null, v: Visual, guardar = true) {
   if (typeof document === 'undefined') return
   const el = document.documentElement
-  if (v.tema) { if (v.tema === 'sonhos') delete el.dataset.tema; else el.dataset.tema = v.tema; try { localStorage.setItem('prg-tema', v.tema) } catch {} }
-  aplicarNoHtml(el, variaveisDoVisual(v), v.fonte, v.tamanho)
+  if (v.tema) { if (v.tema === TEMA_PADRAO) delete el.dataset.tema; else el.dataset.tema = v.tema; try { localStorage.setItem('prg-tema', v.tema) } catch {} }
+  aplicarNoHtml(el, variaveisDoVisual(v), v.fonte, v.tamanho, v.movimento, v.efeitos)
   if (guardar && perfilId) try { localStorage.setItem(CHAVE + perfilId, JSON.stringify(v)) } catch {}
 }
 export function visualGuardado(perfilId: string): Visual {
@@ -111,4 +119,4 @@ export function visualGuardado(perfilId: string): Visual {
 }
 
 /** Roda antes de desenhar a página: aplica o visual guardado do perfil escolhido (evita piscar). */
-export const SCRIPT_VISUAL = `try{(function(){var id=localStorage.getItem('prg-aventureiro-selecionado-v1');if(!id)return;var v=JSON.parse(localStorage.getItem('${CHAVE}'+id)||'null');if(!v)return;var vars=(${variaveisDoVisual.toString()})(v);(${aplicarNoHtml.toString()})(document.documentElement,vars,v.fonte,v.tamanho);if(v.tema){if(v.tema==='sonhos')delete document.documentElement.dataset.tema;else document.documentElement.dataset.tema=v.tema}})()}catch(e){}`
+export const SCRIPT_VISUAL = `try{(function(){var id=localStorage.getItem('prg-aventureiro-selecionado-v1');if(!id)return;var v=JSON.parse(localStorage.getItem('${CHAVE}'+id)||'null');if(!v)return;var vars=(${variaveisDoVisual.toString()})(v);(${aplicarNoHtml.toString()})(document.documentElement,vars,v.fonte,v.tamanho,v.movimento,v.efeitos);if(v.tema){if(v.tema==='${TEMA_PADRAO}')delete document.documentElement.dataset.tema;else document.documentElement.dataset.tema=v.tema}})()}catch(e){}`

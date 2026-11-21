@@ -125,13 +125,24 @@ export default function Aparencia({ perfilId, inicial, tema, escolherTema, salvo
       <p className="mt-3 text-sm font-semibold">Fonte dos títulos</p>
       <div className="mt-2 grid gap-2 sm:grid-cols-3">
         {FONTES.map(f => <button key={f.id} type="button" aria-pressed={(v.fonte ?? 'fantasia') === f.id} onClick={() => mudar({ fonte: f.id })} className={chip((v.fonte ?? 'fantasia') === f.id) + ' text-left'}>
-          <span className="block text-xl" style={{ fontFamily: f.id === 'fantasia' ? 'var(--font-cinzel), Georgia, serif' : f.id === 'elegante' ? 'var(--font-cormorant), Georgia, serif' : 'var(--font-geist-sans), sans-serif', fontWeight: 700 }}>Aventura</span>
+          <span className="block text-xl" style={{ fontFamily: f.id === 'fantasia' ? 'var(--font-cinzel), Georgia, serif' : f.id === 'elegante' ? 'var(--font-cormorant), Georgia, serif' : 'var(--font-inter), var(--font-geist-sans), sans-serif', fontWeight: 700 }}>Aventura</span>
           <span className="block text-xs text-(--a-a99bbb)">{f.nome} · {f.descricao}</span></button>)}
       </div>
       <p className="mt-4 text-sm font-semibold">Tamanho do texto</p>
       <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label="Tamanho do texto">
         {TAMANHOS.map((t, i) => <button key={t.id} type="button" role="radio" aria-checked={(v.tamanho ?? 'm') === t.id} onClick={() => mudar({ tamanho: t.id })} className={chip((v.tamanho ?? 'm') === t.id)}>
           <span style={{ fontSize: 13 + i * 2.5 }}>A</span> {t.nome}</button>)}
+      </div>
+    </section>
+
+    <section className={bloco} aria-labelledby="ap-conforto">
+      <h2 id="ap-conforto" className="text-lg font-bold">🌙 Conforto</h2>
+      <p className="mt-1 text-sm text-(--a-bfb2cf)">Para quem enjoa com animações ou usa um aparelho mais simples.</p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <button type="button" aria-pressed={v.movimento === 'reduzido'} onClick={() => mudar({ movimento: v.movimento === 'reduzido' ? undefined : 'reduzido' })} className={chip(v.movimento === 'reduzido') + ' text-left'}>
+          <span className="block font-semibold">{v.movimento === 'reduzido' ? '✓ ' : ''}Reduzir movimento</span><span className="block text-xs text-(--a-a99bbb)">Sem animações, transições nem confetes.</span></button>
+        <button type="button" aria-pressed={v.efeitos === 'leves'} onClick={() => mudar({ efeitos: v.efeitos === 'leves' ? undefined : 'leves' })} className={chip(v.efeitos === 'leves') + ' text-left'}>
+          <span className="block font-semibold">{v.efeitos === 'leves' ? '✓ ' : ''}Efeitos leves</span><span className="block text-xs text-(--a-a99bbb)">Sem vidro desfocado nem brilhos: mais leve e com mais contraste.</span></button>
       </div>
     </section>
   </div>

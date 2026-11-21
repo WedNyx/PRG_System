@@ -1,10 +1,12 @@
-@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:wght@600;700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 @import "./cores.css";
 
 :root {
   /* Fontes CSS carregadas pelo navegador; fallback local quando indisponíveis. */
   --font-geist-sans: "Geist";
+  /* Identidade v0.36.5: Inter no corpo e nos controles (Cinzel continua nos títulos). */
+  --font-inter: "Inter";
   --font-geist-mono: "Geist Mono";
   --font-cinzel: "Cinzel";
   --font-cormorant: "Cormorant Garamond";
@@ -18,7 +20,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter), var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -34,7 +36,12 @@
   --vidro: 14px;
   --fonte-titulo: var(--font-cinzel), Georgia, serif;
   --fundo-desfoque: 0px;
+  /* Identidade lunar (v0.36.5): dourado moderado para detalhes (ativo, selos, divisórias). */
+  --ouro: #c8a96b; --ouro-claro: #e9d9a8; --noite: #0b1020; --noite-cartao: #17142b;
 }
+/* Noite lunar (padrão): violeta #8B5CF6 nos destaques e cartões puxados para o azul-noturno. */
+:root:not([data-tema]) { --giro: -7; --sat: 1; --cartao-giro: -22; --cartao-sat: 0.85; --cartao-alfa: 0.88; }
+[data-tema="sonhos"] { --giro: 0; --sat: 1; }
 [data-tema="algodao"] { --giro: 38; --sat: 1.1; }
 [data-tema="lua"] { --giro: -48; --sat: 1.05; --cartao-alfa: 0.8; }
 [data-tema="carmesim"] { --giro: 62; --sat: 1.15; --cartao-sat: 0.9; }
@@ -46,7 +53,7 @@
 [data-tema="sombrio"] { --giro: 60; --sat: 1.1; --cartao-giro: 0; --cartao-sat: 0.55; --cartao-luz: -0.03; --cartao-alfa: 0.82; }
 [data-tema="classico"] { --cartao-alfa: 1; --vidro: 0px; }
 [data-fonte="elegante"] { --fonte-titulo: var(--font-cormorant), Georgia, serif; }
-[data-fonte="simples"] { --fonte-titulo: var(--font-geist-sans), system-ui, sans-serif; }
+[data-fonte="simples"] { --fonte-titulo: var(--font-inter), var(--font-geist-sans), system-ui, sans-serif; }
 html[data-tamanho="p"] { font-size: 15px; }
 html[data-tamanho="g"] { font-size: 17.5px; }
 
@@ -77,7 +84,7 @@ h1, h2, .titulo { font-family: var(--fonte-titulo); letter-spacing: 0.01em; }
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-inter), var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 /* ---- Temas do PRG System (escolhidos em Central → Temas; lista em src/lib/tema.ts) ----
@@ -86,11 +93,13 @@ body {
  * --tema-pc: tela deitada (computador) · --tema-cel: tela em pé (celular) · --tema-veu: escurece para o texto ler bem.
  */
 :root {
-  /* Padrão: Estrelinhas sonhadoras */
-  --tema-cor: #2a2160; --tema-veu: linear-gradient(180deg, rgba(18, 12, 50, 0.38), rgba(18, 12, 50, 0.58));
-  --tema-pc: url('/temas/sonhos-pc.webp'); --tema-cel: url('/temas/sonhos-cel.webp');
-  --tema-tam: cover; --tema-rep: no-repeat; --tema-pos: center; --tema-pos-cel: center;
+  /* Padrão (v0.36.5): Noite lunar — desenho vetorial leve (public/temas/lunar.svg). */
+  --tema-cor: #0b1020; --tema-veu: linear-gradient(180deg, rgba(11, 16, 32, 0.05), rgba(11, 16, 32, 0.45));
+  --tema-pc: url('/temas/lunar.svg'); --tema-cel: url('/temas/lunar-cel.svg');
+  --tema-tam: cover; --tema-rep: no-repeat; --tema-pos: center; --tema-pos-cel: center top;
 }
+[data-tema="sonhos"] { --tema-cor: #2a2160; --tema-veu: linear-gradient(180deg, rgba(18, 12, 50, 0.38), rgba(18, 12, 50, 0.58));
+  --tema-pc: url('/temas/sonhos-pc.webp'); --tema-cel: url('/temas/sonhos-cel.webp'); --tema-tam: cover; --tema-rep: no-repeat; --tema-pos: center; --tema-pos-cel: center; }
 [data-tema="classico"] { --tema-cor: #100d1c; --tema-veu: radial-gradient(ellipse at 85% 0%, #322044 0%, transparent 48%); --tema-pc: none; --tema-cel: none; }
 [data-tema="algodao"] { --tema-cor: #3a2a6e; --tema-veu: linear-gradient(180deg, rgba(20, 12, 48, 0.42), rgba(20, 12, 48, 0.62));
   --tema-pc: url('/temas/algodao-pc.webp'); --tema-cel: url('/temas/algodao-cel.webp'); --tema-tam: cover; --tema-rep: no-repeat; --tema-pos: center; --tema-pos-cel: center; }
@@ -517,3 +526,36 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 /* Navegação D&D: resumo compacto e cinco destinos visíveis. */
 .dnd-resumo-compacto{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:.35rem;color:#efd1a1}.dnd-resumo-celula{min-width:0;display:grid;justify-items:center;align-content:center;gap:.12rem;padding:.25rem .1rem;background:#33232b;border:1px solid #79563f;border-radius:6px;text-align:center}.dnd-resumo-celula strong{font-size:.95rem;color:#fff0dc;overflow-wrap:anywhere}.dnd-resumo-celula span{font-size:.65rem;line-height:1.2;overflow-wrap:anywhere}.dnd-resumo-celula:first-child svg{color:#ef7777}.dnd-menu-label{display:flex;align-items:center;gap:.45rem;color:inherit}.dnd-menu-curto{display:none}.dnd-menu-longo{display:inline}
 @media(max-width:1023px){[data-visual="dnd5e-srd"] .ficha-menu>div{display:grid;grid-template-columns:repeat(auto-fit,minmax(54px,1fr));gap:.2rem;overflow:visible;padding:.25rem;background:#281c22;border:1px solid #947151;border-radius:9px}[data-visual="dnd5e-srd"] .ficha-menu button{min-width:0;min-height:48px;padding:.3rem .1rem;border-radius:5px;color:#efd1a1;background:transparent;text-align:center}[data-visual="dnd5e-srd"] .ficha-menu button[aria-current="page"]{background:#674a35;box-shadow:inset 0 -2px #d5ae74}.dnd-menu-label{flex-direction:column;gap:.2rem;justify-content:center}.dnd-menu-curto{display:block;font-size:clamp(.57rem,2.2vw,.75rem);line-height:1.2;overflow-wrap:anywhere}.dnd-menu-longo{display:none}}
+
+/* ---- Conforto (v0.36.5, Perfil › Aparência) ---- */
+html[data-movimento="reduzido"] *, html[data-movimento="reduzido"] *::before, html[data-movimento="reduzido"] *::after {
+  animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important;
+}
+html[data-efeitos="leves"] { --vidro: 0px; --cartao-alfa: 0.97; }
+html[data-efeitos="leves"] :is([class*="rounded-2xl"], [class*="rounded-3xl"])[class*="bg-(--s-"] { box-shadow: none; }
+html[data-efeitos="leves"] :is([class*="bg-(--a-7652ac)"], [class*="bg-(--a-7654bb)"], [class*="bg-(--a-7853b4)"]) { box-shadow: none; background-image: none; }
+
+/* ---- Peças compartilhadas da identidade (v0.36.5) ----
+ * Usadas pela navegação nova, Ferramentas, Perfil e Mesa de Som. Estados: normal, hover, foco, ativo, desabilitado. */
+.prg-cartao { border: 1px solid var(--a-55456e); background: color-mix(in oklab, var(--s-201a32) 92%, transparent); border-radius: 1rem; }
+.prg-botao { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 2.5rem; border-radius: .75rem; padding: .5rem .9rem; font-size: .875rem; font-weight: 600; transition: background-color .15s, border-color .15s, transform .15s; }
+.prg-botao:focus-visible { outline: 2px solid var(--a-c5a7ff); outline-offset: 2px; }
+.prg-botao:disabled { opacity: .5; cursor: not-allowed; }
+.prg-botao-primario { background: var(--a-7652ac); color: #fff; }
+.prg-botao-primario:hover:not(:disabled) { background: var(--a-8b68c4); }
+.prg-botao-secundario { border: 1px solid var(--a-6d5690); color: var(--a-e4d3ff); }
+.prg-botao-secundario:hover:not(:disabled) { background: var(--s-2b2143); }
+.prg-chip { display: inline-flex; align-items: center; gap: .35rem; border-radius: 999px; border: 1px solid var(--a-55456e); padding: .35rem .8rem; font-size: .8rem; color: var(--a-cfc0df); transition: background-color .15s, border-color .15s; }
+.prg-chip:hover { background: var(--s-2b2140); }
+.prg-chip[aria-selected="true"], .prg-chip[aria-pressed="true"] { border-color: var(--ouro); background: var(--s-3a2c58); color: #fff; box-shadow: inset 0 -2px 0 var(--ouro); }
+.prg-ouro { color: var(--ouro-claro); }
+.prg-divisoria { height: 1px; background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--ouro) 55%, transparent), transparent); }
+/* Item ativo da navegação: faixa dourada à esquerda (lateral) ou embaixo (barra do celular). */
+.prg-nav-ativo { box-shadow: inset 3px 0 0 var(--ouro); }
+
+/* ---- Modos da ficha (v0.36.5) ----
+ * Jogo: identidade resumida no topo, depois ações rápidas e recursos (o que se usa a cada turno). */
+[data-modo="jogo"] .ficha-composicao > .ficha-identidade { order: -4; }
+[data-modo="jogo"] .ficha-composicao > .ficha-acoes-rapidas { order: -3; }
+[data-modo="jogo"] .ficha-composicao > .ficha-recursos-gerais { order: -2; }
+[data-modo="consulta"] .ficha-composicao :is(input, textarea, select):disabled { opacity: 1; cursor: default; }

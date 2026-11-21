@@ -5,7 +5,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 
 export type Lado = 'center' | 'left' | 'right'
-type Ligacao = 'raiz' | 'reta' | 'curva' | 'raio' | 'fio' | 'serrilha' | 'pegadas' | 'trilha'
+type Ligacao = 'raiz' | 'reta' | 'curva' | 'raio' | 'fio' | 'serrilha' | 'pegadas' | 'trilha' | 'circuito'
 export type TemaArvore = {
   /** Nome do jeito de ver (botão ao lado de “Lista”). */
   nome: string
@@ -34,6 +34,8 @@ export function caminhoLigacao(t: TemaArvore, de: Lado, para: Lado): ReactNode {
     case 'fio': return <path d={`M${x1} ${y1} Q${mx + (x1 === x2 ? 34 : 0)} ${my + 34} ${x2} ${y2}`} {...traco} />
     case 'pegadas': return <path d={`M${x1} ${y1} C${x1} ${y1 + 70} ${x2} ${y2 - 70} ${x2} ${y2}`} {...traco} strokeDasharray="0.1 16" strokeWidth={t.espessura * 2.4} />
     case 'trilha': return <path d={`M${x1} ${y1} C${x1 + 40} ${y1 + 60} ${x2 - 40} ${y2 - 60} ${x2} ${y2}`} {...traco} strokeDasharray="10 9" />
+    case 'circuito': return <><path d={`M${x1} ${y1} V${my} H${x2} V${y2}`} {...traco} strokeOpacity={.25} strokeWidth={t.espessura * 4} strokeLinecap="square" strokeLinejoin="miter" />
+      <path d={`M${x1} ${y1} V${my} H${x2} V${y2}`} {...traco} strokeLinecap="square" strokeLinejoin="miter" /><circle cx={x1} cy={my} r="4" fill={t.cor} /><circle cx={x2} cy={my} r="4" fill={t.cor} /></>
     default: return null
   }
 }
@@ -119,6 +121,14 @@ export const TEMAS_ARVORE: Record<string, TemaArvore> = {
     ligacao: 'pegadas', cor: '#7fc8f0', espessura: 3,
     no: 'border-[#7fc8f0]/60 bg-[#142038] hover:bg-[#1b2c4d] shadow-[0_0_20px_#7fc8f033]', noAtivo: 'bg-[#1f3560] ring-2 ring-[#7fc8f0]/60',
     titulo: 'text-white', sub: 'text-[#9fe0ff]', selo: 'border-[#7fc8f0] bg-[#0a1222] text-[#9fe0ff]',
+  },
+  /* Projeto N.O.V.A: uma rede de circuitos (investigação e o impossível). */
+  nova: {
+    nome: '⬡ Rede N.O.V.A', fundo: 'bg-[#120f1c] border-[#ffc18f]/30 [background-image:linear-gradient(#ffc18f0d_1px,transparent_1px),linear-gradient(90deg,#ffc18f0d_1px,transparent_1px)] [background-size:22px_22px]',
+    decoracao: <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,#ff8f5a22,transparent_55%)]" />,
+    ligacao: 'circuito', cor: '#ffc18f', espessura: 2,
+    no: 'rounded-none border-[#ffc18f]/70 bg-[#221a2c] hover:bg-[#2e2238] shadow-[0_0_18px_#ff8f5a33]', noAtivo: 'bg-[#3a2a3e] ring-2 ring-[#ffc18f]/60',
+    titulo: 'text-[#fff1e6] uppercase tracking-wide', sub: 'text-[#ffc18f]/85', selo: 'rounded-none! border-[#ffc18f] bg-[#120f1c] text-[#ffc18f]', forma: 'polygon(12% 0,88% 0,100% 50%,88% 100%,12% 100%,0 50%)',
   },
   /* Qualquer outro: as raízes de sempre. */
   padrao: {

@@ -6,12 +6,20 @@
  */
 import type { DadosFicha, Sistema } from './tipos'
 import { identidadeVisual } from './visualIdentidade'
+import { calcular } from './calculo'
+import { arvoreVazia, disponiveis, lerArvore, mesclarArvore, podeLiberar, type Arvore } from './arvore'
 
 export type EstadoMarco = 'recebido' | 'proximo' | 'futuro' | 'referencia'
-export type Marco = { id: string; quando: number; titulo: string; texto: string; escolha?: boolean; estado: EstadoMarco }
+export type Marco = { id: string; quando: number; titulo: string; texto: string; escolha?: boolean; estado: EstadoMarco
+  /** Texto curto no lugar de “Nível N” (ex.: “Camada 2 · 1 ponto”). */
+  rotulo?: string
+  /** Marco que é um hexágono da árvore do autor: dá para liberar e devolver (com pontos). */
+  no?: { id: string; custo: number; liberado: boolean; concedido: boolean; motivo?: string } }
 export type RamoSistema = { id: string; titulo: string; icone: string; cor: string; marcos: Marco[]; vazio?: string }
 /** `medida`: o que conta a progressão (Nível, NEX…). Sem medida, os marcos são só referência. */
-export type ArvoreDoSistema = { medida?: { nome: string; atual: number; unidade?: string; max: number }; dica: string; ramos: RamoSistema[] }
+export type ArvoreDoSistema = { medida?: { nome: string; atual: number; unidade?: string; max: number }; dica: string; ramos: RamoSistema[]
+  /** Árvore que o autor do sistema montou no construtor, já juntada à da ficha (v0.36.3). */
+  autor?: { arvore: Arvore; livres: number; extra: number; nivel: number | null } }
 
 type MarcoDef = Omit<Marco, 'estado'>
 const n = (v: unknown) => Math.max(0, Number(v) || 0)
@@ -159,6 +167,46 @@ function deMarcas(d: DadosFicha): RamoSistema[] {
       estado: (h.nivel <= m.nivel ? 'recebido' : h.nivel === Math.min(...m.habilidades.map(x => x.nivel).filter(x => x > m.nivel)) ? 'proximo' : 'futuro') as EstadoMarco })) }))
 }
 
+/** A árvore que o autor montou no construtor, juntada à da ficha (hexágonos novos do autor entram sem apagar o que foi liberado). */
+export function arvoreDoAutor(s: Sistema, d: DadosFicha): Arvore | null {
+  if (!s.arvore?.nos?.length) return null
+  const ficha = d.arvore !== undefined ? lerArvore(d.arvore) : { ...arvoreVazia(), pontos: Math.max(0, Number(s.arvore.pontos) || 0) }
+  return mesclarArvore(ficha, s.arvore)
+}
+/** Camada de cada hexágono pelos requisitos (a raiz é 1). */
+function camadas(a: Arvore): Map<string, number> {
+  const memo = new Map<string, number>()
+  const de = (id: string, visitando: Set<string>): number => {
+    if (memo.has(id)) return memo.get(id)!
+    if (visitando.has(id)) return 1
+    visitando.add(id)
+    const n = a.nos.find(x => x.id === id)
+    const v = 1 + Math.max(0, ...(n?.requer ?? []).map(r => de(r, visitando)))
+    memo.set(id, v); return v
+  }
+  for (const n of a.nos) de(n.id, new Set())
+  return memo
+}
+/** Pontos extras da árvore pela tabela de níveis do autor (coluna “arvore” → prog_arvore). */
+export function pontosExtrasDaArvore(s: Sistema, d: DadosFicha): number {
+  if (!s.progressoes?.classes.some(c => 'arvore' in c.tabela)) return 0
+  try { return Math.max(0, Number(calcular(s, d).vars.prog_arvore) || 0) } catch { return 0 }
+}
+function ramoDoAutor(s: Sistema, d: DadosFicha, a: Arvore, extra: number): RamoSistema {
+  const nivel = s.campos.some(c => c.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null
+  const prof = camadas(a), ids = new Set(s.arvore!.nos.map(n => (n as { id?: string }).id))
+  const nos = a.nos.filter(n => ids.has(n.id)).sort((x, y) => (prof.get(x.id)! - prof.get(y.id)!) || x.x - y.x)
+  return { id: 'autor', titulo: 'Árvore de ' + s.nome, icone: '⬡', cor: '#ffc18f', marcos: nos.map(n => {
+    const liberado = a.liberados.includes(n.id), pode = podeLiberar(a, n.id, extra, nivel, d)
+    const requer = n.requer.map(r => a.nos.find(x => x.id === r)?.nome).filter(Boolean)
+    return { id: 'au-' + n.id, quando: prof.get(n.id)!, titulo: n.nome, escolha: false,
+      texto: [n.descricao, requer.length ? 'Precisa antes: ' + requer.join(', ') + '.' : '', n.nivel ? 'A partir do nível ' + n.nivel + '.' : ''].filter(Boolean).join('\n'),
+      rotulo: `${n.custo} ${n.custo === 1 ? 'ponto' : 'pontos'}`,
+      estado: (liberado ? 'recebido' : pode.ok ? 'proximo' : 'futuro') as EstadoMarco,
+      no: { id: n.id, custo: n.custo, liberado, concedido: !!a.concedidos?.includes(n.id), ...(pode.ok || liberado ? {} : { motivo: pode.motivo }) } }
+  }) }
+}
+
 /** A árvore do sistema desta ficha, ou null quando ele não tem (aí fica só a árvore de habilidades do mestre). */
 export function arvoreDoSistema(s: Sistema, d: DadosFicha): ArvoreDoSistema | null {
   const id = identidadeVisual(s)
@@ -166,8 +214,13 @@ export function arvoreDoSistema(s: Sistema, d: DadosFicha): ArvoreDoSistema | nu
     : id === 'fate-core' ? fate() : id === 'blades' ? blades(d) : id === 'call-of-cthulhu' ? percentual(true) : id === 'brp' ? percentual(false)
     : id === 'mork-borg' ? morkBorg(d) : id === 'opositores' ? opositores(d) : null
   const marcas = s.extras?.includes('marcas') ? deMarcas(d) : []
-  if (!base && !marcas.length) return s.extras?.includes('marcas') ? { dica: 'Cada marca vira um ramo: crie as marcas na aba Marcas.', ramos: [] } : null
-  return base ? { ...base, ramos: [...marcas, ...base.ramos] } : { dica: 'Cada marca é um ramo: o nível dela libera as habilidades.', ramos: marcas }
+  const doAutor = arvoreDoAutor(s, d)
+  const extra = doAutor ? pontosExtrasDaArvore(s, d) : 0
+  const autor = doAutor ? { arvore: doAutor, livres: disponiveis(doAutor, extra), extra, nivel: s.campos.some(c => c.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null } : undefined
+  const ramosAutor = doAutor ? [ramoDoAutor(s, d, doAutor, extra)] : []
+  if (!base && !marcas.length && !ramosAutor.length) return s.extras?.includes('marcas') ? { dica: 'Cada marca vira um ramo: crie as marcas na aba Marcas.', ramos: [] } : null
+  const dica = base?.dica ?? (ramosAutor.length ? 'A árvore que o autor do sistema montou: gaste os pontos para liberar as habilidades.' : 'Cada marca é um ramo: o nível dela libera as habilidades.')
+  return { ...(base ?? {}), dica, ramos: [...ramosAutor, ...marcas, ...(base?.ramos ?? [])], ...(autor ? { autor } : {}) }
 }
 export const chaveEscolha = (marcoId: string) => ('arv_' + marcoId).slice(0, 40)
 export const rotuloMarco = rotulo

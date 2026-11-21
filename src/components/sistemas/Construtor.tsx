@@ -17,6 +17,7 @@ import { GRAUS_PADRAO, opcoesDeGrau, rotuloGrau } from '@/lib/sistemas/graus'
 import { EditorRegras, EditorTabelas, NOMES_SECOES } from './EditorExtras'
 import EditorRolagem from './EditorRolagem'
 import { EXTRAS, lerExtras, type ExtraFicha } from '@/lib/sistemas/extrasFicha'
+import { ARVORES_VISUAIS, lerVisualAutor } from '@/lib/sistemas/visualAutor'
 import EditorOpcoes, { type OpcaoDef } from './EditorOpcoes'
 import EditorProgressao, { type DefProgressao } from './EditorProgressao'
 import ArvoreHabilidades from '@/components/fichas/Arvore'
@@ -30,7 +31,7 @@ type Def = {
   pericias: { modo: 'treino' | 'valor' | 'nenhuma'; titulo?: string; livres?: boolean; total: string; treinos: Linha[]; lista: Linha[] }
   recursos: Linha[]; listas: Linha[]; limites: { nome: string; uso: string; max: string }[]; observacoes: string; carga: { formula: string; unidade: string }
   arvore: { pontos: number; nos: unknown[] }; progressao: DefProgressao | null
-  tabelas: TabelaDef[]; regras: CapituloRegra[]; nomesSecoes: Partial<Record<SecaoFicha, string>>; visualAtributos: '' | 'lua'; extras: ExtraFicha[]
+  tabelas: TabelaDef[]; regras: CapituloRegra[]; nomesSecoes: Partial<Record<SecaoFicha, string>>; visualAtributos: '' | 'lua'; extras: ExtraFicha[]; visual: NonNullable<Sistema['visual']>
 }
 const ID_TESTE = 'autoral-00000000000000000000000000000000'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-sm text-white'
@@ -52,7 +53,7 @@ function paraDef(s: Partial<Sistema> & Record<string, unknown>, auto = false): D
     regraRolagem: (s.regraRolagem as Def['regraRolagem']) ?? { nome: 'Teste', formula: '1d20+VALOR' },
     parada: (s.parada as Def['parada']) ?? { lados: 20 },
     graus: (s.graus as GrausDef) ?? GRAUS_PADRAO,
-    visualAtributos: s.visualAtributos === 'lua' ? 'lua' : '', extras: lerExtras(s.extras),
+    visualAtributos: s.visualAtributos === 'lua' ? 'lua' : '', extras: lerExtras(s.extras), visual: lerVisualAutor(s.visual) ?? {},
     tabelas: (s.tabelas as TabelaDef[]) ?? [], regras: (s.regras as CapituloRegra[]) ?? [], nomesSecoes: (s.nomesSecoes as Def['nomesSecoes']) ?? {},
     resistencias: Array.isArray(s.resistencias) ? (s.resistencias as string[]) : [],
     creditos: typeof s.creditos === 'string' ? s.creditos : undefined,
@@ -74,7 +75,7 @@ function paraEnvio(d: Def) {
     carga: d.carga.formula ? d.carga : undefined,
     ...(d.arvore.nos.length ? { arvore: d.arvore } : {}),
     ...(d.progressao ? { progressoes: d.progressao } : {}),
-    ...(d.rolagem === 'graus' ? { graus: d.graus } : {}), ...(d.visualAtributos ? { visualAtributos: d.visualAtributos } : {}), ...(d.extras.length ? { extras: d.extras } : {}),
+    ...(d.rolagem === 'graus' ? { graus: d.graus } : {}), ...(d.visualAtributos ? { visualAtributos: d.visualAtributos } : {}), ...(d.extras.length ? { extras: d.extras } : {}), ...(Object.keys(d.visual).length ? { visual: d.visual } : {}),
     ...(d.tabelas.length ? { tabelas: d.tabelas } : {}), ...(d.regras.length ? { regras: d.regras } : {}),
     ...(Object.values(d.nomesSecoes).some(v => v?.trim()) ? { nomesSecoes: d.nomesSecoes } : {}),
   }
@@ -204,10 +205,25 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
               <select aria-label="Dado do zero" disabled={!def.graus.zero} value={def.graus.zero ?? def.graus.lados[0]} onChange={e => mudar(d => ({ ...d, graus: { ...d.graus, zero: Number(e.target.value) } }))} className={pequeno}>{def.graus.lados.map(l => <option key={l} value={l}>d{l}</option>)}</select></label>
             <label className="flex flex-wrap items-center gap-2 text-xs">Grau máximo das perícias
               <select aria-label="Grau máximo das perícias" value={def.graus.maxPericia ?? ''} onChange={e => mudar(d => ({ ...d, graus: { ...d.graus, maxPericia: Number(e.target.value) || undefined } }))} className={pequeno}><option value="">Sem limite</option>{def.graus.lados.map(l => <option key={l} value={l}>d{l}</option>)}</select></label>
+            <label className="flex flex-wrap items-center gap-2 text-xs">{(def.pericias.titulo?.trim() || 'Perícias')} começam em
+              <select aria-label="Grau inicial das perícias" value={def.graus.inicialPericia ?? ''} onChange={e => mudar(d => ({ ...d, graus: { ...d.graus, inicialPericia: Number(e.target.value) || undefined } }))} className={pequeno}><option value="">nada (0)</option>{def.graus.lados.map(l => <option key={l} value={l}>d{l}</option>)}</select>
+              <span className="text-(--a-a998bd)">(fichas novas já começam assim)</span></label>
           </div>}
           <details className="rounded-xl bg-(--s-171325) p-3 text-sm"><summary className="cursor-pointer font-semibold">🏷️ Nomes das partes da ficha (opcional)</summary>
             <div className="mt-2 grid gap-2 sm:grid-cols-2">{NOMES_SECOES.filter(([id]) => !EXTRAS.some(x => x.id === id) || def.extras.includes(id as ExtraFicha)).map(([id, padrao]) => <label key={id} className="block text-xs">{padrao}
               <input value={def.nomesSecoes[id] ?? ''} maxLength={40} onChange={e => mudar(d => ({ ...d, nomesSecoes: { ...d.nomesSecoes, [id]: e.target.value } }))} className={input + ' mt-1'} placeholder={padrao} /></label>)}</div></details>
+          <fieldset className="rounded-xl bg-(--s-171325) p-3 text-sm"><legend className="px-1 font-semibold">🎨 Aparência da ficha (opcional)</legend>
+            <p className="mb-2 text-xs text-(--a-c4b6d4)">As cores dos cartões, a letra dos títulos e o desenho da árvore de habilidades das fichas do seu sistema.</p>
+            <div className="grid grid-cols-3 gap-2">{([['acento', 'Destaque', '#ed9cd8'], ['borda', 'Bordas', '#55456e'], ['cartao', 'Fundo dos cartões', '#201a32']] as const).map(([k, nome, padrao]) => <label key={k} className="block text-xs">{nome}
+              <input type="color" value={def.visual[k] ?? padrao} onChange={e => mudar(d => ({ ...d, visual: { ...d.visual, [k]: e.target.value } }))} className="mt-1 h-10 w-full cursor-pointer rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-1" /></label>)}</div>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <label className="block text-xs">Letra dos títulos<select value={def.visual.fonte ?? ''} onChange={e => mudar(d => ({ ...d, visual: { ...d.visual, fonte: (e.target.value || undefined) as 'serifada' | 'classica' | undefined } }))} className={input + ' mt-1'}>
+                <option value="">Normal</option><option value="serifada">Serifada (livro antigo)</option><option value="classica">Clássica (gravada em pedra)</option></select></label>
+              <label className="block text-xs">Desenho da árvore<select value={def.visual.arvore ?? ''} onChange={e => mudar(d => ({ ...d, visual: { ...d.visual, arvore: e.target.value || undefined } }))} className={input + ' mt-1'}>
+                {ARVORES_VISUAIS.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}</select></label>
+            </div>
+            {Object.keys(def.visual).length > 0 && <button type="button" className={botao + ' mt-2'} onClick={() => mudar(d => ({ ...d, visual: {} }))}>Voltar à aparência padrão</button>}
+          </fieldset>
           <fieldset className="rounded-xl bg-(--s-171325) p-3 text-sm"><legend className="px-1 font-semibold">🧩 Partes extras da ficha (opcional)</legend>
             <p className="mb-2 text-xs text-(--a-c4b6d4)">Ligue o que o seu sistema tem. Cada parte vira uma aba na ficha; o jogador escreve tudo e nada é calculado.</p>
             <div className="grid gap-2 sm:grid-cols-2">{EXTRAS.map(x => <label key={x.id} className="flex items-start gap-2 rounded-lg border border-(--a-3d3152) p-2 text-xs">

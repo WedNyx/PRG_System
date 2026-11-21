@@ -62,7 +62,7 @@ export function PericiasGraus({ s, d, onChange, somenteLeitura, mostrar }: { s: 
   function criar() {
     const nome = nova.trim().slice(0, 60); if (!nome) return
     const id = 'x_' + Math.random().toString(36).slice(2, 10)
-    onChange({ ...d, periciasExtras: [...extras, { id, nome }], pericias: { ...d.pericias, [id]: g.lados[0] } }); setNova('')
+    onChange({ ...d, periciasExtras: [...extras, { id, nome }], pericias: { ...d.pericias, [id]: g.inicialPericia ?? g.lados[0] } }); setNova('')
   }
   function tirar(id: string) {
     if (!confirm('Tirar esta ' + tituloPer.toLowerCase().replace(/s$/, '') + '?')) return

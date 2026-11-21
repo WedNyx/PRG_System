@@ -26,7 +26,9 @@ export type LimiteDef = { nome: string; uso: string; max: string }
  * Graus de dado (v0.35.6): atributos e perícias valem um dado (d4, d6, d8…) em vez de um número.
  * O valor guardado é o número de lados; 0 = “não tem” e rola o dado `zero` (ex.: d4). `maxPericia` limita o grau das perícias.
  */
-export type GrausDef = { lados: number[]; zero?: number; maxPericia?: number }
+export type GrausDef = { lados: number[]; zero?: number; maxPericia?: number
+  /** Grau com que toda perícia começa na ficha nova (v0.36.3; ex.: vivências em d4). Sem isso, começam em 0. */
+  inicialPericia?: number }
 /** Tabela rolável do sistema (v0.35.6): rola `dado` e mostra a linha; `campo` = campo de texto onde dá para guardar o resultado. */
 export type TabelaDef = { id: string; nome: string; dado: string; linhas: { de: number; ate: number; texto: string }[]; campo?: string }
 /** Capítulo das regras do sistema, escrito pelo autor (v0.35.6). Aparece na ficha, em “Regras”. */
@@ -78,6 +80,8 @@ export type Sistema = {
   visualAtributos?: 'lua'
   /** Partes extras da ficha ligadas pelo autor (v0.36.0): marcas com níveis, transformações, invocações, efeitos (ver extrasFicha.ts). */
   extras?: import('./extrasFicha').ExtraFicha[]
+  /** Aparência escolhida pelo autor (v0.36.3): cores dos cartões, letra dos títulos e o desenho da árvore. */
+  visual?: { acento?: string; borda?: string; cartao?: string; fonte?: 'serifada' | 'classica'; arvore?: string }
   /** Nome que a ficha usa para os atributos (sistemas autorais: “Aspectos”, “Virtudes”…; v0.33.8). As perícias usam `pericias.titulo`. */
   tituloAtributos?: string
   /** Modificador do atributo; `X` é o valor do atributo. Sem isso, o modificador é o próprio valor. */

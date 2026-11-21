@@ -7,6 +7,7 @@ import { calcular, fichaVazia } from './calculo'
 import { erroDaFormula } from './regrasRolagem'
 import { lerArvore } from './arvore'
 import { lerExtras } from './extrasFicha'
+import { lerVisualAutor } from './visualAutor'
 import { alvosDeBonus } from './inventario'
 import { avaliar, variaveisDaFormula } from './formula'
 import type { Sistema } from './tipos'
@@ -217,6 +218,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
     ...(tabelas.length ? { tabelas } : {}), ...(regras.length ? { regras } : {}), ...(nomesSecoes ? { nomesSecoes } : {}), ...(parada ? { parada } : {}), ...(resistencias.length ? { resistencias } : {}),
     ...(e.visualAtributos === 'lua' ? { visualAtributos: 'lua' as const } : {}),
     ...(lerExtras(e.extras).length ? { extras: lerExtras(e.extras) } : {}),
+    ...(lerVisualAutor(e.visual) ? { visual: lerVisualAutor(e.visual) } : {}),
     campos, atributos, ...(txt(e.tituloAtributos, 40).trim() ? { tituloAtributos: txt(e.tituloAtributos, 40).trim() } : {}), ...(formulaModificador ? { formulaModificador } : {}), derivados, ...(pericias ? { pericias } : {}),
     recursos, ...(limites.length ? { limites } : {}), listas: listas.length ? listas : [{ id: 'anotacoes', nome: 'Anotações' }],
     ...(observacoes.length ? { observacoes } : {}), ...(carga ? { carga } : {}), ...(progressoes ? { progressoes } : {}),

@@ -12,16 +12,17 @@ const DICAS: Record<PapelDicas, Dica[]> = {
     { icone: '👆', titulo: 'Seu personagem', texto: 'Toque no seu token no mapa para ver a vida, as condições e o botão de atacar. Arraste (ou toque e depois toque na casa) para andar.' },
     { icone: '⚔️', titulo: 'Atacar', texto: 'Toque no seu token → “Atacar” → escolha a arma ou o poder → toque no inimigo. Os dados rolam no servidor e o dano aparece para todo mundo.' },
     { icone: '⏳', titulo: 'Turnos', texto: 'No combate, quando for a sua vez aparece “⚔️ Sua vez”. Quando terminar, toque em “✅ Terminar meu turno”.' },
-    { icone: '💬', titulo: 'Painel', texto: 'No painel ficam o Chat (com dados: 1d20+5, 2d6…), a sua Ficha e a Iniciativa. “Só o mapa” esconde o painel no celular.' },
+    { icone: '💬', titulo: 'Chat e barra da mesa', texto: 'O mapa fica em destaque. Na barra (embaixo no celular, do lado no computador): 💬 Chat (conversa e dados: 1d20+5, 2d6…), ⚔️ Jogo (fichas e iniciativa), 🎵 Música e 📖 Diário. Toque de novo para recolher. A música fica numa pílula no canto do mapa: toque nela para ver o vídeo e o volume.' },
   ],
   mestre: [
+    { icone: '🧭', titulo: 'A mesa', texto: 'O mapa fica em destaque. Na barra (embaixo no celular, do lado no computador) ficam o 💬 Chat e os painéis ⚔️ Jogo, 🎵 Música, 📖 Diário e 👑 Mestre: toque para abrir e de novo para recolher.' },
     { icone: '🗺️', titulo: 'Cena e mapa', texto: 'Na aba “Mestre → Controles”, crie a cena, envie o mapa e use a névoa para esconder o que os jogadores ainda não viram.' },
     { icone: '📜', titulo: 'Personagens na mesa', texto: 'Na aba “Jogo → Fichas”, toque numa ficha e em “📍 Colocar na mesa”. NPCs entram do mesmo jeito.' },
     { icone: '⚔️', titulo: 'Combate', texto: 'Na aba “Jogo → Iniciativa”, toque em “Preparar combate”, marque quem luta e role tudo de uma vez. Em “Mestre → Regras de combate” você escolhe se confirma cada dano.' },
     { icone: '🎲', titulo: 'Tabelas e sessão', texto: 'A aba “Mestre → Tabelas” rola nomes, encontros e tesouros na hora. Lembre de “▶ Abrir sessão” para o grupo entrar.' },
   ],
   espectador: [
-    { icone: '👁️', titulo: 'Assistindo', texto: 'Você vê o mapa, ouve a música e conversa no chat. Os dados e os tokens ficam com o mestre e os jogadores.' },
+    { icone: '👁️', titulo: 'Assistindo', texto: 'Você vê o mapa, ouve a música e conversa no 💬 Chat (na barra da mesa). Os dados e os tokens ficam com o mestre e os jogadores.' },
   ],
 }
 const chave = (p: PapelDicas) => 'prg-dicas-mesa-v1-' + p

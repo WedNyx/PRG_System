@@ -27,6 +27,15 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.36.4', data: '2026-11-21',
+    titulo: 'Mesa mais fácil',
+    itens: [
+      'O mapa agora ocupa a maior parte da tela; as ferramentas ficam numa barra (embaixo no celular, na lateral no computador) e abrem num painel que recolhe com um toque.',
+      'Chat novo numa aba lateral recolhível: balões, abas Conversa/Dados/Combate/Mestre, rolagens em cartões e aviso de mensagens novas quando o chat está fechado.',
+      'Música da campanha compacta: vira uma pílula pequena no canto do mapa, com o vídeo em miniatura; expanda só quando quiser ver o vídeo ou mexer no volume.',
+    ],
+  },
+  {
     versao: '0.36.3', data: '2026-11-21',
     titulo: 'Árvore do autor e aparência do sistema',
     itens: [

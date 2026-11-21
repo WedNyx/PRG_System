@@ -3,16 +3,14 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { BrickWall, Grid3x3, Glasses, Flame, Trash, SquareDashed, Sun, ArrowDown, ArrowLeft, ArrowUp, BookOpen, CircleHelp, Crown, Globe, Library, MoreHorizontal, PanelRightClose, PanelRightOpen, ScrollText, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Send, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
+import { BrickWall, Grid3x3, Glasses, Flame, Trash, SquareDashed, Sun, ArrowDown, ArrowLeft, ArrowUp, BookOpen, CircleHelp, Crown, Globe, Library, MoreHorizontal, ScrollText, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
-import { estiloPapel, PAPEL_ESTILO } from './papeis'
 import { condicoesDisponiveis, emojiCondicao, nomeCondicao } from '@/lib/condicoes'
 import type { Camada } from '@/lib/nuvem/mesa'
 import { podeMoverToken } from '@/lib/nuvem/mesa'
 import MapaMesa, { type CursorRemoto, type ModoMesa, type Ping, type PreviaArea, type ReguaRemota, type TokenMapa } from './MapaMesa'
-import { separarEventos, type AbaChat } from '@/lib/mesa/abasChat'
 import { caminhoLivre, FORMAS_PAREDE, lerParedes, TIPOS_PAREDE, type FormaParede, type TipoParede } from '@/lib/mesa/paredes'
 import { normalizarVisao, type VisaoToken } from '@/lib/mesa/visao'
 import { CORES_AREA, FORMAS_AREA, lerAreasEfeito, tokensNaArea, type AreaEfeito, type FormaArea } from '@/lib/mesa/areasEfeito'
@@ -28,12 +26,14 @@ import Sino from '@/components/Sino'
 import TocadorMesa from './TocadorMesa'
 import type { EstadoMusica } from '@/lib/nuvem/musica'
 import RecorteImagem from './RecorteImagem'
+import ChatMesa from './ChatMesa'
+import { enviarImagem } from './enviarImagem'
 import { LUZES_PRONTAS, MAX_GRADE, type AreaNevoa, type LuzToken } from '@/lib/nuvem/mesa'
 import { btn, input, msg } from './estilos'
 import AnimacaoAssim from '@/components/fichas/AnimacaoAssim'
 import { resultadoAssim, type DadoAssim } from '@/lib/sistemas/assimilacao'
-import RolagemAssim, { marcaAssim } from '@/components/dados/RolagemAssim'
-import { CartaoAtaque, DecisoesMestre, ConfigCombate, DescansoGrupo, JanelaAtaque, PainelFichas, PainelMorte, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type Morte } from './Combate'
+import { marcaAssim } from '@/components/dados/RolagemAssim'
+import { DecisoesMestre, ConfigCombate, DescansoGrupo, JanelaAtaque, PainelFichas, PainelMorte, chaveFonte, useFichasMesa, type DadosAtaque, type EstadoAtaque, type Morte } from './Combate'
 import NaTela from '@/components/NaTela'
 import FichaNaMesa from './FichaNaMesa'
 import { DanoEmVarios, PainelIniciativa } from './Iniciativa'
@@ -51,19 +51,7 @@ export type Estado = {
 export type Acao = (b: Record<string, unknown>) => Promise<Record<string, unknown>>
 
 const CORES = ['#fbbf24', '#38bdf8', '#4ade80', '#f87171', '#c084fc', '#f1f5f9']
-const DADOS = ['1d4', '1d6', '1d8', '1d10', '1d12', '1d20', '1d100']
 const MOVIMENTO = { dono: 'O dono move', todos: 'Todos movem', mestre: 'Só o mestre move' }
-const hora = (d: string) => new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-
-/** Envia uma imagem do aparelho e devolve o link público + proporção (altura/largura). */
-async function enviarImagem(campanhaId: string, eu: string, arq: File): Promise<{ url: string; ar: number }> {
-  if (arq.size > 5 * 1024 * 1024) throw new Error('Imagem maior que 5 MB.')
-  const ar = await new Promise<number>(res => { const img = new Image(); img.onload = () => res(img.naturalHeight / img.naturalWidth || 1); img.onerror = () => res(1); img.src = URL.createObjectURL(arq) })
-  const r = await fetch('/api/prg/mesa/' + campanhaId + '/upload', { method: 'POST', body: arq, headers: { 'Content-Type': arq.type, 'x-prg-aventureiro': eu } })
-  const d = await r.json().catch(() => ({}))
-  if (!r.ok) throw new Error(d.erro || 'Falha no envio')
-  return { url: d.url, ar }
-}
 
 type Pendente = { ate: number }
 /** Copia o objeto mantendo só as entradas aprovadas por `manter`. */
@@ -94,8 +82,13 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [atravessar, setAtravessar] = useState(false)
   const [comoJogador, setComoJogador] = useState(false)
   const [dicas, setDicas] = useState<'auto' | 'aberto' | 'fechado'>('auto')
-  const [aba, setAba] = useState<'chat' | 'fichas' | 'tokens' | 'iniciativa' | 'musica' | 'campanha' | 'tabelas' | 'biblioteca' | 'mestre'>('chat')
-  const [painel, setPainel] = useState(true)
+  const [aba, setAba] = useState<'fichas' | 'tokens' | 'iniciativa' | 'musica' | 'campanha' | 'tabelas' | 'biblioteca' | 'mestre'>('iniciativa')
+  // Mesa organizada (v0.36.4): o mapa em destaque; chat e painel de ferramentas são abas laterais que recolhem.
+  // No computador o chat começa aberto; no celular tudo começa recolhido (e só um abre por vez, por cima do mapa).
+  const grande = () => typeof window !== 'undefined' && window.innerWidth >= 1024
+  const [painel, setPainel] = useState(false)
+  const [chatAberto, setChatAberto] = useState(grande)
+  const [vistoChat, setVistoChat] = useState(0)
   const [mais, setMais] = useState(false)
   const ultimaParte = useRef<Record<string, string>>({})
   const [pings, setPings] = useState<Ping[]>([])
@@ -148,6 +141,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       // Destaca rolagens novas de outras pessoas (as minhas já foram destacadas ao rolar).
       const rol = [...novos].reverse().find(x => (x.tipo === 'rolagem' || x.tipo === 'ataque') && x.autor_id !== novo.eu)
       if (ultimoEvento.current && rol) destacar(rol)
+      if (ult && !ultimoEvento.current) setVistoChat(ult.id)
       if (ult) ultimoEvento.current = Math.max(ultimoEvento.current, ult.id)
       if (novo.agora) setDesvio(Date.parse(novo.agora) - Date.now())
       setE(novo); setErro(''); setFechada(false)
@@ -273,6 +267,12 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   }, [vidaAberta])
 
   const nomes = useMemo(() => Object.fromEntries((e?.membros ?? []).map(m => [m.aventureiro_id, m.aventureiro?.apelido ?? '?'])), [e?.membros])
+  // Mensagens novas enquanto o chat está recolhido (o que já estava na mesa ao entrar não conta).
+  const ultimoId = e?.eventos.at(-1)?.id ?? 0
+  const novosChat = chatAberto || !e ? 0 : e.eventos.filter(ev => ev.id > vistoChat && ev.autor_id !== e.eu && ev.tipo !== 'sistema').length
+  /** Abre ou fecha o chat / o painel. No celular só um fica aberto por vez. */
+  const fecharChat = () => { setChatAberto(false); setVistoChat(ultimoId) }
+  const alternarChat = () => { if (chatAberto) { fecharChat(); return } setChatAberto(true); if (!grande()) setPainel(false) }
   if (!e && fechada) return <main className="fundo-tema flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center text-(--a-e8dff7)">
     <p className="text-5xl" aria-hidden="true">🌙</p>
     <h1 className="text-2xl font-bold">A sessão está fechada</h1>
@@ -332,7 +332,6 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   // Painel em grupos (v0.32.6): poucas abas em cima e, dentro de cada grupo, as partes dele com uma linha explicando o que fazem.
   type Parte = { id: typeof aba; icone: typeof Hand; nome: string; ajuda: string }
   const grupos: { id: string; icone: typeof Hand; nome: string; partes: Parte[] }[] = ([
-    { id: 'chat', icone: MessageSquare, nome: 'Chat', partes: [{ id: 'chat', icone: MessageSquare, nome: 'Chat', ajuda: 'Mensagens e dados da mesa. Os dados são rolados no servidor; o histórico guarda tudo.' }] },
     { id: 'jogo', icone: Swords, nome: 'Jogo', partes: [
       ...(!espectador ? [{ id: 'fichas', icone: ScrollText, nome: 'Fichas', ajuda: admin ? 'Personagens e NPCs da campanha: coloque na mesa, veja a vida e ataque com as armas e poderes da ficha.' : 'Seu personagem: coloque na mesa e ataque com as armas e poderes da ficha.' } as Parte] : []),
       { id: 'iniciativa', icone: Swords, nome: 'Iniciativa', ajuda: admin ? 'Ordem dos turnos. “Preparar combate” rola a iniciativa de todos; “Próximo turno” passa a vez.' : 'Ordem dos turnos do combate. Quando for a sua vez, aparece “⚔️ Sua vez”.' },
@@ -348,7 +347,12 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   ])
   const grupoAtual = grupos.find(g => g.partes.some(p => p.id === aba)) ?? grupos[0]
   const parteAtual = grupoAtual.partes.find(p => p.id === aba) ?? grupoAtual.partes[0]
-  const abrirGrupo = (g: typeof grupos[number]) => setAba(ultimaParte.current[g.id] && g.partes.some(p => p.id === ultimaParte.current[g.id]) ? ultimaParte.current[g.id] as typeof aba : g.partes[0].id)
+  const abrirGrupo = (g: typeof grupos[number]) => {
+    // Tocar no grupo que já está aberto recolhe o painel.
+    if (painel && g.id === grupoAtual.id) { setPainel(false); return }
+    setAba(ultimaParte.current[g.id] && g.partes.some(p => p.id === ultimaParte.current[g.id]) ? ultimaParte.current[g.id] as typeof aba : g.partes[0].id)
+    setPainel(true); if (!grande() && chatAberto) fecharChat()
+  }
   async function alternarSessao() {
     if (sessaoAberta && !confirm('Encerrar a sessão? Os jogadores e espectadores saem da mesa e a música para.')) return
     await acao({ acao: 'sessao', aberta: !sessaoAberta }).catch(() => {})
@@ -379,7 +383,6 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
         <Link href={'/mundo?campanha=' + campanhaId} className="rounded-lg p-1.5 hover:bg-(--s-34294f)" title="Mundo da campanha: mapa, lugares, personagens e relações" aria-label="Mundo da campanha"><Globe size={18} /></Link>
         <button type="button" onClick={() => setDicas('aberto')} className="rounded-lg p-1.5 hover:bg-(--s-34294f)" title="Dicas rápidas da mesa" aria-label="Dicas rápidas da mesa"><CircleHelp size={18} /></button>
       </div>
-      <button type="button" onClick={() => setPainel(!painel)} aria-label={painel ? 'Esconder o painel (só o mapa)' : 'Mostrar o painel'} title={painel ? 'Só o mapa' : 'Mostrar o painel'} className="rounded-lg p-1.5 hover:bg-(--s-34294f)">{painel ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}</button>
       <div className="relative md:hidden">
         <button type="button" onClick={() => setMais(m => !m)} aria-expanded={mais} aria-label="Mais opções" className="rounded-lg p-1.5 hover:bg-(--s-34294f)"><MoreHorizontal size={18} /></button>
         {mais && <div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-xl border border-(--a-55456e) bg-(--s-1d1730) p-1 shadow-2xl" onClick={() => setMais(false)}>
@@ -392,7 +395,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     </header>
 
     <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-      <section className="relative min-h-[45vh] flex-1 overflow-hidden">
+      <section aria-label="Mapa da mesa" className="relative min-h-0 flex-1 overflow-hidden">
         {admin && !sessaoAberta && !ataque && avisoSessao && <p role="status" className="pointer-events-none absolute inset-x-2 top-2 z-30 mx-auto flex max-w-md items-center gap-2 rounded-xl border border-amber-500/50 bg-[#2b2310]/85 p-2 text-xs text-amber-100"><span className="flex-1 text-center">🌙 Sessão fechada: só você vê a mesa. Toque em “▶ Abrir sessão” quando o grupo for jogar.</span><button type="button" aria-label="Esconder aviso" onClick={() => setAvisoSessao(false)} className="pointer-events-auto rounded p-1.5 hover:bg-white/10"><X size={14} /></button></p>}
         {!espectador && <div className="pointer-events-none absolute bottom-2 left-2 z-20 flex max-w-[calc(100%-1rem)] flex-col items-start gap-1">
         {cena && <p className="pointer-events-none rounded-md bg-(--s-19172c)/90 px-2 py-0.5 text-[11px] text-(--a-cfc0df)">{ferramentas.find(f => f.id === modo)?.nome}{modo === 'mover' ? ' · toque no token para ver vida e atacar' : ''}</p>}
@@ -477,20 +480,17 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
 
       </section>
 
-      {painel && <aside className="flex max-h-[55vh] min-h-0 w-full flex-col border-t border-(--a-373251) bg-(--s-14121f) lg:max-h-none lg:w-[410px] lg:border-l lg:border-t-0">
-        <nav className="flex shrink-0 gap-1 border-b border-(--a-373251) bg-(--s-17142a) p-1.5" aria-label="Painel da mesa">
-          {grupos.map(g => { const ativo = g.id === grupoAtual.id
-            return <button key={g.id} type="button" onClick={() => abrirGrupo(g)} aria-current={ativo ? 'page' : undefined}
-              className={'flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 text-[11px] transition sm:text-xs ' + (ativo ? (g.id === 'mestre' ? 'bg-gradient-to-b from-[#5a4320] to-[#3a2a14] text-amber-100' : 'bg-(--s-3a2c58) text-white') : 'text-(--a-b4aeca) hover:bg-(--s-241d38)')}>
-              <g.icone size={16} /><span className="truncate">{g.nome}</span></button> })}
-        </nav>
+      {painel && <aside aria-label="Painel da mesa" className="fixed inset-x-0 bottom-14 z-40 flex h-[72dvh] flex-col rounded-t-2xl border-t border-(--a-55456e) bg-(--s-14121f) shadow-[0_-12px_40px_#000a] lg:static lg:z-auto lg:h-auto lg:w-[380px] lg:shrink-0 lg:rounded-none lg:border-l lg:border-t-0 lg:shadow-none">
+        <div className="flex shrink-0 items-center gap-2 border-b border-(--a-373251) bg-(--s-17142a) px-3 py-2">
+          <grupoAtual.icone size={17} className="text-(--a-b99bff)" /><h2 className="flex-1 font-bold">{grupoAtual.nome}</h2>
+          <button type="button" onClick={() => setPainel(false)} aria-label="Recolher o painel" title="Recolher o painel" className="rounded-lg p-1.5 hover:bg-(--s-34294f)"><X size={18} /></button>
+        </div>
         {grupoAtual.partes.length > 1 && <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-(--a-2b2540) px-2 py-1.5" role="tablist" aria-label={grupoAtual.nome}>
           {grupoAtual.partes.map(p => <button key={p.id} type="button" role="tab" aria-selected={p.id === parteAtual.id} onClick={() => { ultimaParte.current[grupoAtual.id] = p.id; setAba(p.id) }}
             className={'inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-xs ' + (p.id === parteAtual.id ? 'border-(--a-b99bff) bg-(--s-2b2143) text-white' : 'border-transparent text-(--a-b4aeca) hover:bg-(--s-241d38)')}><p.icone size={13} /> {p.nome}</button>)}
         </div>}
         <p className="flex shrink-0 items-start gap-1.5 border-b border-(--a-2b2540) bg-(--s-15122a) px-3 py-1.5 text-[11px] leading-snug text-(--a-a99bbb)"><CircleHelp size={13} className="mt-px shrink-0" /> {parteAtual.ajuda}</p>
         <div className="min-h-0 flex-1 overflow-y-auto p-3">
-          {parteAtual.id === 'chat' && <Chat campanhaId={campanhaId} e={e} nomes={nomes} papelDe={papelDe} admin={admin} espectador={espectador} acao={acao} destacar={destacar} abrirHistorico={() => setHistorico(true)} />}
           {parteAtual.id === 'fichas' && <PainelFichas fichas={fichasMesa} carregar={() => void carregarFichas()} tokens={e.tokens} admin={admin} cenaId={cena?.id ?? null} acao={acao} atacarCom={iniciarAtaque} abrirFicha={setFichaAberta} />}
           {parteAtual.id === 'tokens' && <PainelTokens e={e} admin={admin} acao={acao} campanhaId={campanhaId} abrir={setTokenAberto} />}
           {parteAtual.id === 'iniciativa' && <PainelIniciativa e={e} admin={admin} acao={acao} fichas={fichasMesa} atacar={iniciarAtaque} />}
@@ -503,6 +503,23 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           {parteAtual.id === 'mestre' && admin && <><PainelMestre e={e} acao={acao} campanhaId={campanhaId} setModo={setModo} /><div className="h-3" /><ConfigCombate acerto={e.combate?.acerto ?? 'mestre'} morte={e.combate?.morte ?? 'testes'} acao={acao} /><div className="h-3" /><DescansoGrupo acao={acao} carregar={() => void carregarFichas()} /></>}
         </div>
       </aside>}
+
+      {chatAberto && <aside aria-label="Chat da mesa" className="fixed inset-x-0 bottom-14 top-12 z-40 flex flex-col border-t border-(--a-55456e) bg-(--s-14121f) shadow-[0_-12px_40px_#000a] lg:static lg:z-auto lg:w-[360px] lg:shrink-0 lg:border-l lg:border-t-0 lg:shadow-none">
+        <ChatMesa campanhaId={campanhaId} e={e} nomes={nomes} papelDe={papelDe} admin={admin} espectador={espectador} acao={acao} destacar={destacar} abrirHistorico={() => setHistorico(true)} recolher={fecharChat} />
+      </aside>}
+
+      {/* Barra da mesa: no celular fica embaixo; no computador, na lateral direita. */}
+      <nav aria-label="Barra da mesa" className="flex h-14 shrink-0 border-t border-(--a-373251) bg-(--s-17142a) lg:h-auto lg:w-[68px] lg:flex-col lg:border-l lg:border-t-0 lg:py-2">
+        <button type="button" onClick={alternarChat} aria-pressed={chatAberto} aria-label={'Chat' + (novosChat ? ` (${novosChat} nova${novosChat > 1 ? 's' : ''})` : '')}
+          className={'relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] lg:flex-none lg:py-2.5 ' + (chatAberto ? 'text-white' : 'text-(--a-b4aeca) hover:text-white')}>
+          <span className={'rounded-full px-3 py-0.5 ' + (chatAberto ? 'bg-(--a-5b4380)' : '')}><MessageSquare size={19} /></span>Chat
+          {novosChat > 0 && <span className="absolute right-[calc(50%-1.4rem)] top-1 min-w-5 rounded-full bg-[#e5484d] px-1 text-center text-[11px] font-bold leading-5 text-white lg:right-2">{novosChat > 99 ? '99+' : novosChat}</span>}
+        </button>
+        {grupos.map(g => { const ativo = painel && g.id === grupoAtual.id
+          return <button key={g.id} type="button" onClick={() => abrirGrupo(g)} aria-pressed={ativo} aria-label={g.nome}
+            className={'flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] lg:flex-none lg:py-2.5 ' + (ativo ? (g.id === 'mestre' ? 'text-amber-100' : 'text-white') : 'text-(--a-b4aeca) hover:text-white')}>
+            <span className={'rounded-full px-3 py-0.5 ' + (ativo ? (g.id === 'mestre' ? 'bg-[#5a4320]' : 'bg-(--a-5b4380)') : '')}><g.icone size={19} /></span><span className="max-w-full truncate">{g.nome}</span></button> })}
+      </nav>
     </div>
 
     {(() => { const papel = admin ? 'mestre' : espectador ? 'espectador' : 'jogador'
@@ -758,99 +775,6 @@ function ListaAreas({ areas, tokens, eu, admin, espectador, tirar, limpar, dano 
       {admin && areas.length > 1 && <button type="button" onClick={limpar} className={btn + ' w-full justify-center'}>Tirar todas</button>}
     </div>}
   </section>
-}
-
-function Chat({ campanhaId, e, nomes, papelDe, admin, espectador, acao, destacar, abrirHistorico }: { campanhaId: string; e: Estado; nomes: Record<string, string>; papelDe: Record<string, string>; admin: boolean; espectador: boolean; acao: Acao; destacar: (ev: Evento) => void; abrirHistorico: () => void }) {
-  const [texto, setTexto] = useState('')
-  const [recolhido, setRecolhido] = useState(false)
-  const [enviandoImagem, setEnviandoImagem] = useState(false)
-  const [expr, setExpr] = useState('1d20')
-  const [vis, setVis] = useState<'publica' | 'mestre' | 'privada'>('publica')
-  const [dest, setDest] = useState('')
-  const [pers, setPers] = useState('')
-  const fim = useRef<HTMLLIElement>(null)
-  // Quatro abas (v0.34.9): a conversa do grupo, os dados dos jogadores, o combate e as rolagens do mestre.
-  const [aba, setAba] = useState<AbaChat>('conversa')
-  const combateAgora = (e.mesa?.iniciativa?.length ?? 0) > 0
-  const abaDe = useMemo(() => separarEventos(e.eventos, papelDe, combateAgora), [e.eventos, papelDe, combateAgora])
-  const lista = e.eventos.filter(ev => abaDe.get(ev.id) === aba)
-  const ultimos = useMemo(() => { const u: Record<AbaChat, number> = { conversa: 0, dados: 0, combate: 0, mestre: 0 }; for (const ev of e.eventos) { const a = abaDe.get(ev.id); if (a) u[a] = Math.max(u[a], ev.id) } return u }, [e.eventos, abaDe])
-  const [visto, setVisto] = useState<Record<AbaChat, number>>({ conversa: 0, dados: 0, combate: 0, mestre: 0 })
-  const iniciado = useRef(false)
-  useEffect(() => {
-    // O que já estava na mesa ao entrar não conta como novo.
-    if (!iniciado.current && Object.values(ultimos).some(Boolean)) { setVisto(ultimos); iniciado.current = true; return }
-    setVisto(v => v[aba] >= ultimos[aba] ? v : { ...v, [aba]: ultimos[aba] })
-  }, [aba, ultimos])
-  const novos = (t: AbaChat) => t === aba ? 0 : e.eventos.filter(ev => abaDe.get(ev.id) === t && ev.id > visto[t] && ev.autor_id !== e.eu).length
-  useEffect(() => { fim.current?.scrollIntoView({ block: 'end' }) }, [lista.length, aba])
-  const meus = e.fichas.filter(f => f.dono_id === e.eu || (admin && f.npc))
-  async function rolar(x: string) {
-    const r = await acao({ acao: 'evento', tipo: 'rolagem', expressao: x, visibilidade: vis, destinatarioId: dest, personagem: pers }).catch(() => null)
-    const ev = r?.evento as Evento | undefined
-    if (ev?.expressao && ev.resultados) destacar(ev)
-  }
-  async function enviar() {
-    if (!texto.trim()) return
-    if (/^\/r(oll)?\s+/i.test(texto)) { await rolar(texto.replace(/^\/r(oll)?\s+/i, '')); setTexto(''); toast(`🎲 A rolagem foi para “${combateAgora ? 'Combate' : admin ? 'Mestre' : 'Dados'}”.`); return }
-    await acao({ acao: 'evento', tipo: 'chat', texto, visibilidade: vis, destinatarioId: dest, personagem: pers }).then(() => setTexto('')).catch(() => {})
-  }
-  async function enviarFoto(arq?: File) {
-    if (!arq) return
-    if (!arq.type.startsWith('image/')) { toast.error('Escolha uma imagem.'); return }
-    setEnviandoImagem(true)
-    try {
-      const { url } = await enviarImagem(campanhaId, e.eu, arq)
-      await acao({ acao: 'evento', tipo: 'chat', texto: url, visibilidade: vis, destinatarioId: dest, personagem: pers })
-      toast.success('Imagem enviada ao chat.')
-    } catch (err) { toast.error(msg(err)) } finally { setEnviandoImagem(false) }
-  }
-  return <div className="flex min-h-full flex-col gap-3">
-    <button type="button" onClick={() => setRecolhido(v => !v)} aria-expanded={!recolhido} className={btn + ' w-full justify-center'}>{recolhido ? 'Mostrar conversa' : 'Recolher conversa'} {recolhido ? '▾' : '▴'}</button>
-    {!recolhido && <>
-    <p className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]" aria-label="Legenda das cores">{(['mestre', 'jogador', 'espectador'] as const).map(p => <span key={p} className={PAPEL_ESTILO[p].cor}>{PAPEL_ESTILO[p].icone} {PAPEL_ESTILO[p].nome}</span>)}</p>
-    <div className="flex items-center justify-between"><p className="text-xs text-(--a-b4aeca)">{espectador ? 'Você está assistindo: pode conversar no chat.' : ''}</p>
-      <button type="button" onClick={abrirHistorico} className={btn}><History size={14} /> Histórico</button></div>
-    <div role="tablist" aria-label="Conversa, dados, combate ou mestre" className="sticky top-0 z-10 grid grid-cols-4 gap-1 rounded-xl border border-(--a-373251) bg-(--s-151123) p-1 text-xs shadow-lg sm:text-sm">
-      {([['conversa', '💬', 'Conversa'], ['dados', '🎲', 'Dados'], ['combate', '⚔️', 'Combate'], ['mestre', '🎩', 'Mestre']] as const).map(([id, icone, rot]) => { const n = novos(id), nome = <><span aria-hidden>{icone}</span> {rot}</>
-        return <button key={id} type="button" role="tab" aria-selected={aba === id} onClick={() => setAba(id)}
-          className={'relative rounded-lg px-2 py-1.5 font-semibold transition ' + (aba === id ? 'bg-(--a-7654bb) text-white' : 'text-(--a-cfc0df) hover:bg-(--s-2b2140)')}>{nome}
-          {n > 0 && <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-[#e5484d] px-1 text-[11px] leading-5 text-white">{n > 99 ? '99+' : n}</span>}</button> })}
-    </div>
-    <p className="-mt-1 text-[11px] text-(--a-a99bbb)">{aba === 'conversa' ? 'Mensagens do grupo. Rolagens ficam nas outras abas.' : aba === 'dados' ? 'Rolagens dos jogadores e avisos da mesa (fora do combate).' : aba === 'combate' ? 'Ataques, iniciativa, turnos, dano e tudo o que foi rolado durante o combate.' : 'Rolagens e tabelas do mestre fora do combate.'}</p>
-    <ul className="space-y-2 text-sm">{lista.map(ev => <li key={ev.id} className={'rounded-lg p-2 ' + (ev.visibilidade === 'publica' ? 'bg-(--s-1e1a30)' : 'border border-(--a-7a5a9a) bg-(--s-261c38)')}>
-      <p className="text-[11px] text-(--a-b4aeca)">{hora(ev.criado_em)} · {ev.tipo === 'sistema' ? <strong className="text-(--a-e4d3ff)">Mesa</strong> : (() => { const st = estiloPapel(papelDe[ev.autor_id ?? '']); return <strong className={st.cor} title={st.nome}>{st.icone} {ev.personagem || ev.autor?.apelido || '?'}</strong> })()}{ev.personagem && ev.autor ? ` (${ev.autor.apelido})` : ''}
-        {ev.visibilidade === 'mestre' && ' · 🔒 só o mestre'}{ev.visibilidade === 'privada' && ` · 🔒 privado para ${nomes[ev.destinatario_id ?? ''] ?? '?'}`}</p>
-      {ev.tipo === 'rolagem' && marcaAssim(ev.dados) && ev.expressao && ev.resultados ? <div>{ev.texto && <p className="text-xs text-(--a-c4b6d4)">🎲 {ev.texto}</p>}<RolagemAssim expressao={ev.expressao} resultados={ev.resultados} {...marcaAssim(ev.dados)!} /></div>
-        : ev.tipo === 'rolagem' ? <p><span className="text-(--a-b99bff)">🎲 {ev.expressao}</span> → [{ev.resultados?.join(', ')}] = <strong className="text-lg text-(--a-ed9cd8)">{ev.total}</strong>
-        {ev.expressao?.includes('d20') && ev.resultados?.[0] === 20 && ' ✨ 20 natural!'}{ev.expressao?.includes('d20') && ev.resultados?.[0] === 1 && ' 💀 1 natural'}{ev.texto && <span className="block text-xs text-(--a-c4b6d4)">{ev.texto}</span>}</p>
-        : ev.tipo === 'ataque' && ev.dados ? <CartaoAtaque d={ev.dados} admin={admin} rolagem={ev.expressao && ev.resultados ? { expressao: ev.expressao, resultados: ev.resultados } : undefined} />
-        : ev.tipo === 'chat' && ev.texto && /^https:\/\/[^\s]+\.(?:png|jpe?g|gif|webp)(?:\?[^\s]*)?$/i.test(ev.texto) ? <a href={ev.texto} target="_blank" rel="noopener noreferrer" className="block"><img src={ev.texto} alt="Imagem enviada no chat" loading="lazy" className="max-h-72 max-w-full rounded-lg object-contain" /></a>
-        : <p className="whitespace-pre-wrap break-words">{ev.texto}</p>}
-    </li>)}<li ref={fim} aria-hidden className="h-0 list-none" /></ul>
-    {lista.length === 0 && <p className="text-center text-sm text-(--a-b4aeca)">{aba === 'conversa' ? 'Ninguém falou ainda. Mande um oi!' : aba === 'combate' ? 'Nenhum combate por enquanto.' : aba === 'mestre' ? 'O mestre ainda não rolou nada.' : 'Nada por aqui ainda. Role um dado!'}</p>}
-    <div className="mt-auto space-y-2 border-t border-(--a-373251) pt-3">
-      <div className="grid grid-cols-2 gap-2">
-        <select aria-label="Quem vê" value={vis} onChange={x => setVis(x.target.value as typeof vis)} className={input}>
-          <option value="publica">👀 Todos veem</option><option value="mestre">🔒 Só o mestre</option><option value="privada">✉️ Privado para…</option></select>
-        {vis === 'privada' ? <select aria-label="Destinatário" value={dest} onChange={x => setDest(x.target.value)} className={input}><option value="">Escolha…</option>
-          {e.membros.filter(m => m.aventureiro_id !== e.eu).map(m => <option key={m.aventureiro_id} value={m.aventureiro_id}>{m.aventureiro?.apelido}{m.papel === 'mestre' || m.papel === 'comestre' ? ' (mestre)' : m.papel === 'espectador' ? ' (espectador)' : ''}</option>)}</select>
-          : <select aria-label="Personagem" value={pers} onChange={x => setPers(x.target.value)} className={input}><option value="">Como eu mesmo</option>{meus.map(f => <option key={f.id} value={f.nome || 'Personagem'}>{f.nome || 'Personagem sem nome'}</option>)}</select>}
-      </div>
-      {!espectador && aba !== 'conversa' && <><div className="flex flex-wrap gap-1">{DADOS.map(d => <button key={d} type="button" onClick={() => rolar(d)} className={btn}>{d.slice(1)}</button>)}</div>
-      <form onSubmit={x => { x.preventDefault(); void rolar(expr) }} className="flex gap-2">
-        <input aria-label="Expressão de dados" value={expr} onChange={x => setExpr(x.target.value)} maxLength={80} placeholder="2d6+3, 4d6kh3, 2d20kh1" className={input} />
-        <button type="submit" className="rounded-lg bg-(--a-7654bb) px-3 text-sm font-semibold"><Dices size={18} /></button>
-      </form></>}
-      {aba === 'conversa' && <label className={btn + ' cursor-pointer justify-center'}><ImageIcon size={15} /> {enviandoImagem ? 'Enviando imagem…' : 'Enviar imagem (até 5 MB)'}<input type="file" accept="image/*" className="sr-only" disabled={enviandoImagem} onChange={ev => { const arq = ev.target.files?.[0]; ev.target.value = ''; void enviarFoto(arq) }} /></label>}
-      {aba === 'conversa' && <form onSubmit={x => { x.preventDefault(); void enviar() }} className="flex gap-2">
-        <input aria-label="Mensagem" value={texto} onChange={x => setTexto(x.target.value)} maxLength={1000} placeholder={espectador ? 'Mensagem' : 'Mensagem (ou /r 1d20+2)'} className={input} />
-        <button type="submit" aria-label="Enviar" className="rounded-lg bg-(--a-7654bb) px-3"><Send size={18} /></button>
-      </form>}
-      {aba !== 'conversa' && espectador && <p className="text-xs text-(--a-b4aeca)">Espectadores assistem às rolagens; para falar, use a Conversa.</p>}
-    </div>
-    </>}
-  </div>
 }
 
 function Historico({ campanhaId, membros, fechar }: { campanhaId: string; membros: Estado['membros']; fechar: () => void }) {

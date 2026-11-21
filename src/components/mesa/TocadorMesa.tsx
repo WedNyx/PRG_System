@@ -43,8 +43,9 @@ export default function TocadorMesa({ estado, desvio, aoTerminar }: { estado: Es
   const [volume, setVolume] = useState(lerVolume)
   const [mudo, setMudo] = useState(lerMudo)
   const [bloqueado, setBloqueado] = useState(false)
-  const [aberto, setAberto] = useState(() => { try { return localStorage.getItem('prg-musica-compacta') !== '1' } catch { return true } })
-  useEffect(() => { try { localStorage.setItem('prg-musica-compacta', aberto ? '0' : '1') } catch {} }, [aberto])
+  // Começa compacto (v0.36.4): uma pílula pequena no canto do mapa. Quem expandir, fica expandido (lembra no aparelho).
+  const [aberto, setAberto] = useState(() => { try { return localStorage.getItem('prg-musica-aberta-v2') === '1' } catch { return false } })
+  useEffect(() => { try { localStorage.setItem('prg-musica-aberta-v2', aberto ? '1' : '0') } catch {} }, [aberto])
   const desvioRef = useRef(desvio)
   const fimRef = useRef(aoTerminar)
   useEffect(() => { desvioRef.current = desvio }, [desvio])
@@ -165,21 +166,22 @@ export default function TocadorMesa({ estado, desvio, aoTerminar }: { estado: Es
   }
 
   const ehYt = tocando && estado?.tipo === 'youtube'
-  return <div className={'absolute right-2 top-2 z-20 w-[min(220px,calc(100vw-1rem))] overflow-hidden rounded-xl border border-(--a-5e4b78) bg-(--s-19172c)/95 text-xs shadow-xl ' + (tocando ? '' : 'hidden')} aria-label="Música da mesa">
-    <div className="flex items-center gap-1 px-2 py-1.5">
-      <Music2 size={14} className="shrink-0 text-(--a-b99bff)" />
-      <button type="button" onClick={() => setAberto(a => !a)} className="min-w-0 flex-1 truncate text-left" title={estado?.titulo}>{estado?.pausado ? '⏸ ' : estado?.loop ? '🔁 ' : ''}{estado?.titulo ?? 'Música'}</button>
-      <button type="button" onClick={() => setAberto(a => !a)} aria-expanded={aberto} aria-label={aberto ? 'Compactar música' : 'Expandir música'} title={aberto ? 'Compactar player' : 'Expandir player'} className="rounded p-0.5 hover:bg-(--s-34294f)">{aberto ? <ChevronsDownUp size={14} /> : <ChevronsUpDown size={14} />}</button>
-      <button type="button" onClick={() => setMudo(m => !m)} aria-label={mudo ? 'Ativar som' : 'Silenciar só para mim'} className="rounded p-0.5 hover:bg-(--s-34294f)">{mudo ? <VolumeX size={14} /> : <Volume2 size={14} />}</button>
-    </div>
-    {/* Mantém o iframe do YouTube montado e visível em miniatura ao compactar, sem interromper a música. */}
-    <div className={ehYt ? (aberto ? 'relative aspect-video w-full' : 'relative ml-auto mr-2 mb-1 aspect-video w-24') : 'hidden'}>
+  const titulo = (estado?.pausado ? '⏸ ' : estado?.loop ? '🔁 ' : '') + (estado?.titulo ?? 'Música')
+  // Um só bloco do vídeo (o iframe não pode ser recriado, senão a música recomeça): no modo compacto ele vira uma
+  // miniatura dentro da pílula; expandido, ocupa a largura toda embaixo do título. O YouTube exige o player visível.
+  return <div role="region" aria-label="Música da mesa" className={'absolute left-2 top-2 z-20 flex flex-wrap items-center overflow-hidden border border-(--a-5e4b78) bg-(--s-19172c)/95 text-xs shadow-xl backdrop-blur ' +
+    (aberto ? 'w-[min(300px,calc(100vw-1rem))] gap-x-1 rounded-xl p-1.5' : ('max-w-[min(250px,calc(100vw-1rem))] gap-1.5 py-1 pl-1 pr-1.5 ' + (bloqueado ? 'rounded-xl' : 'h-11 rounded-full'))) + (tocando ? '' : ' hidden')}>
+    <div className={ehYt ? (aberto ? 'relative order-last mt-1.5 aspect-video w-full overflow-hidden rounded-lg' : 'relative h-9 w-16 shrink-0 overflow-hidden rounded-full') : 'hidden'}>
       <div ref={caixaYt} className="absolute inset-0" />
       {/* Camada por cima: ninguém pausa ou pula pelo vídeo; os controles são do mestre. */}
       <div className="absolute inset-0" aria-hidden="true" />
-      {estado?.pausado && <span className="absolute inset-x-0 bottom-1 text-center text-[11px] font-semibold text-white drop-shadow">⏸ Pausada pelo mestre</span>}
+      {estado?.pausado && aberto && <span className="absolute inset-x-0 bottom-1 text-center text-[11px] font-semibold text-white drop-shadow">⏸ Pausada pelo mestre</span>}
     </div>
-    {aberto && <label className="flex items-center gap-2 px-2 py-1.5">Volume <input type="range" min={0} max={100} value={volume} onChange={x => setVolume(Number(x.target.value))} className="flex-1" aria-label="Volume da música (só para você)" /></label>}
-    {bloqueado && <button type="button" onClick={liberar} className="w-full bg-(--a-5b4380) px-2 py-2 font-semibold hover:bg-(--a-6b5190)">🔊 Ouvir a música da mesa</button>}
+    {!ehYt && <span className={'flex shrink-0 items-center justify-center rounded-full bg-(--a-5b4380) text-white ' + (aberto ? 'h-7 w-7' : 'h-9 w-9')}><Music2 size={15} className={estado?.pausado ? '' : 'animate-pulse'} /></span>}
+    <button type="button" onClick={() => setAberto(a => !a)} className="min-w-0 flex-1 truncate text-left font-medium" title={estado?.titulo}>{titulo}</button>
+    <button type="button" onClick={() => setMudo(m => !m)} aria-label={mudo ? 'Ativar som' : 'Silenciar só para mim'} title={mudo ? 'Ativar som' : 'Silenciar só para mim'} className="shrink-0 rounded-full p-1.5 hover:bg-(--s-34294f)">{mudo ? <VolumeX size={15} /> : <Volume2 size={15} />}</button>
+    <button type="button" onClick={() => setAberto(a => !a)} aria-expanded={aberto} aria-label={aberto ? 'Compactar música' : 'Expandir música'} title={aberto ? 'Compactar' : 'Expandir (vídeo e volume)'} className="shrink-0 rounded-full p-1.5 hover:bg-(--s-34294f)">{aberto ? <ChevronsDownUp size={15} /> : <ChevronsUpDown size={15} />}</button>
+    {aberto && <label className="order-last mt-1 flex w-full items-center gap-2 px-1">Volume <input type="range" min={0} max={100} value={volume} onChange={x => setVolume(Number(x.target.value))} className="flex-1" aria-label="Volume da música (só para você)" /></label>}
+    {bloqueado && <button type="button" onClick={liberar} className="order-last mt-1 w-full rounded-lg bg-(--a-5b4380) px-2 py-2 font-semibold hover:bg-(--a-6b5190)">🔊 Ouvir a música da mesa</button>}
   </div>
 }

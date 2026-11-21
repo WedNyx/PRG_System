@@ -3,7 +3,7 @@ import { tituloSistemaNaFicha, edicaoEfetivaDaFicha } from '@/lib/sistemas/edica
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { Dice5, Info, Heart, Shield, Sparkles, User, BookOpen, Backpack, ScrollText } from 'lucide-react'
+import { Dice5, GitBranch, Info, Heart, Shield, Sparkles, User, BookOpen, Backpack, ScrollText } from 'lucide-react'
 import { classesDaFicha } from '@/lib/sistemas/dnd2024Classes'
 import { classesDaFicha2014 } from '@/lib/sistemas/dnd2014Multiclasse'
 import { calcular } from '@/lib/sistemas/calculo'
@@ -17,6 +17,8 @@ import AtributosLua from './AtributosLua'
 import { AtributosGraus, PericiasGraus, RegrasDoSistema, TabelasDoSistema } from './FichaGraus'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import { InventarioFicha, PoderesFicha } from './Inventario'
+import ArvoreHabilidades from './Arvore'
+import ArvoreDndOficial from './ArvoreDndOficial'
 import JanelaDescanso from './Descanso'
 import type { Item } from '@/lib/sistemas/inventario'
 import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
@@ -49,8 +51,10 @@ const numero = (v: string) => v.trim() === '' || v.trim() === '-' ? null : Math.
  * Nada é calculado nem conferido: o jogador e o mestre digitam atributos, modificadores, valores,
  * perícias e máximos. Os dados rolam com os números digitados.
  */
-export default function FichaManual({ sistema: s, dados: d, onChange, somenteLeitura = false, rolarNaCampanha, passarItem }: {
+export default function FichaManual({ sistema: s, dados: d, onChange, somenteLeitura = false, rolarNaCampanha, passarItem, mestre = false }: {
   sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean
+  /** Quem abre é o mestre (ou o dono de uma ficha avulsa): pode conceder e montar habilidades na árvore. */
+  mestre?: boolean
   /** Se a ficha é de campanha: rola no servidor e publica no chat da mesa. */
   rolarNaCampanha?: (expressao: string, rotulo: string, extra?: { estilo: 'assimilacao'; manter?: number; todos?: boolean }) => Promise<{ resultados: number[]; total: number } | null>
   /** Ficha de campanha: passar um item para outro personagem. */
@@ -140,10 +144,11 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     { id: 'formas', icone: '🐺', nome: 'Transformações', sub: 'Formas com vida e golpes próprios', ajuda: 'Cada forma tem vida, essência, atributos e golpes próprios. Transformar não muda a ficha normal: ela fica guardada para quando voltar.', ok: temExtra(s, 'formas') },
     { id: 'invocacoes', icone: '🐻', nome: 'Invocações', sub: 'Criaturas, vida e ataques', ajuda: 'Criaturas que o personagem chama. Invocar tira o custo e começa com a vida cheia; a duração desce em Passar 1 turno.', ok: temExtra(s, 'invocacoes') },
     { id: 'efeitos', icone: '⏳', nome: 'Efeitos', sub: 'Condições e turnos', ajuda: 'O que está valendo agora e por quantos turnos. Nada é aplicado sozinho: é só para não esquecer.', ok: temExtra(s, 'efeitos') },
-    { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ajuda: 'Adicione poderes, magias, talentos e habilidades do personagem. O jogador e o mestre escrevem tudo.', ok: true },
+    { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ajuda: 'Consulte e gerencie as habilidades do personagem. Registre informações complementares nas anotações.', ok: true },
+    { id: 'arvore', icone: '🌠', nome: 'Árvore de habilidades', sub: 'Caminhos, poderes e progressão', ajuda: 'Visualize e gerencie a árvore de habilidades. Os nós oficiais de D&D são informativos; habilidades extras ficam em um ramo separado.', ok: s.id === 'dnd5e-srd' || s.id === 'dnd5e-manual' || !!s.arvore?.nos.length || (Array.isArray((d.arvore as { nos?: unknown[] } | undefined)?.nos) && !!(d.arvore as { nos: unknown[] }).nos.length) },
     { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou ícone, ou pegue prontos no 📦 Arsenal. Itens equipados com rolagem aparecem nas ações rápidas.', ok: true },
     { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ajuda: 'Espaço livre para a história do personagem, aliados, segredos e lembretes.', ok: true },
-  ] as const).filter(x => x.ok).map(x => s.nomesSecoes?.[x.id] ? { ...x, nome: s.nomesSecoes[x.id]! } : x)
+  ] as const).filter(x => x.ok).map(x => x.id !== 'arvore' && s.nomesSecoes?.[x.id] ? { ...x, nome: s.nomesSecoes[x.id]! } : x)
   // Vocabulário editorial: subtítulos temáticos sem substituir os nomes definidos pelo autor.
   const capitulos: Record<string, readonly string[]> = {
     'dnd5e-srd': ['Crônica do herói', 'Provas e talentos', 'Grimório e técnicas', 'Equipamento de viagem', 'Diário de aventuras'],
@@ -164,6 +169,15 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const rubrica = capitulos[identidade]
   const indiceCapitulo = (id: string) => ['principal','atributos','habilidades','equipamentos','anotacoes'].indexOf(id)
   const [secao, setSecao] = useState<string>('principal')
+  // Compacta apenas a apresentação da barra fixa no celular; não altera recursos.
+  const [resumoCompacto, setResumoCompacto] = useState(false)
+  useEffect(() => {
+    const atualizarResumo = () => setResumoCompacto(window.scrollY > 180)
+    atualizarResumo()
+    window.addEventListener('scroll', atualizarResumo, { passive: true })
+    return () => window.removeEventListener('scroll', atualizarResumo)
+  }, [])
+
   const ir = (id: string) => { setSecao(id); window.scrollTo({ top: 0, behavior: 'smooth' }) }
   const menu = useRef<HTMLDivElement>(null)
   useEffect(() => { menu.current?.querySelector('[aria-current="page"]')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }) }, [secao])
@@ -203,7 +217,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   return <div style={estiloTema(tema)} data-visual={identidade} className={tema.sombrio ? 'ficha-sombria' : undefined}>
     <RolagemCentral ref={central} />
     {descansando && <JanelaDescanso s={s} d={d} onChange={onChange} rolarTotal={rolarTotal} fechar={() => setDescansando(false)} />}
-    <div className="ficha-resumo sticky top-[57px] z-10 -mx-3 mb-4 border-b border-(--a-373251) bg-(--s-100d1c)/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-4" aria-label="Resumo do personagem">
+    <div className={`ficha-resumo sticky top-[57px] z-10 max-sm:[&_.dnd-resumo-celula]:min-h-0 max-sm:[&_.dnd-resumo-celula]:py-1 ${resumoCompacto ? 'max-sm:!py-1 max-sm:[&_.dnd-resumo-celula]:!py-0 max-sm:[&_.dnd-resumo-celula_span]:hidden max-sm:[&_.dnd-resumo-celula_svg]:size-3.5' : ''} -mx-3 mb-4 border-b border-(--a-373251) bg-(--s-100d1c)/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-4`} aria-label="Resumo do personagem">
       {identidade === 'dnd5e-srd' ? <div className="dnd-resumo-compacto" aria-label="Recursos principais">
         {recursoPrincipal && [recursoPrincipal, ...s.recursos.filter(r => r !== recursoPrincipal && maxDe(r.id))].slice(0, 3).map((r,i) => {
           const Icone = i === 0 ? Heart : /dado/i.test(r.nome) ? Dice5 : Sparkles
@@ -218,18 +232,18 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     </div>
     <div className="lg:flex lg:gap-6">
       <nav aria-label="Seções da ficha" className="ficha-menu mb-4 lg:mb-0 lg:w-60 lg:shrink-0">
-        <div ref={menu} className="flex gap-2 overflow-x-auto pb-1 lg:sticky lg:top-[120px] lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-(--a-55456e) lg:bg-(--s-201a32) lg:p-3">
+        <div ref={menu} className="grid grid-cols-3 gap-1.5 pb-1 sm:grid-cols-3 sm:gap-2 lg:flex lg:sticky lg:top-[120px] lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-(--a-55456e) lg:bg-(--s-201a32) lg:p-3">
           <p className="hidden px-2 pb-1 text-xs font-bold uppercase tracking-widest text-(--a-ed9cd8) lg:block">🌙 Menu da ficha</p>
           {SECOES.map(x => <button key={x.id} type="button" onClick={() => ir(x.id)} aria-label={x.nome} aria-current={secao === x.id ? 'page' : undefined}
-            className={'shrink-0 rounded-xl px-3 py-2 text-left text-sm transition lg:w-full ' + (secao === x.id ? 'bg-(--a-5b4380) text-white' : 'bg-(--s-201a32) text-(--a-d6c8e8) hover:bg-(--s-2b2140) lg:bg-transparent')}>
-            {identidade === 'dnd5e-srd' ? <span className="dnd-menu-label">{(() => { const Icone = [User,Dice5,BookOpen,Backpack,ScrollText][indiceCapitulo(x.id)] ?? Info; return <Icone size={19} aria-hidden="true"/> })()}<span className="dnd-menu-curto">{['Principal','Atributos','Poderes','Itens','Diário'][indiceCapitulo(x.id)] ?? x.nome}</span><span className="dnd-menu-longo">{x.nome}</span></span> : <span className="whitespace-nowrap">{x.icone} {x.nome}</span>}
+            className={'min-w-0 min-h-12 rounded-xl px-1.5 py-2 text-center text-xs transition sm:px-3 sm:text-sm lg:w-full lg:text-left ' + (secao === x.id ? 'bg-(--a-5b4380) text-white' : 'bg-(--s-201a32) text-(--a-d6c8e8) hover:bg-(--s-2b2140) lg:bg-transparent')}>
+            {identidade === 'dnd5e-srd' ? <span className="dnd-menu-label">{(() => { const Icone = x.id === 'arvore' ? GitBranch : [User,Dice5,BookOpen,Backpack,ScrollText][indiceCapitulo(x.id)] ?? Info; return <Icone size={19} aria-hidden="true"/> })()}<span className="dnd-menu-curto">{x.id === 'arvore' ? 'Árvore' : ['Principal','Atributos','Poderes','Itens','Diário'][indiceCapitulo(x.id)] ?? x.nome}</span><span className="dnd-menu-longo">{x.nome}</span></span> : <span className="break-words">{x.icone} {x.nome}</span>}
             <span className="hidden text-xs text-(--a-c4b6d4) lg:block">{rubrica?.[indiceCapitulo(x.id)] ?? x.sub}</span>
           </button>)}
         </div>
       </nav>
       <div className="min-w-0 flex-1 space-y-4">
         {atual && rubrica && <header className="ficha-capitulo"><span aria-hidden="true" className="ficha-capitulo-selo">{simbolos[identidade] ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" className="ficha-simbolo"><path d={simbolos[identidade]} /></svg> : String(iAtual + 1).padStart(2, "0")}</span><div className="min-w-0"><p className="ficha-capitulo-universo">{tituloSistemaNaFicha(s, d)}</p><h2>{rubrica[indiceCapitulo(atual.id)] ?? atual.nome}</h2></div></header>}
-        {atual && <p className="flex gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-2 text-xs text-(--a-cfc0df)"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></p>}
+        {atual && <aside aria-label="Orientações da seção" className="flex items-start gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-3 text-xs leading-relaxed text-(--a-cfc0df)"><span aria-hidden="true" className="shrink-0 text-base">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></aside>}
 
         {secao === 'marcas' && <SecaoMarcas s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolarExpr} />}
         {secao === 'formas' && <SecaoFormas s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolarExpr} />}
@@ -398,13 +412,20 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               <textarea rows={4} value={d.listas[id] ?? ''} disabled={somenteLeitura} maxLength={8000} onChange={e => set('listas', { ...d.listas, [id]: e.target.value })} className={input + ' mt-1 font-normal'} /></label>)}</div>
           </section>}
           <div className="ficha-acervo ficha-acervo-poderes"><PoderesFicha {...propsInv} /></div>
-          {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
-          <section className="grid gap-4">{listasDe('habilidades').filter(l => !destaque(l.id) && !(s.id === 'pf2e' && l.id === 'talentos' && !d.listas.talentos?.trim())).map(l => lista(s.id === 'pf2e' && l.id === 'talentos' ? { ...l, nome: 'Outros talentos' } : l))}</section>
+          {listasDe('habilidades').some(l=>!destaque(l.id)) && <details className={card}><summary className="cursor-pointer font-semibold">Anotações complementares de habilidades</summary><section className="mt-3 grid gap-4">{listasDe('habilidades').filter(l => !destaque(l.id) && !(s.id === 'pf2e' && l.id === 'talentos' && !d.listas.talentos?.trim())).map(l => lista(s.id === 'pf2e' && l.id === 'talentos' ? { ...l, nome: 'Outros talentos' } : l))}</section></details>}
         </>}
+        {secao === 'arvore' && <div className="space-y-4">
+          {s.id === 'dnd5e-srd' || s.id === 'dnd5e-manual' ? <ArvoreDndOficial d={d} edicao={edicaoEfetivaDaFicha(s, d) === 'phb2014' ? 'phb2014' : 'phb2024'} fontes={null}>
+            <ArvoreHabilidades s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura}
+              rolar={(expressao, rotulo) => void rolarExpr(expressao, rotulo)} mestre={mestre && !somenteLeitura}
+              nivel={Math.max(1, Number(d.campos.nivel) || 1)} visualizacao="cartoes" />
+          </ArvoreDndOficial> : <ArvoreHabilidades s={s} d={d} onChange={onChange}
+            somenteLeitura={somenteLeitura} rolar={(expressao, rotulo) => void rolarExpr(expressao, rotulo)}
+            mestre={mestre && !somenteLeitura} nivel={s.campos.some(x=>x.id==='nivel') ? Math.max(1,Number(d.campos.nivel)||1) : null} />}
+        </div>}
         {secao === 'equipamentos' && <>
           <div className="ficha-acervo ficha-acervo-inventario"><InventarioFicha {...propsInv} passarItem={passarItem} /></div>
-          {listasDe('equipamentos').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
-          <section className="grid gap-4">{listasDe('equipamentos').map(l => lista(l))}</section>
+          {listasDe('equipamentos').length > 0 && <details className={card}><summary className="cursor-pointer font-semibold">Anotações complementares do inventário</summary><section className="mt-3 grid gap-4">{listasDe('equipamentos').map(l => lista(l))}</section></details>}
         </>}
         {secao === 'anotacoes' && <>
           {s.id === 'dnd5e-srd' ? <section className="dnd-diario" aria-label="Páginas do diário">

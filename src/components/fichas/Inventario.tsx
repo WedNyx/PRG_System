@@ -20,6 +20,7 @@ import { alcanceEmMetrosArmaDnd, atributoParaArmaDnd, descricaoArmaDnd, expressa
 import { ARMAS_DND_2014, armaDndPorIdEdicao, descricaoArma2014 } from '@/lib/sistemas/dnd2014Armas'
 import { ARMAS_DND_2024 } from '@/lib/sistemas/dnd2024Armas'
 import { lerLivrosDnd } from '@/lib/sistemas/dndLivros'
+import { hexagonosOficiaisDnd } from '@/lib/sistemas/arvoreDndOficial'
 import { arsenaisPermitidosDnd } from '@/lib/sistemas/dndArsenais'
 import { referenciaArmaDndPorId, type ReferenciaArmaDnd } from '@/lib/sistemas/dnd2024ArmasExpandidas'
 
@@ -121,11 +122,11 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
   const nomeAlvo = Object.fromEntries(alvosDeBonus(s).map(a => [a.id, a.nome]))
   const [buscaItens, setBuscaItens] = useState('')
   const [estadoItens, setEstadoItens] = useState('todos')
-  const itensBuscados = temaDnd && buscaItens.trim()
+  const itensBuscados = buscaItens.trim()
     ? itens.filter(it => [it.nome, it.descricao ?? '', referenciaArmaDndPorId(it.armaRefDnd)?.livro ?? ''].join(' ')
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(buscaItens.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))
     : itens
-  const itensVisiveis = temaDnd ? itensBuscados.filter(it=>estadoItens==='todos'||(estadoItens==='equipados'?!!uso.itens[it.id]?.equipado:estadoItens==='disponiveis'?qtd(it)>0:qtd(it)===0)) : itensBuscados
+  const itensVisiveis = itensBuscados.filter(it=>estadoItens==='todos'||(estadoItens==='equipados'?qtd(it)>0&&!!uso.itens[it.id]?.equipado:estadoItens==='disponiveis'?qtd(it)>0:qtd(it)===0))
   const pct = c.carga.max ? Math.min(100, (c.carga.total / c.carga.max) * 100) : 0
   // Abas por tipo (os nomes seguem o sistema, quando ele tem os seus) e a ala dos itens mágicos.
   const [aba, setAba] = useState<'todos' | 'magico' | Item['categoria']>('todos')
@@ -168,16 +169,19 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <span className="inline-flex items-center rounded-lg border border-(--a-5e4b78)">
                 <button type="button" disabled={somenteLeitura || n <= 0} onClick={() => mudarQtd(it, -1)} aria-label={'Menos ' + it.nome} className="px-2 py-1 disabled:opacity-40"><Minus size={13} /></button>
-                <span className="min-w-8 text-center text-sm tabular-nums" aria-label="Quantidade">{n}</span>
+                <span className="min-w-8 text-center text-sm tabular-nums" aria-label={"Quantidade de "+it.nome}>{n}</span>
                 <button type="button" disabled={somenteLeitura} onClick={() => mudarQtd(it, 1)} aria-label={'Mais ' + it.nome} className="px-2 py-1 disabled:opacity-40"><Plus size={13} /></button>
               </span>
               {it.categoria !== 'consumivel' && it.categoria !== 'tesouro' && <button type="button" className={botao} disabled={somenteLeitura || n <= 0} onClick={() => equipar(it)}><Shield size={13} /> {eq ? 'Desequipar' : 'Equipar'}</button>}
               {it.categoria === 'consumivel' && <button type="button" className={botao} disabled={somenteLeitura || n <= 0} onClick={() => void usarConsumivel(it)}><Sparkles size={13} /> Usar</button>}
-              {it.dano && it.categoria !== 'consumivel' && !armaDnd && !(s.id === 'dnd5e-srd' && it.categoria === 'arma') && <button type="button" className={botao} onClick={() => void rolar(it.dano!, it.nome)}><Dice5 size={13} /> {it.dano}</button>}
+              {it.dano && it.categoria !== 'consumivel' && !armaDnd && !(s.id === 'dnd5e-srd' && it.categoria === 'arma') && <button type="button" className={botao} disabled={n <= 0} onClick={() => void rolar(it.dano!, it.nome)}><Dice5 size={13} /> {it.dano}</button>}
+              </div>
+            {!somenteLeitura && <details className="mt-2 border-t border-(--ficha-borda) pt-2"><summary className="min-h-8 cursor-pointer text-xs font-medium">Gerenciar item</summary><div className="flex flex-wrap gap-2">
               {passarItem && !somenteLeitura && n > 0 && <button type="button" className={botao} onClick={() => passarItem(it, n)} aria-label={'Passar ' + it.nome + ' para outro personagem'}><Gift size={13} /> Passar</button>}
-              {!somenteLeitura && <><button type="button" className={botao} onClick={() => setEditando(it)} aria-label={'Editar ' + it.nome}><Pencil size={13} /></button>
-                <button type="button" className={botao} onClick={() => remover(it)} aria-label={'Remover ' + it.nome}><Trash2 size={13} /></button></>}
-            </div>
+              {!somenteLeitura && <><button type="button" className={botao} onClick={() => setEditando(it)} aria-label={'Editar ' + it.nome}><Pencil size={13} /> Editar</button>
+                <button type="button" className={botao} onClick={() => remover(it)} aria-label={'Remover ' + it.nome}><Trash2 size={13} /> Remover</button></>}
+            
+            </div></details>}
             {!!it.rolagens?.length && <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label={'Rolagens de ' + it.nome}>
               {it.rolagens.map(r => <button key={r.nome + r.expr} type="button" className={botao} disabled={n <= 0} onClick={() => void rolar(r.expr, it.nome + ' · ' + r.nome)}><Dice5 size={13} /> {r.nome}: {r.expr}</button>)}
               {it.rolagens.length > 1 && <button type="button" className={botao} disabled={n <= 0} onClick={async () => { for (const r of it.rolagens!) await rolar(r.expr, it.nome + ' · ' + r.nome) }}>Rolar tudo</button>}
@@ -238,12 +242,17 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
     {temaDnd && <div className="dnd-bau" aria-hidden="true"><svg viewBox="0 0 120 84" fill="none"><path d="M8 40V25Q8 8 30 8H90Q112 8 112 25V40Z" fill="#49312a" stroke="#bc9764" strokeWidth="2"/><path d="M8 40H112V73H8Z" fill="#36221e" stroke="#bc9764" strokeWidth="2"/><path d="M24 10V73M96 10V73M8 48H112M8 65H112" stroke="#bc9764" strokeWidth="3"/><rect x="49" y="34" width="22" height="22" rx="3" fill="#bc9764"/><path d="M60 41V50" stroke="#36221e" strokeWidth="3"/></svg><span>Arsenal do aventureiro</span></div>}
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Backpack size={18} /> Inventário</h2>
-      {!somenteLeitura && <div className="flex flex-wrap gap-2">
-        {s.id === 'dnd5e-srd' && <button type="button" className={botao + ' border-(--a-b99bff) min-h-10'} onClick={() => setCatalogoAberto(true)}><Dice5 size={14} /> Arsenais por livro ({arsenaisPermitidosDnd(edicaoDnd, livrosDnd.suplementos).length})</button>}
-        <button type="button" className={botao} onClick={() => setArsenalAberto(true)}><Package size={14} /> Arsenal pronto</button>
-        <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', categoria: 'equipamento', peso: 0, bonus: [] })}><Plus size={14} /> Novo item</button>
-      </div>}
     </div>
+    {!somenteLeitura && <div className="mt-3 rounded-xl border border-(--ficha-borda) p-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wide">Adicionar equipamentos</h3>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        {s.id === 'dnd5e-srd' && <button type="button" className={botao + ' min-h-12 justify-start'} onClick={() => setCatalogoAberto(true)}><Dice5 size={18} /> <span className="text-left">Arsenais por livro <span className="block text-[11px] opacity-75">{arsenaisPermitidosDnd(edicaoDnd, livrosDnd.suplementos).length} fontes disponíveis</span></span></button>}
+        <button type="button" className={botao + ' min-h-12 justify-start'} onClick={() => setArsenalAberto(true)}><Package size={18} /> <span className="text-left">Arsenal pronto<span className="block text-[11px] opacity-75">Escolher um item do catálogo</span></span></button>
+        <button type="button" className={botao + ' min-h-12 justify-start'} onClick={() => setEditando({ id: novoId(), nome: '', categoria: 'equipamento', peso: 0, bonus: [] })}><Plus size={18} /> <span className="text-left">Criar item<span className="block text-[11px] opacity-75">Personalizar equipamento</span></span></button>
+      </div>
+    </div>}
+    <h3 className="mt-5 text-sm font-semibold">Meus equipamentos</h3>
+    <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-(--ficha-borda) p-3 text-xs"><div><span className="block opacity-75">Tipos de itens</span><strong className="text-lg tabular-nums">{itens.length}</strong></div><div><span className="block opacity-75">Equipados</span><strong className="text-lg tabular-nums">{itens.filter(it=>qtd(it)>0 && uso.itens[it.id]?.equipado).length}</strong></div></div>
     <div className="mt-3 grid gap-3 sm:grid-cols-2">
       <div className="rounded-xl bg-(--s-171325) p-3 text-sm">
         <p className="ficha-carga-titulo text-xs text-(--a-c4b6d4)">Carga{s.carga?.dica ? ' · ' + s.carga.dica : ''}</p>
@@ -254,18 +263,18 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
       {temaDnd ? <CarteiraDnd valor={uso.carteira} mudar={carteira=>salvarUso({...uso,carteira})} somenteLeitura={!!somenteLeitura}/> : <label className="ficha-carteira rounded-xl bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">💰 Carteira (moedas e valores)
         <input value={uso.carteira} disabled={somenteLeitura} maxLength={500} onChange={e => salvarUso({ ...uso, carteira: e.target.value })} placeholder="Ex.: 35 PO, 12 PP" className={input + ' mt-1 text-sm'} /></label>}
     </div>
-    {temaDnd && itens.length > 0 && <div className="mt-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
-      <label className="block text-xs font-semibold text-(--a-d3adf0)">🔎 Encontrar item na bolsa</label>
-      <input type="search" value={buscaItens} onChange={e => setBuscaItens(e.target.value)}
-        placeholder="Busque nome, descrição ou livro…" className={input + ' mt-1 text-sm'} />
-      <div className="dnd-filtros-arsenal" role="group" aria-label="Estado dos equipamentos">{[['todos','Todos'],['equipados','Equipados'],['disponiveis','Disponíveis'],['esgotados','Esgotados']].map(([id,nome])=><button key={id} type="button" aria-pressed={estadoItens===id} onClick={()=>setEstadoItens(id)}>{nome}</button>)}</div>
+    {itens.length > 0 && <div className="mt-3 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+      <label className="block text-xs font-semibold text-(--a-d3adf0)" htmlFor="busca-inventario">Localizar equipamento</label>
+      <input id="busca-inventario" type="search" value={buscaItens} onChange={e => setBuscaItens(e.target.value)}
+        placeholder={temaDnd ? "Nome, descrição ou livro…" : "Nome ou descrição…"} className={input + ' mt-1 text-sm'} />
+      <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4" role="group" aria-label="Estado dos equipamentos">{[['todos','Todos'],['equipados','Equipados'],['disponiveis','Disponíveis'],['esgotados','Esgotados']].map(([id,nome])=><button key={id} type="button" aria-pressed={estadoItens===id} className={botao + " min-h-11 justify-center " + (estadoItens===id ? "border-(--ficha-acento) bg-(--s-3a2c58)" : "")} onClick={()=>setEstadoItens(id)}>{nome}</button>)}</div>
       <p className="mt-1 text-[11px] text-(--a-c4b6d4)">{itensVisiveis.length} de {itens.length} itens encontrados</p>
     </div>}
     {Object.keys(c.bonus).length > 0 && <p className="mt-3 rounded-lg bg-[#1f3a2c] p-2 text-xs text-[#a9f0c8]">Itens equipados somando: {Object.entries(c.bonus).map(([a, v]) => `${nomeAlvo[a] ?? a} ${v >= 0 ? '+' : ''}${v}`).join(' · ')}</p>}
     {!itensVisiveis.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">{itens.length ? 'Nenhum item corresponde à busca.' : 'Nenhum item ainda.'}{!itens.length && !somenteLeitura && ' Toque em “Novo item” ou pegue um pronto no “Arsenal pronto”.'}</p>}
-    {itensVisiveis.length > 0 && <nav aria-label="Tipos de item" className="ficha-categorias mt-4 flex gap-1.5 overflow-x-auto pb-1">
+    {itensVisiveis.length > 0 && <nav aria-label="Tipos de item" className="ficha-categorias mt-4 flex flex-wrap gap-1.5 pb-1">
       {abasItens.map(a => <button key={a.id} type="button" onClick={() => setAba(a.id)} aria-pressed={abaAtual === a.id}
-        className={'shrink-0 rounded-full border px-3 py-1 text-xs ' + (abaAtual === a.id ? (a.id === 'magico' ? 'border-[#f0c46a] bg-(--s-3a2c58) text-amber-100' : 'border-(--a-b99bff) bg-(--s-3a2c58) text-white') : 'border-(--a-3d3152) text-(--a-cfc0df)')}>{a.nome} <span className="opacity-70">({a.n})</span></button>)}
+        className={'min-h-10 rounded-full border px-3 py-1 text-xs ' + (abaAtual === a.id ? (a.id === 'magico' ? 'border-[#f0c46a] bg-(--s-3a2c58) text-amber-100' : 'border-(--a-b99bff) bg-(--s-3a2c58) text-white') : 'border-(--a-3d3152) text-(--a-cfc0df)')}>{a.nome} <span className="opacity-70">({a.n})</span></button>)}
     </nav>}
     {abaAtual === 'todos' && magicos.length > 0 && <div className="mt-3 rounded-2xl border border-[#f0c46a]/50 bg-gradient-to-br from-(--s-2e2147) to-(--s-1a1428) p-3 shadow-[0_0_18px_#b99bff33]">
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-200">{nomeMagico}</h3>
@@ -280,6 +289,9 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
     }) : <ul className="ficha-lista-itens mt-3 space-y-2">{itensVisiveis.filter(i => abaAtual === 'magico' ? i.magico : i.categoria === abaAtual).map(linhaItem)}</ul>}
     {editando && <EditorItem s={s} edicaoDnd={edicaoDnd} inicial={editando} salvar={salvarItem} fechar={() => setEditando(null)} />}
     {arsenalAberto && <ArsenalPronto fechar={() => setArsenalAberto(false)} adicionar={x => {
+      // O mesmo modelo de novo soma 1 na quantidade em vez de criar uma cópia (um item editado vira outro e não junta).
+      const igual = itens.find(i => i.nome === x.nome && i.categoria === x.categoria && (i.dano ?? '') === (x.dano ?? '') && i.iconeBiblioteca === x.icone && !i.bonus.length)
+      if (igual) { mudarQtd(igual, 1); toast.success(`${x.nome}: agora são ${qtd(igual) + 1}.`); return }
       if (itens.length >= 300) { toast.error('O inventário já chegou ao limite de 300 itens.'); return }
       salvarItem(itemDoArsenal(x, novoId)); toast.success(x.nome + ' entrou no inventário!')
     }} />}
@@ -287,10 +299,34 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
   </section>
 }
 
+/** Como a seção de poderes se apresenta em cada sistema (títulos e grupos); o formato dos dados e o uso não mudam. */
+export function apresentacaoPoderes(id: string) {
+  const key = id.toLowerCase()
+  if (key.includes('dnd')) return { titulo: 'Características, talentos e magias extras', grupos: [['habilidade','Características'],['talento','Talentos'],['magia','Magias'],['tecnica','Técnicas'],['outro','Outros']], dica: 'Características automáticas de espécie, classe e origem pertencem à progressão da ficha. Cadastre aqui apenas adições personalizadas.' }
+  if (key.includes('ordem')) return { titulo: 'Habilidades e rituais', grupos: [['habilidade','Habilidades'],['magia','Rituais'],['talento','Poderes'],['tecnica','Técnicas'],['outro','Outros']], dica: 'Rituais e poderes oficiais devem seguir NEX, classe, trilha e regras do livro; os registros abaixo são personalizados.' }
+  if (key.includes('pathfinder') || key === 'pf2e') return { titulo: 'Talentos, magias e ações', grupos: [['talento','Talentos'],['magia','Magias'],['habilidade','Características'],['tecnica','Ações'],['outro','Outros']], dica: 'As escolhas oficiais de ancestralidade, classe e talentos devem respeitar os pré-requisitos da edição.' }
+  if (key.includes('fate')) return { titulo: 'Façanhas e habilidades', grupos: [['talento','Façanhas'],['habilidade','Habilidades'],['tecnica','Técnicas'],['magia','Poderes sobrenaturais'],['outro','Outros']], dica: 'Façanhas e aspectos têm regras próprias em Fate; este painel registra apenas poderes estruturados adicionais.' }
+  if (key.includes('cthulhu') || key.includes('brp')) return { titulo: 'Habilidades e conhecimentos', grupos: [['habilidade','Habilidades'],['magia','Feitiços'],['talento','Talentos'],['tecnica','Técnicas'],['outro','Outros']], dica: 'Feitiços, sanidade e conhecimentos especiais dependem do sistema e da edição utilizada.' }
+  if (key.includes('tormenta')) return { titulo: 'Poderes e magias', grupos: [['habilidade','Poderes de classe'],['talento','Poderes gerais'],['magia','Magias'],['tecnica','Técnicas'],['outro','Outros']], dica: 'Poderes oficiais e seus pré-requisitos devem ser conferidos na progressão do personagem.' }
+  if (key.includes('blades')) return { titulo: 'Habilidades especiais', grupos: [['habilidade','Habilidades especiais'],['talento','Vantagens'],['tecnica','Técnicas'],['magia','Poderes arcanos'],['outro','Outros']], dica: 'Habilidades de cartilha e regras de estresse seguem o sistema escolhido.' }
+  if (key.includes('mork')) return { titulo: 'Poderes e habilidades', grupos: [['magia','Poderes'],['habilidade','Habilidades'],['talento','Talentos'],['tecnica','Técnicas'],['outro','Outros']], dica: 'Consulte as regras próprias para o uso de poderes e recursos.' }
+  if (key.includes('assimil')) return { titulo: 'Habilidades e mutações', grupos: [['habilidade','Habilidades'],['talento','Mutações'],['tecnica','Técnicas'],['magia','Poderes'],['outro','Outros']], dica: 'Registre aqui habilidades personalizadas sem alterar automaticamente as regras de assimilação.' }
+  if (key.includes('lunet')) return { titulo: 'Técnicas e manifestações', grupos: [['tecnica','Técnicas'],['magia','Manifestações'],['habilidade','Habilidades'],['talento','Talentos'],['outro','Outros']], dica: 'As manifestações e seus custos devem respeitar as regras de Lunethernnyis.' }
+  if (key.includes('faroeste')) return { titulo: 'Talentos e técnicas', grupos: [['talento','Talentos'],['tecnica','Técnicas'],['habilidade','Habilidades'],['magia','Poderes sobrenaturais'],['outro','Outros']], dica: 'Ajuste custos e efeitos às regras da campanha.' }
+  return { titulo: 'Poderes e habilidades', grupos: [['habilidade','Habilidades'],['magia','Magias'],['talento','Talentos'],['tecnica','Técnicas'],['outro','Outros']], dica: 'Adicione habilidades personalizadas. Os efeitos dependem das regras do sistema.' }
+}
 /** Seção “Poderes”: magias e habilidades com custo em recurso, usos por descanso e rolagem. */
 export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDescanso }: Props) {
   const poderes = lerPoderes(d.poderes), uso = lerUso(d.uso)
   const [editando, setEditando] = useState<Poder | null>(null)
+  const [filtroPoder, setFiltroPoder] = useState('todos')
+  const [buscaPoder, setBuscaPoder] = useState('')
+  const apresentacao = apresentacaoPoderes(s.id)
+  const ehDnd = s.id === 'dnd5e-srd' || s.id === 'dnd5e-manual'
+  const [mostrarOficiais, setMostrarOficiais] = useState(false)
+  const oficiaisDnd = ehDnd ? hexagonosOficiaisDnd(d, lerLivrosDnd(d.dndLivros).base).filter(no => no.estado === 'recebido' || no.estado === 'pendente') : []
+  const [origemPoder, setOrigemPoder] = useState<'todos' | 'arvore' | 'personalizado'>('todos')
+  const visiveis = poderes.filter(p => (filtroPoder === 'todos' || p.tipo === filtroPoder) && (!ehDnd || origemPoder === 'todos' || (origemPoder === 'arvore' ? p.id.startsWith('arv-') : !p.id.startsWith('arv-'))) && (p.nome + ' ' + (p.descricao ?? '')).toLocaleLowerCase('pt-BR').includes(buscaPoder.trim().toLocaleLowerCase('pt-BR')))
   const nomeRecurso = Object.fromEntries(s.recursos.map(r => [r.id, r.nome]))
   function salvarPoder(p: Poder) {
     onChange({ ...d, poderes: poderes.some(x => x.id === p.id) ? poderes.map(x => x.id === p.id ? p : x) : [...poderes, p] }); setEditando(null)
@@ -314,22 +350,48 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
 
   return <section className={card}>
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Sparkles size={18} /> {s.id === 'dnd5e-srd' ? 'Poderes extras e personalizados' : 'Poderes e magias'}</h2>
+      <h2 className="flex items-center gap-2 font-bold text-(--a-ed9cd8)"><Sparkles size={18} /> {apresentacao.titulo}</h2>
       <div className="flex gap-2">
         {comUsos && !somenteLeitura && <button type="button" className={botao} onClick={descansar} title="Zera os usos gastos"><Moon size={14} /> Descansar</button>}
         {!somenteLeitura && <button type="button" className={botao} onClick={() => setEditando({ id: novoId(), nome: '', tipo: 'habilidade' })}><Plus size={14} /> Novo poder</button>}
       </div>
     </div>
-    {s.id === 'dnd5e-srd' && <p className="mt-2 text-xs text-(--a-c4b6d4)">Habilidades de raça/espécie, classe e antecedente são geradas nos hexágonos oficiais da Árvore. Adicione aqui apenas poderes aprendidos ou concedidos além daqueles naturais.</p>}
-    {!poderes.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">Nenhum poder ainda.{!somenteLeitura && ' Toque em “Novo poder”.'}</p>}
-    <ul className="ficha-lista-poderes mt-3 space-y-2">{poderes.map(p => {
-      const tipo = TIPOS_PODER.find(t => t.id === p.tipo)!, gastos = uso.poderes[p.id] ?? 0
+    <p className="mt-2 text-xs text-(--a-c4b6d4)">{apresentacao.dica}</p>
+    {ehDnd && <div className="mt-3 grid gap-3 lg:grid-cols-2">
+      <div className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+        <p className="font-semibold">🌠 Progressão e Árvore</p>
+        <p className="mt-1 text-xs text-(--a-c4b6d4)">Características obtidas pela progressão, espécie, classe e antecedentes. Para mudar uma escolha oficial, use a criação ou evolução da ficha.</p>
+        <p className="mt-2 text-xs font-semibold">{oficiaisDnd.filter(no=>no.estado==='recebido').length} características recebidas · {oficiaisDnd.filter(no=>no.estado==='pendente').length} escolhas pendentes</p>
+        <button type="button" className={botao + ' mt-3 min-h-11 w-full justify-center sm:w-auto'} aria-expanded={mostrarOficiais} onClick={()=>setMostrarOficiais(!mostrarOficiais)}>{mostrarOficiais ? 'Ocultar características' : 'Ver características da ficha'}</button>
+      </div>
+      <div className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+        <p className="font-semibold">✨ Adições personalizadas</p>
+        <p className="mt-1 text-xs text-(--a-c4b6d4)">Talentos, magias, características e concessões extras do mestre. Estes registros podem ser editados sem alterar as escolhas oficiais.</p>
+        <p className="mt-2 text-xs font-semibold">{poderes.filter(p=>!p.id.startsWith('arv-')).length} registros adicionais</p>
+      </div>
+    </div>}
+    {ehDnd && mostrarOficiais && <div className="mt-3 space-y-2 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
+      <h3 className="font-semibold">Características da edição {lerLivrosDnd(d.dndLivros).base === 'phb2014' ? '2014' : '2024'}</h3>
+      <p className="text-xs text-(--a-c4b6d4)">Consulta baseada na progressão salva na ficha. Não concede efeitos nem altera suas escolhas.</p>
+      {!oficiaisDnd.length && <p className="text-sm">Nenhuma característica recebida ou pendente encontrada. Confira as escolhas no Guia/Progressão.</p>}
+      <ul className="max-h-80 space-y-2 overflow-y-auto pr-1">{oficiaisDnd.map(no=><li key={no.id} className="rounded-lg border border-(--a-55456e) p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-sm">{no.titulo}</strong><span className={'text-xs ' + (no.estado==='pendente'?'text-amber-200':'text-emerald-200')}>{no.estado==='pendente'?'Escolha pendente':'Recebido'}</span></div>
+        <p className="mt-1 text-xs text-(--a-c4b6d4)">Nível {no.nivel} · {no.livro}</p>
+        {no.descricao && <p className="mt-1 whitespace-pre-wrap text-xs">{no.descricao}</p>}
+      </li>)}</ul>
+    </div>}
+    {!!poderes.length && <div className="mt-3 space-y-2"><label className="block text-xs">Buscar habilidade<input type="search" value={buscaPoder} onChange={e => setBuscaPoder(e.target.value)} placeholder="Nome ou descrição" className={input + ' mt-1 min-h-11'} /></label>{ehDnd && <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar pela origem da habilidade">{([{id:'todos',nome:'Todas as origens'},{id:'arvore',nome:'Da Árvore'},{id:'personalizado',nome:'Personalizadas'}] as const).map(o=><button key={o.id} type="button" aria-pressed={origemPoder===o.id} onClick={()=>setOrigemPoder(o.id)} className={botao + ' min-h-11 ' + (origemPoder===o.id?'border-(--a-b99bff) bg-(--s-3a2c58) font-semibold':'')}>{o.nome}</button>)}</div>}
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="group" aria-label="Filtrar poderes por categoria">{[{id:'todos',nome:'Todos'},...apresentacao.grupos.map(([id,nome])=>({id,nome}))].map(g=><button key={g.id} type="button" aria-pressed={filtroPoder===g.id} onClick={()=>setFiltroPoder(g.id)} className={botao + ' min-h-11 justify-center ' + (filtroPoder===g.id?'border-(--a-b99bff) bg-(--s-3a2c58) font-semibold':'')}>{g.nome} ({g.id==='todos'?poderes.length:poderes.filter(p=>p.tipo===g.id).length})</button>)}</div><p aria-live="polite" className="text-xs opacity-80">{visiveis.length} de {poderes.length} registros</p></div>}
+    {!poderes.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">Nenhum poder adicional cadastrado.{!somenteLeitura && ' Toque em “Novo poder” para criar um.'}</p>}
+    {!!poderes.length && !visiveis.length && <p className="mt-3 text-sm text-(--a-bfb2cf)">Nenhuma habilidade corresponde aos filtros. Experimente outra categoria ou origem.</p>}
+    <ul className="ficha-lista-poderes mt-3 space-y-2">{visiveis.map(p => {
+      const tipo = TIPOS_PODER.find(t => t.id === p.tipo)!, nomeTipo = apresentacao.grupos.find(([id])=>id===p.tipo)?.[1] ?? tipo.nome, gastos = uso.poderes[p.id] ?? 0
       const atual = p.recurso ? d.recursos[p.recurso]?.atual ?? 0 : undefined
       const ok = podeUsar(p, uso, atual).ok
-      return <li key={p.id} className="ficha-poder rounded-xl bg-(--s-171325) p-3">
+      return <li key={p.id} className="ficha-poder min-w-0 rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3 sm:p-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="min-w-0 flex-1 font-semibold">{tipo.icone} {p.nome}</span>
-          <span className="rounded bg-(--s-2b2140) px-1.5 py-0.5 text-[10px] text-(--a-d6c8e8)">{tipo.nome}</span>
+          <span className="rounded bg-(--s-2b2140) px-1.5 py-0.5 text-[10px] text-(--a-d6c8e8)">{nomeTipo}</span>
           {p.id.startsWith('arv-') && <span className="rounded bg-(--s-3b2b57) px-1.5 py-0.5 text-[10px] text-amber-200" title="Vem de um hexágono liberado; muda na Árvore de habilidades">🌠 Árvore</span>}
         </div>
         <p className="mt-1 text-xs text-(--a-c9bcd9)">
@@ -349,9 +411,9 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
 }
 
 function Janela({ titulo, fechar, children, ampla = false, temaDnd = false }: { titulo: string; fechar: () => void; children: React.ReactNode; ampla?: boolean; temaDnd?: boolean }) {
-  return <NaTela><div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-2 sm:p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
-    <div role="dialog" aria-modal="true" aria-label={titulo} className={'w-full min-w-0 overflow-y-auto overscroll-contain rounded-2xl border border-(--a-6d5690) bg-(--s-1b1529) text-sm text-(--a-f2ebff) ' + (ampla ? 'max-h-[96dvh] max-w-2xl p-3 sm:p-5' : 'max-h-[88vh] max-w-lg p-5') + (temaDnd ? ' dnd-janela-editor' : '')}>
-      <div className="sticky top-0 z-10 mb-3 flex items-center justify-between rounded-lg bg-(--s-1b1529) py-2"><h2 className="text-lg font-bold">{temaDnd && <span className="dnd-editor-selo" aria-hidden="true"><Shield size={20}/></span>}{titulo}</h2><button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1.5 hover:bg-(--s-38294d)"><X size={18} /></button></div>
+  return <NaTela><div className="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/70 p-2 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:items-center sm:p-4" onMouseDown={e => { if (e.target === e.currentTarget) fechar() }}>
+    <div role="dialog" aria-modal="true" aria-label={titulo} className={'w-full min-w-0 overflow-y-auto overscroll-contain rounded-2xl border border-(--a-6d5690) bg-(--s-1b1529) text-sm text-(--a-f2ebff) ' + (ampla ? 'max-h-[96dvh] max-w-2xl p-3 sm:p-5' : 'max-h-[calc(100dvh-1rem)] max-w-lg p-3 sm:max-h-[90dvh] sm:p-5') + (temaDnd ? ' dnd-janela-editor' : '')}>
+      <div className="sticky top-0 z-20 mb-3 flex items-center justify-between gap-2 rounded-lg border-b border-(--a-55456e) bg-(--s-1b1529) py-3"><h2 className="min-w-0 text-lg font-bold">{temaDnd && <span className="dnd-editor-selo" aria-hidden="true"><Shield size={20}/></span>}{titulo}</h2><button type="button" onClick={fechar} aria-label="Fechar" className="shrink-0 rounded-lg p-2 hover:bg-(--s-38294d)"><X size={18} /></button></div>
       {children}
     </div>
   </div></NaTela>
@@ -386,6 +448,8 @@ function FotoDoItem({ it, setIt }: { it: Item; setIt: React.Dispatch<React.SetSt
 
 export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }: { s?: Sistema; inicial: Item; salvar: (i: Item) => void; fechar: () => void; edicaoDnd?: LivroBaseDnd }) {
   const [it, setIt] = useState<Item>(inicial)
+  const [etapa, setEtapa] = useState<"base" | "regras" | "aparencia">("base")
+  const etapas = [{id:"base",nome:"Identidade"},{id:"regras",nome:"Mecânicas"},{id:"aparencia",nome:"Aparência"}] as const
   const dnd = s?.id === 'dnd5e-srd'
   const temaDnd = dnd || s?.id === 'dnd5e-manual'
   const referencia = dnd ? referenciaArmaDndPorId(it.armaRefDnd) : null
@@ -402,7 +466,7 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
   const alvos = s ? alvosDeBonus(s) : []
   const setB = (i: number, b: Partial<Bonus>) => setIt({ ...it, bonus: it.bonus.map((x, k) => k === i ? { ...x, ...b } : x) })
   return <Janela titulo={temaDnd ? (inicial.nome ? 'Editar item · D&D' : 'Criar item · D&D') : (inicial.nome ? 'Editar item' : 'Novo item')} fechar={fechar} ampla temaDnd={temaDnd}>
-    <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { toast.error('Dê um nome ao item.'); return }
+    <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarItem(it); if (!v) { setEtapa('base'); toast.error('Dê um nome ao item.'); return }
       if ((it.rolagens?.length ?? 0) > (v.rolagens?.length ?? 0)) toast.warning('Rolagens sem nome ou com dados inválidos ficaram de fora.')
       salvar({ ...v, id: inicial.id }) }}>
       <div className="flex items-center gap-3 rounded-xl border border-(--a-62527e) bg-gradient-to-r from-(--s-2b2143) to-(--s-171325) p-3">
@@ -413,12 +477,15 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
           <p className="mt-1 text-[11px] text-(--a-c4b6d4)">Escolha um ícone do Game-Icons ou use sua própria foto. A raridade dá a cor da moldura.</p>
         </div>
       </div>
-      <FotoDoItem it={it} setIt={setIt} />
+      <nav className="grid grid-cols-3 gap-1.5" aria-label="Seções do editor">{etapas.map((e,i)=><button key={e.id} type="button" aria-current={etapa===e.id?"step":undefined} onClick={()=>setEtapa(e.id)} className={"min-h-11 min-w-0 rounded-lg border px-1 py-2 text-xs "+(etapa===e.id?"border-(--a-b99bff) bg-(--s-3a2c58) font-semibold":"border-(--a-55456e)")}>{i+1}. {e.nome}</button>)}</nav>
+      <section hidden={etapa!=="base"} className="space-y-3"><p className="text-xs opacity-80">Comece pelo nome, tipo e peso. Os demais campos são opcionais.</p>
       <label className="block">Nome<input required value={it.nome} maxLength={120} onChange={e => setIt({ ...it, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Espada longa" /></label>
       <div className="grid grid-cols-2 gap-2">
-        <label className="block">Tipo<select value={it.categoria} onChange={e => setIt({ ...it, categoria: e.target.value as Item['categoria'] })} className={input + ' mt-1'}>{CATEGORIAS_ITEM.map(c => <option key={c.id} value={c.id}>{c.icone} {c.nome}</option>)}</select></label>
+        <label className="block">Tipo<select value={it.categoria} onChange={e => setIt({ ...it, categoria: e.target.value as Item['categoria'] })} className={input + ' mt-1'}>{CATEGORIAS_ITEM.map(c => <option key={c.id} value={c.id}>{c.icone} {s?.nomesItens?.[c.id] ?? c.nome}</option>)}</select></label>
         <CampoPeso valor={it.peso} unidade={s?.carga?.unidade ?? 'kg'} mudar={peso => setIt({ ...it, peso })} />
       </div>
+      <label className="block">Descrição<textarea rows={3} value={it.descricao ?? ''} maxLength={2000} onChange={e => setIt({ ...it, descricao: e.target.value })} className={input + ' mt-1'} /></label>
+      </section><section hidden={etapa!=="regras"} className="space-y-3"><p className="text-xs opacity-80">Configure apenas o que o item realmente faz: rolagens, alcance e modificadores. Efeitos narrativos podem ficar na descrição.</p>
       {dnd && it.categoria === 'arma' && <div className="space-y-2 rounded-lg border border-(--a-55456e) bg-(--s-171325) p-3 text-xs">
         {referencia && <p className="rounded-lg border border-(--a-8b6cba)/50 bg-(--s-241a3a) p-2">📖 <strong>{referencia.nome}</strong> · {referencia.livro} ({referencia.edicao}). Efeitos exclusivos devem ser conferidos no livro.</p>}
         <label className="block">Modelo físico da arma (opcional)
@@ -440,6 +507,25 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
             className={input + ' max-w-24'}>{[0,1,2,3].map(v => <option key={v} value={v}>+{v}</option>)}</select>
         </label>
       </div>}
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <label className="block">{it.categoria === 'consumivel' ? 'Rolagem ao usar (ex.: cura 2d4+2)' : 'Dano ou rolagem (ex.: 1d8+3)'}
+          <input value={it.dano ?? ''} maxLength={40} disabled={s?.id === 'dnd5e-srd' && !!it.armaDnd}
+            onChange={e => setIt({ ...it, dano: e.target.value })} className={input + ' mt-1 disabled:opacity-50'} placeholder="Opcional" /></label>
+        <label className="block">Alcance (m)<input type="number" min={0} max={1000} step="any" value={it.alcance ?? ''} onChange={e => setIt({ ...it, alcance: Number(e.target.value) || undefined })} className={input + ' mt-1'} placeholder="1,5" /></label>
+      </div>
+      <EditorRolagens rolagens={it.rolagens ?? []} mudar={r => setIt({ ...it, rolagens: r.length ? r : undefined })} />
+      {alvos.length > 0 && <fieldset className="rounded-xl border border-(--a-55456e) p-3">
+        <legend className="px-1 text-xs text-(--a-d3adf0)">Bônus quando equipado</legend>
+        {it.bonus.map((b, i) => <div key={i} className="mb-2 flex gap-2">
+          <select aria-label="Onde soma" value={b.alvo} onChange={e => setB(i, { alvo: e.target.value })} className={input + ' min-w-0 flex-1'}>{alvos.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}</select>
+          <input aria-label="Valor" type="number" value={b.valor} onChange={e => setB(i, { valor: Number(e.target.value) || 0 })} className={input + ' !w-20 shrink-0'} />
+          <button type="button" onClick={() => setIt({ ...it, bonus: it.bonus.filter((_, k) => k !== i) })} aria-label="Tirar bônus" className={botao}><Trash2 size={13} /></button>
+        </div>)}
+        {it.bonus.length < 8 && <button type="button" className={botao} onClick={() => setIt({ ...it, bonus: [...it.bonus, { alvo: alvos[0].id, valor: 1 }] })}><Plus size={13} /> Adicionar bônus</button>}
+        <p className="mt-2 text-[11px] text-(--a-a998bd)">Ex.: escudo → Classe de Armadura +2; anel → uma resistência +1.</p>
+      </fieldset>}
+      </section>
+      <section hidden={etapa!=="aparencia"} className="space-y-3"><p className="text-xs opacity-80">Personalize como o item aparece na ficha. Nenhuma imagem é obrigatória.</p><FotoDoItem it={it} setIt={setIt}/>
       <details className="rounded-xl border border-(--a-55456e) bg-(--s-171325) p-3">
         <summary className="cursor-pointer font-semibold text-(--a-d3adf0)">🎨 Ícone e raridade</summary>
         <div className="mt-3 space-y-3">
@@ -473,24 +559,8 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
           </label>
         </div>
       </details>
-      <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-2">
-        <label className="block">{it.categoria === 'consumivel' ? 'Rolagem ao usar (ex.: cura 2d4+2)' : 'Dano ou rolagem (ex.: 1d8+3)'}
-          <input value={it.dano ?? ''} maxLength={40} disabled={s?.id === 'dnd5e-srd' && !!it.armaDnd}
-            onChange={e => setIt({ ...it, dano: e.target.value })} className={input + ' mt-1 disabled:opacity-50'} placeholder="Opcional" /></label>
-        <label className="block">Alcance (m)<input type="number" min={0} max={1000} step="any" value={it.alcance ?? ''} onChange={e => setIt({ ...it, alcance: Number(e.target.value) || undefined })} className={input + ' mt-1'} placeholder="1,5" /></label>
-      </div>
-      <EditorRolagens rolagens={it.rolagens ?? []} mudar={r => setIt({ ...it, rolagens: r.length ? r : undefined })} />
-      {alvos.length > 0 && <fieldset className="rounded-xl border border-(--a-55456e) p-3">
-        <legend className="px-1 text-xs text-(--a-d3adf0)">Bônus quando equipado</legend>
-        {it.bonus.map((b, i) => <div key={i} className="mb-2 flex gap-2">
-          <select aria-label="Onde soma" value={b.alvo} onChange={e => setB(i, { alvo: e.target.value })} className={input + ' flex-1'}>{alvos.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}</select>
-          <input aria-label="Valor" type="number" value={b.valor} onChange={e => setB(i, { valor: Number(e.target.value) || 0 })} className={input + ' w-20'} />
-          <button type="button" onClick={() => setIt({ ...it, bonus: it.bonus.filter((_, k) => k !== i) })} aria-label="Tirar bônus" className={botao}><Trash2 size={13} /></button>
-        </div>)}
-        {it.bonus.length < 8 && <button type="button" className={botao} onClick={() => setIt({ ...it, bonus: [...it.bonus, { alvo: alvos[0].id, valor: 1 }] })}><Plus size={13} /> Adicionar bônus</button>}
-        <p className="mt-2 text-[11px] text-(--a-a998bd)">Ex.: escudo → Classe de Armadura +2; anel → uma resistência +1.</p>
-      </fieldset>}
-      <label className="block">Descrição<textarea rows={3} value={it.descricao ?? ''} maxLength={2000} onChange={e => setIt({ ...it, descricao: e.target.value })} className={input + ' mt-1'} /></label>
+      </section>
+      <div className="flex flex-wrap justify-between gap-2">{etapa!=="base" && <button type="button" className={botao+" min-h-11"} onClick={()=>setEtapa(etapa==="aparencia"?"regras":"base")}>Voltar</button>}{etapa!=="aparencia" && <button type="button" className={botao+" min-h-11 ml-auto"} onClick={()=>setEtapa(etapa==="base"?"regras":"aparencia")}>Próxima seção</button>}</div>
       <div className="sticky bottom-0 -mx-3 flex gap-2 rounded-xl border-t border-(--a-62527e) bg-(--s-1b1529) p-3 shadow-2xl sm:mx-0"><button type="button" onClick={fechar} className="flex-1 rounded-lg border border-(--a-62527e) p-2.5">Cancelar</button>
         <button type="submit" className="min-h-11 flex-1 rounded-lg bg-(--a-7654bb) p-2.5 font-semibold">Salvar item</button></div>
     </form>
@@ -500,11 +570,14 @@ export function EditorItem({ s, inicial, salvar, fechar, edicaoDnd = 'phb2024' }
 export function EditorPoder({ s, inicial, salvar, fechar }: { s?: Sistema; inicial: Poder; salvar: (p: Poder) => void; fechar: () => void }) {
   const [p, setP] = useState<Poder>(inicial)
   const recursos = s?.recursos ?? []
+  const dndEditor = s?.id === 'dnd5e-srd' || s?.id === 'dnd5e-manual'
+  const tiposEditor = dndEditor ? [{id:'habilidade',nome:'Característica personalizada'},{id:'talento',nome:'Talento adicional'},{id:'magia',nome:'Magia adicional'},{id:'tecnica',nome:'Técnica personalizada'},{id:'outro',nome:'Outro'}] : TIPOS_PODER
   return <Janela titulo={inicial.nome ? 'Editar poder' : 'Novo poder'} fechar={fechar} temaDnd={s?.id === 'dnd5e-srd' || s?.id === 'dnd5e-manual'}>
     <form noValidate className="space-y-3" onSubmit={e => { e.preventDefault(); const v = normalizarPoder(p); if (!v) { toast.error('Dê um nome ao poder.'); return } salvar({ ...v, id: inicial.id }) }}>
       {(s?.id === 'dnd5e-srd' || s?.id === 'dnd5e-manual') && <div className="dnd-editor-intro"><Sparkles size={22} aria-hidden="true"/><div><strong>{p.nome || 'Uma nova habilidade'}</strong><p>Registre sua técnica, magia ou poder personalizado.</p></div></div>}
-      <label className="block">Nome<input autoFocus required value={p.nome} maxLength={120} onChange={e => setP({ ...p, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Bola de fogo" /></label>
-      <label className="block">Tipo<select value={p.tipo} onChange={e => setP({ ...p, tipo: e.target.value as Poder['tipo'] })} className={input + ' mt-1'}>{TIPOS_PODER.map(t => <option key={t.id} value={t.id}>{t.icone} {t.nome}</option>)}</select></label>
+      <label className="block">Nome<input required value={p.nome} maxLength={120} onChange={e => setP({ ...p, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Bola de fogo" /></label>
+      {dndEditor && <p className="rounded-lg border border-(--a-55456e) bg-(--s-171325) p-3 text-xs text-(--a-c4b6d4)">Este editor cria adições à ficha, não substitui a escolha de talentos, magias ou características oficiais da edição 2014/2024. Para essas escolhas, use a progressão do personagem.</p>}
+      <label className="block">Tipo<select value={p.tipo} onChange={e => setP({ ...p, tipo: e.target.value as Poder['tipo'] })} className={input + ' mt-1'}>{tiposEditor.map(t => <option key={t.id} value={t.id}>{'icone' in t ? t.icone : '✨'} {t.nome}</option>)}</select></label>
       {recursos.length > 0 && <div className="grid grid-cols-2 gap-2">
         <label className="block">Gasta<select value={p.recurso ?? ''} onChange={e => setP({ ...p, recurso: e.target.value || undefined, custo: e.target.value ? p.custo ?? 1 : undefined })} className={input + ' mt-1'}>
           <option value="">Nada</option>{recursos.map(r => <option key={r.id} value={r.id}>{r.nome}</option>)}</select></label>

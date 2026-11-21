@@ -24,12 +24,7 @@ const TEMAS: Record<string, Tema> = {
   'call-of-cthulhu': { acento: '#a6e0d2', borda: '#427b76', cartao: '#182925', fonte: 'var(--font-cormorant), Georgia, serif' },
 }
 export const temaDoSistema = (id: string): Tema => TEMAS[id] ?? PADRAO
-export function identidadeVisual(s: Sistema): string {
-  if (/lunethernnyis|opositores/i.test(s.nome)) return 'opositores'
-  if (/projeto n\.?o\.?v\.?a/i.test(s.nome)) return 'nova'
-  if (/^marcas\b/i.test(s.nome.trim())) return 'marcas'
-  return s.id
-}
+export { identidadeVisual } from '@/lib/sistemas/visualIdentidade'
 TEMAS.opositores = { acento: '#ddc58d', borda: '#826b9f', cartao: '#211a34', fonte: 'var(--font-cinzel), Georgia, serif' }
 TEMAS.nova = { acento: '#ffc18f', borda: '#925e59', cartao: '#292033' }
 TEMAS.marcas = { acento: '#9fe0ff', borda: '#4f6aa8', cartao: '#161b30', fonte: 'var(--font-cinzel), Georgia, serif' }

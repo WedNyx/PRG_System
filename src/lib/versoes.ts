@@ -27,6 +27,16 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.36.2', data: '2026-11-21',
+    titulo: 'Uma árvore para cada sistema',
+    itens: [
+      'A aba Árvore de habilidades agora existe em todos os sistemas, com os ramos do próprio jogo e um visual para cada um: círculo ritual (Ordem), constelação (Opositores), tempestade (Tormenta20), estandartes (Pathfinder), trilha do Oeste, quadro de pistas (Call of Cthulhu e BRP), escada (Fate), becos (Blades), ruína (Mörk Borg) e rastro (Marcas). Também dá para ver em lista.',
+      'Ordem Paranormal pelo NEX; Pathfinder 2e, Tormenta20, Faroeste Arcano e Opositores pelo nível: o que já tem, o próximo marco e os futuros.',
+      'Fate, Blades in the Dark, Call of Cthulhu, BRP e Mörk Borg viram um guia de como o personagem evolui. Em Marcas, cada marca é um ramo.',
+      'Em cada marco dá para anotar o que você escolheu. Nada é aplicado na ficha sozinho; as habilidades extras do mestre continuam no último ramo.',
+    ],
+  },
+  {
     versao: '0.36.1', data: '2026-11-21',
     titulo: 'Fichas mais organizadas',
     itens: [

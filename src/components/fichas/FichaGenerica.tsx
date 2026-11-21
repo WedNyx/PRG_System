@@ -175,6 +175,15 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     { id: 'guia', icone: '📖', nome: 'Guia de criação', sub: 'Passo a passo deste sistema', ajuda: 'Siga os passos para criar o personagem do jeito que as regras pedem.', ok: !!GUIAS[s.id] },
   ] as const).filter(x => x.ok)
   const [secao, setSecao] = useState<string>('principal')
+  // Compacta apenas a apresentação da barra fixa no celular; não altera recursos.
+  const [resumoCompacto, setResumoCompacto] = useState(false)
+  useEffect(() => {
+    const atualizarResumo = () => setResumoCompacto(window.scrollY > 180)
+    atualizarResumo()
+    window.addEventListener('scroll', atualizarResumo, { passive: true })
+    return () => window.removeEventListener('scroll', atualizarResumo)
+  }, [])
+
   const ir = (id: string) => { setSecao(id); window.scrollTo({ top: 0, behavior: 'smooth' }) }
   const menu = useRef<HTMLDivElement>(null)
   // No celular, o botão da seção escolhida fica visível na fileira.
@@ -188,7 +197,7 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
   return <div>
     <RolagemCentral ref={central} />
     {descansando && <JanelaDescanso s={s} d={d} onChange={onChange} rolarTotal={rolarTotal} fechar={() => setDescansando(false)} />}
-    <div className="sticky top-[57px] z-10 -mx-3 mb-4 border-b border-(--a-373251) bg-(--s-100d1c)/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-4" aria-label="Resumo do personagem">
+    <div className={`sticky top-[57px] z-10 max-sm:[&_.dnd-resumo-celula]:min-h-0 max-sm:[&_.dnd-resumo-celula]:py-1 ${resumoCompacto ? 'max-sm:!py-1 max-sm:[&_.dnd-resumo-celula]:!py-0 max-sm:[&_.dnd-resumo-celula_span]:hidden max-sm:[&_.dnd-resumo-celula_svg]:size-3.5' : ''} -mx-3 mb-4 border-b border-(--a-373251) bg-(--s-100d1c)/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-4`} aria-label="Resumo do personagem">
       <div className="flex items-center gap-3 overflow-x-auto" tabIndex={0} role="region" aria-label="Vida e recursos (role para o lado)">
       {recursoPrincipal && [recursoPrincipal, ...s.recursos.filter(r => r !== recursoPrincipal && (c.recursosMax[r.id] || d.recursos[r.id]?.max))].slice(0, 3).map(r => {
         const calc = !!r.formula || r.maxFixo !== undefined
@@ -200,17 +209,21 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     </div>
     <div className="lg:flex lg:gap-6">
       <nav aria-label="Seções da ficha" className="mb-4 lg:mb-0 lg:w-60 lg:shrink-0">
-        <div ref={menu} className="flex gap-2 overflow-x-auto pb-1 lg:sticky lg:top-[120px] lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-(--a-55456e) lg:bg-(--s-201a32) lg:p-3">
+        <div ref={menu} className="grid grid-cols-3 gap-1.5 pb-1 sm:grid-cols-3 sm:gap-2 lg:flex lg:sticky lg:top-[120px] lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-(--a-55456e) lg:bg-(--s-201a32) lg:p-3">
           <p className="hidden px-2 pb-1 text-xs font-bold uppercase tracking-widest text-(--a-ed9cd8) lg:block">🌙 Menu da ficha</p>
           {SECOES.map(x => <button key={x.id} type="button" onClick={() => ir(x.id)} aria-current={secao === x.id ? 'page' : undefined}
-            className={'shrink-0 rounded-xl px-3 py-2 text-left text-sm transition lg:w-full ' + (secao === x.id ? 'bg-(--a-5b4380) text-white' : 'bg-(--s-201a32) text-(--a-d6c8e8) hover:bg-(--s-2b2140) lg:bg-transparent')}>
-            <span className="whitespace-nowrap">{x.icone} {x.nome}</span>
+            className={'min-w-0 min-h-12 rounded-xl px-1.5 py-2 text-center text-xs transition sm:px-3 sm:text-sm lg:w-full lg:text-left ' + (secao === x.id ? 'bg-(--a-5b4380) text-white' : 'bg-(--s-201a32) text-(--a-d6c8e8) hover:bg-(--s-2b2140) lg:bg-transparent')}>
+            <span className="break-words">{x.icone} {x.nome}</span>
             <span className="hidden text-xs text-(--a-c4b6d4) lg:block">{x.sub}</span>
           </button>)}
         </div>
       </nav>
       <div className="min-w-0 flex-1 space-y-4">
-        {atual && <p className="flex gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-2 text-xs text-(--a-cfc0df)"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></p>}
+        {atual && <header className="flex items-center gap-3 rounded-2xl border border-(--a-55456e) bg-(--s-201a32) px-4 py-3">
+          <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-(--a-55456e) bg-(--s-171325) text-xl">{atual.icone}</span>
+          <div className="min-w-0"><p className="text-[11px] font-semibold uppercase tracking-wider text-(--a-c4b6d4)">{s.nome}</p><h2 className="break-words text-lg font-bold text-(--a-e4d3ff)">{atual.nome}</h2><p className="text-xs text-(--a-c4b6d4)">{atual.sub}</p></div>
+        </header>}
+        {atual && <aside aria-label="Orientações da seção" className="flex items-start gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-3 text-xs leading-relaxed text-(--a-cfc0df)"><span aria-hidden="true" className="shrink-0 text-base">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></aside>}
         {secao === 'principal' && <>
     {s.id !== 'livre' && s.tipo !== 'autoral' && !legado2014 && <ConferenciaFicha s={s} d={d} c={c} efeitos={efeitosDnd} ir={ir} />}
     {s.id === 'dnd5e-srd' && <LivrosPersonagemDnd d={d} onChange={onChange} somenteLeitura={somenteLeitura}
@@ -391,23 +404,21 @@ export default function FichaGenerica({ sistema: sistemaOriginal, dados: d, onCh
     {s.id === 'dnd5e-srd' && !legado2014 && <MagiasDnd2024 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} semLimites={modoProgressao === 'manual'} ocultarInatas rolar={(x, r) => void rolarExpr(x, r)} />}
     {legado2014 && <MagiasDnd2014 d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolar={(x,r)=>void rolarExpr(x,r)}/>}
     <PoderesFicha {...propsInv} />
-    {listasDe('habilidades').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
-    <section className="grid gap-4">
+    {listasDe('habilidades').length > 0 && <details className={card}><summary className="cursor-pointer font-semibold">Anotações complementares de habilidades</summary><section className="mt-3 grid gap-4">
       {listasDe('habilidades').map(l => <label key={l.id} className={card + ' block'}>
         <span className="font-bold text-(--a-ed9cd8)">{l.nome}</span>
         <textarea rows={6} value={d.listas[l.id] ?? ''} disabled={somenteLeitura} maxLength={20000} onChange={e => set('listas', { ...d.listas, [l.id]: e.target.value })} className={input + ' mt-2'} />
       </label>)}
-    </section>
+    </section></details>}
         </>}
         {secao === 'equipamentos' && <>
     <InventarioFicha {...propsInv} passarItem={passarItem} edicaoDnd={edicaoDnd} />
-    {listasDe('equipamentos').length > 0 && <h3 className="px-1 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">Anotações livres</h3>}
-    <section className="grid gap-4">
+    {listasDe('equipamentos').length > 0 && <details className={card}><summary className="cursor-pointer font-semibold">Anotações complementares de inventário</summary><section className="mt-3 grid gap-4">
       {listasDe('equipamentos').map(l => <label key={l.id} className={card + ' block'}>
         <span className="font-bold text-(--a-ed9cd8)">{l.nome}</span>
         <textarea rows={6} value={d.listas[l.id] ?? ''} disabled={somenteLeitura} maxLength={20000} onChange={e => set('listas', { ...d.listas, [l.id]: e.target.value })} className={input + ' mt-2'} />
       </label>)}
-    </section>
+    </section></details>}
         </>}
         {secao === 'anotacoes' && <>
     <section className="grid gap-4">

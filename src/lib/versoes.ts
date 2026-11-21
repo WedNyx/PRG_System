@@ -27,6 +27,17 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.36.1', data: '2026-11-21',
+    titulo: 'Fichas mais organizadas',
+    itens: [
+      'Menu da ficha em grade no celular, sem botões cortados, e a barra de vida e recursos fica menor quando você desce a página.',
+      'Inventário: “Adicionar equipamentos” separado de “Meus equipamentos”, busca e filtros em todos os sistemas. O mesmo modelo do Arsenal soma na quantidade em vez de duplicar.',
+      'Arsenal pronto com busca, ambientação, categoria e ordem por peso. Editor de itens em três etapas: Identidade, Mecânicas e Aparência.',
+      'Poderes com nomes e grupos de cada sistema, busca e filtros. Em D&D, as características da progressão ficam separadas das adições personalizadas.',
+      'D&D: a Árvore de habilidades volta como aba própria, com a visão Yggdrasil e a lista. Só o mestre (ou o dono de uma ficha avulsa) concede habilidades nela.',
+    ],
+  },
+  {
     versao: '0.36.0', data: '2026-11-20',
     titulo: 'Marcas, transformações e invocações',
     itens: [

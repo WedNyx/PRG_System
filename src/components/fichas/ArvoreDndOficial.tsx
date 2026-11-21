@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState, type ReactNode } from 'react'
-import { BookOpenCheck, CircleHelp, GitBranch, Sparkles, X } from 'lucide-react'
+import { BookOpenCheck, CircleHelp, GitBranch, LockKeyhole, Sparkles, X } from 'lucide-react'
 import type { DadosFicha } from '@/lib/sistemas/tipos'
 import { hexagonosOficiaisDnd, RAMOS_HEX_DND, type RamoHexDnd, type EstadoHexDnd } from '@/lib/sistemas/arvoreDndOficial'
 import type { LivroBaseDnd } from '@/lib/sistemas/dndLivros'
@@ -42,7 +42,7 @@ function ConteudoCartaoArvore({d,no,edicao,fechar}:{
         className="min-h-10 min-w-10 shrink-0 rounded-lg border border-(--a-55456e) p-2"><X size={17}/></button>
     </div>
     <p className="mt-2 text-xs text-(--a-cfc0df)">Nível {no.nivel} · {estados[no.estado].texto}</p>
-    <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-(--a-cfc0df)">{info.resumo}</p>
+    <details className="mt-3 rounded-lg border border-violet-300/20 p-3" open><summary className="cursor-pointer text-sm font-semibold text-(--a-ed9cd8)">Descrição</summary><p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-(--a-cfc0df)">{info.resumo}</p></details>
     {info.beneficios.length>0&&<div className="mt-3 space-y-2">
       <p className="text-sm font-semibold text-(--a-ed9cd8)">Como funciona</p>
       <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-(--a-cfc0df)">
@@ -53,10 +53,11 @@ function ConteudoCartaoArvore({d,no,edicao,fechar}:{
       <strong className="block">Na sua ficha</strong>{info.registro}
     </p>}
     {no.escolha&&<p className="mt-3 text-xs text-emerald-200">Escolha registrada: {no.escolha}</p>}
+    {no.estado==='futuro'&&<p className="mt-3 flex items-center gap-2 text-xs text-(--a-c4b6d4)"><LockKeyhole size={15}/> Disponível a partir do nível {no.nivel}.</p>}
     {no.estado==='pendente'&&<p className="mt-3 flex items-start gap-2 text-xs text-amber-200">
       <CircleHelp size={15} className="shrink-0"/> Complete a escolha no Guia/Progressão da ficha.
     </p>}
-    {info.atencao&&<p className="mt-3 text-xs leading-relaxed text-(--a-a998bd)">{info.atencao}</p>}
+    {info.atencao&&<details className="mt-2 rounded-lg border border-violet-300/20 p-3"><summary className="cursor-pointer text-sm font-semibold">Requisitos e observações</summary><p className="mt-2 text-xs leading-relaxed text-(--a-a998bd)">{info.atencao}</p></details>}
     <p className="mt-3 flex items-start gap-2 text-xs text-(--a-c4b6d4)"><BookOpenCheck size={15} className="shrink-0"/>Fonte: {no.livro}</p>
   </>
 }
@@ -65,6 +66,7 @@ export default function ArvoreDndOficial({ d, edicao, fontes, children }: Props)
   const [ramoAtivo, setRamoAtivo] = useState<RamoHexDnd>('classe')
   const [futuros, setFuturos] = useState(false)
   const [selecionado, setSelecionado] = useState<string | null>(null)
+  const [visao, setVisao] = useState<'yggdrasil' | 'lista'>('yggdrasil')
   const oficiais = useMemo(
     () => hexagonosOficiaisDnd(d, edicao, fontes, futuros),
     [d, edicao, fontes, futuros],
@@ -88,7 +90,7 @@ export default function ArvoreDndOficial({ d, edicao, fontes, children }: Props)
         <GitBranch size={20} /> Árvores de habilidades
       </h2>
       <p className="mt-1 text-sm text-(--a-cfc0df)">
-        Quatro ramos, uma árvore por vez. Os cartões seguem suas escolhas, nível e livro; basta abrir um para ver detalhes.
+        Quatro ramos de uma árvore de evolução. Toque em uma estrela para consultar os detalhes, sem alterar a ficha.
       </p>
       <p className="mt-2 text-xs text-(--a-d3adf0)">
         {edicao === 'phb2014' ? 'D&D 2014 · SRD 5.1 / Livro do Jogador (5e)' :
@@ -120,6 +122,12 @@ export default function ArvoreDndOficial({ d, edicao, fontes, children }: Props)
         <h3 className="flex items-center gap-2 text-base font-semibold" style={{ color: ramo.cor }}>
           <span aria-hidden>{ramo.icone}</span>{ramo.titulo}
         </h3>
+        {ramoAtivo !== 'mestre' && <div className="flex flex-wrap items-center gap-2">
+          <div role="group" aria-label="Visualização da árvore" className="flex rounded-lg border border-(--a-55456e) p-1">
+            <button type="button" aria-pressed={visao==='yggdrasil'} onClick={()=>setVisao('yggdrasil')} className={'min-h-10 rounded-md px-3 text-xs ' + (visao==='yggdrasil'?'bg-(--s-34294f) text-white':'text-(--a-cfc0df)')}>🌳 Yggdrasil</button>
+            <button type="button" aria-pressed={visao==='lista'} onClick={()=>setVisao('lista')} className={'min-h-10 rounded-md px-3 text-xs ' + (visao==='lista'?'bg-(--s-34294f) text-white':'text-(--a-cfc0df)')}>☷ Lista</button>
+          </div>
+        </div>}
         {ramoAtivo !== 'mestre' && <label className="inline-flex items-center gap-2 rounded-lg border border-(--a-55456e) px-3 py-2 text-xs text-(--a-cfc0df)">
           <input type="checkbox" checked={futuros} onChange={e => setFuturos(e.target.checked)} />
           Mostrar níveis futuros
@@ -141,7 +149,42 @@ export default function ArvoreDndOficial({ d, edicao, fontes, children }: Props)
                   ramoAtivo === 'especie' ? 'Escolha sua espécie ou raça para mostrar os traços dela.' :
                     'Escolha seu antecedente ou origem na aba Principal para formar este ramo.'}
               </p>
-              : <ol className="mx-auto max-w-3xl" aria-label={'Progressão vertical de ' + ramo.titulo}>
+              : visao === 'yggdrasil' ? <div className="mx-auto max-w-3xl">
+                <p className="mb-3 text-center text-xs text-(--a-c4b6d4)">Árvore do Mundo · Toque nos galhos para conhecer suas habilidades.</p>
+                <div className="relative overflow-hidden rounded-2xl border border-amber-300/25 bg-[radial-gradient(ellipse_at_50%_65%,#30251f_0%,#181321_70%,#0c0a13_100%)] px-2 py-6">
+                  <div className="pointer-events-none absolute inset-0 opacity-20" aria-hidden style={{backgroundImage:'radial-gradient(#e3c899 1px, transparent 1px)',backgroundSize:'39px 41px'}} />
+                  <ol className="relative mx-auto max-w-lg" aria-label={'Yggdrasil de ' + ramo.titulo}>
+                    {grupo.map((n,i)=>{
+                      const ativo=selecionado===n.id
+                      const lado=i===0?'center':i%2===1?'left':'right'
+                      return <li key={n.id} className="relative min-h-40 pb-8">
+                        <svg aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-full w-full" viewBox="0 0 300 160" preserveAspectRatio="none">
+                          <path d="M150 0 C147 55 153 105 150 160" fill="none" stroke="#4a332b" strokeWidth="15" strokeLinecap="round"/>
+                          <path d="M150 0 C147 55 153 105 150 160" fill="none" stroke="#a7835c" strokeWidth="5" strokeOpacity=".85" strokeLinecap="round"/>
+                          {lado!=='center'&&<path d={lado==='left'?'M150 54 C120 52 112 45 75 45':'M150 54 C180 52 188 45 225 45'} fill="none" stroke="#b99564" strokeWidth="5" strokeLinecap="round"/>}
+                        </svg>
+                        <div className={'relative flex ' + (lado==='left'?'justify-start':lado==='right'?'justify-end':'justify-center')}>
+                          <button type="button" aria-pressed={ativo} aria-label={n.titulo+', nível '+n.nivel+', '+estados[n.estado].texto} onClick={()=>setSelecionado(ativo?null:n.id)}
+                            className={'relative z-10 flex min-h-24 w-[47%] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-3 text-center shadow-[0_4px_22px_#0008] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 sm:w-[43%] '+
+                              (ativo?'border-amber-200 bg-[#57402d] ring-2 ring-amber-200/40':'border-amber-300/55 bg-[#29201f] hover:bg-[#41302a]')+
+                              (n.estado==='futuro'?' opacity-65':'')}
+                            style={{borderColor:ativo?'#f5d58a':ramo.cor}}>
+                            <span aria-hidden className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-300/60 bg-[#17121a] text-lg text-amber-100">{n.estado==='futuro'?<LockKeyhole size={17}/>:n.estado==='recebido'?'✧':estados[n.estado].icone}</span>
+                            <strong className="w-full break-words text-xs leading-snug text-white">{n.titulo}</strong>
+                            <span className="text-[10px] text-amber-100/80">Nv. {n.nivel} · {estados[n.estado].texto}</span>
+                          </button>
+                        </div>
+                        {ativo&&<div className="relative z-20 mt-3 rounded-xl border border-amber-300/35 bg-[#201a21] p-3 lg:hidden">
+                          <ConteudoCartaoArvore d={d} no={n} edicao={edicao} fechar={()=>setSelecionado(null)}/>
+                        </div>}
+                      </li>
+                    })}
+                  </ol>
+                  <svg aria-hidden="true" className="pointer-events-none relative mx-auto h-16 w-48" viewBox="0 0 192 64">
+                    <path d="M96 0 V18 Q70 32 10 57 M96 18 Q122 32 182 57 M96 18 Q96 39 96 61 M96 22 Q55 37 40 62 M96 22 Q137 37 152 62" stroke="#a7835c" strokeWidth="5" fill="none" strokeLinecap="round"/>
+                  </svg>
+                </div>
+              </div> : <ol className="mx-auto max-w-3xl" aria-label={'Progressão vertical de ' + ramo.titulo}>
                 {grupo.map((n, i) => {
                   const status = estados[n.estado]
                   const ativo = selecionado === n.id
@@ -152,7 +195,7 @@ export default function ArvoreDndOficial({ d, edicao, fontes, children }: Props)
                         (ativo ? 'border-(--a-b99bff) bg-(--s-34294f)' : 'border-(--a-55456e) bg-(--s-201a32)')}
                       style={{ borderLeftColor: ramo.cor, opacity: n.estado === 'futuro' ? 0.75 : 1 }}>
                       <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-(--s-34294f) text-lg" style={{ color: ramo.cor }}>
-                        {status.icone}
+                        <span>{status.icone}</span>
                       </span>
                       <span className="min-w-0 flex-1">
                         <strong className="block break-words text-sm leading-snug text-(--a-f2ebff) sm:text-base">{n.titulo}</strong>

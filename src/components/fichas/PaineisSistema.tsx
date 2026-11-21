@@ -295,7 +295,7 @@ const FAIXAS: Record<string, { simbolo: string; frase: string; fundo: string; bo
   brp: { simbolo: '🔎', frase: 'Arquivo de investigação · d100 abaixo do valor', fundo: 'linear-gradient(120deg,#2a2416,#141210 60%,#1b2620)', borda: '#d6bf8f' },
   'call-of-cthulhu': { simbolo: '🕯️', frase: 'Investigador · d100 normal, difícil e extremo', fundo: 'linear-gradient(120deg,#0c2420,#0e1214 60%,#231c12)', borda: '#9fd8c4' },
   'faroeste-arcano': { simbolo: '🤠', frase: 'Pólvora e feitiçaria no Velho Oeste', fundo: 'linear-gradient(120deg,#3a2410,#1a120b 60%,#2b1d10)', borda: '#eab26a' },
-  'ordem-paranormal': { simbolo: '🩸', frase: 'Agente · o paranormal está por perto', fundo: 'linear-gradient(120deg,#2a0f3a,#120b18 60%,#2a0a12)', borda: '#d8a6ff' },
+  'ordem-paranormal': { simbolo: '🩸', frase: 'Agente · o paranormal está por perto', fundo: 'linear-gradient(120deg,#3a0b16,#120a0d 60%,#2a0a12)', borda: '#ff4058' },
   tormenta20: { simbolo: '⭐', frase: 'Herói · d20 + atributo + perícia', fundo: 'linear-gradient(120deg,#3a0d0d,#160b0b 60%,#2a160b)', borda: '#ff7a6b' },
   'mork-borg': { simbolo: '💀', frase: 'O mundo está morrendo. Você também.', fundo: '#000', borda: '#ffe600' },
   assimilacao: { simbolo: '🧬', frase: 'Sobreviver depois do Colapso', fundo: 'linear-gradient(120deg,#0c2a28,#0f0f16 60%,#2a0f2e)', borda: '#5eead4' },

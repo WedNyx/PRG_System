@@ -28,6 +28,17 @@ export function moverNaOrdem(lista: Entrada[], id: string, direcao: -1 | 1, turn
   return { lista: l, turno: manterVez(l, daVez, turno) }
 }
 
+/** Arrasta alguém para outra posição da ordem (v0.36.6); a vez continua com quem estava nela. */
+export function moverPara(lista: Entrada[], id: string, destino: number, turno: number): Ordem {
+  const i = lista.findIndex(x => x.id === id)
+  if (i < 0) return { lista, turno }
+  const j = Math.max(0, Math.min(lista.length - 1, Math.trunc(destino)))
+  if (i === j) return { lista, turno }
+  const daVez = lista[turno]?.id, l = [...lista]
+  const [x] = l.splice(i, 1); l.splice(j, 0, x)
+  return { lista: l, turno: manterVez(l, daVez, turno) }
+}
+
 /** Muda o valor de alguém e reordena (empates mantêm a ordem atual); a vez não muda. */
 export function mudarValor(lista: Entrada[], id: string, valor: number, turno: number): Ordem {
   const daVez = lista[turno]?.id

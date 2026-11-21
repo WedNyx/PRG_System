@@ -98,7 +98,7 @@ const semLado = async p => { const w = p.viewportSize().width; return p.evaluate
       const AC = window.AudioContext; window.AudioContext = class extends AC { createBufferSource() { window.__sons.push('fonte'); return super.createBufferSource() } createOscillator() { window.__sons.push('osc'); return super.createOscillator() } }
     })
     await m.p.goto(B + '/mesa?campanha=' + cid, { waitUntil: 'domcontentloaded' }); await j.p.goto(B + '/mesa?campanha=' + cid, { waitUntil: 'domcontentloaded' }); await m.p.waitForTimeout(4000)
-    await m.p.getByRole('button', { name: /^Música/ }).first().click(); await m.p.waitForTimeout(400)
+    await m.p.getByRole('button', { name: /^Som/ }).first().click(); await m.p.waitForTimeout(400)
     await m.p.getByRole('tab', { name: /Mesa de som/ }).click(); await m.p.waitForTimeout(500)
     ok(await m.p.getByRole('button', { name: /^Tocar / }).count() >= 20, `${disp}: mestre vê os efeitos da Mesa de Som`)
     await m.p.screenshot({ path: `${O}/${disp}-8-mesa-de-som.png` })
@@ -125,7 +125,7 @@ const semLado = async p => { const w = p.viewportSize().width; return p.evaluate
     ok(await sons() > antes, `${disp}: os outros efeitos continuam tocando`)
     await m.p.getByRole('checkbox', { name: /Sons de susto/ }).check()
     // Jogador: vê o que toca e ajusta só o próprio som
-    await j.p.getByRole('button', { name: /^Música/ }).first().click(); await j.p.waitForTimeout(300)
+    await j.p.getByRole('button', { name: /^Som/ }).first().click(); await j.p.waitForTimeout(300)
     await j.p.getByRole('tab', { name: /^Sons/ }).click(); await j.p.waitForTimeout(500)
     ok(await j.p.getByRole('slider', { name: 'Volume dos sons da mesa' }).count() === 1 && await j.p.getByRole('button', { name: /^Tocar / }).count() === 0, `${disp}: jogador tem o próprio volume e não toca efeitos`)
     await j.p.screenshot({ path: `${O}/${disp}-10-sons-jogador.png` })

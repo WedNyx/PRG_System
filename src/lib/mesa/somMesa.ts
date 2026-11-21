@@ -334,6 +334,27 @@ const AMBIENTE: Record<string, CriadorAmbiente> = {
   },
 }
 
+// ---------------------------------------------------------------- sons enviados pelo mestre (Howler)
+
+type Howl = import('howler').Howl
+const arquivosTocando = new Set<Howl>()
+/**
+ * Toca um áudio enviado pelo mestre (Howler.js, carregado só quando precisa).
+ * O endereço já foi conferido (audioDaPlataforma) por quem chama.
+ */
+export async function tocarArquivo(url: string, vol = 0.9) {
+  if (typeof window === 'undefined') return false
+  const { Howl } = await import('howler')
+  const h: Howl = new Howl({ src: [url], volume: Math.min(1, Math.max(0.05, vol)) * volumeLocal, html5: true })
+  arquivosTocando.add(h)
+  const fim = () => { arquivosTocando.delete(h); h.unload() }
+  h.once('end', fim); h.once('loaderror', fim); h.once('playerror', fim)
+  h.play()
+  return true
+}
+/** Para os áudios enviados que ainda estão tocando (Silenciar). */
+export function pararArquivos() { for (const h of arquivosTocando) { h.fade(h.volume(), 0, 400); setTimeout(() => { h.stop(); h.unload() }, 450) } arquivosTocando.clear() }
+
 /** Toca um efeito para esta pessoa. `vol` vem do mestre (0–1); o volume local é aplicado na saída. */
 export function tocarEfeito(id: string, vol = 0.9) {
   const toca = TOCADORES[id]; const c = contexto()
@@ -363,4 +384,4 @@ export function definirCamadas(camadas: Camadas, transicao = 1.5) {
     try { const parar = criar(c, g); g.gain.exponentialRampToValueAtTime(alvo, t + transicao); camadasVivas.set(id, { ganho: g, parar }) } catch { g.disconnect() }
   }
 }
-export function pararSons() { definirCamadas({}, 0.4) }
+export function pararSons() { definirCamadas({}, 0.4); pararArquivos() }

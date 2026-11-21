@@ -17,7 +17,8 @@ import { GRAUS_PADRAO, opcoesDeGrau, rotuloGrau } from '@/lib/sistemas/graus'
 import { EditorRegras, EditorTabelas, NOMES_SECOES } from './EditorExtras'
 import EditorRolagem from './EditorRolagem'
 import { EXTRAS, lerExtras, type ExtraFicha } from '@/lib/sistemas/extrasFicha'
-import { ARVORES_VISUAIS, lerVisualAutor } from '@/lib/sistemas/visualAutor'
+import { lerVisualAutor } from '@/lib/sistemas/visualAutor'
+import EstudioFicha from './EstudioFicha'
 import EditorOpcoes, { type OpcaoDef } from './EditorOpcoes'
 import EditorProgressao, { type DefProgressao } from './EditorProgressao'
 import ArvoreHabilidades from '@/components/fichas/Arvore'
@@ -91,6 +92,7 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
   const [salvando, setSalvando] = useState(false)
   const [alterado, setAlterado] = useState(false)
   const [previa, setPrevia] = useState(false)
+  const [estudio, setEstudio] = useState(false)
   const [aberta, setAberta] = useState<string>('sobre')
   const [errosServidor, setErrosServidor] = useState<string[]>([])
   const ultimoCampo = useRef<{ set: (v: string) => void; valor: string } | null>(null)
@@ -182,6 +184,8 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
           <ul className="mt-2 list-disc space-y-1 pl-5">{erros.slice(0, 8).map(e => <li key={e}>{e}</li>)}</ul></section>
         : <p className="flex items-center gap-2 rounded-xl bg-[#1f3a2c]/90 px-3 py-2 text-sm text-[#a9f0c8]"><CheckCircle2 size={16} /> Tudo certo: as fórmulas calculam. Veja em “Prévia”.</p>}
 
+      {estudio && <EstudioFicha sistema={validacao?.ok ? validacao.sistema : null} visual={def.visual} mudarVisual={v => mudar(d => ({ ...d, visual: v }))}
+        nomes={def.nomesSecoes} mudarNome={(id, nome) => mudar(d => ({ ...d, nomesSecoes: { ...d.nomesSecoes, [id]: nome } }))} extras={def.extras} fechar={() => setEstudio(false)} />}
       {previa ? <Previa def={def} validacao={validacao} /> : <>
         <SecaoBase id="sobre" titulo="📘 Sobre o sistema" sub="Nome, descrição e como se rola" aberta={aberta === 'sobre'} alternar={() => setAberta(a => a === 'sobre' ? '' : 'sobre')}>
           <label className="block">Nome<input value={def.nome} maxLength={80} onChange={e => mudar(d => ({ ...d, nome: e.target.value }))} className={input + ' mt-1'} placeholder="Ex.: Crônicas da Névoa" /></label>
@@ -209,21 +213,6 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
               <select aria-label="Grau inicial das perícias" value={def.graus.inicialPericia ?? ''} onChange={e => mudar(d => ({ ...d, graus: { ...d.graus, inicialPericia: Number(e.target.value) || undefined } }))} className={pequeno}><option value="">nada (0)</option>{def.graus.lados.map(l => <option key={l} value={l}>d{l}</option>)}</select>
               <span className="text-(--a-a998bd)">(fichas novas já começam assim)</span></label>
           </div>}
-          <details className="rounded-xl bg-(--s-171325) p-3 text-sm"><summary className="cursor-pointer font-semibold">🏷️ Nomes das partes da ficha (opcional)</summary>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">{NOMES_SECOES.filter(([id]) => !EXTRAS.some(x => x.id === id) || def.extras.includes(id as ExtraFicha)).map(([id, padrao]) => <label key={id} className="block text-xs">{padrao}
-              <input value={def.nomesSecoes[id] ?? ''} maxLength={40} onChange={e => mudar(d => ({ ...d, nomesSecoes: { ...d.nomesSecoes, [id]: e.target.value } }))} className={input + ' mt-1'} placeholder={padrao} /></label>)}</div></details>
-          <fieldset className="rounded-xl bg-(--s-171325) p-3 text-sm"><legend className="px-1 font-semibold">🎨 Aparência da ficha (opcional)</legend>
-            <p className="mb-2 text-xs text-(--a-c4b6d4)">As cores dos cartões, a letra dos títulos e o desenho da árvore de habilidades das fichas do seu sistema.</p>
-            <div className="grid grid-cols-3 gap-2">{([['acento', 'Destaque', '#ed9cd8'], ['borda', 'Bordas', '#55456e'], ['cartao', 'Fundo dos cartões', '#201a32']] as const).map(([k, nome, padrao]) => <label key={k} className="block text-xs">{nome}
-              <input type="color" value={def.visual[k] ?? padrao} onChange={e => mudar(d => ({ ...d, visual: { ...d.visual, [k]: e.target.value } }))} className="mt-1 h-10 w-full cursor-pointer rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-1" /></label>)}</div>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
-              <label className="block text-xs">Letra dos títulos<select value={def.visual.fonte ?? ''} onChange={e => mudar(d => ({ ...d, visual: { ...d.visual, fonte: (e.target.value || undefined) as 'serifada' | 'classica' | undefined } }))} className={input + ' mt-1'}>
-                <option value="">Normal</option><option value="serifada">Serifada (livro antigo)</option><option value="classica">Clássica (gravada em pedra)</option></select></label>
-              <label className="block text-xs">Desenho da árvore<select value={def.visual.arvore ?? ''} onChange={e => mudar(d => ({ ...d, visual: { ...d.visual, arvore: e.target.value || undefined } }))} className={input + ' mt-1'}>
-                {ARVORES_VISUAIS.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}</select></label>
-            </div>
-            {Object.keys(def.visual).length > 0 && <button type="button" className={botao + ' mt-2'} onClick={() => mudar(d => ({ ...d, visual: {} }))}>Voltar à aparência padrão</button>}
-          </fieldset>
           <fieldset className="rounded-xl bg-(--s-171325) p-3 text-sm"><legend className="px-1 font-semibold">🧩 Partes extras da ficha (opcional)</legend>
             <p className="mb-2 text-xs text-(--a-c4b6d4)">Ligue o que o seu sistema tem. Cada parte vira uma aba na ficha; o jogador escreve tudo e nada é calculado.</p>
             <div className="grid gap-2 sm:grid-cols-2">{EXTRAS.map(x => <label key={x.id} className="flex items-start gap-2 rounded-lg border border-(--a-3d3152) p-2 text-xs">
@@ -233,6 +222,11 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
           {def.creditos && <p className="rounded-lg bg-(--s-171325) p-2 text-[11px] text-(--a-a998bd)">Créditos do modelo usado (licença aberta): {def.creditos}</p>}
         </SecaoBase>
 
+        <SecaoBase id="estudio" titulo="🎨 Estúdio da ficha" sub="Monte a ficha do seu jeito: abas, partes, cores, imagens e formatos" aberta={aberta === 'estudio'} alternar={() => setAberta(a => a === 'estudio' ? '' : 'estudio')}>
+          <p className="text-xs text-(--a-c4b6d4)">Arraste as abas e as partes da ficha, escolha a largura de cada uma, esconda o que não usa, troque nomes e ícones, envie logo, fundo e moldura e escolha cores, letras e formatos. A prévia muda na hora.</p>
+          <ResumoEstudio visual={def.visual} />
+          <button type="button" onClick={() => setEstudio(true)} className="w-full rounded-xl bg-gradient-to-r from-(--a-7652ac) to-[#b45309] px-4 py-3 font-semibold" data-abrir-estudio>🎨 Abrir o estúdio da ficha</button>
+        </SecaoBase>
         <SecaoBase id="campos" titulo="🪪 Campos de identidade" sub="Classe, raça, nível… (número vira variável)" aberta={aberta === 'campos'} alternar={() => setAberta(a => a === 'campos' ? '' : 'campos')}>
           {def.campos.map((c, i) => <div key={i} className="space-y-1 rounded-xl bg-(--s-171325) p-2">
             <div className="flex gap-2">
@@ -503,4 +497,21 @@ function paraGraus(d: Def): Def {
 function Dica({ valor, mudar, rotulo = 'Explicação (aparece na ficha)' }: { valor: unknown; mudar: (v: string) => void; rotulo?: string }) {
   return <label className="block text-[11px] text-(--a-c4b6d4)">{rotulo}
     <textarea rows={1} value={typeof valor === 'string' ? valor : ''} maxLength={400} onChange={e => mudar(e.target.value)} className={input + ' mt-0.5 text-xs'} placeholder="Opcional" /></label>
+}
+
+/** Resumo do que já foi personalizado no estúdio. */
+function ResumoEstudio({ visual }: { visual: NonNullable<Sistema['visual']> }) {
+  const m = visual.montagem
+  const itens = [
+    m?.secoes?.some(x => x.oculta) && `${m.secoes.filter(x => x.oculta).length} aba(s) escondida(s)`,
+    m?.blocos && `${Object.keys(m.blocos).length} parte(s) arrumada(s)`,
+    visual.logo && 'logo', visual.fundoImagem && 'fundo com imagem', visual.molduraImagem && 'moldura própria',
+    (visual.cartaoEstilo || visual.moldura || visual.atributosEstilo || visual.barrasEstilo) && 'formatos próprios',
+  ].filter(Boolean) as string[]
+  const cores = [visual.fundo, visual.cartao, visual.acento, visual.borda].filter(Boolean) as string[]
+  if (!itens.length && !cores.length && !visual.fonte) return <p className="text-xs text-(--a-a998bd)">Ainda com a aparência padrão.</p>
+  return <div className="flex flex-wrap items-center gap-1.5 text-xs">
+    {cores.length > 0 && <span aria-label="Cores escolhidas" className="flex overflow-hidden rounded-md border border-white/20">{cores.map((c, i) => <span key={i} className="block size-5" style={{ background: c }} />)}</span>}
+    {itens.map(x => <span key={x} className="rounded-full border border-(--a-55456e) px-2 py-0.5">{x}</span>)}
+  </div>
 }

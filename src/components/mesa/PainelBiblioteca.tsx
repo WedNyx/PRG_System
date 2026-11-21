@@ -129,7 +129,7 @@ export default function PainelBiblioteca({ campanhaId, e }: { campanhaId: string
       })}
     </>}
 
-    {arsenal && <ArsenalPronto fechar={() => setArsenal(false)} adicionar={x => void salvar('item', itemDoArsenal(x, () => 'novo'))} />}
+    {arsenal && <ArsenalPronto sistema={sistemaDaCampanha(e.campanha.sistema ?? '')} fechar={() => setArsenal(false)} adicionar={x => void salvar('item', itemDoArsenal(x, () => 'novo'))} />}
     {editando?.tipo === 'item' && <EditorItem s={s} inicial={editando.valor as Item} salvar={v => void salvar('item', v, editando.id)} fechar={() => setEditando(null)} />}
     {editando?.tipo === 'poder' && <EditorPoder s={s} inicial={editando.valor as Poder} salvar={v => void salvar('poder', v, editando.id)} fechar={() => setEditando(null)} />}
     {dando && <JanelaDar campanhaId={campanhaId} e={e} b={dando} fechar={() => setDando(null)} />}

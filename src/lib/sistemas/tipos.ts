@@ -6,7 +6,8 @@ export type OpcaoCampo = { nome: string; descricao?: string; bonus?: { alvo: str
   /** D&D: opção de livro comercial (id em dnd2024Fontes) — só aparece se o mestre liberar a fonte. */
   fonte?: string }
 export type CampoDef = { id: string; nome: string; tipo: 'texto' | 'numero' | 'area' | 'escolha'; padrao?: string | number; opcoes?: OpcaoCampo[]; /** Escolha de classe: campo de número com o nível dela (multiclasse). */ nivel?: string
-  /** Explicação curta que aparece na ficha (v0.35.6). */ dica?: string }
+  /** Explicação curta que aparece na ficha (v0.35.6). */ dica?: string
+  /** Lista só de sugestão (v0.36.6): a conferência não cobra o campo. */ sugestao?: boolean }
 export type AtributoDef = { id: string; nome: string; min: number; max: number; padrao: number; /** Explicação do atributo (v0.35.6). */ dica?: string }
 export type TreinoDef = { id: string; nome: string; formula: string; custo?: number }
 /** atributo pode ser 'FOR/DES': usa o melhor modificador dos dois. */
@@ -33,6 +34,25 @@ export type GrausDef = { lados: number[]; zero?: number; maxPericia?: number
 export type TabelaDef = { id: string; nome: string; dado: string; linhas: { de: number; ate: number; texto: string }[]; campo?: string }
 /** Capítulo das regras do sistema, escrito pelo autor (v0.35.6). Aparece na ficha, em “Regras”. */
 export type CapituloRegra = { titulo: string; texto: string }
+/** Largura de uma parte da ficha numa grade de 12 colunas (no celular, tudo ocupa a linha inteira). */
+export type LarguraBloco = 4 | 6 | 8 | 12
+/** Montagem da ficha feita pelo autor no estúdio (v0.36.6): ordem, ícone e visibilidade das abas; ordem, largura, nome e visibilidade de cada parte. */
+export type MontagemFicha = {
+  secoes?: { id: string; oculta?: boolean; icone?: string }[]
+  blocos?: Record<string, { ordem?: number; largura?: LarguraBloco; oculto?: boolean; titulo?: string }>
+}
+export type FonteAutor = 'serifada' | 'classica' | 'moderna' | 'mono'
+export type VisualAutor = {
+  acento?: string; borda?: string; cartao?: string; texto?: string; fundo?: string
+  fonte?: FonteAutor; fonteCorpo?: FonteAutor; arvore?: string
+  fundoImagem?: string; fundoEscuro?: number; logo?: string; molduraImagem?: string
+  moldura?: 'dupla' | 'ornamento' | 'pergaminho' | 'neon' | 'imagem'
+  cartaoEstilo?: 'vidro' | 'contorno' | 'pergaminho'
+  raio?: number; brilho?: 'suave' | 'forte'
+  atributosEstilo?: 'circulo' | 'hexagono' | 'escudo' | 'losango'
+  barrasEstilo?: 'fina' | 'grossa' | 'brilho' | 'segmentada'
+  montagem?: MontagemFicha
+}
 export type SecaoFicha = 'principal' | 'atributos' | 'habilidades' | 'equipamentos' | 'anotacoes' | 'marcas' | 'formas' | 'invocacoes' | 'efeitos'
 
 export type Sistema = {
@@ -80,8 +100,8 @@ export type Sistema = {
   visualAtributos?: 'lua'
   /** Partes extras da ficha ligadas pelo autor (v0.36.0): marcas com níveis, transformações, invocações, efeitos (ver extrasFicha.ts). */
   extras?: import('./extrasFicha').ExtraFicha[]
-  /** Aparência escolhida pelo autor (v0.36.3): cores dos cartões, letra dos títulos e o desenho da árvore. */
-  visual?: { acento?: string; borda?: string; cartao?: string; fonte?: 'serifada' | 'classica'; arvore?: string }
+  /** Aparência escolhida pelo autor (v0.36.3; estúdio completo na v0.36.6): cores, letras, imagens, formatos e a montagem da ficha. */
+  visual?: VisualAutor
   /** Nome que a ficha usa para os atributos (sistemas autorais: “Aspectos”, “Virtudes”…; v0.33.8). As perícias usam `pericias.titulo`. */
   tituloAtributos?: string
   /** Modificador do atributo; `X` é o valor do atributo. Sem isso, o modificador é o próprio valor. */

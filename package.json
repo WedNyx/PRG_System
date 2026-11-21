@@ -1,6 +1,6 @@
 {
   "name": "prg-system",
-  "version": "0.36.5",
+  "version": "0.36.6",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -13,11 +13,17 @@
   "dependencies": {
     "@3d-dice/dice-box": "^1.1.4",
     "@3d-dice/dice-box-threejs": "^0.0.12",
+    "@dnd-kit/core": "6.3.1",
+    "@dnd-kit/sortable": "10.0.0",
+    "@dnd-kit/utilities": "3.2.2",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.0",
+    "@xyflow/react": "12.12.1",
     "canvas-confetti": "^1.9.4",
     "game-icons-transparent": "1.0.2",
+    "howler": "2.2.4",
     "lucide-react": "^1.25.0",
+    "motion": "14.9.1",
     "next": "16.2.10",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -27,6 +33,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/canvas-confetti": "^1.9.0",
+    "@types/howler": "2.2.12",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

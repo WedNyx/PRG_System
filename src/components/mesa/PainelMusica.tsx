@@ -6,6 +6,7 @@ import { FastForward, Pause, Rewind, SkipBack, SkipForward, ArrowDown, ArrowUp, 
 import { api } from '@/lib/nuvem/cliente'
 import type { EstadoMusica } from '@/lib/nuvem/musica'
 import { btn, input, msg } from './estilos'
+import ListaArrastavel from './ListaArrastavel'
 
 type Musica = { id: string; titulo: string; url: string; tipo: 'youtube' | 'audio'; video_id: string | null; ordem: number }
 type Playlist = { id: string; dono_id: string; nome: string; enviada: boolean; atualizada_em: string; dono: { apelido: string } | null; musicas: Musica[] }
@@ -77,7 +78,7 @@ export default function PainelMusica({ campanhaId, eu, admin, espectador = false
     </>}
 
     {admin && aba === 'recebidas' && <>
-      {!donos.length && <p className="text-(--a-b4aeca)">Nenhum jogador enviou playlist ainda. Eles criam na aba 🎵 Música e tocam em “Enviar ao mestre”.</p>}
+      {!donos.length && <p className="text-(--a-b4aeca)">Nenhum jogador enviou playlist ainda. Eles criam em 🎵 Som → Trilha e tocam em “Enviar ao mestre”.</p>}
       {donos.map(g => <section key={g.nome + g.listas[0].dono_id} className="space-y-2">
         <h3 className="text-xs font-bold uppercase tracking-wide text-(--a-e4d3ff)">De {g.nome}</h3>
         {g.listas.map(p => <CartaoPlaylist key={p.id} p={p} minha={false} admin aberta={aberta === p.id} alternar={() => setAberta(a => a === p.id ? null : p.id)}
@@ -147,8 +148,10 @@ function CartaoPlaylist({ p, minha, admin, aberta, alternar, fazer, campanhaId, 
       </form>}
 
       {!p.musicas.length && <p className="text-xs text-(--a-b4aeca)">Playlist vazia.</p>}
-      <ol className="space-y-1">
-        {p.musicas.map((m, i) => <li key={m.id} className={'flex items-center gap-1 rounded-lg px-1.5 py-1 ' + (tocandoId === m.id ? 'bg-(--s-3a2c58)' : 'bg-(--s-1e1a30)')}>
+      <ListaArrastavel itens={p.musicas} chave={m => m.id} desabilitado={!minha} className="space-y-1" rotulo={'Músicas de ' + p.nome}
+        mover={(de, para) => { const ids = p.musicas.map(m => m.id); const [x] = ids.splice(de, 1); ids.splice(para, 0, x); void fazer({ acao: 'musica_reordenar', playlistId: p.id, ids }) }}>
+        {(m, i, alca) => <div className={'flex items-center gap-1 rounded-lg px-1.5 py-1 ' + (tocandoId === m.id ? 'bg-(--s-3a2c58)' : 'bg-(--s-1e1a30)')}>
+          {alca}
           <span className="w-5 shrink-0 text-center text-xs text-(--a-9d93b8)">{tocandoId === m.id ? '♪' : i + 1}</span>
           <span className="min-w-0 flex-1 truncate" title={m.titulo}>{m.tipo === 'youtube' ? '▶️ ' : '🎧 '}{m.titulo}</span>
           {admin && <button type="button" onClick={() => void fazer({ acao: 'tocar', musicaId: m.id }, 'Tocando para a mesa!', true)} aria-label={`Tocar ${m.titulo} para a mesa`} title="Tocar para a mesa" className="rounded p-1 text-green-300 hover:bg-(--s-34294f)"><Play size={15} /></button>}
@@ -157,8 +160,8 @@ function CartaoPlaylist({ p, minha, admin, aberta, alternar, fazer, campanhaId, 
             <button type="button" disabled={i === p.musicas.length - 1} onClick={() => void fazer({ acao: 'musica_mover', id: m.id, direcao: 'baixo' })} aria-label="Descer" className="rounded p-1 hover:bg-(--s-34294f) disabled:opacity-30"><ArrowDown size={13} /></button>
             <button type="button" onClick={() => void fazer({ acao: 'musica_remover', id: m.id })} aria-label={`Remover ${m.titulo}`} className="rounded p-1 text-red-300 hover:bg-(--s-34294f)"><Trash2 size={13} /></button>
           </>}
-        </li>)}
-      </ol>
+        </div>}
+      </ListaArrastavel>
 
       {minha && <div className="space-y-2 rounded-lg bg-(--s-120f22) p-2">
         <p className="text-xs font-semibold text-(--a-e4d3ff)">Adicionar música</p>

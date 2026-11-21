@@ -289,8 +289,13 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
     }) : <ul className="ficha-lista-itens mt-3 space-y-2">{itensVisiveis.filter(i => abaAtual === 'magico' ? i.magico : i.categoria === abaAtual).map(linhaItem)}</ul>}
     {editando && <EditorItem s={s} edicaoDnd={edicaoDnd} inicial={editando} salvar={salvarItem} fechar={() => setEditando(null)} />}
     {arsenalAberto && <ArsenalPronto fechar={() => setArsenalAberto(false)} adicionar={x => {
-      // O mesmo modelo de novo soma 1 na quantidade em vez de criar uma cópia (um item editado vira outro e não junta).
-      const igual = itens.find(i => i.nome === x.nome && i.categoria === x.categoria && (i.dano ?? '') === (x.dano ?? '') && i.iconeBiblioteca === x.icone && !i.bonus.length)
+      // O mesmo modelo de novo soma 1 na quantidade em vez de criar uma cópia — mas só quando o item na mochila
+      // ainda é idêntico ao modelo do Arsenal (nada editado); senão vira outro item e não junta (achado do Codex, PR #69).
+      const modelo = itemDoArsenal(x, () => '')
+      const igual = itens.find(i => i.nome === modelo.nome && i.categoria === modelo.categoria && (i.dano ?? '') === (modelo.dano ?? '')
+        && (i.alcance ?? null) === (modelo.alcance ?? null) && (i.peso ?? 0) === (modelo.peso ?? 0) && (i.descricao ?? '') === (modelo.descricao ?? '')
+        && JSON.stringify(i.rolagens ?? []) === JSON.stringify(modelo.rolagens ?? [])
+        && i.iconeBiblioteca === modelo.iconeBiblioteca && !i.bonus.length && !i.magico)
       if (igual) { mudarQtd(igual, 1); toast.success(`${x.nome}: agora são ${qtd(igual) + 1}.`); return }
       if (itens.length >= 300) { toast.error('O inventário já chegou ao limite de 300 itens.'); return }
       salvarItem(itemDoArsenal(x, novoId)); toast.success(x.nome + ' entrou no inventário!')

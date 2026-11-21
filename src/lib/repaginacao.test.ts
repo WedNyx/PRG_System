@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { limparPreferencias, PREFERENCIAS_PADRAO } from './preferencias'
 import { AMBIENTES, CENAS_PRONTAS, EFEITOS, efeitoRepentino, ehEfeito, limparCamadas, limparCena } from './mesa/somMesa'
 import { filtrarBusca, normalizar, type ItemBusca } from './busca'
@@ -59,13 +59,16 @@ describe('Fichas e mesa (v0.36.6)', () => {
     expect(ARSENAL_ORDEM.every(x => !/livro de regras|p\. ?\d/i.test(x.descricao))).toBe(true)
     expect(ARSENAL_ORDEM.find(x => x.nome === 'Machadinha')?.rolagens?.[0].expr).toBe('3d6')
   })
-  it('áudio da Mesa de Som só da própria campanha', async () => {
+  it('áudio da Mesa de Som só da própria campanha e do próprio Storage', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://x.supabase.co')
     const { audioDaPlataforma } = await import('./imagens')
     const cid = '0b9b2f0e-1111-4111-8111-111111111111'
     const url = `https://x.supabase.co/storage/v1/object/public/prg-mesa/${cid}/a1.mp3`
     expect(audioDaPlataforma(url, cid)).toBe(true)
     expect(audioDaPlataforma(url, '0b9b2f0e-2222-4222-8222-222222222222')).toBe(false)
     expect(audioDaPlataforma('https://evil.com/a.mp3')).toBe(false)
+    expect(audioDaPlataforma(`https://evil.com/storage/v1/object/public/prg-mesa/${cid}/a1.mp3`, cid)).toBe(false)
+    vi.unstubAllEnvs()
   })
   it('cada sistema tem o roteiro da ficha de papel', async () => {
     const { FICHA_OFICIAL } = await import('./sistemas/fichaOficial')

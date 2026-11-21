@@ -308,6 +308,7 @@ export function InventarioFicha({ s, d, c, onChange, somenteLeitura, rolar, pass
       const igual = itens.find(i => i.nome === modelo.nome && i.categoria === modelo.categoria && (i.dano ?? '') === (modelo.dano ?? '')
         && (i.alcance ?? null) === (modelo.alcance ?? null) && (i.peso ?? 0) === (modelo.peso ?? 0) && (i.descricao ?? '') === (modelo.descricao ?? '')
         && JSON.stringify(i.rolagens ?? []) === JSON.stringify(modelo.rolagens ?? [])
+        && JSON.stringify(i.ordem ?? null) === JSON.stringify(modelo.ordem ?? null)
         && i.iconeBiblioteca === modelo.iconeBiblioteca && !i.bonus.length && !i.magico)
       if (igual) { mudarQtd(igual, 1); toast.success(`${x.nome}: agora são ${qtd(igual) + 1}.`); return }
       if (itens.length >= 300) { toast.error('O inventário já chegou ao limite de 300 itens.'); return }

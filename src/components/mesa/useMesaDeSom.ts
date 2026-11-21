@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePreferencias } from '@/lib/preferencias'
 import { audioDaPlataforma } from '@/lib/imagens'
-import { CENAS_PRONTAS, pararArquivos, tocarArquivo, definirCamadas, definirVolumeLocal, efeitoRepentino, ehEfeito, limparCamadas, limparCena, pararSons, retomarSom, tocarEfeito, type Camadas, type CenaSonora } from '@/lib/mesa/somMesa'
+import { CENAS_PRONTAS, pararArquivos, tocarArquivo, definirCamadas, definirMudoArquivos, definirVolumeLocal, efeitoRepentino, ehEfeito, limparCamadas, limparCena, pararSons, retomarSom, tocarEfeito, type Camadas, type CenaSonora } from '@/lib/mesa/somMesa'
 
 export type MesaDeSom = {
   camadas: Camadas
@@ -12,8 +12,8 @@ export type MesaDeSom = {
   setIntensidade: (v: number) => void
   /** Mestre: toca para todos (e para ele mesmo). */
   tocar: (id: string) => void
-  /** Mestre: troca as camadas de ambiente (para todos). */
-  definirAmbiente: (c: Camadas, cena?: string | null) => void
+  /** Mestre: troca as camadas de ambiente (para todos). `pararArq`: também avisa para parar os áudios enviados. */
+  definirAmbiente: (c: Camadas, cena?: string | null, pararArq?: boolean) => void
   aplicarCena: (c: CenaSonora) => void
   silenciarTudo: () => void
   cenasSalvas: CenaSonora[]
@@ -58,6 +58,8 @@ export function useMesaDeSom({ campanhaId, eu, admin, enviar }: { campanhaId: st
   // Volume e camadas no aparelho desta pessoa (respeita “Ouvir os sons da mesa”).
   useEffect(() => { definirVolumeLocal(pref.volumeSons) }, [pref.volumeSons])
   useEffect(() => { definirCamadas(pref.sonsMesa ? camadas : {}) }, [camadas, pref.sonsMesa])
+  // Desligar "Ouvir os sons da mesa" muda até o áudio enviado que já está tocando, sem precisar sair da mesa.
+  useEffect(() => { definirMudoArquivos(!pref.sonsMesa) }, [pref.sonsMesa])
   useEffect(() => () => pararSons(), [])
   // O navegador só libera o som depois de um toque na página.
   useEffect(() => {
@@ -78,16 +80,17 @@ export function useMesaDeSom({ campanhaId, eu, admin, enviar }: { campanhaId: st
     enviar('som', { id, vol: intensidade })
   }, [admin, enviar, intensidade, tocarLocal])
 
-  const definirAmbiente = useCallback((c: Camadas, novaCena: string | null = null) => {
+  const definirAmbiente = useCallback((c: Camadas, novaCena: string | null = null, pararArq = false) => {
     if (!admin) return
     retomarSom()
     const limpas = limparCamadas(c)
     setCamadas(limpas); setCena(novaCena)
-    enviar('ambiente', { camadas: limpas, cena: novaCena })
+    enviar('ambiente', { camadas: limpas, cena: novaCena, ...(pararArq ? { pararArquivos: true } : {}) })
   }, [admin, enviar])
 
   const aplicarCena = useCallback((c: CenaSonora) => definirAmbiente(c.camadas, c.id), [definirAmbiente])
-  const silenciarTudo = useCallback(() => { pararArquivos(); definirAmbiente({}, null) }, [definirAmbiente])
+  // Silenciar para todo mundo (v0.36.6): também avisa pelo canal para o áudio enviado parar no aparelho de cada um.
+  const silenciarTudo = useCallback(() => { pararArquivos(); definirAmbiente({}, null, true) }, [definirAmbiente])
 
   const guardar = (l: CenaSonora[]) => { setCenasSalvas(l); try { localStorage.setItem(chaveCenas(campanhaId), JSON.stringify(l)) } catch { /* sem espaço */ } }
   const salvarCena = (nome: string) => {
@@ -120,8 +123,9 @@ export function useMesaDeSom({ campanhaId, eu, admin, enviar }: { campanhaId: st
     tocarLocal(o.id, typeof o.vol === 'number' && Number.isFinite(o.vol) ? Math.min(1, Math.max(0.05, o.vol)) : 0.9)
   }, [tocarLocal, campanhaId])
   const receberAmbiente = useCallback((p: unknown) => {
-    const o = p as { camadas?: unknown; cena?: unknown }
+    const o = p as { camadas?: unknown; cena?: unknown; pararArquivos?: unknown }
     setCamadas(limparCamadas(o?.camadas)); setCena(typeof o?.cena === 'string' ? o.cena.slice(0, 40) : null)
+    if (o?.pararArquivos === true) pararArquivos()
   }, [])
 
   // Mestre: repete o ambiente de tempos em tempos (para quem entrou depois) e toca os sons aleatórios da cena.

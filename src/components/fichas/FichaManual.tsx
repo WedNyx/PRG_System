@@ -488,6 +488,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               <textarea rows={4} value={d.listas[id] ?? ''} disabled={somenteLeitura} maxLength={8000} onChange={e => set('listas', { ...d.listas, [id]: e.target.value })} className={input + ' mt-1 font-normal'} /></label>)}</div>
           </section>}
           <div className="ficha-acervo ficha-acervo-poderes" data-bloco="poderes"><PoderesFicha {...propsInv} /></div>
+          {listasDe('habilidades').filter(l => destaque(l.id) && (d.listas[l.id] ?? '').trim()).map(l => lista(l))}
           {listasDe('habilidades').some(l=>!destaque(l.id)) && <details className={card} data-bloco="notas"><summary className="cursor-pointer font-semibold">Anotações complementares de habilidades</summary><section className="mt-3 grid gap-4">{listasDe('habilidades').filter(l => !destaque(l.id) && !(s.id === 'pf2e' && l.id === 'talentos' && !d.listas.talentos?.trim())).map(l => lista(s.id === 'pf2e' && l.id === 'talentos' ? { ...l, nome: 'Outros talentos' } : l))}</section></details>}
         </div>}
         {secao === 'arvore' && <div className="space-y-4">

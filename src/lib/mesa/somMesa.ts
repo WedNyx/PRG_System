@@ -96,6 +96,7 @@ export function limparCena(v: unknown): CenaSonora | null {
 let ac: AudioContext | null = null
 let saida: GainNode | null = null
 let volumeLocal = 0.8
+let mudoArquivos = false
 const ruidos: Partial<Record<'branco' | 'rosa' | 'marrom', AudioBuffer>> = {}
 const camadasVivas = new Map<string, { ganho: GainNode; parar: () => void }>()
 
@@ -112,7 +113,10 @@ export function somBloqueado() { return !!ac && ac.state === 'suspended' }
 export function definirVolumeLocal(v: number) {
   volumeLocal = Math.min(1, Math.max(0, v))
   if (ac && saida) saida.gain.setTargetAtTime(volumeLocal, ac.currentTime, 0.1)
+  aplicarVolumeArquivos()
 }
+/** "Ouvir os sons da mesa" desligado: os áudios enviados que já estão tocando ficam mudos (sem precisar sair da mesa). */
+export function definirMudoArquivos(m: boolean) { mudoArquivos = m; aplicarVolumeArquivos() }
 
 function ruido(c: AudioContext, tipo: 'branco' | 'rosa' | 'marrom'): AudioBuffer {
   const pronto = ruidos[tipo]; if (pronto && pronto.sampleRate === c.sampleRate) return pronto
@@ -337,7 +341,10 @@ const AMBIENTE: Record<string, CriadorAmbiente> = {
 // ---------------------------------------------------------------- sons enviados pelo mestre (Howler)
 
 type Howl = import('howler').Howl
-const arquivosTocando = new Set<Howl>()
+// Guarda o volume que o mestre pediu para cada áudio (0–1), separado do volume/mudo deste aparelho,
+// para recalcular h.volume() sempre que `volumeLocal`/`mudoArquivos` mudarem enquanto ele ainda toca.
+const arquivosTocando = new Map<Howl, number>()
+function aplicarVolumeArquivos() { for (const [h, vol] of arquivosTocando) h.volume(mudoArquivos ? 0 : vol * volumeLocal) }
 /**
  * Toca um áudio enviado pelo mestre (Howler.js, carregado só quando precisa).
  * O endereço já foi conferido (audioDaPlataforma) por quem chama.
@@ -345,15 +352,16 @@ const arquivosTocando = new Set<Howl>()
 export async function tocarArquivo(url: string, vol = 0.9) {
   if (typeof window === 'undefined') return false
   const { Howl } = await import('howler')
-  const h: Howl = new Howl({ src: [url], volume: Math.min(1, Math.max(0.05, vol)) * volumeLocal, html5: true })
-  arquivosTocando.add(h)
+  const volBase = Math.min(1, Math.max(0.05, vol))
+  const h: Howl = new Howl({ src: [url], volume: mudoArquivos ? 0 : volBase * volumeLocal, html5: true })
+  arquivosTocando.set(h, volBase)
   const fim = () => { arquivosTocando.delete(h); h.unload() }
   h.once('end', fim); h.once('loaderror', fim); h.once('playerror', fim)
   h.play()
   return true
 }
 /** Para os áudios enviados que ainda estão tocando (Silenciar). */
-export function pararArquivos() { for (const h of arquivosTocando) { h.fade(h.volume(), 0, 400); setTimeout(() => { h.stop(); h.unload() }, 450) } arquivosTocando.clear() }
+export function pararArquivos() { for (const h of arquivosTocando.keys()) { h.fade(h.volume(), 0, 400); setTimeout(() => { h.stop(); h.unload() }, 450) } arquivosTocando.clear() }
 
 /** Toca um efeito para esta pessoa. `vol` vem do mestre (0–1); o volume local é aplicado na saída. */
 export function tocarEfeito(id: string, vol = 0.9) {

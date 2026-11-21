@@ -350,13 +350,18 @@ function avisarArquivos() { ouvintesArquivos.forEach(f => f()) }
 /** Avisa quando um áudio enviado começa/termina (usado pela UI para habilitar o "Silenciar"). */
 export function assinarArquivosTocando(f: () => void) { ouvintesArquivos.add(f); return () => ouvintesArquivos.delete(f) }
 export function haArquivoTocando() { return arquivosTocando.size > 0 }
+// Incrementada a cada "Silenciar"/saída da mesa, para cancelar um tocarArquivo() que ainda estava
+// carregando o Howler (import dinâmico) e só terminaria de carregar depois do pedido de parar.
+let geracaoArquivos = 0
 /**
  * Toca um áudio enviado pelo mestre (Howler.js, carregado só quando precisa).
  * O endereço já foi conferido (audioDaPlataforma) por quem chama.
  */
 export async function tocarArquivo(url: string, vol = 0.9) {
   if (typeof window === 'undefined') return false
+  const minhaGeracao = geracaoArquivos
   const { Howl } = await import('howler')
+  if (geracaoArquivos !== minhaGeracao) return false
   const volBase = Math.min(1, Math.max(0.05, vol))
   const h: Howl = new Howl({ src: [url], volume: mudoArquivos ? 0 : volBase * volumeLocal, html5: true })
   arquivosTocando.set(h, volBase)
@@ -366,8 +371,9 @@ export async function tocarArquivo(url: string, vol = 0.9) {
   h.play()
   return true
 }
-/** Para os áudios enviados que ainda estão tocando (Silenciar). */
+/** Para os áudios enviados que ainda estão tocando (Silenciar), e cancela qualquer um que ainda estava carregando. */
 export function pararArquivos() {
+  geracaoArquivos++
   if (!arquivosTocando.size) return
   for (const h of arquivosTocando.keys()) { h.fade(h.volume(), 0, 400); setTimeout(() => { h.stop(); h.unload() }, 450) }
   arquivosTocando.clear()

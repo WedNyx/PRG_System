@@ -68,6 +68,8 @@ describe('Fichas e mesa (v0.36.6)', () => {
     expect(audioDaPlataforma(url, '0b9b2f0e-2222-4222-8222-222222222222')).toBe(false)
     expect(audioDaPlataforma('https://evil.com/a.mp3')).toBe(false)
     expect(audioDaPlataforma(`https://evil.com/storage/v1/object/public/prg-mesa/${cid}/a1.mp3`, cid)).toBe(false)
+    const outraCid = '0b9b2f0e-2222-4222-8222-222222222222'
+    expect(audioDaPlataforma(`https://x.supabase.co/storage/v1/object/public/prg-mesa/${outraCid}/a1.mp3?x=/storage/v1/object/public/prg-mesa/${cid}/a1.mp3`, cid)).toBe(false)
     vi.unstubAllEnvs()
   })
   it('cada sistema tem o roteiro da ficha de papel', async () => {

@@ -10,9 +10,13 @@ function origemStorage(): string | null {
 /** Áudio enviado pela própria plataforma para esta campanha (bucket prg-mesa/<campanha>/…). Usado pela Mesa de Som (v0.36.6). */
 export function audioDaPlataforma(v: unknown, campanhaId?: string): v is string {
   if (typeof v !== 'string' || v.length > 500) return false
-  const m = /^https?:\/\/[^\s"'<>()]+\/storage\/v1\/object\/public\/prg-mesa\/([0-9a-f-]{36})\/[A-Za-z0-9_.-]+\.(mp3|ogg|wav|m4a|aac|webm)$/.exec(v)
-  if (!m || (campanhaId && m[1] !== campanhaId)) return false
   const origem = origemStorage()
   if (!origem) return false
-  try { return new URL(v).origin === origem } catch { return false }
+  // Confere o pathname já separado da query/âncora (não a string bruta): um "?x=/storage/.../prg-mesa/<campanha-certa>/a.mp3"
+  // no final da URL faria o regex antigo casar com a campanha certa enquanto o arquivo de fato buscado era outro (achado do Codex).
+  let u: URL
+  try { u = new URL(v) } catch { return false }
+  if (u.origin !== origem) return false
+  const m = /^\/storage\/v1\/object\/public\/prg-mesa\/([0-9a-f-]{36})\/[A-Za-z0-9_.-]+\.(mp3|ogg|wav|m4a|aac|webm)$/.exec(u.pathname)
+  return !!m && (!campanhaId || m[1] === campanhaId)
 }

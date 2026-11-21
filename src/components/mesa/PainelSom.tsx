@@ -59,7 +59,7 @@ export default function PainelSom({ som, admin }: { som: MesaDeSom; admin: boole
       <label className="flex min-w-0 flex-1 items-center gap-2 text-xs text-(--a-cfc0df)"><span className="shrink-0">Intensidade</span>
         <input type="range" min={0.1} max={1} step={0.05} value={som.intensidade} onChange={e => som.setIntensidade(Number(e.target.value))} aria-label="Intensidade dos efeitos para todos" className="min-w-0 flex-1 accent-(--a-8b68c4)" />
         <span className="w-9 text-right tabular-nums">{pct(som.intensidade)}</span></label>
-      <button type="button" onClick={som.silenciarTudo} disabled={!ativos.length} className="prg-botao prg-botao-secundario shrink-0 !min-h-9 !px-2.5 !text-xs"><VolumeX size={14} /> Silenciar</button>
+      <button type="button" onClick={som.silenciarTudo} disabled={!ativos.length && !som.arquivoTocando} className="prg-botao prg-botao-secundario shrink-0 !min-h-9 !px-2.5 !text-xs"><VolumeX size={14} /> Silenciar</button>
     </div>
     {tocandoAgora}
     <div role="tablist" aria-label="Mesa de som" className="flex gap-1.5">

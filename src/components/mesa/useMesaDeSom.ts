@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePreferencias } from '@/lib/preferencias'
 import { audioDaPlataforma } from '@/lib/imagens'
-import { CENAS_PRONTAS, pararArquivos, tocarArquivo, definirCamadas, definirMudoArquivos, definirVolumeLocal, efeitoRepentino, ehEfeito, limparCamadas, limparCena, pararSons, retomarSom, tocarEfeito, type Camadas, type CenaSonora } from '@/lib/mesa/somMesa'
+import { assinarArquivosTocando, CENAS_PRONTAS, haArquivoTocando, pararArquivos, tocarArquivo, definirCamadas, definirMudoArquivos, definirVolumeLocal, efeitoRepentino, ehEfeito, limparCamadas, limparCena, pararSons, retomarSom, tocarEfeito, type Camadas, type CenaSonora } from '@/lib/mesa/somMesa'
 
 export type MesaDeSom = {
   camadas: Camadas
@@ -16,6 +16,8 @@ export type MesaDeSom = {
   definirAmbiente: (c: Camadas, cena?: string | null, pararArq?: boolean) => void
   aplicarCena: (c: CenaSonora) => void
   silenciarTudo: () => void
+  /** Algum áudio enviado está tocando neste aparelho agora (habilita o "Silenciar" mesmo sem ambiente ligado). */
+  arquivoTocando: boolean
   cenasSalvas: CenaSonora[]
   salvarCena: (nome: string) => void
   apagarCena: (id: string) => void
@@ -54,6 +56,9 @@ export function useMesaDeSom({ campanhaId, eu, admin, enviar }: { campanhaId: st
   const prefRef = useRef(pref)
   const estado = useRef({ camadas, cena })
   useEffect(() => { prefRef.current = pref; estado.current = { camadas, cena } }, [pref, camadas, cena])
+
+  const [arquivoTocando, setArquivoTocando] = useState(false)
+  useEffect(() => { const sair = assinarArquivosTocando(() => setArquivoTocando(haArquivoTocando())); return () => { sair() } }, [])
 
   // Volume e camadas no aparelho desta pessoa (respeita “Ouvir os sons da mesa”).
   useEffect(() => { definirVolumeLocal(pref.volumeSons) }, [pref.volumeSons])
@@ -151,5 +156,5 @@ export function useMesaDeSom({ campanhaId, eu, admin, enviar }: { campanhaId: st
 
   const testar = useCallback(() => { retomarSom(); tocarEfeito('sino', 0.6) }, [])
 
-  return { camadas, cena, intensidade, setIntensidade, tocar, definirAmbiente, aplicarCena, silenciarTudo, cenasSalvas, salvarCena, apagarCena, meusSons, enviarSom, tocarMeu, apagarMeu, reordenarMeus, testar, receberSom, receberAmbiente }
+  return { camadas, cena, intensidade, setIntensidade, tocar, definirAmbiente, aplicarCena, silenciarTudo, arquivoTocando, cenasSalvas, salvarCena, apagarCena, meusSons, enviarSom, tocarMeu, apagarMeu, reordenarMeus, testar, receberSom, receberAmbiente }
 }

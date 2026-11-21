@@ -345,6 +345,11 @@ type Howl = import('howler').Howl
 // para recalcular h.volume() sempre que `volumeLocal`/`mudoArquivos` mudarem enquanto ele ainda toca.
 const arquivosTocando = new Map<Howl, number>()
 function aplicarVolumeArquivos() { for (const [h, vol] of arquivosTocando) h.volume(mudoArquivos ? 0 : vol * volumeLocal) }
+const ouvintesArquivos = new Set<() => void>()
+function avisarArquivos() { ouvintesArquivos.forEach(f => f()) }
+/** Avisa quando um áudio enviado começa/termina (usado pela UI para habilitar o "Silenciar"). */
+export function assinarArquivosTocando(f: () => void) { ouvintesArquivos.add(f); return () => ouvintesArquivos.delete(f) }
+export function haArquivoTocando() { return arquivosTocando.size > 0 }
 /**
  * Toca um áudio enviado pelo mestre (Howler.js, carregado só quando precisa).
  * O endereço já foi conferido (audioDaPlataforma) por quem chama.
@@ -355,13 +360,19 @@ export async function tocarArquivo(url: string, vol = 0.9) {
   const volBase = Math.min(1, Math.max(0.05, vol))
   const h: Howl = new Howl({ src: [url], volume: mudoArquivos ? 0 : volBase * volumeLocal, html5: true })
   arquivosTocando.set(h, volBase)
-  const fim = () => { arquivosTocando.delete(h); h.unload() }
+  avisarArquivos()
+  const fim = () => { arquivosTocando.delete(h); h.unload(); avisarArquivos() }
   h.once('end', fim); h.once('loaderror', fim); h.once('playerror', fim)
   h.play()
   return true
 }
 /** Para os áudios enviados que ainda estão tocando (Silenciar). */
-export function pararArquivos() { for (const h of arquivosTocando.keys()) { h.fade(h.volume(), 0, 400); setTimeout(() => { h.stop(); h.unload() }, 450) } arquivosTocando.clear() }
+export function pararArquivos() {
+  if (!arquivosTocando.size) return
+  for (const h of arquivosTocando.keys()) { h.fade(h.volume(), 0, 400); setTimeout(() => { h.stop(); h.unload() }, 450) }
+  arquivosTocando.clear()
+  avisarArquivos()
+}
 
 /** Toca um efeito para esta pessoa. `vol` vem do mestre (0–1); o volume local é aplicado na saída. */
 export function tocarEfeito(id: string, vol = 0.9) {

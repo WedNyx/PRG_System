@@ -43,3 +43,40 @@ describe('Árvore de cada sistema (v0.36.2)', () => {
     expect(chaveEscolha('x'.repeat(80)).length).toBe(40)
   })
 })
+
+describe('Árvore do autor, vivências em d4 e aparência (v0.36.3)', () => {
+  const nova = async () => {
+    const { readFileSync } = await import('node:fs')
+    const { validarSistema } = await import('./autoral')
+    const def = JSON.parse(readFileSync('supabase/sementes/nova.json', 'utf8'))
+    def.campos.push({ id: 'nivel', nome: 'Nível', tipo: 'numero', padrao: 1 })
+    def.graus.inicialPericia = 4
+    def.visual = { acento: '#FF0000', fonte: 'classica', arvore: 'opositores', lixo: 1 }
+    def.arvore = { pontos: 1, nos: [
+      { id: 'raiz', nome: 'Peculiaridade', custo: 1, cor: '#e2e8f0', x: 0, y: 0, requer: [], efeitos: [] },
+      { id: 'aco', nome: 'Mente de aço', custo: 1, cor: '#a78bfa', x: 100, y: -100, requer: ['raiz'], efeitos: [{ tipo: 'poder', poder: { nome: 'Mente de aço', tipo: 'habilidade', custo: 1, recurso: 'clareza' } }] },
+      { id: 'res', nome: 'Resistência', custo: 1, cor: '#a78bfa', x: -100, y: -100, requer: ['raiz'], efeitos: [] }] }
+    const r = validarSistema(def, { id: 'autoral-' + 'd'.repeat(32), autor: 'godgamer' })
+    if (!r.ok) throw new Error(JSON.stringify(r.erros))
+    return r.sistema
+  }
+  it('vivências começam em d4 e a aparência do autor é lida e limpa', async () => {
+    const s = await nova()
+    expect(s.graus?.inicialPericia).toBe(4)
+    expect(Object.values(fichaVazia(s).pericias).every(v => v === 4)).toBe(true)
+    expect(s.visual).toEqual({ acento: '#ff0000', fonte: 'classica', arvore: 'opositores' })
+  })
+  it('a árvore do autor entra na ficha antiga, com camadas, pontos e liberar', async () => {
+    const s = await nova()
+    const { liberarNo } = await import('./arvore')
+    const d: DadosFicha = { ...fichaVazia(s), arvore: undefined }
+    const a = arvoreDoSistema(s, d)!
+    expect(a.ramos[0].id).toBe('autor')
+    expect(a.ramos[0].marcos.map(m => [m.titulo, m.quando, m.estado])).toEqual([['Peculiaridade', 1, 'proximo'], ['Resistência', 2, 'futuro'], ['Mente de aço', 2, 'futuro']])
+    expect(a.autor?.livres).toBe(1)
+    const lib = liberarNo(a.autor!.arvore, 'raiz', a.autor!.extra, a.autor!.nivel, d)
+    const depois = arvoreDoSistema(s, { ...d, arvore: lib.arvore })!
+    expect(depois.ramos[0].marcos[0].estado).toBe('recebido')
+    expect(depois.ramos[0].marcos[1].no?.motivo).toMatch(/Faltam 1 ponto/)
+  })
+})

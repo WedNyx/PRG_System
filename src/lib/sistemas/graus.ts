@@ -11,8 +11,9 @@ const LADOS_OK = (n: number) => Number.isInteger(n) && n >= 2 && n <= 100
 export function lerGraus(v: unknown): GrausDef {
   const o = v && typeof v === 'object' ? v as Record<string, unknown> : {}
   const lados = [...new Set((Array.isArray(o.lados) ? o.lados : []).map(Number).filter(LADOS_OK))].sort((a, b) => a - b).slice(0, 12)
-  const zero = Number(o.zero), maxPericia = Number(o.maxPericia)
-  return { lados: lados.length ? lados : GRAUS_PADRAO.lados, ...(LADOS_OK(zero) ? { zero } : {}), ...(LADOS_OK(maxPericia) ? { maxPericia } : {}) }
+  const zero = Number(o.zero), maxPericia = Number(o.maxPericia), inicial = Number(o.inicialPericia)
+  const ls = lados.length ? lados : GRAUS_PADRAO.lados
+  return { lados: ls, ...(LADOS_OK(zero) ? { zero } : {}), ...(LADOS_OK(maxPericia) ? { maxPericia } : {}), ...(ls.includes(inicial) ? { inicialPericia: inicial } : {}) }
 }
 /** Valores que um atributo/perícia pode ter: 0 (se o sistema deixa) e os lados. */
 export function opcoesDeGrau(g: GrausDef, max?: number): number[] {

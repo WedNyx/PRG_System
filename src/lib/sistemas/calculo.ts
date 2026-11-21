@@ -63,7 +63,7 @@ function fichaBase(s: Sistema, nome: string): DadosFicha {
     sistema: s.id, nome,
     campos: Object.fromEntries(s.campos.map(c => [c.id, c.padrao ?? (c.tipo === 'numero' ? 0 : '')])),
     atributos: Object.fromEntries(s.atributos.map(a => [a.id, a.padrao])),
-    pericias: Object.fromEntries((s.pericias?.lista ?? []).map(p => [p.id, s.pericias?.modo === 'valor' ? baseDaPericia(s, p.base) : s.pericias?.treinos?.[0]?.id ?? ''])),
+    pericias: Object.fromEntries((s.pericias?.lista ?? []).map(p => [p.id, s.pericias?.modo === 'valor' ? (s.rolagem === 'graus' && s.graus?.inicialPericia ? s.graus.inicialPericia : baseDaPericia(s, p.base)) : s.pericias?.treinos?.[0]?.id ?? ''])),
     recursos: Object.fromEntries(s.recursos.map(r => [r.id, { atual: 0 }])),
     listas: Object.fromEntries(s.listas.map(l => [l.id, ''])),
     // Árvore padrão do sistema (sem nada liberado).

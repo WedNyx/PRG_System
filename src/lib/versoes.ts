@@ -27,6 +27,15 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.36.3', data: '2026-11-21',
+    titulo: 'Árvore do autor e aparência do sistema',
+    itens: [
+      'A árvore que o autor monta no construtor agora aparece na ficha, com o visual do sistema (o Projeto N.O.V.A ganhou uma rede de circuitos). Fichas antigas recebem a árvore sozinhas.',
+      'Liberar e devolver habilidades da árvore direto na ficha, gastando os pontos (os da tabela de níveis do autor também contam).',
+      'Construtor: escolha o grau com que as perícias começam (ex.: vivências em d4) e a aparência da ficha: cores, letra dos títulos e o desenho da árvore.',
+    ],
+  },
+  {
     versao: '0.36.2', data: '2026-11-21',
     titulo: 'Uma árvore para cada sistema',
     itens: [

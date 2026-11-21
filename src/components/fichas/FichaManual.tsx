@@ -20,6 +20,7 @@ import { InventarioFicha, PoderesFicha } from './Inventario'
 import ArvoreHabilidades from './Arvore'
 import ArvoreDndOficial from './ArvoreDndOficial'
 import ArvoreSistema from './ArvoreSistema'
+import { FONTES_AUTOR } from '@/lib/sistemas/visualAutor'
 import JanelaDescanso from './Descanso'
 import type { Item } from '@/lib/sistemas/inventario'
 import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
@@ -82,7 +83,9 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     marcas: 'M12 21a9 9 0 1 0 0-18a9 9 0 1 0 0 18 M12 17c-2.5 0-4-1.4-4-3s1.8-3 4-3s4 1.4 4 3s-1.5 3-4 3 M7.5 10.5a1.3 1.6 0 1 0 0.01 0 M10.3 7.8a1.3 1.6 0 1 0 0.01 0 M13.7 7.8a1.3 1.6 0 1 0 0.01 0 M16.5 10.5a1.3 1.6 0 1 0 0.01 0',
   }
 
-  const tema = temaDoSistema(identidade), visual = estiloDoSistema(s.id)
+  // Aparência escolhida pelo autor (sistemas autorais) vale por cima da do visual do sistema (v0.36.3).
+  const tema = { ...temaDoSistema(identidade), ...(s.visual?.acento ? { acento: s.visual.acento } : {}), ...(s.visual?.borda ? { borda: s.visual.borda } : {}),
+    ...(s.visual?.cartao ? { cartao: s.visual.cartao } : {}), ...(s.visual?.fonte ? { fonte: FONTES_AUTOR[s.visual.fonte] } : {}) }, visual = estiloDoSistema(s.id)
   const c = useMemo(() => calcular(s, d), [s, d])
   // Inventário e poderes no modo genérico: sem catálogo nem conta automática de arma do D&D.
   const sInv = useMemo<Sistema>(() => s.id === 'dnd5e-srd' ? { ...s, id: 'dnd5e-manual' } : s, [s])

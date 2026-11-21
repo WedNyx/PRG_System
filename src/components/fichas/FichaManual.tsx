@@ -19,6 +19,7 @@ import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/Ro
 import { InventarioFicha, PoderesFicha } from './Inventario'
 import ArvoreHabilidades from './Arvore'
 import ArvoreDndOficial from './ArvoreDndOficial'
+import ArvoreSistema from './ArvoreSistema'
 import JanelaDescanso from './Descanso'
 import type { Item } from '@/lib/sistemas/inventario'
 import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
@@ -145,7 +146,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     { id: 'invocacoes', icone: '🐻', nome: 'Invocações', sub: 'Criaturas, vida e ataques', ajuda: 'Criaturas que o personagem chama. Invocar tira o custo e começa com a vida cheia; a duração desce em Passar 1 turno.', ok: temExtra(s, 'invocacoes') },
     { id: 'efeitos', icone: '⏳', nome: 'Efeitos', sub: 'Condições e turnos', ajuda: 'O que está valendo agora e por quantos turnos. Nada é aplicado sozinho: é só para não esquecer.', ok: temExtra(s, 'efeitos') },
     { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ajuda: 'Consulte e gerencie as habilidades do personagem. Registre informações complementares nas anotações.', ok: true },
-    { id: 'arvore', icone: '🌠', nome: 'Árvore de habilidades', sub: 'Caminhos, poderes e progressão', ajuda: 'Visualize e gerencie a árvore de habilidades. Os nós oficiais de D&D são informativos; habilidades extras ficam em um ramo separado.', ok: s.id === 'dnd5e-srd' || s.id === 'dnd5e-manual' || !!s.arvore?.nos.length || (Array.isArray((d.arvore as { nos?: unknown[] } | undefined)?.nos) && !!(d.arvore as { nos: unknown[] }).nos.length) },
+    { id: 'arvore', icone: '🌠', nome: 'Árvore de habilidades', sub: 'Caminhos, poderes e progressão', ajuda: 'Visualize e gerencie a árvore de habilidades. Os nós oficiais de D&D são informativos; habilidades extras ficam em um ramo separado.', ok: true },
     { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou ícone, ou pegue prontos no 📦 Arsenal. Itens equipados com rolagem aparecem nas ações rápidas.', ok: true },
     { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ajuda: 'Espaço livre para a história do personagem, aliados, segredos e lembretes.', ok: true },
   ] as const).filter(x => x.ok).map(x => x.id !== 'arvore' && s.nomesSecoes?.[x.id] ? { ...x, nome: s.nomesSecoes[x.id]! } : x)
@@ -419,9 +420,11 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
             <ArvoreHabilidades s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura}
               rolar={(expressao, rotulo) => void rolarExpr(expressao, rotulo)} mestre={mestre && !somenteLeitura}
               nivel={Math.max(1, Number(d.campos.nivel) || 1)} visualizacao="cartoes" />
-          </ArvoreDndOficial> : <ArvoreHabilidades s={s} d={d} onChange={onChange}
-            somenteLeitura={somenteLeitura} rolar={(expressao, rotulo) => void rolarExpr(expressao, rotulo)}
-            mestre={mestre && !somenteLeitura} nivel={s.campos.some(x=>x.id==='nivel') ? Math.max(1,Number(d.campos.nivel)||1) : null} />}
+          </ArvoreDndOficial> : <ArvoreSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura}>
+            <ArvoreHabilidades s={s} d={d} onChange={onChange}
+              somenteLeitura={somenteLeitura} rolar={(expressao, rotulo) => void rolarExpr(expressao, rotulo)}
+              mestre={mestre && !somenteLeitura} nivel={s.campos.some(x=>x.id==='nivel') ? Math.max(1,Number(d.campos.nivel)||1) : null} />
+          </ArvoreSistema>}
         </div>}
         {secao === 'equipamentos' && <>
           <div className="ficha-acervo ficha-acervo-inventario"><InventarioFicha {...propsInv} passarItem={passarItem} /></div>

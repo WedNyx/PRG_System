@@ -1,0 +1,311 @@
+{
+  "formato": "prg-ficha",
+  "versao": 1,
+  "exportadoEm": "2026-11-20T00:00:00.000Z",
+  "sistema": "autoral-5d1e8a3c7f2b4c6d9e0a3b8f1c2d4e6a",
+  "sistemaNome": "Marcas",
+  "nome": "Lucy Kustina",
+  "dados": {
+    "sistema": "autoral-5d1e8a3c7f2b4c6d9e0a3b8f1c2d4e6a",
+    "nome": "Lucy Kustina",
+    "campos": {
+      "classe": "Engenheira Bélica",
+      "nivel": 1,
+      "idade": "32",
+      "altura": "1,70 m",
+      "deslocamento": "12 m",
+      "pulo": "",
+      "resistencias": "Golpes furtivos (Franco-Atirador), veneno (Flor Selvagem), ataques de água (Lontra) e dano perfurante (fuzil)."
+    },
+    "atributos": {
+      "FOR": 1,
+      "VEL": 2,
+      "INT": 3,
+      "VIG": 1,
+      "ESS": 3
+    },
+    "pericias": {
+      "precisao": 1,
+      "camuflagem": 1,
+      "criacao": 1,
+      "atletismo": 1,
+      "alquimia": 1
+    },
+    "recursos": {
+      "vida": {
+        "atual": 75,
+        "max": 75
+      },
+      "pe": {
+        "atual": 95,
+        "max": 95
+      },
+      "sanidade": {
+        "atual": 10,
+        "max": 50
+      }
+    },
+    "listas": {
+      "historia": "HISTÓRIA PRÉ-REENCARNAÇÃO\nLucy Kustina, 32 anos, 1,70 m, soldada da Segunda Guerra Mundial, extremamente talentosa em engenharia. Quando chegou em Astraluna, começou a trabalhar para o Atreus e, usando os conhecimentos da vida passada, passou a desenvolver armas neste mundo novo.\n\nNa vida passada, era muito respeitada e adorada pela mira com a sniper. Gostava de estar entre os aliados celebrando as vitórias, e ficava muito abalada, mas nunca mostrava, quando algum deles morria em combate.\n\nA maior perda da Lucy veio dois anos depois de entrar na guerra. Ao conhecer os novos recrutas que chegaram como reforço, viu um rosto conhecido: uma garota de cabelos ruivos e olhos verdes, da mesma vila que ela, que ela tinha visto crescer. Essa garota trazia alegria para a vila e até para o campo de batalha. Na batalha seguinte, lutando contra os soviéticos por um ponto de extrema importância, Lucy viu a garota ferida. A cabeça dizia que não valia arriscar a vida por uma única soldada, mas o coração foi mais forte: de algum jeito, ela não foi atingida e voltou para a segurança puxando a garota. Quando se virou para os primeiros socorros, viu o rosto pálido: onde antes havia olhos brilhantes e um sorriso largo, só restavam olhos sem luz e um rosto sem movimento. “Ela não tinha nem vinte”, foi a última coisa que Lucy conseguiu pensar. As tropas ganharam — mas esse custo realmente vale a pena?\n\nEssa morte mudou o jeito dela de ver a guerra: guerra não é só proteger o seu país, guerra é morte, e não é algo de que se orgulhar. Os do outro lado não são só inimigos, são pessoas também. Aguentar essa verdade é o que faz um verdadeiro soldado.",
+      "objetivos": "“MATAR” O FROST\nBuscar a Lilith para enterrá-la em Astraluna, para que ela descanse em paz enquanto a flor que eu plantei lá transforma Astraluna numa grande floresta, e terminar o que o Atreus começou como rival dele.\nPlano para o Frost:\n- Drogar a Lilith e levá-la embora sem machucar, com poções de sono; procurar algemas, correntes ou correntes mágicas.\n- Entregar corpos melhores para o Frost (o comandante inútil, o guarda babaca e o cara da lança). Fazer bombas para o caso de ele só querer levar os corpos.\n- Última e absoluta última opção: enfrentar o Frost. Criar o máximo de poções de explosão para lidar com os minions dele, poções de lentidão/velocidade caso tenha que correr, e tentar separar o Frost do exército dele.\n\nCAÇAR O CHEFE DOS ORÁCULOS\nMatar quem fez o Atreus morrer protegendo a gente. Procurar os oráculos para conseguir os códigos e achar o chefe deles.\n\nCAÇAR OS DEUSES ANCESTRAIS RELACIONADOS AO CAIN\nCain foi quem matou a Lilith; vou aniquilar qualquer um relacionado a ele. O único que conhecemos seria o “Desespero”, o filho de Cain (ele talvez não exista).\n\nVOLTAR PARA ASTRALUNA NO FINAL DA CAMPANHA\nQuero voltar para Astraluna e ficar ao lado da única pessoa que eu realmente amei. Quero estar lá no final, viva ou morta.\n\nÚltimas palavras: “Humanidade, nessa jornada, mesmo que ela tenha sido pequena, eu senti várias coisas: raiva, tristeza, felicidade, amor. Foi nessa pequena jornada que eu me senti mais humana na minha vida. Então cuidem desse desgraçado e depois me deixem descansar do lado da Lilith.”",
+      "anotacoes": "Vida na ficha original: 60/60 + 15. Experiência em Astraluna.\nO nível do personagem não estava na ficha: confira."
+    },
+    "itens": [
+      {
+        "id": "lc-oculos",
+        "nome": "Óculos amaldiçoados (Robert)",
+        "categoria": "equipamento",
+        "peso": 0,
+        "bonus": [],
+        "magico": true
+      },
+      {
+        "id": "lc-colar",
+        "nome": "Colar",
+        "categoria": "equipamento",
+        "peso": 0,
+        "bonus": [],
+        "descricao": "+20 de mana.",
+        "magico": true
+      },
+      {
+        "id": "lc-bota",
+        "nome": "Bota de basilisco",
+        "categoria": "equipamento",
+        "peso": 0,
+        "bonus": [],
+        "descricao": "+2 de movimento. Anda na água (recarga de 10 min).",
+        "magico": true
+      }
+    ],
+    "poderes": [],
+    "uso": {
+      "itens": {
+        "lc-oculos": {
+          "qtd": 1,
+          "equipado": true
+        },
+        "lc-colar": {
+          "qtd": 1,
+          "equipado": true
+        },
+        "lc-bota": {
+          "qtd": 1,
+          "equipado": true
+        }
+      },
+      "poderes": {},
+      "carteira": ""
+    },
+    "marcasPoder": [
+      {
+        "id": "lcmarfra",
+        "nome": "Marca do Franco-Atirador",
+        "nivel": 8,
+        "habilidades": [
+          {
+            "id": "lcfra001",
+            "nivel": 1,
+            "nome": "Resistência a golpes furtivos"
+          },
+          {
+            "id": "lcfra002",
+            "nivel": 2,
+            "nome": "Pés rápidos e visão de águia",
+            "texto": "Movimento vai para 12 m e a visão aumenta."
+          },
+          {
+            "id": "lcfra003",
+            "nivel": 3,
+            "nome": "Summon: fuzil",
+            "expressao": "1d8+1d4",
+            "texto": "Um fuzil: 1d8 + 1d4 de fogo por 2 turnos. Alcance de 100 m, mínimo de 6 m para atacar. Resistência a dano perfurante."
+          },
+          {
+            "id": "lcfra004",
+            "nivel": 4,
+            "nome": "Jackpot",
+            "custo": 5,
+            "usosMax": 2,
+            "texto": "Acerta com certeza. 5 PE por tiro."
+          },
+          {
+            "id": "lcfra005",
+            "nivel": 5,
+            "nome": "Tiro perfurante",
+            "expressao": "2d8",
+            "custo": 5,
+            "texto": "Carrega o tiro por 1 turno. 10 m."
+          },
+          {
+            "id": "lcfra006",
+            "nivel": 6,
+            "nome": "Chuva de balas",
+            "expressao": "1d6",
+            "custo": 6,
+            "texto": "Um tiro que se separa numa chuva de balas: área de 10 m, 1d6 por turno por 3 turnos."
+          },
+          {
+            "id": "lcfra007",
+            "nivel": 7,
+            "nome": "Ultimate: Maximus",
+            "expressao": "1d20",
+            "custo": 7,
+            "texto": "Fusão com o rifle, carregamento por turno: a cada 2 turnos aumenta 1d8 de rebote; a cada turno aumenta 1d10 de dano. Se atirar sem carregar: 1d20."
+          },
+          {
+            "id": "lcfra008",
+            "nivel": 8,
+            "nome": "Canhão Infernal (passiva do nível 7)",
+            "expressao": "1d20",
+            "texto": "1d20 de fogo no alvo principal e 1d6 de fogo em área de 20 m por 3 turnos."
+          }
+        ]
+      },
+      {
+        "id": "lcmarflo",
+        "nome": "Marca da Flor Selvagem",
+        "nivel": 5,
+        "habilidades": [
+          {
+            "id": "lcflo001",
+            "nivel": 1,
+            "nome": "Resistência a veneno"
+          },
+          {
+            "id": "lcflo002",
+            "nivel": 2,
+            "nome": "Fotossíntese",
+            "expressao": "1d8",
+            "texto": "Em ambiente ensolarado, parada por 1 turno: cura 1d8."
+          },
+          {
+            "id": "lcflo003",
+            "nivel": 3,
+            "nome": "Escudo floral",
+            "expressao": "1d4",
+            "custo": 3,
+            "texto": "Cria um domo que protege de 12 de dano. Absorve 10 de dano; destruído, leva 1 turno para refazer."
+          },
+          {
+            "id": "lcflo004",
+            "nivel": 4,
+            "nome": "Esfera de veneno",
+            "expressao": "1d6",
+            "custo": 4,
+            "texto": "Role 1d6 para ver quantos turnos fica. 1d6 de dano."
+          },
+          {
+            "id": "lcflo005",
+            "nivel": 5,
+            "nome": "Campo da bênção das flores",
+            "expressao": "1d8+1d6",
+            "custo": 5,
+            "texto": "Cria uma área de flores de 8 m: cura 1d8 + 1d6."
+          }
+        ]
+      },
+      {
+        "id": "lcmarlon",
+        "nome": "Marca da Lontra",
+        "nivel": 5,
+        "habilidades": [
+          {
+            "id": "lclon001",
+            "nivel": 1,
+            "nome": "Resistência a ataques de água"
+          },
+          {
+            "id": "lclon002",
+            "nivel": 2,
+            "nome": "Nado e escalada",
+            "texto": "+15 m de deslocamento na água e +2 m de escalada."
+          },
+          {
+            "id": "lclon003",
+            "nivel": 3,
+            "nome": "Leques duplos",
+            "expressao": "1d6",
+            "texto": "Lançamento máximo de 8 a 10 m. +2 de destreza."
+          },
+          {
+            "id": "lclon004",
+            "nivel": 4,
+            "nome": "Lontra explosiva",
+            "expressao": "1d6",
+            "custo": 4,
+            "texto": "Chama uma lontra de energia azul que segue o oponente e explode nele, aplicando molhado."
+          },
+          {
+            "id": "lclon005",
+            "nivel": 5,
+            "nome": "Distração da lontra",
+            "custo": 5,
+            "texto": "Uma lontra de energia azul reduz em 2 o dado de acerto e de desvio do inimigo por 3 turnos. Em falha crítica do inimigo ou 20 no dado, a lontra o cega completamente. Furtiva, ela pode distrair inimigos."
+          },
+          {
+            "id": "lclon006",
+            "nivel": 6,
+            "nome": "Sacrifício de longo prazo (ideia, nível a definir)",
+            "usosMax": 1,
+            "texto": "Passiva: se a invocação estiver a 3–5 m, recebe o dano que eu tomei, 1 vez por combate. Com 20 de dano ela perde o próximo turno; com 40, some pelo combate inteiro."
+          },
+          {
+            "id": "lclon007",
+            "nivel": 7,
+            "nome": "Alteração (ideia, nível a definir)",
+            "texto": "Muda de tamanho entre 45 cm e 2 m; carrega 1 ou 2 jogadores com teste de Força."
+          }
+        ]
+      }
+    ],
+    "formas": [
+      {
+        "id": "lcformrd",
+        "nome": "Rainha Demônio Lucyana",
+        "custo": 7,
+        "vidaMax": 120,
+        "essenciaMax": 72,
+        "atributos": {
+          "FOR": 2,
+          "VEL": 3,
+          "INT": 4,
+          "VIG": 2,
+          "ESS": 4
+        },
+        "pericias": "Precisão, Camuflagem, Criação, Atletismo, Alquimia",
+        "texto": "Rainha das balas sangrentas: custa 7 PE e dá +20 de vida e voo livre.\nNível 1: pulo de 7 m com uma asa de energia escura.\nNível 2: rouba vida — metade de todo o dano causado.",
+        "golpes": [
+          {
+            "id": "lcrdg001",
+            "nome": "Teleporte",
+            "custo": 10,
+            "texto": "Para QUALQUER lugar do mapa. Leva 1 turno."
+          },
+          {
+            "id": "lcrdg002",
+            "nome": "Disparo de balas demoníacas",
+            "expressao": "1d12+1d8",
+            "texto": "Fuzil: 1d12 + 1d8 de caos por 3 turnos. Alcance de 100 m, mínimo de 6 m. Resistência a dano perfurante. (Se o mestre deixar.)"
+          },
+          {
+            "id": "lcrdg003",
+            "nome": "Tiro sangrento do inferno",
+            "expressao": "1d20+1d20",
+            "custo": 10,
+            "texto": "Carregamento por turno: a cada 2 turnos aumenta 1d10 de rebote; a cada turno aumenta 1d20 de dano. Sem carregar: 1d20 + 1d20 de caos."
+          },
+          {
+            "id": "lcrdg004",
+            "nome": "Portão de Gehenna",
+            "expressao": "1d100",
+            "custo": 15,
+            "texto": "Um disparo de destruição absoluta que aniquila tudo o que acertar, abrindo um buraco que parece não ter fim. Precisa estar 20 m acima do alvo. Área de 20 m."
+          }
+        ]
+      }
+    ],
+    "invocacoes": [],
+    "efeitos": []
+  }
+}

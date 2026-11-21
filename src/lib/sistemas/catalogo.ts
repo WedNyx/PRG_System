@@ -852,45 +852,6 @@ export const SISTEMAS: Sistema[] = [
     ],
   },
   {
-    id: 'marcas',
-    nome: 'Marcas',
-    resumo: 'Sistema autoral de JOJO. Estrutura baseada nas fichas existentes; regras de testes e evolução aguardam validação do criador.',
-    tipo: 'autoral', licenca: 'Autoral — JOJO', dados: 'd20',
-    campos: [
-      { id: 'jogador', nome: 'Jogador', tipo: 'texto' },
-      { id: 'idade', nome: 'Idade', tipo: 'texto' },
-      { id: 'altura', nome: 'Altura', tipo: 'texto' },
-      { id: 'nivel', nome: 'Nível do personagem', tipo: 'numero', padrao: 1 },
-      { id: 'marcas_possuidas', nome: 'Marcas e níveis de cada Marca', tipo: 'area' },
-      { id: 'observacoes', nome: 'Regras particulares e pendências', tipo: 'area' },
-    ],
-    atributos: [
-      ['forca','Força'], ['velocidade','Velocidade'], ['inteligencia','Inteligência'],
-      ['vigor','Vigor'], ['essencia','Essência'], ['carisma','Carisma']
-    ].map(([id,nome]) => ({ id, nome, min: 0, max: 99, padrao: 0 })),
-    derivados: [],
-    recursos: [
-      { id: 'vida', nome: 'Vida' },
-      { id: 'essencia', nome: 'Pontos de Essência' },
-      { id: 'sanidade', nome: 'Sanidade' },
-    ],
-    pericias: { titulo: 'Perícias', modo: 'valor', livres: true, lista: p([
-      ['Luta', 'forca'], ['Esquiva','velocidade'], ['Percepção','inteligencia'],
-      ['Percepção espiritual','essencia'], ['Atletismo','forca'], ['Sobrevivência','inteligencia'],
-      ['Negociação','carisma'], ['Resistência a veneno','vigor'],
-    ]) },
-    listas: [
-      { id: 'marcas_habilidades', nome: 'Habilidades das Marcas' },
-      { id: 'marcas_invocacoes', nome: 'Invocações e criaturas' },
-      { id: 'marcas_condicoes', nome: 'Condições e resistências' },
-      { id: 'anotacoes', nome: 'História e anotações' },
-    ],
-    observacoes: [
-      'Regras de testes, dificuldade, dano e evolução ainda não confirmadas por JOJO. Não aplicar bônus automáticos.',
-      'O nível do personagem e o nível da Marca são independentes. Transformações não substituem a ficha base.',
-    ],
-  },
-  {
     id: 'livre',
     nome: 'Ficha livre',
     resumo: 'Para qualquer sistema que ainda não está aqui: campos livres, recursos e listas.',

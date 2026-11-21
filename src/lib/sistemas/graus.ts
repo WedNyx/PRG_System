@@ -66,7 +66,7 @@ export function lerRegras(v: unknown): CapituloRegra[] {
     return titulo || texto ? [{ titulo: titulo || 'Regras', texto }] : []
   })
 }
-const SECOES = ['principal', 'atributos', 'habilidades', 'equipamentos', 'anotacoes'] as const
+const SECOES = ['principal', 'atributos', 'habilidades', 'equipamentos', 'anotacoes', 'marcas', 'formas', 'invocacoes', 'efeitos'] as const
 export function lerNomesSecoes(v: unknown): Sistema['nomesSecoes'] {
   const o = v && typeof v === 'object' ? v as Record<string, unknown> : {}
   const out = Object.fromEntries(SECOES.flatMap(k => typeof o[k] === 'string' && (o[k] as string).trim() ? [[k, (o[k] as string).trim().slice(0, 40)]] : []))

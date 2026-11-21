@@ -26,6 +26,17 @@ export function versaoValida(versao: string): boolean {
 }
 
 export const VERSOES: Versao[] = [
+  {
+    versao: '0.36.0', data: '2026-11-20',
+    titulo: 'Marcas, transformações e invocações',
+    itens: [
+      'Novo sistema autoral: Marcas, do JOJO (só ele edita). Fichas prontas de Hawkins, Lucy, Tiamat e Karloy para importar.',
+      'Construtor: “Partes extras da ficha”. Qualquer autor pode ligar Marcas com níveis, Transformações, Invocações e Efeitos.',
+      'Marcas: cada nível libera uma habilidade, com dado, custo e usos por combate. As de nível acima ficam trancadas.',
+      'Transformações com vida, essência, atributos e golpes próprios, sem mexer na ficha normal. Invocações com vida, ataques e duração.',
+      'Usar, Transformar e Invocar só marcam o uso e tiram o custo que você escreveu. Nada é calculado sozinho.',
+    ],
+  },
   { versao: '0.35.10', data: '2026-11-17', titulo: 'Dados de Assimilação', itens: ['D6, D10 e D12 com símbolos personalizados e animação poliédrica.', 'Movimento e colisões aproximadas, preservando o resultado sorteado.', 'Assistência de dados na ficha e animações na mesa virtual.'] },
   {
     versao: '0.35.9', data: '2026-11-17',

@@ -16,6 +16,7 @@ import type { CapituloRegra, DadosFicha, GrausDef, SecaoFicha, Sistema, TabelaDe
 import { GRAUS_PADRAO, opcoesDeGrau, rotuloGrau } from '@/lib/sistemas/graus'
 import { EditorRegras, EditorTabelas, NOMES_SECOES } from './EditorExtras'
 import EditorRolagem from './EditorRolagem'
+import { EXTRAS, lerExtras, type ExtraFicha } from '@/lib/sistemas/extrasFicha'
 import EditorOpcoes, { type OpcaoDef } from './EditorOpcoes'
 import EditorProgressao, { type DefProgressao } from './EditorProgressao'
 import ArvoreHabilidades from '@/components/fichas/Arvore'
@@ -29,7 +30,7 @@ type Def = {
   pericias: { modo: 'treino' | 'valor' | 'nenhuma'; titulo?: string; livres?: boolean; total: string; treinos: Linha[]; lista: Linha[] }
   recursos: Linha[]; listas: Linha[]; limites: { nome: string; uso: string; max: string }[]; observacoes: string; carga: { formula: string; unidade: string }
   arvore: { pontos: number; nos: unknown[] }; progressao: DefProgressao | null
-  tabelas: TabelaDef[]; regras: CapituloRegra[]; nomesSecoes: Partial<Record<SecaoFicha, string>>; visualAtributos: '' | 'lua'
+  tabelas: TabelaDef[]; regras: CapituloRegra[]; nomesSecoes: Partial<Record<SecaoFicha, string>>; visualAtributos: '' | 'lua'; extras: ExtraFicha[]
 }
 const ID_TESTE = 'autoral-00000000000000000000000000000000'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-sm text-white'
@@ -51,7 +52,7 @@ function paraDef(s: Partial<Sistema> & Record<string, unknown>, auto = false): D
     regraRolagem: (s.regraRolagem as Def['regraRolagem']) ?? { nome: 'Teste', formula: '1d20+VALOR' },
     parada: (s.parada as Def['parada']) ?? { lados: 20 },
     graus: (s.graus as GrausDef) ?? GRAUS_PADRAO,
-    visualAtributos: s.visualAtributos === 'lua' ? 'lua' : '',
+    visualAtributos: s.visualAtributos === 'lua' ? 'lua' : '', extras: lerExtras(s.extras),
     tabelas: (s.tabelas as TabelaDef[]) ?? [], regras: (s.regras as CapituloRegra[]) ?? [], nomesSecoes: (s.nomesSecoes as Def['nomesSecoes']) ?? {},
     resistencias: Array.isArray(s.resistencias) ? (s.resistencias as string[]) : [],
     creditos: typeof s.creditos === 'string' ? s.creditos : undefined,
@@ -73,7 +74,7 @@ function paraEnvio(d: Def) {
     carga: d.carga.formula ? d.carga : undefined,
     ...(d.arvore.nos.length ? { arvore: d.arvore } : {}),
     ...(d.progressao ? { progressoes: d.progressao } : {}),
-    ...(d.rolagem === 'graus' ? { graus: d.graus } : {}), ...(d.visualAtributos ? { visualAtributos: d.visualAtributos } : {}),
+    ...(d.rolagem === 'graus' ? { graus: d.graus } : {}), ...(d.visualAtributos ? { visualAtributos: d.visualAtributos } : {}), ...(d.extras.length ? { extras: d.extras } : {}),
     ...(d.tabelas.length ? { tabelas: d.tabelas } : {}), ...(d.regras.length ? { regras: d.regras } : {}),
     ...(Object.values(d.nomesSecoes).some(v => v?.trim()) ? { nomesSecoes: d.nomesSecoes } : {}),
   }
@@ -205,8 +206,14 @@ export default function Construtor({ idInicial }: { idInicial: string | null }) 
               <select aria-label="Grau máximo das perícias" value={def.graus.maxPericia ?? ''} onChange={e => mudar(d => ({ ...d, graus: { ...d.graus, maxPericia: Number(e.target.value) || undefined } }))} className={pequeno}><option value="">Sem limite</option>{def.graus.lados.map(l => <option key={l} value={l}>d{l}</option>)}</select></label>
           </div>}
           <details className="rounded-xl bg-(--s-171325) p-3 text-sm"><summary className="cursor-pointer font-semibold">🏷️ Nomes das partes da ficha (opcional)</summary>
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">{NOMES_SECOES.map(([id, padrao]) => <label key={id} className="block text-xs">{padrao}
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">{NOMES_SECOES.filter(([id]) => !EXTRAS.some(x => x.id === id) || def.extras.includes(id as ExtraFicha)).map(([id, padrao]) => <label key={id} className="block text-xs">{padrao}
               <input value={def.nomesSecoes[id] ?? ''} maxLength={40} onChange={e => mudar(d => ({ ...d, nomesSecoes: { ...d.nomesSecoes, [id]: e.target.value } }))} className={input + ' mt-1'} placeholder={padrao} /></label>)}</div></details>
+          <fieldset className="rounded-xl bg-(--s-171325) p-3 text-sm"><legend className="px-1 font-semibold">🧩 Partes extras da ficha (opcional)</legend>
+            <p className="mb-2 text-xs text-(--a-c4b6d4)">Ligue o que o seu sistema tem. Cada parte vira uma aba na ficha; o jogador escreve tudo e nada é calculado.</p>
+            <div className="grid gap-2 sm:grid-cols-2">{EXTRAS.map(x => <label key={x.id} className="flex items-start gap-2 rounded-lg border border-(--a-3d3152) p-2 text-xs">
+              <input type="checkbox" className="mt-0.5" checked={def.extras.includes(x.id)} onChange={e => mudar(d => ({ ...d, extras: EXTRAS.map(y => y.id).filter(id => id === x.id ? e.target.checked : d.extras.includes(id)) }))} />
+              <span><strong className="text-white">{x.icone} {x.nome}</strong><br /><span className="text-(--a-a998bd)">{x.descricao}</span></span></label>)}</div>
+          </fieldset>
           {def.creditos && <p className="rounded-lg bg-(--s-171325) p-2 text-[11px] text-(--a-a998bd)">Créditos do modelo usado (licença aberta): {def.creditos}</p>}
         </SecaoBase>
 

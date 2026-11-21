@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { BrickWall, Grid3x3, Glasses, Flame, Trash, SquareDashed, Sun, ArrowDown, ArrowLeft, ArrowUp, BookOpen, CircleHelp, Crown, Globe, Library, MoreHorizontal, ScrollText, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
+import { AudioLines, BrickWall, Grid3x3, Glasses, Flame, Trash, SquareDashed, Sun, ArrowDown, ArrowLeft, ArrowUp, BookOpen, CircleHelp, Crown, Globe, Library, MoreHorizontal, ScrollText, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
@@ -17,6 +17,9 @@ import { CORES_AREA, FORMAS_AREA, lerAreasEfeito, tokensNaArea, type AreaEfeito,
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import PainelCampanha from './PainelCampanha'
 import PainelMusica from './PainelMusica'
+import { lerPreferencias } from '@/lib/preferencias'
+import { useMesaDeSom } from './useMesaDeSom'
+import PainelSom from './PainelSom'
 import PainelTabelas from './PainelTabelas'
 import PainelBiblioteca from './PainelBiblioteca'
 import { sistemaDaCampanha } from '@/lib/sistemas/catalogo'
@@ -82,12 +85,12 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [atravessar, setAtravessar] = useState(false)
   const [comoJogador, setComoJogador] = useState(false)
   const [dicas, setDicas] = useState<'auto' | 'aberto' | 'fechado'>('auto')
-  const [aba, setAba] = useState<'fichas' | 'tokens' | 'iniciativa' | 'musica' | 'campanha' | 'tabelas' | 'biblioteca' | 'mestre'>('iniciativa')
+  const [aba, setAba] = useState<'fichas' | 'tokens' | 'iniciativa' | 'musica' | 'sons' | 'campanha' | 'tabelas' | 'biblioteca' | 'mestre'>('iniciativa')
   // Mesa organizada (v0.36.4): o mapa em destaque; chat e painel de ferramentas são abas laterais que recolhem.
   // No computador o chat começa aberto; no celular tudo começa recolhido (e só um abre por vez, por cima do mapa).
   const grande = () => typeof window !== 'undefined' && window.innerWidth >= 1024
   const [painel, setPainel] = useState(false)
-  const [chatAberto, setChatAberto] = useState(grande)
+  const [chatAberto, setChatAberto] = useState(() => grande() && lerPreferencias().chatAbertoPc)
   const [vistoChat, setVistoChat] = useState(0)
   const [mais, setMais] = useState(false)
   const ultimaParte = useRef<Record<string, string>>({})
@@ -99,7 +102,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [ataque, setAtaque] = useState<EstadoAtaque | null>(null)
   const [avisoSessao, setAvisoSessao] = useState(true)
   const [camadaSel, setCamadaSel] = useState<string | null>(null)
-  const [som, setSom] = useState(true)
+  const [som, setSom] = useState(() => lerPreferencias().somDados)
   const [historico, setHistorico] = useState(false)
   /** Ficha aberta dentro da mesa (v0.33.8). */
   const [fichaAberta, setFichaAberta] = useState<string | null>(null)
@@ -159,6 +162,11 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
 
   useEffect(() => { void carregar() }, [carregar])
   useEffect(() => { const t = setInterval(() => void carregar(), tempoReal ? 30000 : 4000); return () => clearInterval(t) }, [carregar, tempoReal])
+  // Mesa de Som (v0.36.5): o estado mora aqui para o ambiente continuar com o painel fechado.
+  const enviarSom = useCallback((evento: string, payload: Record<string, unknown>) => { void canal.current?.send({ type: 'broadcast', event: evento, payload }) }, [])
+  const mesaSom = useMesaDeSom({ campanhaId, admin: e?.campanha.meuPapel === 'mestre' || e?.campanha.meuPapel === 'comestre', enviar: enviarSom })
+  const receptorSom = useRef(mesaSom)
+  useEffect(() => { receptorSom.current = mesaSom }, [mesaSom])
   useEffect(() => {
     if (!e?.eu || canal.current) return
     let supa: ReturnType<typeof createClient>
@@ -194,6 +202,8 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
         if (!FORMAS_AREA.some(f => f.id === a.forma) || ![a.x, a.y, a.angulo, a.metros].every(n => typeof n === 'number' && Number.isFinite(n)) || typeof a.cor !== 'string' || !/^#[0-9a-f]{6}$/i.test(a.cor)) return
         setPrevias(m => ({ ...m, [id]: { id: 'previa-' + id, forma: a.forma as FormaArea, x: a.x as number, y: a.y as number, angulo: a.angulo as number, metros: Math.min(300, a.metros as number), cor: a.cor as string, nome: '', quem: typeof g.quem === 'string' ? g.quem.slice(0, 40) : '?', ate: Date.now() + 8000 } }))
       })
+      .on('broadcast', { event: 'som' }, ({ payload }) => receptorSom.current.receberSom(payload))
+      .on('broadcast', { event: 'ambiente' }, ({ payload }) => receptorSom.current.receberAmbiente(payload))
       .on('presence', { event: 'sync' }, () => setOnline(Object.keys(ch.presenceState())))
       .subscribe(status => { setTempoReal(status === 'SUBSCRIBED'); if (status === 'SUBSCRIBED') void ch.track({ em: Date.now() }) })
     canal.current = ch
@@ -337,7 +347,8 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       { id: 'iniciativa', icone: Swords, nome: 'Iniciativa', ajuda: admin ? 'Ordem dos turnos. “Preparar combate” rola a iniciativa de todos; “Próximo turno” passa a vez.' : 'Ordem dos turnos do combate. Quando for a sua vez, aparece “⚔️ Sua vez”.' },
       ...(!espectador ? [{ id: 'tokens', icone: UserRound, nome: 'Tokens', ajuda: 'Tudo que está no mapa: vida, condições e quem pode mover cada token.' } as Parte] : []),
     ] },
-    { id: 'musica', icone: Music2, nome: 'Música', partes: [{ id: 'musica', icone: Music2, nome: 'Música', ajuda: admin ? 'A trilha da sessão: o que você tocar, todos ouvem juntos.' : 'A trilha da sessão, tocada pelo mestre (cada um ajusta o próprio volume).' }] },
+    { id: 'musica', icone: Music2, nome: 'Música', partes: [{ id: 'musica', icone: Music2, nome: 'Música', ajuda: admin ? 'A trilha da sessão: o que você tocar, todos ouvem juntos.' : 'A trilha da sessão, tocada pelo mestre (cada um ajusta o próprio volume).' },
+      { id: 'sons', icone: AudioLines, nome: admin ? 'Mesa de som' : 'Sons', ajuda: admin ? 'Efeitos na hora, ambientes em camadas e cenas prontas. Todos ouvem; cada um escolhe o próprio volume.' : 'Efeitos e ambientes tocados pelo mestre. Ajuste o seu volume ou desligue os sons de susto.' }] },
     ...(!espectador ? [{ id: 'diario', icone: BookOpen, nome: 'Diário', partes: [{ id: 'campanha', icone: BookOpen, nome: 'Diário', ajuda: 'Sessões, anotações (privadas ou compartilhadas)' + (admin ? ' e recompensas (XP, moedas, pontos).' : '.') } as Parte] }] : []),
     ...(admin ? [{ id: 'mestre', icone: Crown, nome: 'Mestre', partes: [
       { id: 'mestre', icone: Settings2, nome: 'Controles', ajuda: 'Cenas e mapa, névoa, regras de combate e descanso do grupo.' },
@@ -494,6 +505,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           {parteAtual.id === 'fichas' && <PainelFichas fichas={fichasMesa} carregar={() => void carregarFichas()} tokens={e.tokens} admin={admin} cenaId={cena?.id ?? null} acao={acao} atacarCom={iniciarAtaque} abrirFicha={setFichaAberta} />}
           {parteAtual.id === 'tokens' && <PainelTokens e={e} admin={admin} acao={acao} campanhaId={campanhaId} abrir={setTokenAberto} />}
           {parteAtual.id === 'iniciativa' && <PainelIniciativa e={e} admin={admin} acao={acao} fichas={fichasMesa} atacar={iniciarAtaque} />}
+          {parteAtual.id === 'sons' && <PainelSom som={mesaSom} admin={admin} />}
           {parteAtual.id === 'musica' && <PainelMusica campanhaId={campanhaId} eu={e.eu} admin={admin} espectador={espectador} tocando={e.musica} aoMudar={avisarMudanca} />}
           {parteAtual.id === 'campanha' && <PainelCampanha campanhaId={campanhaId} e={e} admin={admin} />}
           {parteAtual.id === 'biblioteca' && admin && <PainelBiblioteca campanhaId={campanhaId} e={e} />}

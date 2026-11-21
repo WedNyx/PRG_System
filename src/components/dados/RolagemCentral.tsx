@@ -6,6 +6,7 @@ import confetti from 'canvas-confetti'
 import { detectarCritico } from '@/lib/dice'
 import { somCritico, somFalha, somRolagem } from '@/lib/sons'
 import { detalheDaRolagem, notacao3D } from '@/lib/dados3d'
+import { lerPreferencias, movimentoReduzido } from '@/lib/preferencias'
 
 export type Rolagem = {
   /** O que foi rolado (ex.: "Força", "Bola de fogo"). */
@@ -83,7 +84,9 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
       timers.current.forEach(clearTimeout); timers.current = []
       const minha = ++rodada.current
       setAtual(r); setFase('rolando')
-      if (somRef.current) somRolagem()
+      // Preferências do aparelho (Perfil › Jogabilidade, v0.36.5).
+      const pref = lerPreferencias(), comSom = somRef.current && pref.somDados
+      if (comSom) somRolagem()
       const critico = detectarCritico(r.expressao, r.resultados)
       let mostrou = false
       const mostrarCartao = () => {
@@ -91,13 +94,13 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
         mostrou = true
         setFase('cartao')
         if (critico === 'critico') {
-          if (somRef.current) somCritico()
-          confetti({ particleCount: 140, spread: 80, origin: { y: 0.55 }, colors: ['#b99bff', '#ed9cd8', '#fbbf24', '#ffffff'] })
-        } else if (critico === 'falha' && somRef.current) somFalha()
+          if (comSom) somCritico()
+          if (pref.confetes && !movimentoReduzido()) confetti({ particleCount: 140, spread: 80, origin: { y: 0.55 }, colors: ['#b99bff', '#ed9cd8', '#fbbf24', '#ffffff'] })
+        } else if (critico === 'falha' && comSom) somFalha()
         timers.current.push(setTimeout(() => { if (minha === rodada.current) fechar() }, TEMPO_CARTAO))
       }
       const notacao = notacao3D(r.expressao, r.resultados)
-      if (box.current && notacao) {
+      if (box.current && notacao && pref.dados3d) {
         try {
           box.current.clearDice()
           // O cartão aparece quando os dados param (ou depois de um tempo, se algo travar).

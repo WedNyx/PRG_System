@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Bell, CheckCheck, Trash2, X } from 'lucide-react'
 import { api, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
+import { lerPreferencias } from '@/lib/preferencias'
 
 type Aviso = { id: number; campanha_id: string | null; tipo: string; titulo: string; texto: string; link: string | null; lida: boolean; criada_em: string }
 const INTERVALO = 30_000
@@ -44,7 +45,7 @@ export default function Sino({ classe = '' }: { classe?: string }) {
       const r = await api<{ itens: Aviso[]; naoLidas: number }>('notificacoes?limite=40')
       const maior = r.itens[0]?.id ?? 0
       // Balão só para avisos que chegaram depois que a página abriu.
-      if (ultimo.current !== null) for (const a of r.itens.filter(x => x.id > ultimo.current! && !x.lida).slice(0, 3).reverse())
+      if (ultimo.current !== null && lerPreferencias().baloesAvisos) for (const a of r.itens.filter(x => x.id > ultimo.current! && !x.lida).slice(0, 3).reverse())
         toast(a.titulo, { description: a.texto || undefined, action: a.link ? { label: 'Ver', onClick: () => void abrirAviso(a) } : undefined })
       ultimo.current = Math.max(ultimo.current ?? 0, maior)
       setItens(r.itens); setNaoLidas(r.naoLidas)

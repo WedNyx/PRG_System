@@ -1,13 +1,14 @@
 /**
- * Temas visuais (escolhidos em Central → Temas; valem para este aparelho). 'sonhos' (Estrelinhas sonhadoras) é o padrão.
- * Cada tema tem uma imagem para tela deitada (computador) e outra para tela em pé (celular),
+ * Temas visuais (escolhidos em Central → Temas; valem para este aparelho). 'sonhos' (Estrelinhas sonhadoras) era o padrão até a v0.36.4.
+ * 'lunar' (Noite lunar, v0.36.5) é o padrão da identidade nova. Cada tema tem uma imagem para tela deitada (computador) e outra para tela em pé (celular),
  * aplicadas por CSS em globals.css ([data-tema] no <html>).
  */
-export type Tema = 'sonhos' | 'classico' | 'algodao' | 'lua' | 'carmesim' | 'celestial' | 'prisma' | 'floresta' | 'mar' | 'taverna' | 'sombrio'
-export const TEMA_PADRAO: Tema = 'sonhos'
+export type Tema = 'lunar' | 'sonhos' | 'classico' | 'algodao' | 'lua' | 'carmesim' | 'celestial' | 'prisma' | 'floresta' | 'mar' | 'taverna' | 'sombrio'
+export const TEMA_PADRAO: Tema = 'lunar'
 /** matiz/intensidade: as cores da plataforma neste tema (iguais a --giro/--sat em globals.css; 300 = roxo original). */
 export const TEMAS: { id: Tema; nome: string; descricao: string; mini: string; matiz: number; intensidade: number }[] = [
-  { id: 'sonhos', nome: 'Estrelinhas sonhadoras', descricao: 'O tema da plataforma: estrelas sorridentes e lua dourada em nuvens roxas.', mini: 'url(/temas/sonhos-mini.webp) center / cover', matiz: 300, intensidade: 1 },
+  { id: 'lunar', nome: 'Noite lunar', descricao: 'A identidade nova: azul-noturno, violeta e detalhes dourados, com a lua crescente e constelações.', mini: 'url(/temas/lunar.svg) 80% 20% / cover', matiz: 293, intensidade: 1 },
+  { id: 'sonhos', nome: 'Estrelinhas sonhadoras', descricao: 'O tema clássico da plataforma: estrelas sorridentes e lua dourada em nuvens roxas.', mini: 'url(/temas/sonhos-mini.webp) center / cover', matiz: 300, intensidade: 1 },
   { id: 'algodao', nome: 'Nuvens de algodão', descricao: 'Pôr do sol cor-de-rosa com lua crescente.', mini: 'url(/temas/algodao-mini.webp) center / cover', matiz: 338, intensidade: 1.1 },
   { id: 'lua', nome: 'Lua cheia', descricao: 'Noite azul, lua brilhante e nuvens escuras.', mini: 'url(/temas/lua-mini.webp) center / cover', matiz: 252, intensidade: 1.05 },
   { id: 'carmesim', nome: 'Céu carmesim', descricao: 'Via Láctea sobre um campo e um horizonte vermelho.', mini: 'url(/temas/carmesim-mini.webp) center / cover', matiz: 2, intensidade: 1.15 },

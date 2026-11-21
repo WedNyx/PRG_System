@@ -6,6 +6,7 @@
 import { calcular, fichaVazia } from './calculo'
 import { erroDaFormula } from './regrasRolagem'
 import { lerArvore } from './arvore'
+import { lerExtras } from './extrasFicha'
 import { alvosDeBonus } from './inventario'
 import { avaliar, variaveisDaFormula } from './formula'
 import type { Sistema } from './tipos'
@@ -215,6 +216,7 @@ export function validarSistema(entrada: unknown, meta: { id: string; autor?: str
     dados: txt(e.dados, 40) || (rolagem === 'd100' ? 'd100' : rolagem === 'd20' ? 'd20' : parada ? `Parada de d${parada.lados}` : regraRolagem ? regraRolagem.formula.replace(/VALOR/gi, 'X') : graus ? `Graus de dado (d${graus.lados[0]}–d${graus.lados.at(-1)})` : 'Livre'), rolagem, ...(regraRolagem ? { regraRolagem } : {}), ...(graus ? { graus } : {}),
     ...(tabelas.length ? { tabelas } : {}), ...(regras.length ? { regras } : {}), ...(nomesSecoes ? { nomesSecoes } : {}), ...(parada ? { parada } : {}), ...(resistencias.length ? { resistencias } : {}),
     ...(e.visualAtributos === 'lua' ? { visualAtributos: 'lua' as const } : {}),
+    ...(lerExtras(e.extras).length ? { extras: lerExtras(e.extras) } : {}),
     campos, atributos, ...(txt(e.tituloAtributos, 40).trim() ? { tituloAtributos: txt(e.tituloAtributos, 40).trim() } : {}), ...(formulaModificador ? { formulaModificador } : {}), derivados, ...(pericias ? { pericias } : {}),
     recursos, ...(limites.length ? { limites } : {}), listas: listas.length ? listas : [{ id: 'anotacoes', nome: 'Anotações' }],
     ...(observacoes.length ? { observacoes } : {}), ...(carga ? { carga } : {}), ...(progressoes ? { progressoes } : {}),

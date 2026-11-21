@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Plus, RotateCcw, Trash2 } from 'lucide-react'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
+import { identidadeVisual } from './VisualSistema'
 
 /**
  * Partes próprias de cada sistema (v0.35.9): o que é a cara de cada jogo, no lugar certo e fácil de marcar.
@@ -289,6 +290,7 @@ const FAIXAS: Record<string, { simbolo: string; frase: string; fundo: string; bo
   'dnd5e-srd': { simbolo: '⚔️', frase: 'Aventureiro · d20 contra a CA e a CD', fundo: 'linear-gradient(120deg,#3a0f14,#1c0d12 60%,#2a1a0e)', borda: '#c0263a' },
   pf2e: { simbolo: '🛡️', frase: 'Três ações por turno · graus de sucesso', fundo: 'linear-gradient(120deg,#0f1d3a,#11131f 60%,#2b2410)', borda: '#e8b84a' },
   'fate-core': { simbolo: '✦', frase: 'Aspectos, façanhas e a escada de adjetivos', fundo: 'linear-gradient(120deg,#0b2236,#141026 60%,#1d0f2f)', borda: '#6cc4ff' },
+  marcas: { simbolo: '🐾', frase: 'Portador de marcas · cada nível desperta um poder da fera', fundo: 'linear-gradient(120deg,#0c1c33,#141127 60%,#1f1236)', borda: '#7fc8f0' },
   blades: { simbolo: '🗡️', frase: 'Ação, risco e efeito · estresse e relógios', fundo: 'linear-gradient(120deg,#0c1d1b,#0f0f14 60%,#1f1a12)', borda: '#9fdccb' },
   brp: { simbolo: '🔎', frase: 'Arquivo de investigação · d100 abaixo do valor', fundo: 'linear-gradient(120deg,#2a2416,#141210 60%,#1b2620)', borda: '#d6bf8f' },
   'call-of-cthulhu': { simbolo: '🕯️', frase: 'Investigador · d100 normal, difícil e extremo', fundo: 'linear-gradient(120deg,#0c2420,#0e1214 60%,#231c12)', borda: '#9fd8c4' },
@@ -299,7 +301,7 @@ const FAIXAS: Record<string, { simbolo: string; frase: string; fundo: string; bo
   assimilacao: { simbolo: '🧬', frase: 'Sobreviver depois do Colapso', fundo: 'linear-gradient(120deg,#0c2a28,#0f0f16 60%,#2a0f2e)', borda: '#5eead4' },
 }
 export function FaixaDoSistema({ s, nome }: { s: Sistema; nome: string }) {
-  const f = FAIXAS[s.id]; if (!f) return null
+  const f = FAIXAS[s.id] ?? FAIXAS[identidadeVisual(s)]; if (!f) return null
   const mork = s.id === 'mork-borg'
   return <div className={'relative overflow-hidden rounded-2xl border-2 px-4 py-3 ' + (mork ? '-rotate-[0.6deg]' : '')} style={{ background: f.fundo, borderColor: f.borda, boxShadow: `0 0 22px -8px ${f.borda}` }} aria-hidden>
     <span className="pointer-events-none absolute -right-2 -top-4 select-none text-[5.5rem] leading-none opacity-[.13]">{f.simbolo}</span>

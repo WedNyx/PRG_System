@@ -10,6 +10,8 @@ import { calcular } from '@/lib/sistemas/calculo'
 import type { DadosFicha, FichaManual as Manual, Sistema } from '@/lib/sistemas/tipos'
 import { montarRolagem, rolarExpressao } from '@/lib/dice'
 import AcoesRapidas from './AcoesRapidas'
+import { ResumoExtras, SecaoEfeitos, SecaoFormas, SecaoInvocacoes, SecaoMarcas } from './ExtrasFicha'
+import { temExtra } from '@/lib/sistemas/extrasFicha'
 import PainelDoSistema, { FaixaDoSistema, RECURSOS_NO_PAINEL } from './PaineisSistema'
 import AtributosLua from './AtributosLua'
 import { AtributosGraus, PericiasGraus, RegrasDoSistema, TabelasDoSistema } from './FichaGraus'
@@ -72,6 +74,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     assimilacao: 'M12 3Q22 3 20 12Q18 22 10 20Q1 18 4 9Q6 5 12 3Z M12 3Q8 12 16 19 M4 9Q12 8 20 12 M10 12L14 9M10 12L9 17',
     opositores: 'M16 2A10 10 0 1 0 21 17A9 9 0 0 1 16 2Z M18 4V10 M15 7H21 M20 11V15 M18 13H22',
     nova: 'M12 2L22 8V16L12 22L2 16V8Z M7 8H12V12H17V16 M7 6V10 M17 14V18 M12 2V5 M12 19V22',
+    marcas: 'M12 21a9 9 0 1 0 0-18a9 9 0 1 0 0 18 M12 17c-2.5 0-4-1.4-4-3s1.8-3 4-3s4 1.4 4 3s-1.5 3-4 3 M7.5 10.5a1.3 1.6 0 1 0 0.01 0 M10.3 7.8a1.3 1.6 0 1 0 0.01 0 M13.7 7.8a1.3 1.6 0 1 0 0.01 0 M16.5 10.5a1.3 1.6 0 1 0 0.01 0',
   }
 
   const tema = temaDoSistema(identidade), visual = estiloDoSistema(s.id)
@@ -133,6 +136,10 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const SECOES = ([
     { id: 'principal', icone: '❤️', nome: 'Principal', sub: 'Identidade, valores e recursos', ajuda: 'Preencha os dados do personagem, os valores (CA, Defesa…) e o máximo de cada recurso. Nada é calculado: o que você digita é o que vale. Embaixo ficam as ações rápidas: armas equipadas e poderes, para rolar com um toque.', ok: true },
     { id: 'atributos', icone: '✨', nome: s.pericias ? (s.atributos.length ? `${tituloAtr} e ${tituloPer[0].toLowerCase()}${tituloPer.slice(1)}` : tituloPer) : tituloAtr, sub: 'Testes e rolagens', ajuda: graus ? `Escolha o dado de cada atributo${s.pericias ? ' e de cada ' + (s.pericias.titulo?.trim() || 'perícia').toLowerCase().replace(/s$/, '') : ''}. Em “Teste”, os dois dados rolam juntos e somam.` : `Digite os valores${comMod ? ', os modificadores' : ''}${s.pericias ? ' e o total de cada perícia' : ''}. Toque no botão ao lado para rolar com o número digitado.`, ok: s.atributos.length > 0 || !!s.pericias },
+    { id: 'marcas', icone: '🐾', nome: 'Marcas', sub: 'Níveis, habilidades e custos', ajuda: 'Cada marca tem o próprio nível. As habilidades até esse nível ficam liberadas: role o dado e toque em Usar para marcar o uso e tirar o custo. Em Editar, escreva o que cada nível dá.', ok: temExtra(s, 'marcas') },
+    { id: 'formas', icone: '🐺', nome: 'Transformações', sub: 'Formas com vida e golpes próprios', ajuda: 'Cada forma tem vida, essência, atributos e golpes próprios. Transformar não muda a ficha normal: ela fica guardada para quando voltar.', ok: temExtra(s, 'formas') },
+    { id: 'invocacoes', icone: '🐻', nome: 'Invocações', sub: 'Criaturas, vida e ataques', ajuda: 'Criaturas que o personagem chama. Invocar tira o custo e começa com a vida cheia; a duração desce em Passar 1 turno.', ok: temExtra(s, 'invocacoes') },
+    { id: 'efeitos', icone: '⏳', nome: 'Efeitos', sub: 'Condições e turnos', ajuda: 'O que está valendo agora e por quantos turnos. Nada é aplicado sozinho: é só para não esquecer.', ok: temExtra(s, 'efeitos') },
     { id: 'habilidades', icone: '🌌', nome: 'Poderes e habilidades', sub: 'Magias, técnicas, usos e custos', ajuda: 'Adicione poderes, magias, talentos e habilidades do personagem. O jogador e o mestre escrevem tudo.', ok: true },
     { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou ícone, ou pegue prontos no 📦 Arsenal. Itens equipados com rolagem aparecem nas ações rápidas.', ok: true },
     { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ajuda: 'Espaço livre para a história do personagem, aliados, segredos e lembretes.', ok: true },
@@ -152,6 +159,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     assimilacao: ['Registro do sobrevivente', 'Adaptações e competências', 'Mutações e capacidades', 'Suprimentos', 'Diário de sobrevivência'],
     opositores: ['Identidade lunar', 'Constelação de atributos', 'Legado e poderes', 'Relíquias e pertences', 'Memórias sob a lua'],
     nova: ['Perfil N.O.V.A', 'Matriz de competências', 'Protocolos e capacidades', 'Módulos e suprimentos', 'Registro de operações'],
+    marcas: ['Portador da marca', 'Atributos e perícias', 'Poderes e técnicas', 'Pertences e orbes', 'Crônica e objetivos'],
   }
   const rubrica = capitulos[identidade]
   const indiceCapitulo = (id: string) => ['principal','atributos','habilidades','equipamentos','anotacoes'].indexOf(id)
@@ -220,12 +228,17 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
         </div>
       </nav>
       <div className="min-w-0 flex-1 space-y-4">
-        {atual && rubrica && <header className="ficha-capitulo"><span aria-hidden="true" className="ficha-capitulo-selo">{simbolos[identidade] ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" className="ficha-simbolo"><path d={simbolos[identidade]} /></svg> : String(indiceCapitulo(atual.id) + 1).padStart(2, "0")}</span><div className="min-w-0"><p className="ficha-capitulo-universo">{tituloSistemaNaFicha(s, d)}</p><h2>{rubrica[indiceCapitulo(atual.id)]}</h2></div></header>}
+        {atual && rubrica && <header className="ficha-capitulo"><span aria-hidden="true" className="ficha-capitulo-selo">{simbolos[identidade] ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" className="ficha-simbolo"><path d={simbolos[identidade]} /></svg> : String(iAtual + 1).padStart(2, "0")}</span><div className="min-w-0"><p className="ficha-capitulo-universo">{tituloSistemaNaFicha(s, d)}</p><h2>{rubrica[indiceCapitulo(atual.id)] ?? atual.nome}</h2></div></header>}
         {atual && <p className="flex gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-2 text-xs text-(--a-cfc0df)"><span aria-hidden="true">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></p>}
 
+        {secao === 'marcas' && <SecaoMarcas s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolarExpr} />}
+        {secao === 'formas' && <SecaoFormas s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolarExpr} />}
+        {secao === 'invocacoes' && <SecaoInvocacoes s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolarExpr} />}
+        {secao === 'efeitos' && <SecaoEfeitos s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolarExpr} />}
         {secao === 'principal' && <div className="ficha-composicao">
           {s.id !== 'faroeste-arcano' && <FaixaDoSistema s={s} nome={d.nome} />}
           {s.id === 'faroeste-arcano' && <div data-painel-sistema><PainelDoSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} /></div>}
+          <ResumoExtras s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolarExpr} ir={ir} />
           {s.id === 'ordem-paranormal' && <ResumoOrdem nex={Number(d.campos.nex ?? 0) || 0} classe={String(d.campos.classe ?? '')} trilha={String(d.campos.trilha ?? '')} origem={String(d.campos.origem ?? '')}
             pe={{ atual: Number(d.recursos.pe?.atual ?? 0) || 0, max: maxDe('pe') }} san={{ atual: Number(d.recursos.san?.atual ?? 0) || 0, max: maxDe('san') }} />}
           <section className={card + " ficha-identidade"}>

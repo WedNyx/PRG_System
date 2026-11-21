@@ -1,0 +1,267 @@
+{
+  "formato": "prg-ficha",
+  "versao": 1,
+  "exportadoEm": "2026-11-20T00:00:00.000Z",
+  "sistema": "autoral-5d1e8a3c7f2b4c6d9e0a3b8f1c2d4e6a",
+  "sistemaNome": "Marcas",
+  "nome": "Tiamat",
+  "dados": {
+    "sistema": "autoral-5d1e8a3c7f2b4c6d9e0a3b8f1c2d4e6a",
+    "nome": "Tiamat",
+    "campos": {
+      "classe": "",
+      "nivel": 7,
+      "idade": "38",
+      "altura": "1,85 m",
+      "deslocamento": "",
+      "pulo": "5 m",
+      "resistencias": "Imune a gelo (Marca do Urso Polar)."
+    },
+    "atributos": {
+      "FOR": 4,
+      "VEL": 2,
+      "INT": 1,
+      "VIG": 2,
+      "ESS": 2
+    },
+    "pericias": {
+      "resistencia_veneno": 1,
+      "atletismo": 1,
+      "sobrevivencia": 1,
+      "negociacao": 1,
+      "luta": 2,
+      "percepcao_espiritual": 2
+    },
+    "recursos": {
+      "vida": {
+        "atual": 85,
+        "max": 85
+      },
+      "pe": {
+        "atual": 21,
+        "max": 21
+      },
+      "sanidade": {
+        "atual": 20,
+        "max": 50
+      }
+    },
+    "listas": {
+      "historia": "",
+      "objetivos": "",
+      "anotacoes": "Carisma não estava na ficha.\nSanidade na ficha original: 50/20 (lido como máximo 50, atual 20)."
+    },
+    "itens": [
+      {
+        "id": "tm-faca",
+        "nome": "Faca de cozinha",
+        "categoria": "arma",
+        "peso": 0,
+        "bonus": []
+      },
+      {
+        "id": "tm-vara",
+        "nome": "Vara de pesca",
+        "categoria": "equipamento",
+        "peso": 0,
+        "bonus": []
+      },
+      {
+        "id": "tm-orbe-marca",
+        "nome": "Orbe de marca",
+        "categoria": "equipamento",
+        "peso": 0,
+        "bonus": [],
+        "descricao": "Vazio.",
+        "magico": true
+      },
+      {
+        "id": "tm-isqueiro",
+        "nome": "Isqueiro",
+        "categoria": "equipamento",
+        "peso": 0,
+        "bonus": []
+      },
+      {
+        "id": "tm-orbe-magica",
+        "nome": "Orbe mágica",
+        "categoria": "equipamento",
+        "peso": 0,
+        "bonus": [],
+        "descricao": "Rouba marcas.",
+        "magico": true
+      },
+      {
+        "id": "tm-pocao-ess",
+        "nome": "Poção de essência",
+        "categoria": "consumivel",
+        "peso": 0,
+        "bonus": []
+      }
+    ],
+    "poderes": [],
+    "uso": {
+      "itens": {
+        "tm-faca": {
+          "qtd": 1,
+          "equipado": false
+        },
+        "tm-vara": {
+          "qtd": 1,
+          "equipado": false
+        },
+        "tm-orbe-marca": {
+          "qtd": 1,
+          "equipado": false
+        },
+        "tm-isqueiro": {
+          "qtd": 1,
+          "equipado": false
+        },
+        "tm-orbe-magica": {
+          "qtd": 1,
+          "equipado": false
+        },
+        "tm-pocao-ess": {
+          "qtd": 10,
+          "equipado": false
+        }
+      },
+      "poderes": {},
+      "carteira": "4 de ouro, 20 de prata"
+    },
+    "marcasPoder": [
+      {
+        "id": "tmmarurs",
+        "nome": "Marca do Urso Polar",
+        "nivel": 8,
+        "habilidades": [
+          {
+            "id": "tmurs001",
+            "nivel": 1,
+            "nome": "Imunidade a gelo"
+          },
+          {
+            "id": "tmurs002",
+            "nivel": 2,
+            "nome": "Golpe gélido",
+            "expressao": "1d4",
+            "texto": "Ataques corpo a corpo dão dano de gelo."
+          },
+          {
+            "id": "tmurs003",
+            "nivel": 3,
+            "nome": "Martelo de gelo",
+            "expressao": "1d10"
+          },
+          {
+            "id": "tmurs004",
+            "nivel": 4,
+            "nome": "Esmagamento",
+            "expressao": "1d8+1d6",
+            "custo": 3
+          },
+          {
+            "id": "tmurs005",
+            "nivel": 5,
+            "nome": "Armadura gélida",
+            "custo": 2,
+            "texto": "+10 de vida e +1 dado de Vigor."
+          },
+          {
+            "id": "tmurs006",
+            "nivel": 6,
+            "nome": "Fúria ártica",
+            "expressao": "1d6",
+            "custo": 2,
+            "texto": "Ganha 1d6 no ataque e resistência a ataques de lâminas."
+          },
+          {
+            "id": "tmurs007",
+            "nivel": 7,
+            "nome": "Zona polar",
+            "expressao": "1d4",
+            "custo": 3,
+            "texto": "Área de 5 m que dá 1d4 por turno. Magias de água e fogo causam metade do dano."
+          },
+          {
+            "id": "tmurs008",
+            "nivel": 8,
+            "nome": "Invocação espiritual",
+            "custo": 7,
+            "texto": "Invoca a besta de gelo: veja Invocações."
+          }
+        ]
+      },
+      {
+        "id": "tmmarcha",
+        "nome": "Marca do Chamado Espiritual",
+        "nivel": 1,
+        "texto": "Ainda sem habilidades escritas.",
+        "habilidades": []
+      }
+    ],
+    "formas": [],
+    "invocacoes": [
+      {
+        "id": "tminvurs",
+        "nome": "Urso de gelo",
+        "custo": 7,
+        "vidaMax": 60,
+        "texto": "Defesa: invoca um muro de gelo com 20 de vida.\nNa ficha original: HP 60-25.",
+        "golpes": [
+          {
+            "id": "tminvg01",
+            "nome": "Pata de gelo",
+            "expressao": "1d6"
+          },
+          {
+            "id": "tminvg02",
+            "nome": "Sopro de gelo",
+            "expressao": "1d8",
+            "texto": "Raio de 10 m."
+          },
+          {
+            "id": "tminvg03",
+            "nome": "Avalanche",
+            "expressao": "4d8",
+            "texto": "Raio de 11 m."
+          }
+        ]
+      },
+      {
+        "id": "tminvevo",
+        "nome": "Urso de gelo (evoluído)",
+        "custo": 7,
+        "vidaMax": 90,
+        "texto": "Evolução do urso: +30 de vida. Sopro de gelo: o inimigo faz teste de Vigor 16+ ou fica congelado por 2 turnos (limite 3). Barreira de gelo com 40 de vida (limite 4).",
+        "golpes": [
+          {
+            "id": "tmevog01",
+            "nome": "Pata de gelo",
+            "expressao": "1d6"
+          },
+          {
+            "id": "tmevog02",
+            "nome": "Sopro de gelo",
+            "expressao": "1d12",
+            "texto": "Raio de 10 m. Vigor 16+ ou congelado por 2 turnos (limite 3)."
+          },
+          {
+            "id": "tmevog03",
+            "nome": "Estaca de gelo",
+            "expressao": "1d20",
+            "texto": "Carrega uma estaca de gelo por 1 turno; quando acerta, dá 1d20."
+          },
+          {
+            "id": "tmevog04",
+            "nome": "Avalanche",
+            "expressao": "4d8",
+            "texto": "Raio de 11 m."
+          }
+        ]
+      }
+    ],
+    "efeitos": []
+  }
+}

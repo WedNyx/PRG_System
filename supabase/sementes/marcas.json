@@ -1,0 +1,252 @@
+{
+ "id": "autoral-5d1e8a3c7f2b4c6d9e0a3b8f1c2d4e6a",
+ "nome": "Marcas",
+ "resumo": "Portadores de marcas de feras e forças antigas: cada marca tem nível próprio e libera habilidades, transformações e invocações. Sistema em construção.",
+ "tipo": "autoral",
+ "licenca": "Sistema autoral de JOJO",
+ "dados": "d20",
+ "rolagem": "d20",
+ "extras": [
+  "marcas",
+  "formas",
+  "invocacoes",
+  "efeitos"
+ ],
+ "campos": [
+  {
+   "id": "classe",
+   "nome": "Classe",
+   "tipo": "texto",
+   "dica": "Ex.: Assassino de oportunidade, Engenheira Bélica."
+  },
+  {
+   "id": "nivel",
+   "nome": "Nível",
+   "tipo": "numero",
+   "padrao": 1,
+   "dica": "Nível do personagem. Cada marca tem o próprio nível, separado deste."
+  },
+  {
+   "id": "idade",
+   "nome": "Idade",
+   "tipo": "texto"
+  },
+  {
+   "id": "altura",
+   "nome": "Altura",
+   "tipo": "texto"
+  },
+  {
+   "id": "deslocamento",
+   "nome": "Deslocamento",
+   "tipo": "texto",
+   "dica": "Em metros."
+  },
+  {
+   "id": "pulo",
+   "nome": "Pulo",
+   "tipo": "texto",
+   "dica": "Ex.: pula 5 metros."
+  },
+  {
+   "id": "resistencias",
+   "nome": "Resistências e imunidades",
+   "tipo": "area",
+   "dica": "Das marcas, da armadura e dos itens. Ex.: imune a gelo; resistente a ataques vindos da terra firme."
+  }
+ ],
+ "atributos": [
+  {
+   "id": "FOR",
+   "nome": "Força",
+   "min": 0,
+   "max": 20,
+   "padrao": 1,
+   "dica": "Força física e dos golpes."
+  },
+  {
+   "id": "VEL",
+   "nome": "Velocidade",
+   "min": 0,
+   "max": 20,
+   "padrao": 1,
+   "dica": "Rapidez, reflexo e movimento."
+  },
+  {
+   "id": "INT",
+   "nome": "Inteligência",
+   "min": 0,
+   "max": 20,
+   "padrao": 1,
+   "dica": "Raciocínio, criação e estratégia."
+  },
+  {
+   "id": "VIG",
+   "nome": "Vigor",
+   "min": 0,
+   "max": 20,
+   "padrao": 1,
+   "dica": "Resistência do corpo. Ex.: teste de Vigor 16+ para não congelar."
+  },
+  {
+   "id": "ESS",
+   "nome": "Essência",
+   "min": 0,
+   "max": 20,
+   "padrao": 1,
+   "dica": "Ligação com as marcas e a energia espiritual."
+  },
+  {
+   "id": "CAR",
+   "nome": "Carisma",
+   "min": 0,
+   "max": 20,
+   "padrao": 1,
+   "dica": "Presença, conversa e negociação."
+  }
+ ],
+ "tituloAtributos": "Atributos",
+ "derivados": [],
+ "pericias": {
+  "titulo": "Perícias",
+  "modo": "valor",
+  "livres": true,
+  "total": "VALOR",
+  "lista": [
+   {
+    "id": "luta",
+    "nome": "Luta"
+   },
+   {
+    "id": "esquiva",
+    "nome": "Esquiva"
+   },
+   {
+    "id": "percepcao",
+    "nome": "Percepção"
+   },
+   {
+    "id": "percepcao_espiritual",
+    "nome": "Percepção espiritual"
+   },
+   {
+    "id": "atletismo",
+    "nome": "Atletismo"
+   },
+   {
+    "id": "sobrevivencia",
+    "nome": "Sobrevivência"
+   },
+   {
+    "id": "negociacao",
+    "nome": "Negociação"
+   },
+   {
+    "id": "furtividade",
+    "nome": "Furtividade"
+   },
+   {
+    "id": "enganacao",
+    "nome": "Enganação"
+   },
+   {
+    "id": "assassinato",
+    "nome": "Assassinato"
+   },
+   {
+    "id": "reflexo",
+    "nome": "Reflexo"
+   },
+   {
+    "id": "olfato",
+    "nome": "Olfato"
+   },
+   {
+    "id": "precisao",
+    "nome": "Precisão"
+   },
+   {
+    "id": "camuflagem",
+    "nome": "Camuflagem"
+   },
+   {
+    "id": "criacao",
+    "nome": "Criação"
+   },
+   {
+    "id": "alquimia",
+    "nome": "Alquimia"
+   },
+   {
+    "id": "resistencia_veneno",
+    "nome": "Resistência a veneno"
+   }
+  ]
+ },
+ "recursos": [
+  {
+   "id": "vida",
+   "nome": "Vida (HP)",
+   "dica": "Itens e armaduras podem somar vida (ex.: +30)."
+  },
+  {
+   "id": "pe",
+   "nome": "Essência (PE)",
+   "dica": "As habilidades das marcas gastam PE. Poções de essência devolvem."
+  },
+  {
+   "id": "sanidade",
+   "nome": "Sanidade"
+  }
+ ],
+ "listas": [
+  {
+   "id": "historia",
+   "nome": "História"
+  },
+  {
+   "id": "objetivos",
+   "nome": "Objetivos"
+  },
+  {
+   "id": "anotacoes",
+   "nome": "Anotações"
+  }
+ ],
+ "nomesSecoes": {
+  "habilidades": "Outros poderes"
+ },
+ "regras": [
+  {
+   "titulo": "O que são as Marcas",
+   "texto": "Os personagens carregam marcas: o poder de uma fera ou de uma força (Lobo, Urso Polar, Franco-Atirador, Flor Selvagem, Lontra…). Um personagem pode ter mais de uma marca.\n\nCada marca tem o próprio nível, separado do nível do personagem. Cada nível da marca libera uma habilidade nova ou uma passiva (resistência, visão, deslocamento…). Na ficha, as habilidades acima do nível atual da marca aparecem trancadas."
+  },
+  {
+   "titulo": "Atributos e perícias",
+   "texto": "Seis atributos: Força, Velocidade, Inteligência, Vigor, Essência e Carisma. Nas fichas atuais, eles vão de 0 a 5.\n\nAs perícias são livres: cada personagem tem as suas (Luta, Furtividade, Percepção espiritual, Alquimia…). Algumas têm nível (ex.: Luta 2)."
+  },
+  {
+   "titulo": "Vida, Essência e Sanidade",
+   "texto": "Vida (HP): o quanto o personagem aguenta. Armaduras e itens podem somar vida.\n\nPontos de Essência (PE): o que as habilidades das marcas gastam. Cada habilidade diz o próprio custo. Poções de essência devolvem PE.\n\nSanidade: a mente do personagem."
+  },
+  {
+   "titulo": "Usos por combate",
+   "texto": "Algumas habilidades só podem ser usadas algumas vezes por combate (ex.: 3 vezes por combate, 1 vez por combate). Na ficha, “Usar” marca o uso e tira o custo; “Novo combate” zera os usos."
+  },
+  {
+   "titulo": "Transformações",
+   "texto": "Algumas marcas transformam o personagem (ex.: lobisomem, lobo primordial, rainha demônio). A forma tem vida, essência, atributos, deslocamento e golpes próprios, e pode limitar as habilidades normais. Transformar custa essência. Quando a transformação acaba, o personagem volta à ficha normal."
+  },
+  {
+   "titulo": "Invocações",
+   "texto": "Algumas habilidades chamam criaturas (ex.: urso de gelo, lobos de energia, lontra de energia). A invocação tem vida e ataques próprios e pode evoluir com a marca."
+  },
+  {
+   "titulo": "Ainda em aberto",
+   "texto": "O criador ainda vai definir: como funcionam os testes (dado e dificuldade), como o personagem e as marcas sobem de nível, e o custo de algumas habilidades. Por enquanto a ficha rola 1d20 + o valor e não calcula nada: o jogador e o mestre escrevem tudo."
+  }
+ ],
+ "observacoes": [
+  "Sistema em construção: as regras de testes e de evolução ainda serão definidas por JOJO."
+ ]
+}

@@ -12,7 +12,7 @@ const pequeno = 'rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-
 const botao = 'inline-flex items-center gap-1 rounded-lg border border-(--a-5e4b78) px-2.5 py-1.5 text-xs hover:bg-(--s-34294f) disabled:opacity-40'
 const icone = 'rounded-lg p-1.5 hover:bg-(--s-34294f) disabled:opacity-30'
 
-export const NOMES_SECOES: [SecaoFicha, string][] = [['principal', 'Principal'], ['atributos', 'Atributos e perícias'], ['habilidades', 'Poderes e habilidades'], ['equipamentos', 'Inventário'], ['anotacoes', 'Anotações e regras']]
+export const NOMES_SECOES: [SecaoFicha, string][] = [['principal', 'Principal'], ['atributos', 'Atributos e perícias'], ['habilidades', 'Poderes e habilidades'], ['equipamentos', 'Inventário'], ['anotacoes', 'Anotações e regras'], ['marcas', 'Marcas'], ['formas', 'Transformações'], ['invocacoes', 'Invocações'], ['efeitos', 'Efeitos']]
 
 const mover = <T,>(l: T[], i: number, d: -1 | 1) => { const j = i + d; if (j < 0 || j >= l.length) return l; const n = [...l]; [n[i], n[j]] = [n[j], n[i]]; return n }
 

@@ -31,7 +31,7 @@ export type GrausDef = { lados: number[]; zero?: number; maxPericia?: number }
 export type TabelaDef = { id: string; nome: string; dado: string; linhas: { de: number; ate: number; texto: string }[]; campo?: string }
 /** Capítulo das regras do sistema, escrito pelo autor (v0.35.6). Aparece na ficha, em “Regras”. */
 export type CapituloRegra = { titulo: string; texto: string }
-export type SecaoFicha = 'principal' | 'atributos' | 'habilidades' | 'equipamentos' | 'anotacoes'
+export type SecaoFicha = 'principal' | 'atributos' | 'habilidades' | 'equipamentos' | 'anotacoes' | 'marcas' | 'formas' | 'invocacoes' | 'efeitos'
 
 export type Sistema = {
   id: string
@@ -76,6 +76,8 @@ export type Sistema = {
   atributos: AtributoDef[]
   /** Como a ficha mostra os atributos (v0.35.8): 'lua' = em arco, formando uma lua minguante. */
   visualAtributos?: 'lua'
+  /** Partes extras da ficha ligadas pelo autor (v0.36.0): marcas com níveis, transformações, invocações, efeitos (ver extrasFicha.ts). */
+  extras?: import('./extrasFicha').ExtraFicha[]
   /** Nome que a ficha usa para os atributos (sistemas autorais: “Aspectos”, “Virtudes”…; v0.33.8). As perícias usam `pericias.titulo`. */
   tituloAtributos?: string
   /** Modificador do atributo; `X` é o valor do atributo. Sem isso, o modificador é o próprio valor. */
@@ -129,6 +131,11 @@ export type DadosFicha = {
   periciasExtras?: { id: string; nome: string }[]
   /** Marcações da ficha que não calculam nada (v0.35.9): caixas de estresse, salvaguardas contra a morte, espaços de magia usados, relógios, condições… */
   marcas?: Record<string, boolean | number | string>
+  /** Partes extras (v0.36.0, ver extrasFicha.ts): o que o personagem tem. O que muda no jogo fica em `marcas`. */
+  marcasPoder?: import('./extrasFicha').MarcaPersonagem[]
+  formas?: import('./extrasFicha').Forma[]
+  invocacoes?: import('./extrasFicha').Invocacao[]
+  efeitos?: import('./extrasFicha').Efeito[]
   /** Livro do Jogador e suplementos escolhidos para ESTA ficha (mestre autoriza na campanha). */
   dndLivros?: import('./dndLivros').SelecaoLivrosDnd
   /** Atributos antes dos bônus raciais na criação 2014. Ausência = ficha antiga com totais manuais. */

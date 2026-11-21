@@ -227,6 +227,9 @@ html:not([style*="--fundo-desfoque"]) .fundo-tema::before { filter: none; transf
 [data-visual="assimilacao"] .ficha-painel { border-radius: 24px 8px 30px 12px; background-image: radial-gradient(ellipse at 95% 0%, #b45ec51f, transparent 55%); }
 [data-visual="opositores"] .ficha-painel { border-radius: 22px; border-top: 3px double var(--ficha-acento); background-image: radial-gradient(circle at 92% 8%, #d9c58d20, transparent 28%); }
 [data-visual="nova"] .ficha-painel { border-radius: 4px 20px; border-inline-start: 3px solid var(--ficha-acento); background-image: repeating-linear-gradient(90deg, transparent 0 30px, #ffffff04 30px 31px); }
+[data-visual="marcas"] .ficha-painel { border-radius: 18px; border-top: 2px solid var(--ficha-acento); background-image: radial-gradient(circle at 100% 0, #7fc8f022, transparent 32%), radial-gradient(circle at 0 100%, #8a5cf61a, transparent 35%); }
+[data-visual="marcas"] .ficha-capitulo { border-radius:18px; background:linear-gradient(120deg,#132447,#161b30 55%,#24173a); }
+[data-visual="marcas"] :is(.ficha-item,.ficha-poder) { border-radius:14px; border-left:3px solid #7fc8f0; }
 
 [data-visual="dnd5e-srd"] .ficha-atributo-mod { border-radius: 7px 7px 45% 45% / 7px 7px 28% 28%; border-color: #ba905e; background: linear-gradient(145deg,#41282c,#21171e); }
 [data-visual="faroeste-arcano"] .ficha-atributo-mod { border-radius: 6px; border-style: double; background: linear-gradient(145deg,#483021,#241a15); }

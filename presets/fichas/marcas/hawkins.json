@@ -1,0 +1,401 @@
+{
+  "formato": "prg-ficha",
+  "versao": 1,
+  "exportadoEm": "2026-11-20T00:00:00.000Z",
+  "sistema": "autoral-5d1e8a3c7f2b4c6d9e0a3b8f1c2d4e6a",
+  "sistemaNome": "Marcas",
+  "nome": "Hawkins",
+  "dados": {
+    "sistema": "autoral-5d1e8a3c7f2b4c6d9e0a3b8f1c2d4e6a",
+    "nome": "Hawkins",
+    "campos": {
+      "classe": "Assassino de oportunidade",
+      "nivel": 9,
+      "idade": "23",
+      "altura": "1,88 m",
+      "deslocamento": "",
+      "pulo": "",
+      "resistencias": "Ataques vindos da terra firme (armadura de escamas de dragão terrestre)."
+    },
+    "atributos": {
+      "FOR": 2,
+      "VEL": 4,
+      "INT": 2,
+      "VIG": 2,
+      "ESS": 2
+    },
+    "pericias": {
+      "furtividade": 1,
+      "enganacao": 1,
+      "assassinato": 1,
+      "reflexo": 1
+    },
+    "recursos": {
+      "vida": {
+        "atual": 100,
+        "max": 100
+      },
+      "pe": {
+        "atual": 44,
+        "max": 44
+      },
+      "sanidade": {
+        "atual": 0,
+        "max": 50
+      }
+    },
+    "listas": {
+      "historia": "",
+      "objetivos": "",
+      "anotacoes": "Vida: 70 + 30 da armadura.\nNa ficha original a sanidade estava 50/0 (lido como máximo 50, atual 0) — confira com o mestre."
+    },
+    "itens": [
+      {
+        "id": "hw-espada-gelo",
+        "nome": "Espada de gelo",
+        "categoria": "arma",
+        "peso": 0,
+        "bonus": [],
+        "descricao": "1d6 + 1d4 de gelo.",
+        "dano": "1d6+1d4",
+        "rolagens": [
+          {
+            "nome": "Dano",
+            "expr": "1d6+1d4"
+          }
+        ]
+      },
+      {
+        "id": "hw-faca",
+        "nome": "Faca",
+        "categoria": "arma",
+        "peso": 0,
+        "bonus": [],
+        "dano": "1d4",
+        "rolagens": [
+          {
+            "nome": "Dano",
+            "expr": "1d4"
+          }
+        ]
+      },
+      {
+        "id": "hw-lanca-roxa",
+        "nome": "Lança roxa (Atreus)",
+        "categoria": "arma",
+        "peso": 0,
+        "bonus": [],
+        "descricao": "1d8 + 1d6 elétrico. Especial — estocada silenciosa: ataque furtivo soma +1d6.",
+        "dano": "1d8+1d6",
+        "rolagens": [
+          {
+            "nome": "Dano",
+            "expr": "1d8+1d6"
+          }
+        ],
+        "magico": true
+      },
+      {
+        "id": "hw-armadura",
+        "nome": "Armadura de escamas de dragão terrestre",
+        "categoria": "armadura",
+        "peso": 0,
+        "bonus": [],
+        "descricao": "+30 de vida e resistência a ataques vindos da terra firme.",
+        "magico": true
+      },
+      {
+        "id": "hw-bolsa",
+        "nome": "Bolsa de couro preta",
+        "categoria": "equipamento",
+        "peso": 0,
+        "bonus": []
+      },
+      {
+        "id": "hw-capa",
+        "nome": "Capa escura",
+        "categoria": "equipamento",
+        "peso": 0,
+        "bonus": []
+      },
+      {
+        "id": "hw-bolas",
+        "nome": "Bola de pegar marca",
+        "categoria": "equipamento",
+        "peso": 0,
+        "bonus": [],
+        "magico": true
+      },
+      {
+        "id": "hw-pocao-cura",
+        "nome": "Poção de cura",
+        "categoria": "consumivel",
+        "peso": 0,
+        "bonus": [],
+        "descricao": "Cura 10 de vida."
+      },
+      {
+        "id": "hw-pocao-ess",
+        "nome": "Poção de essência",
+        "categoria": "consumivel",
+        "peso": 0,
+        "bonus": [],
+        "descricao": "Devolve 10 de essência."
+      },
+      {
+        "id": "hw-colar",
+        "nome": "Colar do Atreus",
+        "categoria": "equipamento",
+        "peso": 0,
+        "bonus": [],
+        "magico": true
+      },
+      {
+        "id": "hw-luvas",
+        "nome": "Luvas do Atreus",
+        "categoria": "equipamento",
+        "peso": 0,
+        "bonus": [],
+        "magico": true
+      },
+      {
+        "id": "hw-pocao-xp",
+        "nome": "Poção de aumento de XP",
+        "categoria": "consumivel",
+        "peso": 0,
+        "bonus": []
+      }
+    ],
+    "poderes": [
+      {
+        "id": "hw-estocada",
+        "nome": "Estocada violenta",
+        "tipo": "habilidade",
+        "expressao": "1d12",
+        "usosMax": 4,
+        "descricao": "Alcance de 7 m; dano máximo a 4 m ou menos. 4 vezes por batalha."
+      }
+    ],
+    "uso": {
+      "itens": {
+        "hw-espada-gelo": {
+          "qtd": 1,
+          "equipado": true
+        },
+        "hw-faca": {
+          "qtd": 1,
+          "equipado": false
+        },
+        "hw-lanca-roxa": {
+          "qtd": 1,
+          "equipado": true
+        },
+        "hw-armadura": {
+          "qtd": 1,
+          "equipado": true
+        },
+        "hw-bolsa": {
+          "qtd": 1,
+          "equipado": false
+        },
+        "hw-capa": {
+          "qtd": 1,
+          "equipado": false
+        },
+        "hw-bolas": {
+          "qtd": 2,
+          "equipado": false
+        },
+        "hw-pocao-cura": {
+          "qtd": 3,
+          "equipado": false
+        },
+        "hw-pocao-ess": {
+          "qtd": 2,
+          "equipado": false
+        },
+        "hw-colar": {
+          "qtd": 1,
+          "equipado": false
+        },
+        "hw-luvas": {
+          "qtd": 1,
+          "equipado": false
+        },
+        "hw-pocao-xp": {
+          "qtd": 3,
+          "equipado": false
+        }
+      },
+      "poderes": {},
+      "carteira": "33 de ouro, 5 de prata, 0 de cobre"
+    },
+    "marcasPoder": [
+      {
+        "id": "hwmarlob",
+        "nome": "Marca do Lobo",
+        "nivel": 9,
+        "habilidades": [
+          {
+            "id": "hwlobo01",
+            "nivel": 1,
+            "nome": "Faro do caçador",
+            "texto": "Toma metade do dano de qualquer ataque furtivo."
+          },
+          {
+            "id": "hwlobo02",
+            "nivel": 2,
+            "nome": "Garras de lobo e visão noturna",
+            "expressao": "1d4",
+            "texto": "Garras de 1d4. Visão noturna de 10 m."
+          },
+          {
+            "id": "hwlobo03",
+            "nivel": 3,
+            "nome": "Lança roxa",
+            "expressao": "1d8",
+            "texto": "Especial — estocada silenciosa: o ataque furtivo soma +1d6. +3 m de deslocamento."
+          },
+          {
+            "id": "hwlobo04",
+            "nivel": 4,
+            "nome": "Onda sônica",
+            "expressao": "1d6",
+            "custo": 3,
+            "texto": "Uma onda sônica poderosa. Deixa desorientados os inimigos a menos de 4 m. Alcance máximo: 10 m."
+          },
+          {
+            "id": "hwlobo05",
+            "nivel": 5,
+            "nome": "Campo de fumaça",
+            "custo": 4,
+            "texto": "Fumaça densa numa área de 20 m: todos, menos o usuário, enxergam no máximo 3 m. Não some por meios comuns, só por outros meios."
+          },
+          {
+            "id": "hwlobo06",
+            "nivel": 6,
+            "nome": "Explosão uivante",
+            "expressao": "3d6",
+            "custo": 5,
+            "texto": "Invoca 2 lobos de energia que, junto do usuário, criam dois feixes sonoros de 10 m. Deixa os inimigos desorientados."
+          },
+          {
+            "id": "hwlobo07",
+            "nivel": 7,
+            "nome": "Transformação uivante",
+            "texto": "Vira lobisomem de 2,5 m: veja Transformações."
+          },
+          {
+            "id": "hwlobo08",
+            "nivel": 8,
+            "nome": "Transformação: chute da matilha",
+            "texto": "+10 de vida na transformação e ganha o chute da matilha (1d20)."
+          },
+          {
+            "id": "hwlobo09",
+            "nivel": 9,
+            "nome": "Divisão da matilha",
+            "usosMax": 1,
+            "texto": "+10 na vida máxima do lobo. Uma vez por combate, se divide e anula o dano."
+          },
+          {
+            "id": "hwlobo10",
+            "nivel": 10,
+            "nome": "Transformação: lobo primordial",
+            "texto": "Vira um lobo completo de tamanho mágico: muito forte, mas não distingue inimigo de aliado. Veja Transformações."
+          }
+        ]
+      }
+    ],
+    "formas": [
+      {
+        "id": "hwformlb",
+        "nome": "Lobisomem Uivante",
+        "custo": 7,
+        "requisito": "Marca do Lobo, nível 7",
+        "vidaMax": 110,
+        "essenciaMax": 71,
+        "atributos": {
+          "FOR": 4,
+          "VEL": 5,
+          "INT": 2,
+          "VIG": 4,
+          "ESS": 2
+        },
+        "deslocamento": "14 m",
+        "pericias": "Furtividade, Enganação, Assassinato, Reflexo, Olfato",
+        "texto": "Lobisomem de 2,5 m de altura. Limita as habilidades normais do usuário. Salto de 7 m e visão total no escuro. Resistente a golpes perfurantes e necróticos.\nNa ficha original: vida 110/71 e essência 71/33.",
+        "golpes": [
+          {
+            "id": "hwlbg001",
+            "nome": "Garras longas",
+            "expressao": "1d12"
+          },
+          {
+            "id": "hwlbg002",
+            "nome": "Mordida",
+            "expressao": "1d6",
+            "texto": "+ sangramento de 1d4 por 3 turnos."
+          },
+          {
+            "id": "hwlbg003",
+            "nome": "Bote do lobo",
+            "texto": "Furtivo: o ataque ganha 1 dado a mais."
+          },
+          {
+            "id": "hwlbg004",
+            "nome": "Uivo do lobo",
+            "expressao": "3d6",
+            "texto": "Pode deixar os oponentes inconscientes. 10 m."
+          },
+          {
+            "id": "hwlbg005",
+            "nome": "Chute da matilha",
+            "expressao": "1d20",
+            "custo": 4,
+            "texto": "Dá um pulo e desfere um monte de chutes."
+          }
+        ]
+      },
+      {
+        "id": "hwformpr",
+        "nome": "Lobo Primordial",
+        "requisito": "Marca do Lobo, nível 10",
+        "vidaMax": 150,
+        "atributos": {
+          "FOR": 3,
+          "VEL": 3,
+          "VIG": 3,
+          "INT": 0,
+          "CAR": 0
+        },
+        "texto": "Lobo alfa de 4 m. Muito forte, mas não distingue inimigo de aliado.",
+        "golpes": [
+          {
+            "id": "hwprg001",
+            "nome": "Uivo do lobo ascendente",
+            "expressao": "1d20+1d12",
+            "usosMax": 3
+          },
+          {
+            "id": "hwprg002",
+            "nome": "Garras ou mordida",
+            "expressao": "1d12"
+          },
+          {
+            "id": "hwprg003",
+            "nome": "Investida do lobo",
+            "expressao": "1d20+1d8",
+            "texto": "Se joga em cima do inimigo; o lobo vira espinhos."
+          }
+        ]
+      }
+    ],
+    "invocacoes": [],
+    "efeitos": [],
+    "marcas": {
+      "fv_hwformlb": 71,
+      "fe_hwformlb": 33
+    }
+  }
+}

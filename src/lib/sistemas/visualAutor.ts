@@ -4,7 +4,7 @@ import type { Sistema, VisualAutor } from './tipos'
 
 /** Desenhos de árvore que o autor pode escolher (os mesmos dos sistemas prontos). */
 export const ARVORES_VISUAIS: { id: string; nome: string }[] = [
-  { id: '', nome: 'O do visual do sistema' }, { id: 'padrao', nome: '🌳 Raízes' }, { id: 'nova', nome: '⬡ Rede de circuitos' },
+  { id: '', nome: 'O do visual do sistema' }, { id: 'padrao', nome: '🌳 Raízes' }, { id: 'moderno', nome: '◈ Moderno (tempo atual)' }, { id: 'nova', nome: '◈ Rede N.O.V.A (moderna)' },
   { id: 'ordem-paranormal', nome: '🕯️ Círculo ritual' }, { id: 'opositores', nome: '✨ Constelação' }, { id: 'tormenta20', nome: '⚡ Tempestade' },
   { id: 'pf2e', nome: '🛡️ Estandartes' }, { id: 'faroeste-arcano', nome: '🌵 Trilha' }, { id: 'call-of-cthulhu', nome: '🧵 Quadro de pistas' },
   { id: 'fate-core', nome: '✦ Escada' }, { id: 'blades', nome: '🏮 Becos' }, { id: 'mork-borg', nome: '💀 Ruína' }, { id: 'marcas', nome: '🐾 Rastro' },
@@ -30,6 +30,8 @@ export function lerVisualAutor(v: unknown): Sistema['visual'] | undefined {
   const brilho = um(o.brilho, ['suave', 'forte'] as const); if (brilho) out.brilho = brilho
   const atr = um(o.atributosEstilo, ['circulo', 'hexagono', 'escudo', 'losango'] as const); if (atr) out.atributosEstilo = atr
   const barras = um(o.barrasEstilo, ['fina', 'grossa', 'brilho', 'segmentada'] as const); if (barras) out.barrasEstilo = barras
+  const lig = um(o.arvoreLigacao, ['reta', 'curva', 'circuito'] as const); if (lig) out.arvoreLigacao = lig
+  const fa = um(o.arvoreFundo, ['estrelas', 'liso'] as const); if (fa) out.arvoreFundo = fa
   const montagem = lerMontagem(o.montagem); if (montagem) out.montagem = montagem
   return Object.keys(out).length ? out : undefined
 }

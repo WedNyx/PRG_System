@@ -6,7 +6,7 @@
  */
 import type { DadosFicha, Sistema } from './tipos'
 import { identidadeVisual } from './visualIdentidade'
-import { calcular } from './calculo'
+import { escolhasDeClassePendentes, progressaoAtiva } from './calculo'
 import { arvoreVazia, disponiveis, lerArvore, mesclarArvore, podeLiberar, type Arvore } from './arvore'
 
 export type EstadoMarco = 'recebido' | 'proximo' | 'futuro' | 'referencia'
@@ -19,7 +19,9 @@ export type RamoSistema = { id: string; titulo: string; icone: string; cor: stri
 /** `medida`: o que conta a progressão (Nível, NEX…). Sem medida, os marcos são só referência. */
 export type ArvoreDoSistema = { medida?: { nome: string; atual: number; unidade?: string; max: number }; dica: string; ramos: RamoSistema[]
   /** Árvore que o autor do sistema montou no construtor, já juntada à da ficha (v0.36.3). */
-  autor?: { arvore: Arvore; livres: number; extra: number; nivel: number | null } }
+  autor?: { arvore: Arvore; livres: number; extra: number; nivel: number | null
+    /** Pontos que entram ao subir para o próximo nível (pela tabela do autor). */ ganhoProximo: number
+    /** Campo de escolha (ex.: Destaque) que falta para a tabela de níveis dar pontos. */ pendente?: string } }
 
 type MarcoDef = Omit<Marco, 'estado'>
 const n = (v: unknown) => Math.max(0, Number(v) || 0)
@@ -187,10 +189,26 @@ function camadas(a: Arvore): Map<string, number> {
   for (const n of a.nos) de(n.id, new Set())
   return memo
 }
+/** Quanto a árvore ganha no próximo nível e se falta uma escolha (classe, destaque…) para a tabela valer (v0.36.7). */
+export function ganhoDeNivel(s: Sistema, d: DadosFicha, extra = pontosExtrasDaArvore(s, d)): { ganhoProximo: number; pendente?: string } {
+  const comArvore = s.progressoes?.classes.filter(c => 'arvore' in c.tabela) ?? []
+  if (!comArvore.length) return { ganhoProximo: 0 }
+  const campoNivel = comArvore[0].campoNivel, nivel = Math.max(0, Number(d.campos[campoNivel]) || 0)
+  const ligadas = new Set(comArvore.map(c => c.id))
+  const falta = escolhasDeClassePendentes(s, d).find(c => c.opcoes?.some(o => o.progressao && ligadas.has(o.progressao)))
+  const proximo = nivel < 20 ? pontosExtrasDaArvore(s, { ...d, campos: { ...d.campos, [campoNivel]: nivel + 1 } }) : extra
+  return { ganhoProximo: Math.max(0, proximo - extra), ...(falta ? { pendente: falta.nome } : {}) }
+}
 /** Pontos extras da árvore pela tabela de níveis do autor (coluna “arvore” → prog_arvore). */
 export function pontosExtrasDaArvore(s: Sistema, d: DadosFicha): number {
   if (!s.progressoes?.classes.some(c => 'arvore' in c.tabela)) return 0
-  try { return Math.max(0, Number(calcular(s, d).vars.prog_arvore) || 0) } catch { return 0 }
+  // Direto da tabela (v0.36.7): a ficha manual não passa pelas fórmulas, então os pontos do nível não podem depender delas.
+  let total = 0
+  for (const { cl, campoNivel } of progressaoAtiva(s, d)) {
+    const n = Math.max(0, Math.min(20, Math.floor(Number(d.campos?.[campoNivel]) || 0)))
+    if (n > 0) total += Number(cl.tabela.arvore?.[n - 1]) || 0
+  }
+  return Math.max(0, total)
 }
 function ramoDoAutor(s: Sistema, d: DadosFicha, a: Arvore, extra: number): RamoSistema {
   const nivel = s.campos.some(c => c.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null
@@ -216,7 +234,7 @@ export function arvoreDoSistema(s: Sistema, d: DadosFicha): ArvoreDoSistema | nu
   const marcas = s.extras?.includes('marcas') ? deMarcas(d) : []
   const doAutor = arvoreDoAutor(s, d)
   const extra = doAutor ? pontosExtrasDaArvore(s, d) : 0
-  const autor = doAutor ? { arvore: doAutor, livres: disponiveis(doAutor, extra), extra, nivel: s.campos.some(c => c.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null } : undefined
+  const autor = doAutor ? { arvore: doAutor, livres: disponiveis(doAutor, extra), extra, nivel: s.campos.some(c => c.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null, ...ganhoDeNivel(s, d, extra) } : undefined
   const ramosAutor = doAutor ? [ramoDoAutor(s, d, doAutor, extra)] : []
   if (!base && !marcas.length && !ramosAutor.length) return s.extras?.includes('marcas') ? { dica: 'Cada marca vira um ramo: crie as marcas na aba Marcas.', ramos: [] } : null
   const dica = base?.dica ?? (ramosAutor.length ? 'A árvore que o autor do sistema montou: gaste os pontos para liberar as habilidades.' : 'Cada marca é um ramo: o nível dela libera as habilidades.')
@@ -224,3 +242,11 @@ export function arvoreDoSistema(s: Sistema, d: DadosFicha): ArvoreDoSistema | nu
 }
 export const chaveEscolha = (marcoId: string) => ('arv_' + marcoId).slice(0, 40)
 export const rotuloMarco = rotulo
+
+/** Distâncias do centro agrupadas (anéis). */
+export function aneisDaArvore(pontos: { x: number; y: number }[], centro: { x: number; y: number }): number[] {
+  const ds = pontos.map(p => Math.hypot(p.x - centro.x, p.y - centro.y)).filter(d => d > 20).sort((a, b) => a - b)
+  const out: number[] = []
+  for (const d of ds) { if (!out.length || d - out[out.length - 1] > 40) out.push(d); else out[out.length - 1] = (out[out.length - 1] + d) / 2 }
+  return out.map(Math.round)
+}

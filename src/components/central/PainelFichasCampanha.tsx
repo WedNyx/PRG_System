@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Check, ChevronRight, Copy, Eye, EyeOff, History, Lock, LockOpen, MessageSquareWarning, Plus, Trash2, UserPlus, X } from 'lucide-react'
+import { Check, ChevronRight, Copy, Eye, EyeOff, History, Lock, LockOpen, MessageSquareWarning, Plus, Trash2, Undo2, UserPlus, X } from 'lucide-react'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import { CAMPOS } from '@/lib/campanhas/permissoes'
 import { SISTEMA_V8, sistemaPorId } from '@/lib/sistemas/catalogo'
@@ -47,6 +47,9 @@ export default function PainelFichasCampanha({ aventureiroId, campanhaId, admin,
   const [ocupado, setOcupado] = useState(false)
   const [nova, setNova] = useState<{ tipo: 'npc' | 'jogador'; jogadorId: string; sistema: string; nome: string } | null>(null)
   const [travas, setTravas] = useState<string | null>(null)
+  // Excluir de vez (v0.36.7): o mestre digita o nome da ficha para confirmar.
+  const [apagando, setApagando] = useState<{ id: string; texto: string } | null>(null)
+  const souMestre = membros.find(m => m.aventureiro_id === aventureiroId)?.papel === 'mestre'
   const call = useCallback((c: string, method = 'GET', body?: unknown) => api<Record<string, unknown>>(c, { method, body, aventureiro: aventureiroId }), [aventureiroId])
 
   const carregar = useCallback(async () => {
@@ -95,6 +98,19 @@ export default function PainelFichasCampanha({ aventureiroId, campanhaId, admin,
       <Link href={'/historico?ficha=' + f.id} className={btn}><History size={14} /> Histórico</Link>
       {extra}
     </div>
+    {apagando?.id === f.id && <div className="mt-2 rounded-lg border border-[#c2416b] bg-[#2a1220] p-3 text-xs" data-excluir-ficha>
+      <p className="font-semibold text-[#f2a9c3]">Excluir “{f.nome || 'sem nome'}” de vez?</p>
+      <p className="mt-1 text-(--a-d6c8e8)">A ficha da campanha é apagada para sempre, com o histórico dela. Se quiser só tirar da mesa, use “Tirar da campanha”: a ficha volta para {f.dono?.apelido ?? 'o jogador'}.</p>
+      <label className="mt-2 block">Digite o nome da ficha para confirmar
+        <input value={apagando.texto} onChange={e => setApagando({ id: f.id, texto: e.target.value })} placeholder={f.nome || 'excluir'} autoFocus
+          className="mt-1 w-full rounded-lg border border-(--a-70588c) bg-(--s-151123) p-2 text-sm text-white" /></label>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        <button type="button" disabled={ocupado || apagando.texto.trim().toLowerCase() !== (f.nome || 'excluir').trim().toLowerCase()}
+          onClick={() => { const texto = apagando.texto; setApagando(null); acao(() => call('fichas/' + f.id, 'DELETE', { confirmar: texto })) }}
+          className={btn + ' border-[#c2416b] text-[#f2a9c3]'}><Trash2 size={14} /> Excluir de vez</button>
+        <button type="button" onClick={() => setApagando(null)} className={btn}>Cancelar</button>
+      </div>
+    </div>}
     {travas === f.id && <div className="mt-2 grid gap-1 rounded-lg border border-(--a-55456e) p-2 text-xs sm:grid-cols-2">
       {CAMPOS.map(c => <label key={c.id} className="flex items-center gap-2"><input type="checkbox" defaultChecked={f.areas_bloqueadas?.includes(c.id)} data-area={c.id} className="accent-(--a-b79aff)" />{c.titulo}</label>)}
       <button type="button" className={btn + ' sm:col-span-2 justify-center'} disabled={ocupado} onClick={e => {
@@ -143,6 +159,9 @@ export default function PainelFichasCampanha({ aventureiroId, campanhaId, admin,
       <ul className="mt-3 space-y-2">{jogadores.map(f => cartao(f, <>
         <button type="button" disabled={ocupado} onClick={() => acao(() => call(`campanhas/${campanhaId}/fichas/${f.id}`, 'POST', { bloqueada: !f.bloqueada }))} className={btn}>{f.bloqueada ? <><LockOpen size={14} /> Destravar</> : <><Lock size={14} /> Travar</>}</button>
         <button type="button" onClick={() => setTravas(travas === f.id ? null : f.id)} className={btn}><Lock size={14} /> Travar áreas</button>
+        {f.dono_id !== aventureiroId && <button type="button" disabled={ocupado} onClick={() => acao(() => call(`campanhas/${campanhaId}/fichas/${f.id}`, 'POST', { acao: 'devolver' }),
+          `Tirar “${f.nome || 'sem nome'}” da campanha? A ficha sai da mesa e volta para ${f.dono?.apelido ?? 'o jogador'} como ficha avulsa (nada se perde).`)} className={btn}><Undo2 size={14} /> Tirar da campanha</button>}
+        {souMestre && f.dono_id !== aventureiroId && <button type="button" disabled={ocupado} onClick={() => setApagando(apagando?.id === f.id ? null : { id: f.id, texto: '' })} className={btn + ' text-[#f2a9c3]'}><Trash2 size={14} /> Excluir de vez</button>}
       </>))}</ul>
       {jogadores.length === 0 && <p className="mt-2 text-sm text-(--a-c4b6d4)">Nenhuma ficha aprovada ainda.</p>}
     </section>

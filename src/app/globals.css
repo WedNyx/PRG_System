@@ -720,3 +720,13 @@ html[data-efeitos="leves"] .ficha-fundo { display: none; }
   .ficha-identidade-campos > *, :has(> .ficha-pericia) > * { grid-column: 1 / -1 !important; }
   :has(> .ficha-atributo-percentual) { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
 }
+
+/* ---- Constelação da árvore do autor (v0.36.7) ---- */
+@keyframes constelacao-pulso { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .35; } }
+.constelacao-pronto .constelacao-forma { animation: constelacao-pulso 2.2s ease-in-out infinite; }
+html[data-movimento="reduzido"] .constelacao-pronto .constelacao-forma { animation: none; }
+@media (prefers-reduced-motion: reduce) { .constelacao-pronto .constelacao-forma { animation: none; } }
+.constelacao-no[data-estado="recebido"] svg { filter: drop-shadow(0 0 14px color-mix(in oklab, var(--ficha-acento) 70%, transparent)); }
+.constelacao-no:focus-visible { outline: 2px solid var(--ficha-acento); }
+.constelacao .react-flow__controls button { background: #11141b; border-color: #ffffff1a; color: #d7deea; }
+.constelacao .react-flow__node-hab { pointer-events: all !important; cursor: default; }

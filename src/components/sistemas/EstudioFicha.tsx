@@ -168,6 +168,13 @@ export default function EstudioFicha({ sistema, visual, mudarVisual, nomes, muda
       <label className="block text-xs">Letra dos títulos<select value={visual.fonte ?? ''} onChange={e => set('fonte', (e.target.value || undefined) as FonteAutor | undefined)} className={campo + ' mt-1'}>{FONTES.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}</select></label>
       <label className="block text-xs">Letra do texto<select value={visual.fonteCorpo ?? ''} onChange={e => set('fonteCorpo', (e.target.value || undefined) as FonteAutor | undefined)} className={campo + ' mt-1'}>{FONTES.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}</select></label>
       <label className="block text-xs">Desenho da árvore<select value={visual.arvore ?? ''} onChange={e => set('arvore', e.target.value || undefined)} className={campo + ' mt-1'}>{ARVORES_VISUAIS.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}</select></label>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block text-xs">Ligações da árvore<select value={visual.arvoreLigacao ?? ''} onChange={e => set('arvoreLigacao', (e.target.value || undefined) as VisualAutor['arvoreLigacao'])} className={campo + ' mt-1'}>
+          <option value="">Tracejadas</option><option value="reta">Retas</option><option value="curva">Curvas</option><option value="circuito">Circuito</option></select></label>
+        <label className="block text-xs">Fundo da árvore<select value={visual.arvoreFundo ?? ''} onChange={e => set('arvoreFundo', (e.target.value || undefined) as VisualAutor['arvoreFundo'])} className={campo + ' mt-1'}>
+          <option value="">Grade</option><option value="estrelas">Estrelas</option><option value="liso">Liso</option></select></label>
+      </div>
+      <p className="text-[11px] text-(--a-a998bd)">A árvore aparece na ficha como você montou no construtor (em “Árvore de habilidades padrão”), crescendo do centro para fora. Em cada hexágono dá para escolher símbolo, forma e tamanho.</p>
     </section>
   </div>
   else if (aba === 'imagens') conteudo = <div className="space-y-3">

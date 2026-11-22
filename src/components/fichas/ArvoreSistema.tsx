@@ -22,6 +22,7 @@ const ESTADOS: Record<EstadoMarco, { texto: string; icone: string }> = {
 }
 const MESTRE = 'mestre', MAPA = 'mapa'
 // React Flow só carrega quando alguém abre o mapa (fica fora do pacote principal da ficha).
+const ConstelacaoArvore = dynamic(() => import('./ConstelacaoArvore'), { ssr: false, loading: () => <p className="rounded-2xl border border-white/10 p-6 text-center text-sm text-(--a-cfc0df)">Abrindo a constelação…</p> })
 const MapaArvore = dynamic(() => import('./MapaArvore'), { ssr: false, loading: () => <p className="rounded-2xl border border-(--a-55456e) p-6 text-center text-sm text-(--a-cfc0df)">Abrindo o mapa…</p> })
 
 export default function ArvoreSistema({ s, d, onChange, somenteLeitura, children }: { s: Sistema; d: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura: boolean; children?: ReactNode }) {
@@ -30,9 +31,12 @@ export default function ArvoreSistema({ s, d, onChange, somenteLeitura, children
   const ramos = arvore?.ramos ?? []
   const [ramoId, setRamoId] = useState(ramos.length > 1 ? MAPA : ramos[0]?.id ?? MESTRE)
   const [futuros, setFuturos] = useState(false)
-  const [visao, setVisao] = useState<'yggdrasil' | 'lista'>('yggdrasil')
+  const [visao, setVisao] = useState<'yggdrasil' | 'lista' | 'constelacao'>('yggdrasil')
   const [aberto, setAberto] = useState<string | null>(null)
   const ramo = ramos.find(r => r.id === ramoId)
+  // Árvore do autor (v0.36.7): abre em constelação, do centro para fora, como o autor montou.
+  const doAutor = ramo?.id === 'autor'
+  const visaoRamo = doAutor ? (visao === 'lista' ? 'lista' : 'constelacao') : visao === 'constelacao' ? 'yggdrasil' : visao
   const escolha = (m: Marco) => { const v = d.marcas?.[chaveEscolha(m.id)]; return typeof v === 'string' ? v : '' }
   const anotar = (m: Marco, v: string) => { const marcas = { ...(d.marcas ?? {}) }; if (v.trim()) marcas[chaveEscolha(m.id)] = v.slice(0, 200); else delete marcas[chaveEscolha(m.id)]; onChange({ ...d, marcas }) }
   const visiveis = (r: RamoSistema) => r.marcos.filter(m => futuros || m.estado !== 'futuro')
@@ -89,16 +93,33 @@ export default function ArvoreSistema({ s, d, onChange, somenteLeitura, children
       <AnimatePresence>{(() => { const m = ramos.flatMap(r => r.marcos).find(x => x.id === aberto); return m ? detalhe(m) : null })()}</AnimatePresence>
     </div> : ramoId === MESTRE || !ramo ? children : <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex flex-wrap items-center gap-2 font-semibold" style={{ color: ramo.cor }}><span aria-hidden>{ramo.icone}</span>{ramo.titulo}{ramo.id === 'autor' && autor && <span className="rounded-full border border-current px-2 py-0.5 text-xs font-normal">{autor.livres} {autor.livres === 1 ? 'ponto livre' : 'pontos livres'}</span>}</h3>
+        <h3 className="flex flex-wrap items-center gap-2 font-semibold" style={{ color: ramo.cor }}><span aria-hidden>{ramo.icone}</span>{ramo.titulo}</h3>
         <div className="flex flex-wrap items-center gap-2">
           <div role="group" aria-label="Visualização da árvore" className="flex rounded-lg border border-(--a-55456e) p-1">
-            {(['yggdrasil', 'lista'] as const).map(v => <button key={v} type="button" aria-pressed={visao === v} onClick={() => setVisao(v)} className={'min-h-10 rounded-md px-3 text-xs ' + (visao === v ? 'bg-(--s-34294f) text-white' : 'text-(--a-cfc0df)')}>{v === 'yggdrasil' ? tema.nome : '☷ Lista'}</button>)}
+            {(doAutor ? ['constelacao', 'lista'] as const : ['yggdrasil', 'lista'] as const).map(v => <button key={v} type="button" aria-pressed={visaoRamo === v} onClick={() => setVisao(v)} className={'min-h-10 rounded-md px-3 text-xs ' + (visaoRamo === v ? 'bg-(--s-34294f) text-white' : 'text-(--a-cfc0df)')}>{v === 'yggdrasil' ? tema.nome : v === 'constelacao' ? '✦ Constelação' : '☷ Lista'}</button>)}
           </div>
-          {ramo.marcos.some(m => m.estado === 'futuro') && <label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-(--a-55456e) px-3 text-xs text-(--a-cfc0df)"><input type="checkbox" checked={futuros} onChange={e => setFuturos(e.target.checked)} /> Mostrar os futuros</label>}
+          {!doAutor && ramo.marcos.some(m => m.estado === 'futuro') && <label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-(--a-55456e) px-3 text-xs text-(--a-cfc0df)"><input type="checkbox" checked={futuros} onChange={e => setFuturos(e.target.checked)} /> Mostrar os futuros</label>}
         </div>
       </div>
-      {!visiveis(ramo).length ? <p className="rounded-xl border border-dashed border-(--a-55456e) p-4 text-sm text-(--a-cfc0df)">{ramo.vazio ?? (ramo.marcos.length ? 'Nada recebido ainda. Ligue “Mostrar os futuros” para ver o caminho.' : 'Nada neste ramo ainda.')}</p>
-        : visao === 'yggdrasil' ? <div className={'relative overflow-hidden rounded-2xl border px-2 py-6 ' + tema.fundo} data-tema-arvore={identidade}>
+      {doAutor && autor && <div className="mb-3 grid gap-2 sm:grid-cols-[auto_1fr]" data-pontos-arvore>
+        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[.04] px-4 py-3">
+          <span className="text-3xl font-black tabular-nums text-white">{autor.livres}</span>
+          <span className="text-xs leading-tight text-(--a-cfc0df)">{autor.livres === 1 ? 'ponto' : 'pontos'}<br />para gastar</span>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-white/[.04] px-4 py-2.5 text-xs leading-relaxed text-(--a-cfc0df)">
+          <p>{autor.arvore.pontos} da árvore{autor.extra ? ` + ${autor.extra} pela tabela de níveis${autor.nivel ? ' (nível ' + autor.nivel + ')' : ''}` : ''}{autor.arvore.liberados.length ? ` · ${autor.arvore.liberados.length} ${autor.arvore.liberados.length === 1 ? 'habilidade liberada' : 'habilidades liberadas'}` : ''}.</p>
+          {autor.pendente ? <p className="mt-0.5 font-semibold text-amber-200">⚠ Escolha “{autor.pendente}” na aba Principal para ganhar os pontos de cada nível.</p>
+            : autor.ganhoProximo > 0 && <p className="mt-0.5 text-white">⬆ Ao subir para o nível {(autor.nivel ?? 0) + 1}: +{autor.ganhoProximo} {autor.ganhoProximo === 1 ? 'ponto' : 'pontos'} na árvore.</p>}
+        </div>
+      </div>}
+      {doAutor && autor && visaoRamo === 'constelacao' ? <div className="space-y-3">
+        <p className="text-xs text-(--a-cfc0df)">A árvore cresce do centro para fora. Arraste para andar, use a pinça (ou a rodinha) para aproximar e toque numa habilidade para ver e liberar.</p>
+        <ConstelacaoArvore arvore={autor.arvore} marcos={ramo.marcos} aberto={aberto} abrir={abrirMarco} ligacao={s.visual?.arvoreLigacao} fundo={s.visual?.arvoreFundo} mostrarFuturos />
+        <div className="flex flex-wrap gap-3 text-[11px] text-(--a-cfc0df)" aria-label="Legenda"><span>◆ Liberada</span><span className="text-(--ficha-acento)">◇ Pode liberar</span><span className="opacity-70">🔒 Bloqueada</span><span>NV = nível mínimo · número = custo</span></div>
+        <AnimatePresence>{(() => { const m = ramo.marcos.find(x => x.id === aberto); return m ? detalhe(m) : null })()}</AnimatePresence>
+      </div>
+      : !visiveis(ramo).length ? <p className="rounded-xl border border-dashed border-(--a-55456e) p-4 text-sm text-(--a-cfc0df)">{ramo.vazio ?? (ramo.marcos.length ? 'Nada recebido ainda. Ligue “Mostrar os futuros” para ver o caminho.' : 'Nada neste ramo ainda.')}</p>
+        : visaoRamo === 'yggdrasil' ? <div className={'relative overflow-hidden rounded-2xl border px-2 py-6 ' + tema.fundo} data-tema-arvore={identidade}>
           {tema.decoracao}
           <ol className="relative mx-auto max-w-lg" aria-label={tema.nome.replace(/^\S+\s/, '') + ' de ' + ramo.titulo}>
             {visiveis(ramo).map((m, i, lista) => {

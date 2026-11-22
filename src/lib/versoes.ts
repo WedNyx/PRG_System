@@ -27,6 +27,17 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.36.7', data: '2026-11-22',
+    titulo: 'Árvore em constelação, árvore mais personalizável e mestre tira ou exclui fichas da campanha',
+    itens: [
+      'A árvore que o autor monta no construtor aparece na ficha como ele desenhou: cresce do centro para fora, em constelação, com anéis, zoom, minimapa e visual moderno. A lista continua ao lado.',
+      'Pontos da árvore mais claros: quantos dá para gastar, de onde vêm (árvore + tabela de níveis), quanto entra ao subir de nível e um aviso quando falta a escolha (ex.: Destaque) que libera os pontos de cada nível.',
+      'No construtor, cada hexágono ganha símbolo (emoji ou letras), forma (hexágono, círculo, losango, quadrado) e tamanho; no Estúdio da ficha dá para escolher as ligações (tracejadas, retas, curvas, circuito) e o fundo da árvore.',
+      'Novo desenho de árvore “Moderno (tempo atual)”; a Rede N.O.V.A ficou com esse visual.',
+      'Mestre: nas fichas dos jogadores da campanha, “Tirar da campanha” devolve a ficha ao jogador como avulsa (nada se perde) e “Excluir de vez” apaga para sempre, digitando o nome da ficha para confirmar. Só o mestre exclui de vez; o jogador recebe um aviso.',
+    ],
+  },
+  {
     versao: '0.36.6', data: '2026-11-21',
     titulo: 'Fichas com a cara de cada jogo, Ordem da PR #68 e mesa organizada',
     itens: [

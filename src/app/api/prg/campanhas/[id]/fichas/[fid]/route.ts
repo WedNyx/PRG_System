@@ -8,7 +8,7 @@ const AREAS = new Set<string>(CAMPOS.map(c => c.id))
 
 /**
  * Ações do mestre sobre uma ficha da campanha:
- * decisao (aprovar | recusar | ajustar + observacao), bloqueada, areasBloqueadas, oculta, acao: 'duplicar'.
+ * decisao (aprovar | recusar | ajustar + observacao), bloqueada, areasBloqueadas, oculta, acao: 'duplicar' | 'devolver'.
  */
 export const POST = rota<Ctx>(async (req, { params }) => {
   const { id, fid } = await params
@@ -18,6 +18,20 @@ export const POST = rota<Ctx>(async (req, { params }) => {
   if (!f || f.campanha_id !== id) throw new ErroApi(404, 'Ficha não encontrada.')
   const b = await lerJson(req) as Record<string, unknown>
   const obs = typeof b.observacao === 'string' ? b.observacao.trim().slice(0, 600) : undefined
+
+  // Tirar da campanha (v0.36.7): a ficha de jogador sai da mesa e volta para ele como ficha avulsa — nada se perde.
+  if (b.acao === 'devolver') {
+    if (f.npc) throw new ErroApi(400, 'NPCs são do mestre: para tirar um NPC, use Excluir.')
+    const nomeC = await nomeDaCampanha(id), nomeF = f.nome || 'Personagem'
+    await rest(`prg_alteracoes?ficha_id=eq.${q(f.id)}&estado=eq.pendente`, { method: 'DELETE' })
+    await rest(`prg_tokens?ficha_id=eq.${q(f.id)}&campanha_id=eq.${q(id)}`, { method: 'PATCH', body: JSON.stringify({ ficha_id: null }) })
+    await rest(`prg_fichas?id=eq.${q(f.id)}`, { method: 'PATCH', body: JSON.stringify({
+      campanha_id: null, status: 'ativa', bloqueada: false, areas_bloqueadas: [], observacao_mestre: '', oculta: false, nome: `${nomeF} (de ${nomeC})`.slice(0, 90),
+    }) })
+    await registrar([{ campanha_id: id, autor_id: eu, tipo: 'administracao', descricao: `Ficha tirada da campanha e devolvida ao jogador: ${nomeF}` }])
+    await notificar([{ destinatario_id: f.dono_id, campanha_id: id, tipo: 'ficha_devolvida', titulo: `📦 ${nomeF} saiu de ${nomeC}`, texto: 'O mestre tirou a ficha da campanha. Ela continua com você, nas suas fichas avulsas.', link: linkFichaNuvem(f) }], eu)
+    return ok({ ok: true })
+  }
 
   if (b.acao === 'duplicar') {
     const [copia] = await rest<{ id: string }[]>('prg_fichas', {

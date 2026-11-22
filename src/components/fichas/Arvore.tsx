@@ -1,5 +1,6 @@
 'use client'
 
+import { FormaSvg, raioDoNo, simboloDoNo } from './formaNo'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
 import { ligarZoomSuave } from '@/lib/zoomRoda'
@@ -15,11 +16,11 @@ import {
   ACOES_DO_MESTRE, arvoreExemplo, concederNo, CORES_NO, desfazer, devolverNo, difereDoSistema, disponiveis, excluirNoArvore, gastos, gravarNoArvore, lerArvore, liberarNo, LIM_ARVORE,
   mesclarArvore, mudarPontos, novoIdNo, noAtivo, podeDevolver, podeLiberar, requisitoFichaAtendido, retirarNo, sincronizarPoderes, TEXTO_ACAO,
   type Arvore, type EfeitoNo, type EntradaHistorico, type NoArvore, type RequisitoFichaNo,
+  FORMAS_NO, TAMANHOS_NO, lerIconeNo,
 } from '@/lib/sistemas/arvore'
 
 const R = 34 // raio do hexágono
 const MARGEM = 170
-const hex = (r: number) => Array.from({ length: 6 }, (_, i) => { const a = Math.PI / 180 * (60 * i - 90); return `${(r * Math.cos(a)).toFixed(1)},${(r * Math.sin(a)).toFixed(1)}` }).join(' ')
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white'
 const btn = 'inline-flex items-center gap-1.5 rounded-lg border border-(--a-70588c) px-3 py-2 text-sm hover:bg-(--s-38294d) disabled:opacity-40'
 
@@ -233,19 +234,19 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
               {/* Hexágonos */}
               {a.nos.map(n => {
                 const { x, y } = pos(n), e = estado(n), escolhido = sel === n.id
-                const aceso = e === 'liberado'
+                const aceso = e === 'liberado', r = raioDoNo(n.tamanho, R)
                 return <g key={n.id} transform={`translate(${x},${y})`} onPointerDown={ev => tocarNo(ev, n)} className={montando ? 'arvore-no-arrastavel cursor-move' : 'cursor-pointer'}
                   role="button" aria-label={`${n.nome}, custo ${n.custo}, ${e === 'inativo' ? 'inativo pela escolha atual' : aceso ? 'liberado' : e === 'disponivel' ? 'pode liberar' : 'bloqueado'}`}>
-                  {escolhido && <polygon points={hex(R + 9)} fill="none" stroke="#fff" strokeWidth={2} opacity={0.9} />}
-                  {ligando === n.id && <polygon points={hex(R + 14)} fill="none" stroke="#fbbf24" strokeWidth={2} strokeDasharray="5 4" />}
-                  {a.concedidos?.includes(n.id) && <polygon points={hex(R + 5)} fill="none" stroke="#fde68a" strokeWidth={1.5} strokeDasharray="3 3" />}
-                  {!!n.nivel && !aceso && <g transform={`translate(${-R * 0.8},${-R * 0.75})`}><circle r={10} fill="#0c0a16" stroke="#62527e" /><text y={4} textAnchor="middle" fontSize={9} fill="#f2ebff" fontWeight={700}>N{n.nivel}</text></g>}
-                  <polygon points={hex(R)} fill={aceso ? n.cor : '#1d1730'} stroke={aceso ? '#fff' : e === 'disponivel' ? n.cor : '#4a3d63'} strokeWidth={aceso ? 2 : e === 'disponivel' ? 3 : 2}
+                  {escolhido && <FormaSvg forma={n.forma} r={r + 9} fill="none" stroke="#fff" strokeWidth={2} opacity={0.9} />}
+                  {ligando === n.id && <FormaSvg forma={n.forma} r={r + 14} fill="none" stroke="#fbbf24" strokeWidth={2} strokeDasharray="5 4" />}
+                  {a.concedidos?.includes(n.id) && <FormaSvg forma={n.forma} r={r + 5} fill="none" stroke="#fde68a" strokeWidth={1.5} strokeDasharray="3 3" />}
+                  {!!n.nivel && !aceso && <g transform={`translate(${-r * 0.8},${-r * 0.75})`}><circle r={10} fill="#0c0a16" stroke="#62527e" /><text y={4} textAnchor="middle" fontSize={9} fill="#f2ebff" fontWeight={700}>N{n.nivel}</text></g>}
+                  <FormaSvg forma={n.forma} r={r} fill={aceso ? n.cor : '#1d1730'} stroke={aceso ? '#fff' : e === 'disponivel' ? n.cor : '#4a3d63'} strokeWidth={aceso ? 2 : e === 'disponivel' ? 3 : 2}
                     filter={aceso ? 'url(#brilho)' : undefined} className={e === 'disponivel' ? 'prg-hex-pronto' : undefined} />
-                  {aceso && <polygon points={hex(R - 4)} fill="url(#hexDentro)" />}
-                  <text y={6} textAnchor="middle" fontSize={18} fill={aceso ? '#1a1230' : e === 'disponivel' ? n.cor : '#6d5f86'} fontWeight={800}>{n.nome.trim()[0]?.toUpperCase()}</text>
-                  <g transform={`translate(${R * 0.8},${-R * 0.75})`}><circle r={10} fill="#0c0a16" stroke={aceso ? n.cor : '#62527e'} /><text y={4} textAnchor="middle" fontSize={11} fill="#f2ebff" fontWeight={700}>{n.custo}</text></g>
-                  <text y={R + 20} textAnchor="middle" fontSize={12} fontFamily="Georgia, serif" letterSpacing="1.2" fill={aceso ? '#f8f1ff' : e === 'disponivel' ? '#e4d3ff' : '#8c7fa3'}
+                  {aceso && <FormaSvg forma={n.forma} r={r - 4} fill="url(#hexDentro)" />}
+                  <text y={6} textAnchor="middle" fontSize={Math.round(18 * r / R)} fill={aceso ? '#1a1230' : e === 'disponivel' ? n.cor : '#6d5f86'} fontWeight={800}>{simboloDoNo(n)}</text>
+                  <g transform={`translate(${r * 0.8},${-r * 0.75})`}><circle r={10} fill="#0c0a16" stroke={aceso ? n.cor : '#62527e'} /><text y={4} textAnchor="middle" fontSize={11} fill="#f2ebff" fontWeight={700}>{n.custo}</text></g>
+                  <text y={r + 20} textAnchor="middle" fontSize={12} fontFamily="Georgia, serif" letterSpacing="1.2" fill={aceso ? '#f8f1ff' : e === 'disponivel' ? '#e4d3ff' : '#8c7fa3'}
                     stroke="#07060d" strokeWidth={3} paintOrder="stroke" style={{ textTransform: 'uppercase' }}>{n.nome.length > 22 ? n.nome.slice(0, 21) + '…' : n.nome}</text>
                 </g>
               })}
@@ -352,6 +353,18 @@ function EditorNo({ inicial, a, sistema, alvos, recursos, temNivel, cartoes, gra
         <button type="button" onClick={fechar} aria-label="Fechar" className="rounded-lg p-1 hover:bg-(--s-2b2140)"><X size={20} /></button></div>
       <label className="mt-3 block text-sm">Nome<input autoFocus required maxLength={LIM_ARVORE.nome} value={n.nome} onChange={e => setN({ ...n, nome: e.target.value })} className={input + ' mt-1'} placeholder="Ex.: Habilidade de Raio" /></label>
       <label className="mt-3 block text-sm">Descrição<textarea rows={3} maxLength={LIM_ARVORE.descricao} value={n.descricao ?? ''} onChange={e => setN({ ...n, descricao: e.target.value })} className={input + ' mt-1'} placeholder="O que ela faz na história e nas regras." /></label>
+      <fieldset className="mt-3 rounded-xl border border-(--a-3d3152) p-3 text-sm"><legend className="px-1 text-xs font-semibold">Aparência no mapa</legend>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="text-xs">Símbolo<input value={n.icone ?? ''} maxLength={6} placeholder={n.nome.trim()[0]?.toUpperCase() || 'A'} aria-label="Símbolo do nó (emoji ou letras)"
+            onChange={e => { const { icone: _i, ...r } = n; void _i; const v = lerIconeNo(e.target.value); setN(v ? { ...r, icone: v } : r) }} className={input + ' mt-1 !w-16 text-center'} /></label>
+          <div className="text-xs"><span className="block">Forma</span><div className="mt-1 flex gap-1">{FORMAS_NO.map(f => <button key={f.id} type="button" aria-pressed={(n.forma ?? 'hexagono') === f.id} aria-label={f.nome} title={f.nome}
+            onClick={() => { const { forma: _f, ...r } = n; void _f; setN(f.id === 'hexagono' ? r : { ...r, forma: f.id }) }}
+            className={'grid size-10 place-items-center rounded-lg border ' + ((n.forma ?? 'hexagono') === f.id ? 'border-amber-300 bg-(--s-3a2c58)' : 'border-(--a-55456e)')}>
+            <svg viewBox="-20 -20 40 40" className="size-6"><FormaSvg forma={f.id} r={14} fill={n.cor} /></svg></button>)}</div></div>
+          <label className="text-xs">Tamanho<select value={n.tamanho ?? ''} onChange={e => { const { tamanho: _t, ...r } = n; void _t; setN(e.target.value ? { ...r, tamanho: e.target.value as 'p' | 'g' } : r) }} className={input + ' mt-1 !w-auto'}>
+            {TAMANHOS_NO.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select></label>
+        </div>
+      </fieldset>
       <div className="mt-3 flex flex-wrap items-end gap-4">
         <div className="text-sm">Custo (pontos)<div className="mt-1 flex items-center gap-2">
           <button type="button" className={btn + ' !px-2'} aria-label="Diminuir custo" onClick={() => setN({ ...n, custo: Math.max(0, n.custo - 1) })}><Minus size={14} /></button>

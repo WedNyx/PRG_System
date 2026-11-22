@@ -15,3 +15,11 @@ No construtor de sistemas autorais, **🎨 Estúdio da ficha → Abrir o estúdi
 - Nada é calculado: o estúdio muda só a aparência e a arrumação.
 
 Teste de tela: `scripts/tela/estudio.cjs`.
+
+## Árvore em constelação (v0.36.7)
+- A árvore que o autor monta em “Árvore de habilidades padrão” aparece na ficha nas posições dele, do centro para fora (`ConstelacaoArvore.tsx`, React Flow): anéis pela distância do centro, ligações pelos requisitos, zoom e minimapa (com mais de 8 nós). A Lista continua como alternativa.
+- Cada nó pode ter símbolo (emoji ou até 3 letras), forma (hexágono, círculo, losango, quadrado) e tamanho (pequeno, normal, grande) — `NoArvore.icone/forma/tamanho`, conferidos em `lerNo`.
+- No Estúdio (Cores): ligações (tracejadas, retas, curvas, circuito) e fundo (grade, estrelas, liso) — `VisualAutor.arvoreLigacao/arvoreFundo`.
+- Pontos: painel com o total para gastar, de onde vêm (árvore + tabela de níveis), quanto entra no próximo nível e aviso quando falta a escolha que liga a tabela (ex.: Destaque). Correção: na ficha manual os pontos da tabela de níveis não entravam (vinham das fórmulas); agora são lidos direto da tabela (`pontosExtrasDaArvore`).
+
+Teste de tela: `scripts/tela/constelacao.cjs`.

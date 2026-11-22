@@ -22,7 +22,15 @@ export type NoArvore = {
   nivel?: number
   /** Restringe este hexágono a uma escolha do personagem (opcional). */
   requisitoFicha?: RequisitoFichaNo
+  /** Aparência escolhida pelo autor (v0.36.7): símbolo dentro do nó (emoji ou até 2 letras), forma e tamanho. */
+  icone?: string; forma?: FormaNo; tamanho?: TamanhoNo
 }
+export type FormaNo = 'hexagono' | 'circulo' | 'losango' | 'quadrado'
+export type TamanhoNo = 'p' | 'g'
+export const FORMAS_NO: { id: FormaNo; nome: string }[] = [{ id: 'hexagono', nome: 'Hexágono' }, { id: 'circulo', nome: 'Círculo' }, { id: 'losango', nome: 'Losango' }, { id: 'quadrado', nome: 'Quadrado' }]
+export const TAMANHOS_NO: { id: TamanhoNo | ''; nome: string }[] = [{ id: 'p', nome: 'Pequeno' }, { id: '', nome: 'Normal' }, { id: 'g', nome: 'Grande (núcleo)' }]
+/** Símbolo curto e seguro para mostrar no nó. */
+export const lerIconeNo = (v: unknown) => typeof v === 'string' && /^[^<>{}()"'`\\;&]{1,6}$/u.test(v.trim()) && [...v.trim()].length <= 3 ? v.trim() : undefined
 /** O que mudou na árvore (v0.33.6). `antes` guarda o hexágono (editar/excluir) ou os pontos, para poder desfazer. */
 export type AcaoArvore = 'liberar' | 'devolver' | 'conceder' | 'retirar' | 'criar' | 'editar' | 'excluir' | 'pontos'
 export type EntradaHistorico = { id: string; acao: AcaoArvore; no?: string; nome: string; em: string; antes?: NoArvore | number; desfeito?: boolean }
@@ -97,7 +105,10 @@ function lerNo(x: unknown, vistos = new Set<string>()): NoArvore | null {
   return { id, nome, ...(descricao ? { descricao } : {}), custo: num(n.custo, 0, 99, 1), cor,
     x: num(n.x, -LIM_ARVORE.area, LIM_ARVORE.area), y: num(n.y, -LIM_ARVORE.area, LIM_ARVORE.area),
     requer: (Array.isArray(n.requer) ? n.requer : []).filter((r): r is string => typeof r === 'string' && ID.test(r) && r !== id).slice(0, LIM_ARVORE.requer), efeitos,
-    ...(nivel > 0 ? { nivel } : {}), ...(requisitoFicha ? { requisitoFicha } : {}) }
+    ...(nivel > 0 ? { nivel } : {}), ...(requisitoFicha ? { requisitoFicha } : {}),
+    ...(lerIconeNo(n.icone) ? { icone: lerIconeNo(n.icone) } : {}),
+    ...(FORMAS_NO.some(f => f.id === n.forma) && n.forma !== 'hexagono' ? { forma: n.forma as FormaNo } : {}),
+    ...(n.tamanho === 'p' || n.tamanho === 'g' ? { tamanho: n.tamanho } : {}) }
 }
 
 const ACOES: AcaoArvore[] = ['liberar', 'devolver', 'conceder', 'retirar', 'criar', 'editar', 'excluir', 'pontos']

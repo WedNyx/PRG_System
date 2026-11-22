@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { apelidoDe, ator, buscarFicha, linkCampanha, mestresDe, notificar, participantes, checarOrigem, lerJson, ok, papelNaCampanha, q, regrasDoJogador, registrar, rest, rpc, rota, ErroApi, type FichaRow } from '@/lib/nuvem/servidor'
+import { apelidoDe, ator, buscarFicha, linkCampanha, mestresDe, nomeDaCampanha, notificar, participantes, checarOrigem, lerJson, ok, papelNaCampanha, q, regrasDoJogador, registrar, rest, rpc, rota, ErroApi, type FichaRow } from '@/lib/nuvem/servidor'
 import { isUuid, normalizarPermissoes, normalizarExcecoes, podeAdministrar, validarFichaDados, isModelo } from '@/lib/nuvem/validacao'
 import { diferencas, aplicar, separarPorRegra, resumoMudanca, type Mudanca } from '@/lib/nuvem/categorias'
 import { agruparRiquezaInicial2014 } from '@/lib/nuvem/riquezaInicial2014Permissoes'
@@ -333,7 +333,16 @@ export const DELETE = rota<Ctx>(async (req, { params }) => {
   checarOrigem(req)
   const { f, eu, dono, admin } = await carregar(req, (await params).id)
   if (f.campanha_id ? !admin : !dono) throw new ErroApi(403, f.campanha_id ? 'Fichas de campanha só o mestre exclui.' : 'Somente o dono pode excluir esta ficha.')
+  // Ficha de jogador na campanha (v0.36.7): só o mestre principal apaga de vez, digitando o nome para confirmar.
+  const deJogador = !!f.campanha_id && !f.npc && f.dono_id !== eu
+  if (deJogador) {
+    if (await papelNaCampanha(f.campanha_id!, eu) !== 'mestre') throw new ErroApi(403, 'Só o mestre da campanha exclui de vez a ficha de um jogador. Co-mestres podem tirá-la da campanha.')
+    const b = await lerJson(req).catch(() => ({})) as { confirmar?: unknown }
+    const norm = (v: unknown) => typeof v === 'string' ? v.trim().toLowerCase() : ''
+    if (!norm(b.confirmar) || norm(b.confirmar) !== norm(f.nome || 'excluir')) throw new ErroApi(400, `Para excluir de vez, digite o nome da ficha: ${f.nome || 'excluir'}.`)
+  }
   await rest(`prg_fichas?id=eq.${q(f.id)}`, { method: 'DELETE' })
-  if (f.campanha_id) await registrar([{ campanha_id: f.campanha_id, autor_id: eu, tipo: 'administracao', descricao: `Ficha excluída: ${f.nome || 'sem nome'}` }])
+  if (f.campanha_id) await registrar([{ campanha_id: f.campanha_id, autor_id: eu, tipo: 'administracao', descricao: `Ficha excluída${deJogador ? ' de vez (de um jogador)' : ''}: ${f.nome || 'sem nome'}` }])
+  if (deJogador) await notificar([{ destinatario_id: f.dono_id, campanha_id: f.campanha_id, tipo: 'ficha_excluida', titulo: `🗑️ O mestre excluiu ${f.nome || 'sua ficha'} de ${await nomeDaCampanha(f.campanha_id!)}`, texto: 'A ficha da campanha foi apagada. Fichas avulsas suas não foram mexidas.' }], eu)
   return ok({ ok: true })
 })

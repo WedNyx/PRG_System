@@ -6,6 +6,7 @@
  */
 import { useState } from 'react'
 import { toast } from 'sonner'
+import ListaArrastavel from './ListaArrastavel'
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
 import { emojiCondicao, nomeCondicao } from '@/lib/condicoes'
 import { empatados } from '@/lib/sistemas/ordemCombate'
@@ -69,9 +70,10 @@ export function PainelIniciativa({ e, admin, acao, fichas, atacar }: { e: Estado
     </div>}
     {!admin && lista.length > 0 && meusFora.map(t => <button key={t.id} type="button" onClick={() => void fazer({ acao: 'iniciativa_entrar', tokenId: t.id })} className={btn + ' w-full justify-center !py-2 text-sm'}>🎲 Entrar no combate com {t.nome}</button>)}
 
-    {lista.length > 0 && <ol className="space-y-1.5" aria-label="Ordem do combate">{lista.map((x, i) => {
+    {lista.length > 0 && <ListaArrastavel itens={lista} chave={x => x.id} desabilitado={!admin} className="space-y-1.5" rotulo="Ordem do combate" mover={(de, para) => void fazer({ acao: 'iniciativa_mover', id: lista[de].id, para })}>{(x, i, alca) => {
       const t = tokenDe(x), vez = i === turno
-      return <li key={x.id} className={'flex items-center gap-2 rounded-xl p-2 text-sm ' + (vez ? 'bg-gradient-to-r from-(--a-5b4380) to-[#7c2d4a] ring-1 ring-amber-300/60' : 'bg-(--s-1e1a30)')}>
+      return <div className={'flex items-center gap-2 rounded-xl p-2 text-sm ' + (vez ? 'bg-gradient-to-r from-(--a-5b4380) to-[#7c2d4a] ring-1 ring-amber-300/60' : 'bg-(--s-1e1a30)')}>
+        {alca}
         <span className="w-5 shrink-0 text-center text-[11px] text-(--a-a998bd)">{i + 1}</span>
         <Avatar t={t} />
         <span className="min-w-0 flex-1">
@@ -89,10 +91,10 @@ export function PainelIniciativa({ e, admin, acao, fichas, atacar }: { e: Estado
           <button type="button" aria-label={'Subir ' + x.nome} disabled={i === 0} onClick={() => void fazer({ acao: 'iniciativa_mover', id: x.id, direcao: -1 })} className="rounded p-1 hover:bg-white/10 disabled:opacity-30"><ArrowUp size={14} /></button>
           <button type="button" aria-label={'Descer ' + x.nome} disabled={i === lista.length - 1} onClick={() => void fazer({ acao: 'iniciativa_mover', id: x.id, direcao: 1 })} className="rounded p-1 hover:bg-white/10 disabled:opacity-30"><ArrowDown size={14} /></button></span>}
         {admin && <button type="button" aria-label={'Tirar do combate: ' + x.nome} onClick={() => void fazer({ acao: 'iniciativa_sair', id: x.id })} className="rounded p-1.5 hover:bg-[#4b253a]"><X size={14} /></button>}
-      </li>
-    })}</ol>}
+      </div>
+    }}</ListaArrastavel>}
     {lista.length === 0 && <p className="text-sm text-(--a-b4aeca)">{admin ? 'Ninguém na iniciativa. “Preparar combate” rola a iniciativa de todos pela ficha (ou pelo bônus que você digitar).' : 'Ainda não há combate.'}</p>}
-    {admin && lista.length > 1 && <p className="text-[11px] text-(--a-a998bd)">Toque no número para mudar a iniciativa; ↑↓ desempatam. Quem entra no meio vai para o lugar certo sem mudar de quem é a vez.</p>}
+    {admin && lista.length > 1 && <p className="text-[11px] text-(--a-a998bd)">Toque no número para mudar a iniciativa; arraste pela alça ⋮⋮ (ou use ↑↓) para mudar a ordem. Quem entra no meio vai para o lugar certo sem mudar de quem é a vez.</p>}
     {admin && <details className="text-sm"><summary className="cursor-pointer text-xs text-(--a-c7a8ff)">Adicionar alguém sem token</summary>
       <form onSubmit={x => { x.preventDefault(); if (!nome.trim()) return
         void fazer({ acao: 'iniciativa', iniciativa: [...lista, { id: crypto.randomUUID(), nome, valor: Number(valor) || 0 }], turno, rodada }); setNome(''); setValor('') }} className="mt-2 flex gap-2">

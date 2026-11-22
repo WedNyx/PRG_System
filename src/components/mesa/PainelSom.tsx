@@ -1,12 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Trash2, Volume2, VolumeX } from 'lucide-react'
+import { Play, Search, Trash2, Upload, Volume2, VolumeX } from 'lucide-react'
+import { toast } from 'sonner'
+import ListaArrastavel from './ListaArrastavel'
 import { mudarPreferencias, usePreferencias } from '@/lib/preferencias'
 import { AMBIENTES, CATEGORIAS, CENAS_PRONTAS, EFEITOS, type CategoriaSom } from '@/lib/mesa/somMesa'
 import type { MesaDeSom } from './useMesaDeSom'
 
-type Aba = 'efeitos' | 'ambiente' | 'cenas'
+type Aba = 'efeitos' | 'ambiente' | 'cenas' | 'meus'
 const pct = (n: number) => Math.round(n * 100) + '%'
 
 /** Ajustes que valem só para quem está olhando (todos veem). */
@@ -34,6 +36,7 @@ export default function PainelSom({ som, admin }: { som: MesaDeSom; admin: boole
   const [categoria, setCategoria] = useState<CategoriaSom | 'todas'>('todas')
   const [busca, setBusca] = useState('')
   const [nomeCena, setNomeCena] = useState('')
+  const [enviando, setEnviando] = useState(false)
   const ativos = Object.entries(som.camadas)
   const todasCenas = [...CENAS_PRONTAS, ...som.cenasSalvas]
   const cenaAtual = todasCenas.find(c => c.id === som.cena)
@@ -56,12 +59,12 @@ export default function PainelSom({ som, admin }: { som: MesaDeSom; admin: boole
       <label className="flex min-w-0 flex-1 items-center gap-2 text-xs text-(--a-cfc0df)"><span className="shrink-0">Intensidade</span>
         <input type="range" min={0.1} max={1} step={0.05} value={som.intensidade} onChange={e => som.setIntensidade(Number(e.target.value))} aria-label="Intensidade dos efeitos para todos" className="min-w-0 flex-1 accent-(--a-8b68c4)" />
         <span className="w-9 text-right tabular-nums">{pct(som.intensidade)}</span></label>
-      <button type="button" onClick={som.silenciarTudo} disabled={!ativos.length} className="prg-botao prg-botao-secundario shrink-0 !min-h-9 !px-2.5 !text-xs"><VolumeX size={14} /> Silenciar</button>
+      <button type="button" onClick={som.silenciarTudo} disabled={!ativos.length && !som.arquivoTocando} className="prg-botao prg-botao-secundario shrink-0 !min-h-9 !px-2.5 !text-xs"><VolumeX size={14} /> Silenciar</button>
     </div>
     {tocandoAgora}
     <div role="tablist" aria-label="Mesa de som" className="flex gap-1.5">
-      {([['efeitos', '⚡ Efeitos'], ['ambiente', '🌧️ Ambiente'], ['cenas', '🎬 Cenas']] as const).map(([id, nome]) =>
-        <button key={id} type="button" role="tab" aria-selected={aba === id} onClick={() => setAba(id)} className="prg-chip flex-1 justify-center">{nome}</button>)}
+      {([['efeitos', '⚡ Efeitos'], ['ambiente', '🌧️ Ambiente'], ['cenas', '🎬 Cenas'], ['meus', '🎙️ Meus']] as const).map(([id, nome]) =>
+        <button key={id} type="button" role="tab" aria-selected={aba === id} onClick={() => setAba(id)} className="prg-chip min-w-0 flex-1 justify-center !px-1 !text-[11px] whitespace-nowrap">{nome}</button>)}
     </div>
 
     {aba === 'efeitos' && <div className="space-y-2.5">
@@ -111,6 +114,23 @@ export default function PainelSom({ som, admin }: { som: MesaDeSom; admin: boole
           <button type="submit" disabled={!ativos.length} className="prg-botao prg-botao-primario shrink-0">Salvar cena</button></div>
       </form>
       <p className="text-[11px] text-(--a-a99bbb)">Algumas cenas tocam sons de vez em quando sozinhas (trovões na tempestade, risadas na taverna).</p>
+    </div>}
+
+    {aba === 'meus' && <div className="space-y-2.5">
+      <p className="text-xs text-(--a-cfc0df)">Envie seus próprios áudios (MP3, OGG, WAV ou M4A, até 15 MB): um grito do vilão, a música tema de um NPC… Ao tocar, todos ouvem.</p>
+      <label className={'prg-botao prg-botao-primario w-full cursor-pointer ' + (enviando ? 'pointer-events-none opacity-60' : '')}><Upload size={15} /> {enviando ? 'Enviando…' : 'Enviar áudio'}
+        <input type="file" accept="audio/mpeg,audio/ogg,audio/wav,audio/mp4,audio/aac,audio/webm,.mp3,.ogg,.wav,.m4a" className="sr-only" aria-label="Enviar áudio para a Mesa de Som" disabled={enviando}
+          onChange={async ev => { const f = ev.target.files?.[0]; ev.target.value = ''; if (!f) return; setEnviando(true); try { await som.enviarSom(f); toast.success('Som adicionado!') } catch (er) { toast.error(er instanceof Error ? er.message : 'Falha no envio.') } finally { setEnviando(false) } }} />
+      </label>
+      {!som.meusSons.length ? <p className="rounded-xl border border-dashed border-(--a-55456e) p-4 text-center text-xs text-(--a-a99bbb)">Nenhum som enviado ainda.</p>
+        : <ListaArrastavel itens={som.meusSons} chave={m => m.id} className="space-y-1.5" rotulo="Meus sons" mover={(de, para) => som.reordenarMeus(de, para)}>
+          {(m, _i, alca) => <div className="flex items-center gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325) px-2 py-1.5">
+            {alca}
+            <button type="button" onClick={() => som.tocarMeu(m)} aria-label={'Tocar ' + m.nome} className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"><span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-(--a-7652ac)"><Play size={14} /></span><span className="truncate">{m.nome}</span></button>
+            <button type="button" onClick={() => som.apagarMeu(m.id)} aria-label={'Tirar ' + m.nome} className="rounded-lg p-1.5 text-(--a-a99bbb) hover:bg-(--s-34294f) hover:text-white"><Trash2 size={14} /></button>
+          </div>}
+        </ListaArrastavel>}
+      <p className="text-[11px] text-(--a-a99bbb)">A lista fica guardada neste aparelho, nesta campanha. Arraste pela alça ⋮⋮ para mudar a ordem.</p>
     </div>}
 
     <SoParaVoce som={som} />

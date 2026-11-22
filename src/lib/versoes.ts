@@ -27,6 +27,21 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.36.6', data: '2026-11-21',
+    titulo: 'Fichas com a cara de cada jogo, Ordem da PR #68 e mesa organizada',
+    itens: [
+      'Ordem Paranormal com a estética da PR #68, terminada: o símbolo Hexatombe nos atributos, selos de treino nas perícias, testes com os símbolos dos elementos, rituais por elemento e círculo, inventário operacional e o Arsenal da Ordem (só números, textos nossos).',
+      'Cada sistema ganhou um fundo com o clima do jogo atrás da ficha e as próprias cores no menu e no resumo. D&D, Pathfinder e Tormenta mostram vida e defesas logo depois da identidade, como na ficha de papel.',
+      'No modo ✏️ Criação, “Ordem da ficha de papel deste jogo” mostra como a ficha oficial é organizada (pesquisa em docs/sistemas/FICHAS_OFICIAIS.md). Nada é calculado.',
+      'Árvore de habilidades: novo 🗺️ Mapa completo com todos os ramos de uma vez, com zoom, arrastar e minimapa, no visual de cada sistema.',
+      'Mesa: o painel do mestre foi separado em Cenas e mapa, Névoa e luz, Combate e descanso, Biblioteca e Tabelas. Música e Mesa de Som ficam juntas em 🎵 Som.',
+      'Arraste para reordenar a iniciativa e as músicas das playlists. Na Mesa de Som, a aba 🎙️ Meus permite enviar seus próprios áudios para tocar para todos.',
+      'Arsenal do sistema: Pathfinder 2e, Ordem, Tormenta20, Call of Cthulhu, BRP, MÖRK BORG, Fate e Blades têm armas com o dano e a rolagem de crítico do próprio jogo. O Arsenal genérico continua numa aba ao lado.',
+      'Origens, trilhas, divindades, ocupações e antecedentes agora sugerem a lista do jogo ao digitar (o campo continua livre). Nos sistemas comerciais, só os nomes: o que cada um dá está no livro.',
+      'Estúdio da ficha no construtor de sistemas: o autor arrasta as abas e as partes da ficha, escolhe a largura de cada uma, esconde e renomeia, envia logo, fundo e moldura e escolhe cores, letras, cartões, formatos dos atributos e das barras, com a prévia mudando na hora.',
+    ],
+  },
+  {
     versao: '0.36.5', data: '2026-11-21',
     titulo: 'Repaginação (teste): identidade lunar, navegação nova e Mesa de Som',
     itens: [

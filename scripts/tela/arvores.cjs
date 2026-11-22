@@ -32,6 +32,8 @@ const CASOS = [
     const arv = p.getByRole('region', { name: 'Árvore do sistema' })
     if (nome === 'livre') { ok(await p.getByRole('tab', { name: /Habilidades adicionais do mestre/ }).count() === 1, 'livre: só o ramo do mestre'); await c.close(); continue }
     ok(await arv.count() === 1, nome + ': árvore do sistema aparece')
+    // v0.36.6: com mais de um ramo, a árvore abre no 🗺️ Mapa completo; aqui conferimos o desenho de um ramo.
+    if (await p.getByRole('tab', { name: /Mapa completo/ }).count()) { await p.getByRole('tablist', { name: 'Ramos da árvore' }).getByRole('tab').nth(1).click(); await p.waitForTimeout(400) }
     if (await p.getByRole('checkbox', { name: 'Mostrar os futuros' }).count()) await p.getByRole('checkbox', { name: 'Mostrar os futuros' }).check()
     void comMedida
     const no = p.locator('[data-tema-arvore] ol button').last()

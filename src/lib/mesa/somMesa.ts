@@ -96,6 +96,7 @@ export function limparCena(v: unknown): CenaSonora | null {
 let ac: AudioContext | null = null
 let saida: GainNode | null = null
 let volumeLocal = 0.8
+let mudoArquivos = false
 const ruidos: Partial<Record<'branco' | 'rosa' | 'marrom', AudioBuffer>> = {}
 const camadasVivas = new Map<string, { ganho: GainNode; parar: () => void }>()
 
@@ -112,7 +113,10 @@ export function somBloqueado() { return !!ac && ac.state === 'suspended' }
 export function definirVolumeLocal(v: number) {
   volumeLocal = Math.min(1, Math.max(0, v))
   if (ac && saida) saida.gain.setTargetAtTime(volumeLocal, ac.currentTime, 0.1)
+  aplicarVolumeArquivos()
 }
+/** "Ouvir os sons da mesa" desligado: os áudios enviados que já estão tocando ficam mudos (sem precisar sair da mesa). */
+export function definirMudoArquivos(m: boolean) { mudoArquivos = m; aplicarVolumeArquivos() }
 
 function ruido(c: AudioContext, tipo: 'branco' | 'rosa' | 'marrom'): AudioBuffer {
   const pronto = ruidos[tipo]; if (pronto && pronto.sampleRate === c.sampleRate) return pronto
@@ -334,6 +338,48 @@ const AMBIENTE: Record<string, CriadorAmbiente> = {
   },
 }
 
+// ---------------------------------------------------------------- sons enviados pelo mestre (Howler)
+
+type Howl = import('howler').Howl
+// Guarda o volume que o mestre pediu para cada áudio (0–1), separado do volume/mudo deste aparelho,
+// para recalcular h.volume() sempre que `volumeLocal`/`mudoArquivos` mudarem enquanto ele ainda toca.
+const arquivosTocando = new Map<Howl, number>()
+function aplicarVolumeArquivos() { for (const [h, vol] of arquivosTocando) h.volume(mudoArquivos ? 0 : vol * volumeLocal) }
+const ouvintesArquivos = new Set<() => void>()
+function avisarArquivos() { ouvintesArquivos.forEach(f => f()) }
+/** Avisa quando um áudio enviado começa/termina (usado pela UI para habilitar o "Silenciar"). */
+export function assinarArquivosTocando(f: () => void) { ouvintesArquivos.add(f); return () => ouvintesArquivos.delete(f) }
+export function haArquivoTocando() { return arquivosTocando.size > 0 }
+// Incrementada a cada "Silenciar"/saída da mesa, para cancelar um tocarArquivo() que ainda estava
+// carregando o Howler (import dinâmico) e só terminaria de carregar depois do pedido de parar.
+let geracaoArquivos = 0
+/**
+ * Toca um áudio enviado pelo mestre (Howler.js, carregado só quando precisa).
+ * O endereço já foi conferido (audioDaPlataforma) por quem chama.
+ */
+export async function tocarArquivo(url: string, vol = 0.9) {
+  if (typeof window === 'undefined') return false
+  const minhaGeracao = geracaoArquivos
+  const { Howl } = await import('howler')
+  if (geracaoArquivos !== minhaGeracao) return false
+  const volBase = Math.min(1, Math.max(0.05, vol))
+  const h: Howl = new Howl({ src: [url], volume: mudoArquivos ? 0 : volBase * volumeLocal, html5: true })
+  arquivosTocando.set(h, volBase)
+  avisarArquivos()
+  const fim = () => { arquivosTocando.delete(h); h.unload(); avisarArquivos() }
+  h.once('end', fim); h.once('loaderror', fim); h.once('playerror', fim)
+  h.play()
+  return true
+}
+/** Para os áudios enviados que ainda estão tocando (Silenciar), e cancela qualquer um que ainda estava carregando. */
+export function pararArquivos() {
+  geracaoArquivos++
+  if (!arquivosTocando.size) return
+  for (const h of arquivosTocando.keys()) { h.fade(h.volume(), 0, 400); setTimeout(() => { h.stop(); h.unload() }, 450) }
+  arquivosTocando.clear()
+  avisarArquivos()
+}
+
 /** Toca um efeito para esta pessoa. `vol` vem do mestre (0–1); o volume local é aplicado na saída. */
 export function tocarEfeito(id: string, vol = 0.9) {
   const toca = TOCADORES[id]; const c = contexto()
@@ -363,4 +409,4 @@ export function definirCamadas(camadas: Camadas, transicao = 1.5) {
     try { const parar = criar(c, g); g.gain.exponentialRampToValueAtTime(alvo, t + transicao); camadasVivas.set(id, { ganho: g, parar }) } catch { g.disconnect() }
   }
 }
-export function pararSons() { definirCamadas({}, 0.4) }
+export function pararSons() { definirCamadas({}, 0.4); pararArquivos() }

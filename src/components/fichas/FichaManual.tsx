@@ -12,6 +12,7 @@ import { montarRolagem, rolarExpressao } from '@/lib/dice'
 import AcoesRapidas from './AcoesRapidas'
 import { ResumoExtras, SecaoEfeitos, SecaoFormas, SecaoInvocacoes, SecaoMarcas } from './ExtrasFicha'
 import { temExtra } from '@/lib/sistemas/extrasFicha'
+import { FICHA_OFICIAL } from '@/lib/sistemas/fichaOficial'
 import PainelDoSistema, { FaixaDoSistema, RECURSOS_NO_PAINEL } from './PaineisSistema'
 import AtributosLua from './AtributosLua'
 import { AtributosGraus, PericiasGraus, RegrasDoSistema, TabelasDoSistema } from './FichaGraus'
@@ -21,14 +22,15 @@ import ArvoreHabilidades from './Arvore'
 import ArvoreDndOficial from './ArvoreDndOficial'
 import ArvoreSistema from './ArvoreSistema'
 import { FONTES_AUTOR } from '@/lib/sistemas/visualAutor'
+import { cssDoVisual, ordenarAbas, tituloDoBloco } from '@/lib/sistemas/montagemFicha'
 import JanelaDescanso from './Descanso'
 import type { Item } from '@/lib/sistemas/inventario'
 import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
 import { expressaoParada, leituraBlades, leituraCoc, leituraD100 } from '@/lib/sistemas/combate'
 import TesteAssimilacao from './TesteAssimilacao'
-import AtributosOrdem from './AtributosOrdem'
+import AtributosOrdem, { SimboloElementoOrdem } from './AtributosOrdem'
 import { Retrato } from './FichaGenerica'
-import { AcoesBlades, AtributoComMod, AtributoDnd, AtributoModificador, estiloDoSistema, estiloTema, GrauPericia, identidadeVisual, PiramideFate, ResumoOrdem, temaDoSistema } from './VisualSistema'
+import { AcoesBlades, AtributoComMod, AtributoDnd, AtributoModificador, estiloDoSistema, estiloTema, GrauPericia, SeloPericiaOrdem, identidadeVisual, PiramideFate, ResumoOrdem, temaDoSistema } from './VisualSistema'
 
 const card = 'ficha-painel rounded-2xl border border-(--ficha-borda) bg-(--ficha-cartao) p-4 sm:p-5'
 const input = 'w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-white disabled:opacity-70'
@@ -77,7 +79,7 @@ function preenchida(id: string, s: Sistema, d: DadosFicha): boolean {
   return false
 }
 
-export default function FichaManual({ sistema: s, dados: d, onChange, somenteLeitura: bloqueada = false, rolarNaCampanha, passarItem, mestre = false }: {
+export default function FichaManual({ sistema: s, dados: d, onChange, somenteLeitura: bloqueada = false, rolarNaCampanha, passarItem, mestre = false, secaoForcada }: {
   sistema: Sistema; dados: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura?: boolean
   /** Quem abre é o mestre (ou o dono de uma ficha avulsa): pode conceder e montar habilidades na árvore. */
   mestre?: boolean
@@ -85,6 +87,8 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   rolarNaCampanha?: (expressao: string, rotulo: string, extra?: { estilo: 'assimilacao'; manter?: number; todos?: boolean }) => Promise<{ resultados: number[]; total: number } | null>
   /** Ficha de campanha: passar um item para outro personagem. */
   passarItem?: (it: Item, tem: number) => void
+  /** Estúdio do construtor: abre a aba que o autor está montando. */
+  secaoForcada?: string
 }) {
   const m: Manual = d.manual ?? { mods: {}, derivados: {}, pericias: {} }
   // Modos da ficha (v0.36.5): Jogo (o que se usa na sessão primeiro), Criação (passo a passo) e Consulta (só leitura).
@@ -183,6 +187,11 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     { id: 'equipamentos', icone: '🎒', nome: 'Inventário', sub: 'Itens, carga e moedas', ajuda: 'Adicione itens com foto ou ícone, ou pegue prontos no 📦 Arsenal. Itens equipados com rolagem aparecem nas ações rápidas.', ok: true },
     { id: 'anotacoes', icone: '📜', nome: 'Anotações e regras', sub: 'História, lembretes, créditos', ajuda: 'Espaço livre para a história do personagem, aliados, segredos e lembretes.', ok: true },
   ] as const).filter(x => x.ok).map(x => x.id !== 'arvore' && s.nomesSecoes?.[x.id] ? { ...x, nome: s.nomesSecoes[x.id]! } : x)
+  // Estúdio do autor (v0.36.6): ordem, ícones e abas escondidas; partes e aparência viram CSS conferido.
+  const montagem = s.visual?.montagem
+  const ABAS = ordenarAbas(SECOES, montagem)
+  const cssAutor = useMemo(() => cssDoVisual(s.visual), [s.visual])
+  const tit = (chave: string, padrao: string) => tituloDoBloco(montagem, chave, padrao)
   // Vocabulário editorial: subtítulos temáticos sem substituir os nomes definidos pelo autor.
   const capitulos: Record<string, readonly string[]> = {
     'dnd5e-srd': ['Crônica do herói', 'Provas e talentos', 'Grimório e técnicas', 'Equipamento de viagem', 'Diário de aventuras'],
@@ -202,7 +211,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   }
   const rubrica = capitulos[identidade]
   const indiceCapitulo = (id: string) => ['principal','atributos','habilidades','equipamentos','anotacoes'].indexOf(id)
-  const [secao, setSecao] = useState<string>('principal')
+  const [secao, setSecao] = useState<string>(secaoForcada ?? 'principal')
   // Compacta apenas a apresentação da barra fixa no celular; não altera recursos.
   const [resumoCompacto, setResumoCompacto] = useState(false)
   useEffect(() => {
@@ -215,8 +224,11 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const ir = (id: string) => { setSecao(id); window.scrollTo({ top: 0, behavior: 'smooth' }) }
   const menu = useRef<HTMLDivElement>(null)
   useEffect(() => { menu.current?.querySelector('[aria-current="page"]')?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }) }, [secao])
-  const iAtual = SECOES.findIndex(x => x.id === secao)
-  const atual = SECOES[iAtual], proxima = SECOES[iAtual + 1]
+  const [forcadaVista, setForcadaVista] = useState(secaoForcada)
+  if (secaoForcada !== forcadaVista) { setForcadaVista(secaoForcada); if (secaoForcada && ABAS.some(x => x.id === secaoForcada)) setSecao(secaoForcada) }
+  const iAtual = Math.max(0, ABAS.findIndex(x => x.id === secao))
+  const atual = ABAS[iAtual], proxima = ABAS[iAtual + 1]
+  if (ABAS[iAtual]?.id !== secao && secao !== 'principal' && !ABAS.some(x => x.id === secao)) setSecao('principal')
   const maxDe = (id: string) => { const x = d.recursos[id]?.max; return x === undefined || x === null ? null : Number(x) || 0 }
   const [mostrarTodosRecursos, setMostrarTodosRecursos] = useState(false)
   const edicao2014 = edicaoEfetivaDaFicha(s, d) === 'phb2014'
@@ -248,9 +260,13 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     <textarea rows={linhas} value={d.listas[l.id] ?? ''} disabled={somenteLeitura} maxLength={20000} onChange={e => set('listas', { ...d.listas, [l.id]: e.target.value })} className={input + ' mt-2'} />
   </label>
 
-  const passos = SECOES.filter(x => ['principal', 'atributos', 'habilidades', 'equipamentos', 'anotacoes'].includes(x.id))
+  const passos = ABAS.filter(x => ['principal', 'atributos', 'habilidades', 'equipamentos', 'anotacoes'].includes(x.id))
   const feitos = passos.filter(x => preenchida(x.id, s, d)).length
-  return <div style={estiloTema(tema)} data-visual={identidade} data-modo={bloqueada ? 'consulta' : modo} className={tema.sombrio ? 'ficha-sombria' : undefined}>
+  return <div style={estiloTema(tema)} data-visual={identidade} data-modo={bloqueada ? 'consulta' : modo} data-ficha-autor={s.visual ? '' : undefined} className={tema.sombrio ? 'ficha-sombria' : undefined}>
+    {cssAutor && <style>{cssAutor}</style>}
+    <div className="ficha-fundo" aria-hidden="true" />
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    {s.visual?.logo && <img src={s.visual.logo} alt={'Logo de ' + s.nome} data-logo-sistema className="ficha-logo mx-auto mb-3 block max-h-28 w-auto max-w-full object-contain drop-shadow-[0_4px_18px_#000a]" />}
     <RolagemCentral ref={central} />
     {descansando && <JanelaDescanso s={s} d={d} onChange={onChange} rolarTotal={rolarTotal} fechar={() => setDescansando(false)} />}
     {!bloqueada && <div className="ficha-modos mb-3 flex flex-wrap items-center gap-2">
@@ -269,6 +285,9 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
             className={'flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs ' + (secao === x.id ? 'border-(--a-e4d3ff) bg-(--s-3a2c58) text-white' : 'border-(--a-55456e) text-(--a-cfc0df) hover:bg-(--s-2b2140)')}>
             <span aria-hidden="true" className={'flex size-4 items-center justify-center rounded-full text-[10px] ' + (ok ? 'bg-emerald-500/80 text-white' : 'bg-black/40')}>{ok ? '✓' : i + 1}</span>{x.nome}<span className="sr-only">{ok ? ' (já tem algo)' : ' (vazio)'}</span></button></li> })}
       </ol>
+      {FICHA_OFICIAL[identidade] && <details className="ficha-oficial mt-2 text-xs text-(--a-cfc0df)"><summary className="cursor-pointer select-none text-(--ficha-acento)">📄 Ordem da ficha de papel deste jogo</summary>
+        <ol className="mt-2 list-decimal space-y-0.5 pl-5">{FICHA_OFICIAL[identidade].ordem.map(x => <li key={x}>{x}</li>)}</ol>
+        <p className="mt-1.5 text-(--a-a99bbb)">{FICHA_OFICIAL[identidade].dica}</p></details>}
     </nav>}
     <div className={`ficha-resumo sticky top-[57px] z-10 max-sm:[&_.dnd-resumo-celula]:min-h-0 max-sm:[&_.dnd-resumo-celula]:py-1 ${resumoCompacto ? 'max-sm:!py-1 max-sm:[&_.dnd-resumo-celula]:!py-0 max-sm:[&_.dnd-resumo-celula_span]:hidden max-sm:[&_.dnd-resumo-celula_svg]:size-3.5' : ''} -mx-3 mb-4 border-b border-(--a-373251) bg-(--s-100d1c)/95 px-3 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-4`} aria-label="Resumo do personagem">
       {identidade === 'dnd5e-srd' ? <div className="dnd-resumo-compacto" aria-label="Recursos principais">
@@ -287,14 +306,14 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
       <nav aria-label="Seções da ficha" className="ficha-menu mb-4 lg:mb-0 lg:w-60 lg:shrink-0">
         <div ref={menu} className="grid grid-cols-3 gap-1.5 pb-1 sm:grid-cols-3 sm:gap-2 lg:flex lg:sticky lg:top-[120px] lg:flex-col lg:overflow-visible lg:rounded-2xl lg:border lg:border-(--a-55456e) lg:bg-(--s-201a32) lg:p-3">
           <p className="hidden px-2 pb-1 text-xs font-bold uppercase tracking-widest text-(--a-ed9cd8) lg:block">🌙 Menu da ficha</p>
-          {SECOES.map(x => <button key={x.id} type="button" onClick={() => ir(x.id)} aria-label={x.nome} aria-current={secao === x.id ? 'page' : undefined}
+          {ABAS.map(x => <button key={x.id} type="button" onClick={() => ir(x.id)} aria-label={x.nome} aria-current={secao === x.id ? 'page' : undefined}
             className={'min-w-0 min-h-12 rounded-xl px-1.5 py-2 text-center text-xs transition sm:px-3 sm:text-sm lg:w-full lg:text-left ' + (secao === x.id ? 'bg-(--a-5b4380) text-white' : 'bg-(--s-201a32) text-(--a-d6c8e8) hover:bg-(--s-2b2140) lg:bg-transparent')}>
             {identidade === 'dnd5e-srd' ? <span className="dnd-menu-label">{(() => { const Icone = x.id === 'arvore' ? GitBranch : [User,Dice5,BookOpen,Backpack,ScrollText][indiceCapitulo(x.id)] ?? Info; return <Icone size={19} aria-hidden="true"/> })()}<span className="dnd-menu-curto">{x.id === 'arvore' ? 'Árvore' : ['Principal','Atributos','Poderes','Itens','Diário'][indiceCapitulo(x.id)] ?? x.nome}</span><span className="dnd-menu-longo">{x.nome}</span></span> : <span className="break-words">{x.icone} {x.nome}</span>}
             <span className="hidden text-xs text-(--a-c4b6d4) lg:block">{rubrica?.[indiceCapitulo(x.id)] ?? x.sub}</span>
           </button>)}
         </div>
       </nav>
-      <div className="min-w-0 flex-1 space-y-4">
+      <div className="ficha-conteudo min-w-0 flex-1 space-y-4">
         {atual && rubrica && <header className="ficha-capitulo"><span aria-hidden="true" className="ficha-capitulo-selo">{simbolos[identidade] ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" className="ficha-simbolo"><path d={simbolos[identidade]} /></svg> : String(iAtual + 1).padStart(2, "0")}</span><div className="min-w-0"><p className="ficha-capitulo-universo">{tituloSistemaNaFicha(s, d)}</p><h2>{rubrica[indiceCapitulo(atual.id)] ?? atual.nome}</h2></div></header>}
         {atual && modo !== 'jogo' && <aside aria-label="Orientações da seção" className="ficha-orientacao flex items-start gap-2 rounded-xl border border-(--a-3d3152) bg-(--s-171325)/90 px-3 py-3 text-xs leading-relaxed text-(--a-cfc0df)"><span aria-hidden="true" className="shrink-0 text-base">{atual.icone}</span><span><strong className="text-(--a-e4d3ff)">{atual.nome}:</strong> {atual.ajuda}</span></aside>}
 
@@ -302,13 +321,13 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
         {secao === 'formas' && <SecaoFormas s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolarExpr} />}
         {secao === 'invocacoes' && <SecaoInvocacoes s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolarExpr} />}
         {secao === 'efeitos' && <SecaoEfeitos s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolarExpr} />}
-        {secao === 'principal' && <div className="ficha-composicao">
-          {s.id !== 'faroeste-arcano' && <FaixaDoSistema s={s} nome={d.nome} />}
+        {secao === 'principal' && <div className="ficha-composicao ficha-blocos" data-secao="principal">
+          {s.id !== 'faroeste-arcano' && <div data-bloco="faixa"><FaixaDoSistema s={s} nome={d.nome} /></div>}
           {s.id === 'faroeste-arcano' && <div data-painel-sistema><PainelDoSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} /></div>}
-          <ResumoExtras s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolarExpr} ir={ir} />
+          <div data-bloco="extras" className="empty:hidden"><ResumoExtras s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolar={rolarExpr} ir={ir} /></div>
           {s.id === 'ordem-paranormal' && <ResumoOrdem nex={Number(d.campos.nex ?? 0) || 0} classe={String(d.campos.classe ?? '')} trilha={String(d.campos.trilha ?? '')} origem={String(d.campos.origem ?? '')}
             pe={{ atual: Number(d.recursos.pe?.atual ?? 0) || 0, max: maxDe('pe') }} san={{ atual: Number(d.recursos.san?.atual ?? 0) || 0, max: maxDe('san') }} />}
-          <section className={card + " ficha-identidade"}>
+          <section className={card + " ficha-identidade"} data-bloco="identidade">
             <div className="ficha-identidade-retrato flex items-start gap-4">
               <Retrato url={d.retrato} nome={d.nome} somenteLeitura={somenteLeitura} onChange={u => onChange({ ...d, retrato: u ?? undefined })} />
               <label className="block min-w-0 flex-1 text-sm font-semibold">Nome do personagem
@@ -322,14 +341,15 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
                   : <input type={f.tipo === 'numero' ? 'number' : 'text'} value={d.campos[f.id] ?? ''} disabled={somenteLeitura} maxLength={120}
                     list={f.tipo === 'escolha' && f.opcoes?.length ? 'sugestoes-' + f.id : undefined}
                     onChange={e => set('campos', { ...d.campos, [f.id]: f.tipo === 'numero' ? Number(e.target.value) : e.target.value })} className={input + ' mt-1'} />}
-                {f.tipo === 'escolha' && !!f.opcoes?.length && <datalist id={'sugestoes-' + f.id}>{f.opcoes.map(o => <option key={o.nome} value={o.nome} />)}</datalist>}
+                {f.tipo === 'escolha' && !!f.opcoes?.length && <datalist id={'sugestoes-' + f.id}>{f.opcoes.map(o => <option key={o.nome} value={o.nome} label={o.descricao} />)}</datalist>}
+                {f.tipo === 'escolha' && (() => { const o = f.opcoes?.find(x => x.nome === d.campos[f.id]); return o?.descricao ? <span data-descricao-opcao className="mt-1 text-[11px] leading-snug text-(--a-b99bff)">{o.descricao}</span> : null })()}
                 {f.dica && <span className="mt-1 text-[11px] leading-snug text-(--a-a998bd)">{f.dica}</span>}
               </label>)}
             </div>}
           </section>
-          {s.id !== 'faroeste-arcano' && <div data-painel-sistema className="ficha-paineis-especiais space-y-4 empty:hidden"><PainelDoSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} /></div>}
-          {(s.derivados.length > 0 || s.recursos.length > 0) && <section className={card + " ficha-recursos-gerais"}>
-            <div className="mb-3 flex flex-wrap items-center gap-2"><h2 className="flex-1 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">Valores e recursos</h2>
+          {s.id !== 'faroeste-arcano' && <div data-painel-sistema data-bloco="paineis" className="ficha-paineis-especiais space-y-4 empty:hidden"><PainelDoSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} /></div>}
+          {(s.derivados.length > 0 || s.recursos.length > 0) && <section className={card + " ficha-recursos-gerais"} data-bloco="recursos">
+            <div className="mb-3 flex flex-wrap items-center gap-2"><h2 className="flex-1 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">{tit('principal.recursos', 'Valores e recursos')}</h2>
               {!somenteLeitura && s.recursos.length > 0 && <button type="button" onClick={() => setDescansando(true)} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d4a23a]/70 px-3 py-1.5 text-sm text-amber-100 hover:bg-[#3a2a14]">🌙 Descanso</button>}</div>
             {s.derivados.length > 0 && <div className="ficha-valores-grid grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {s.derivados.map(x => <label key={x.id} className="ficha-valor rounded-xl bg-(--s-171325) p-3" data-defesa={x.id === defesa?.id ? "sim" : undefined}>
@@ -360,16 +380,16 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               })}
             </div>}
           </section>}
-          <div className="ficha-acoes-rapidas"><AcoesRapidas d={d} rolar={rolarExpr} irInventario={() => ir('equipamentos')} /></div>
+          <div className="ficha-acoes-rapidas empty:hidden" data-bloco="acoes"><AcoesRapidas d={d} rolar={rolarExpr} irInventario={() => ir('equipamentos')} /></div>
         </div>}
 
-        {secao === 'atributos' && <>
-          {graus && s.atributos.length > 0 && <section className={card}>
+        {secao === 'atributos' && <div className="ficha-blocos space-y-4" data-secao="atributos">
+          {graus && s.atributos.length > 0 && <section className={card} data-bloco="atributos">
             <h2 className="mb-3 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">{tituloAtr}</h2>
             <AtributosGraus s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} mostrar={mostrar} />
           </section>}
-          {graus && s.pericias && <PericiasGraus s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} mostrar={mostrar} />}
-          {!graus && s.atributos.length > 0 && <section className={card}>
+          {graus && s.pericias && <div data-bloco="pericias"><PericiasGraus s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} mostrar={mostrar} /></div>}
+          {!graus && s.atributos.length > 0 && <section className={card} data-bloco="atributos">
             <h2 className="mb-3 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">{tituloAtr}</h2>
             {lua ? <>
               <AtributosLua atributos={s.atributos} valores={d.atributos} somenteLeitura={somenteLeitura}
@@ -406,20 +426,20 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               </div>}
           </section>}
           {s.rolagem === 'assimilacao' && <TesteAssimilacao s={s} d={d} c={c} onChange={onChange} somenteLeitura={somenteLeitura} rolarNaCampanha={rolarNaCampanha} />}
-          {(d20 || parada || regra) && s.atributos.length > 0 && !lua && (visual.atributos === 'padrao' || visual.atributos === 'hexagonos' || !d20) && <section className={card}>
-            <h2 className="mb-2 flex items-center gap-2 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]"><Dice5 size={18} /> Teste de atributo</h2>
+          {(d20 || parada || regra) && s.atributos.length > 0 && !lua && (visual.atributos === 'padrao' || visual.atributos === 'hexagonos' || !d20) && <section className={card + (s.id === 'ordem-paranormal' ? ' ordem-testes' : '')} data-bloco="teste">
+            <h2 className="mb-2 flex items-center gap-2 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]"><Dice5 size={18} /> {tit('atributos.teste', 'Teste de atributo')}</h2>
             {parada && <p className="mb-2 text-xs text-(--a-a998bd)">Rola um d{parada} para cada ponto do atributo e fica com o maior. Com 0, rola dois e fica com o menor.</p>}
-            <div className="flex flex-wrap gap-2">{s.atributos.map(a => { const v = Number(d.atributos[a.id]) || 0, b = comMod ? m.mods[a.id] ?? 0 : v
+            <div className={s.id === 'ordem-paranormal' ? 'ordem-testes-grid' : 'flex flex-wrap gap-2'}>{s.atributos.map(a => { const v = Number(d.atributos[a.id]) || 0, b = comMod ? m.mods[a.id] ?? 0 : v
               return <button key={a.id} type="button" onClick={() => parada ? rolar(a.nome, 0, v) : rolar(a.nome, b)}
-                className="rounded-lg border border-(--a-5e4b78) px-3 py-2 text-sm hover:bg-(--s-34294f)">{a.id} {parada ? `(${Math.max(0, v) || 2}d${parada})` : sinal(b)}</button> })}</div>
+                className="rounded-lg border border-(--a-5e4b78) px-3 py-2 text-sm hover:bg-(--s-34294f)">{s.id === 'ordem-paranormal' ? <><SimboloElementoOrdem atributo={a.id} tamanho={52}/><strong>{a.id}</strong><span>{Math.max(0,v)||2}d{parada}{v===0 ? ' · menor' : ''}</span></> : <>{a.id} {parada ? `(${Math.max(0, v) || 2}d${parada})` : sinal(b)}</>}</button> })}</div>
           </section>}
-          {parada && !!s.resistencias?.length && visual.pericias !== 'acoes' && <section className={card}>
-            <h2 className="mb-1 flex items-center gap-2 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]"><Dice5 size={18} /> Resistência</h2>
+          {parada && !!s.resistencias?.length && visual.pericias !== 'acoes' && <section className={card} data-bloco="resistencia">
+            <h2 className="mb-1 flex items-center gap-2 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]"><Dice5 size={18} /> {tit('atributos.resistencia', 'Resistência')}</h2>
             <p className="mb-2 text-xs text-(--a-a998bd)">Rola um d{parada} por ponto (o número digitado em Valores) e fica com o maior.</p>
             <div className="flex flex-wrap gap-2">{s.resistencias.map(id => { const x = s.derivados.find(y => y.id === id); if (!x) return null; const n = Number(m.derivados[id]) || 0
               return <button key={id} type="button" onClick={() => rolar(x.nome.split(' (')[0], 0, n, true)} className="rounded-lg border border-(--a-5e4b78) px-3 py-2 text-sm hover:bg-(--s-34294f)">{x.nome.split(' (')[0]} ({n || 2}d{parada})</button> })}</div>
           </section>}
-          {!graus && s.pericias && <section className={card + (s.id === 'dnd5e-srd' ? ' dnd-testes' : '')}>
+          {!graus && s.pericias && <section data-bloco="pericias" className={card + (s.id === 'dnd5e-srd' ? ' dnd-testes' : s.id === 'ordem-paranormal' ? ' ordem-pericias' : '')}>
             <h2 className="mb-1 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">{tituloPer}</h2>
             {visual.pericias === 'piramide' ? <>
               <p className="mb-3 text-xs text-(--a-a998bd)">Cada degrau mostra as perícias daquele nível. Toque numa perícia para rolar 4dF + o nível.</p>
@@ -434,16 +454,18 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
                 rolar={(nome, n) => void rolar(nome, 0, n)} rolarResistencia={(nome, n) => void rolar(nome, 0, n, true)} />
             </> : <>
             {dossie && <p className="mb-2 text-xs text-(--a-a998bd)">☑ marca de experiência: marque a perícia usada com sucesso na sessão (para a fase de melhoria). {s.leituraD100 === 'coc' ? 'Embaixo de cada uma: a metade (sucesso difícil) e o quinto (extremo).' : 'Embaixo de cada uma: o sucesso especial (⅕) e o crítico (1/20).'}</p>}
-            <p className="mb-3 text-xs text-(--a-a998bd)">{s.pericias.modo === 'valor' ? 'Digite o valor de cada uma.' : visual.pericias === 'graus' ? 'Toque no círculo para marcar o grau de treino e digite o total (bônus) de cada uma.' : 'Digite o total (bônus) de cada uma.'}{podeRolar ? ' Toque no dado para rolar.' : ''}</p>
+            <p className="mb-3 text-xs text-(--a-a998bd)">{s.pericias.modo === 'valor' ? 'Digite o valor de cada uma.' : visual.pericias === 'graus' ? 'Toque no indicador para marcar o grau de treino e digite o total (bônus) de cada uma.' : 'Digite o total (bônus) de cada uma.'}{podeRolar ? ' Toque no dado para rolar.' : ''}</p>
+            {s.id === "ordem-paranormal" && <div className="ordem-pericias-cabecalho" aria-hidden="true"><span>Treino</span><span>Competência</span><span>Bônus</span><span>Teste</span></div>}
             {[...grupos].map(([g, itens]) => <div key={g} className={s.id === 'dnd5e-srd' ? "dnd-registro-grupo mb-4" : "mb-4"}>
               {g && <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--a-d3adf0)">{g}</h3>}
-              <div className={s.id === 'dnd5e-srd' ? "dnd-registro-lista" : "grid grid-cols-1 gap-2 sm:grid-cols-2"}>
+              <div className={s.id === 'dnd5e-srd' ? "dnd-registro-lista" : s.id === 'ordem-paranormal' ? "ordem-pericias-lista" : "grid grid-cols-1 gap-2 sm:grid-cols-2"}>
                 {itens.map(p => { const valor = s.pericias!.modo === 'valor'
                   const tot = valor ? Number(d.pericias[p.id]) || 0 : m.pericias[p.id] ?? 0
                   return <div key={p.id} className={'ficha-pericia flex items-center gap-2 rounded-lg px-3 py-2 ' + (dossie ? 'border border-[#b9a77e] bg-[#ece2c8] text-[#2a1f14] [font-family:ui-monospace,Courier,monospace]' : 'bg-(--s-171325)')}>
                     {dossie && <input type="checkbox" checked={marcas['exp_' + p.id] === true} disabled={somenteLeitura} onChange={e => marcar('exp_' + p.id, e.target.checked)} aria-label={'Marca de experiência em ' + p.nome} title="Marca de experiência (usou com sucesso nesta sessão)" className="h-4 w-4 shrink-0 accent-[#5f4f35]" />}
+                    {s.id === "ordem-paranormal" && <SeloPericiaOrdem marca grau={Math.max(0, s.pericias?.treinos?.findIndex(t => t.id === String(d.pericias[p.id] ?? "")) ?? 0)}/>}
                     {visual.pericias === 'graus' && <GrauPericia s={s} valor={String(d.pericias[p.id] ?? '')} nome={p.nome} somenteLeitura={somenteLeitura} mudar={v => set('pericias', { ...d.pericias, [p.id]: v })} />}
-                    <span className="min-w-0 flex-1"><span className={s.id === 'dnd5e-srd' ? "block text-sm dnd-pericia-nome" : "block truncate text-sm"}>{p.nome}{p.atributo && <span className="ml-1 text-[10px] text-(--a-a998bd)">({p.atributo})</span>}</span>
+                    <span className="min-w-0 flex-1"><span className={s.id === 'dnd5e-srd' ? "block text-sm dnd-pericia-nome" : s.id === 'ordem-paranormal' ? "block text-sm break-words" : "block truncate text-sm"}>{p.nome}{p.atributo && (s.id === "ordem-paranormal" ? <span className="ordem-pericia-elemento">{p.atributo.toUpperCase()}</span> : <span className="ml-1 text-[10px] text-(--a-a998bd)">({p.atributo})</span>)}</span>
                       {dossie && <span className="block text-[11px] text-[#5f4f35]">{s.leituraD100 === 'coc' ? `½ ${Math.floor(tot / 2)} · ⅕ ${Math.floor(tot / 5)}` : `especial ${Math.max(1, Math.round(tot / 5))} · crítico ${Math.max(1, Math.round(tot / 20))}`}</span>}</span>
                     <input type="number" aria-label={(valor ? 'Valor de ' : 'Total de ') + p.nome} value={valor ? d.pericias[p.id] ?? 0 : m.pericias[p.id] ?? ''} placeholder="0" disabled={somenteLeitura}
                       onChange={e => valor ? set('pericias', { ...d.pericias, [p.id]: numero(e.target.value) ?? 0 }) : setManual('pericias', p.id, numero(e.target.value))}
@@ -455,19 +477,20 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
             </div>)}
             </>}
           </section>}
-        </>}
+        </div>}
 
-        {secao === 'habilidades' && <>
-          {s.id === 'ordem-paranormal' && listasDe('habilidades').filter(l => destaque(l.id)).map(l => lista(l, 8))}
-          {s.id === 'pf2e' && <section className={card}>
+        {secao === 'habilidades' && <div className="ficha-blocos space-y-4" data-secao="habilidades">
+          
+          {s.id === 'pf2e' && <section className={card} data-bloco="talentos">
             <h2 className="mb-1 font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]">Talentos por categoria</h2>
             <p className="mb-3 text-xs text-(--a-a998bd)">Um talento por linha, com o nível em que foi escolhido (ex.: “1 · Golpe Duplo”).</p>
             <div className="grid gap-3 sm:grid-cols-2">{TALENTOS_PF2E.map(([id, nome]) => <label key={id} className="block rounded-xl border border-(--ficha-borda) bg-(--s-171325) p-2 text-sm font-semibold">{nome}
               <textarea rows={4} value={d.listas[id] ?? ''} disabled={somenteLeitura} maxLength={8000} onChange={e => set('listas', { ...d.listas, [id]: e.target.value })} className={input + ' mt-1 font-normal'} /></label>)}</div>
           </section>}
-          <div className="ficha-acervo ficha-acervo-poderes"><PoderesFicha {...propsInv} /></div>
-          {listasDe('habilidades').some(l=>!destaque(l.id)) && <details className={card}><summary className="cursor-pointer font-semibold">Anotações complementares de habilidades</summary><section className="mt-3 grid gap-4">{listasDe('habilidades').filter(l => !destaque(l.id) && !(s.id === 'pf2e' && l.id === 'talentos' && !d.listas.talentos?.trim())).map(l => lista(s.id === 'pf2e' && l.id === 'talentos' ? { ...l, nome: 'Outros talentos' } : l))}</section></details>}
-        </>}
+          <div className="ficha-acervo ficha-acervo-poderes" data-bloco="poderes"><PoderesFicha {...propsInv} /></div>
+          {listasDe('habilidades').filter(l => destaque(l.id) && (d.listas[l.id] ?? '').trim()).map(l => lista(l))}
+          {listasDe('habilidades').some(l=>!destaque(l.id)) && <details className={card} data-bloco="notas"><summary className="cursor-pointer font-semibold">Anotações complementares de habilidades</summary><section className="mt-3 grid gap-4">{listasDe('habilidades').filter(l => !destaque(l.id) && !(s.id === 'pf2e' && l.id === 'talentos' && !d.listas.talentos?.trim())).map(l => lista(s.id === 'pf2e' && l.id === 'talentos' ? { ...l, nome: 'Outros talentos' } : l))}</section></details>}
+        </div>}
         {secao === 'arvore' && <div className="space-y-4">
           {s.id === 'dnd5e-srd' || s.id === 'dnd5e-manual' ? <ArvoreDndOficial d={d} edicao={edicaoEfetivaDaFicha(s, d) === 'phb2014' ? 'phb2014' : 'phb2024'} fontes={null}>
             <ArvoreHabilidades s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura}
@@ -479,12 +502,12 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               mestre={mestre && !somenteLeitura} nivel={s.campos.some(x=>x.id==='nivel') ? Math.max(1,Number(d.campos.nivel)||1) : null} />
           </ArvoreSistema>}
         </div>}
-        {secao === 'equipamentos' && <>
-          <div className="ficha-acervo ficha-acervo-inventario"><InventarioFicha {...propsInv} passarItem={passarItem} /></div>
-          {listasDe('equipamentos').length > 0 && <details className={card}><summary className="cursor-pointer font-semibold">Anotações complementares do inventário</summary><section className="mt-3 grid gap-4">{listasDe('equipamentos').map(l => lista(l))}</section></details>}
-        </>}
-        {secao === 'anotacoes' && <>
-          {s.id === 'dnd5e-srd' ? <section className="dnd-diario" aria-label="Páginas do diário">
+        {secao === 'equipamentos' && <div className="ficha-blocos space-y-4" data-secao="equipamentos">
+          <div className="ficha-acervo ficha-acervo-inventario" data-bloco="inventario"><InventarioFicha {...propsInv} passarItem={passarItem} /></div>
+          {listasDe('equipamentos').length > 0 && <details className={card} data-bloco="notas"><summary className="cursor-pointer font-semibold">Anotações complementares do inventário</summary><section className="mt-3 grid gap-4">{listasDe('equipamentos').map(l => lista(l))}</section></details>}
+        </div>}
+        {secao === 'anotacoes' && <div className="ficha-blocos space-y-4" data-secao="anotacoes">
+          {s.id === 'dnd5e-srd' ? <section className="dnd-diario" aria-label="Páginas do diário" data-bloco="textos">
             <header className="dnd-diario-capa"><span aria-hidden="true">✦</span><div><h3>Memórias do aventureiro</h3><p>Registre conhecimentos, histórias e lembranças da jornada.</p></div><span aria-hidden="true">✦</span></header>
             {listasDe('anotacoes').map((l,i) => <label key={l.id} className="dnd-diario-pagina">
               <span className="dnd-diario-capitulo">Capítulo {String(i+1).padStart(2,'0')}</span>
@@ -492,15 +515,15 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
               <textarea rows={/hist.ria|anota/i.test(l.nome)?10:6} value={d.listas[l.id] ?? ''} disabled={somenteLeitura} maxLength={20000} onChange={e=>set('listas',{...d.listas,[l.id]:e.target.value})} placeholder={/profici|idioma/i.test(l.nome)?'Registre armas, armaduras, ferramentas e idiomas…':'Escreva as memórias da sua jornada…'} className="dnd-diario-texto"/>
               <span className="dnd-diario-rodape"><span aria-hidden="true">◇ ─ ◇</span><span>{(d.listas[l.id]??'').length.toLocaleString('pt-BR')} / 20.000</span></span>
             </label>)}
-          </section> : <section className="grid gap-4">{listasDe('anotacoes').map(l => lista(l))}</section>}
-          <TabelasDoSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolarNaCampanha={rolarNaCampanha} />
-          <RegrasDoSistema s={s} />
-          {s.autor && <section className={card + ' text-sm'}><p>✍️ <strong className="text-(--a-ed9cd8)">{s.nome}</strong> é um sistema autoral criado por <strong className="text-(--a-e4d3ff)">{s.autor}</strong>.</p></section>}
-          {(s.observacoes?.length || s.creditos) && <section className={card + ' text-xs text-(--a-bfb2cf)'}>
+          </section> : <section className="grid gap-4 empty:hidden" data-bloco="textos">{listasDe('anotacoes').map(l => lista(l))}</section>}
+          <div data-bloco="tabelas" className="empty:hidden"><TabelasDoSistema s={s} d={d} onChange={onChange} somenteLeitura={somenteLeitura} rolarNaCampanha={rolarNaCampanha} /></div>
+          <div data-bloco="regras" className="empty:hidden"><RegrasDoSistema s={s} /></div>
+          {s.autor && <section className={card + ' text-sm'} data-bloco="autor"><p>✍️ <strong className="text-(--a-ed9cd8)">{s.nome}</strong> é um sistema autoral criado por <strong className="text-(--a-e4d3ff)">{s.autor}</strong>.</p></section>}
+          {(s.observacoes?.length || s.creditos) && <section className={card + ' text-xs text-(--a-bfb2cf)'} data-bloco="creditos">
             {s.observacoes?.map(o => <p key={o} className="mb-2 flex gap-2"><Info size={14} className="mt-0.5 shrink-0" /> {o}</p>)}
             {s.creditos && <p className="mt-2 border-t border-(--a-3d3152) pt-2 text-[11px] leading-relaxed text-(--a-9d8db0)">{s.creditos}</p>}
           </section>}
-        </>}
+        </div>}
         {proxima && <button type="button" onClick={() => ir(proxima.id)} className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-(--a-62527e) bg-(--s-171325)/80 p-3 text-left text-sm transition hover:border-(--a-b99bff) hover:bg-(--s-201a32)">
           <span className="text-xl" aria-hidden="true">{proxima.icone}</span><span className="min-w-0 flex-1"><span className="block text-xs text-(--a-a99bbb)">Próxima parte</span><span className="block font-semibold">{proxima.nome}</span></span><span aria-hidden="true">→</span></button>}
       </div>

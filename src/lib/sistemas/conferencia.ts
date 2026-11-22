@@ -15,7 +15,7 @@ export function conferirFichaGenerica(s: Sistema, d: DadosFicha, c: Pick<Calculo
   const out: ItemConferencia[] = []
   if (!d.nome?.trim()) out.push({ tipo: 'aviso', texto: 'Dê um nome ao personagem.', aba: 'principal' })
   for (const f of s.campos) {
-    if (f.tipo !== 'escolha' || OPCIONAL.test(f.nome) || OPCIONAL.test(f.id) || f.opcoes?.some(o => /^(não|nenhum|sem)\b/i.test(o.nome))) continue
+    if (f.tipo !== 'escolha' || f.sugestao || OPCIONAL.test(f.nome) || OPCIONAL.test(f.id) || f.opcoes?.some(o => /^(não|nenhum|sem)\b/i.test(o.nome))) continue
     const v = d.campos[f.id]
     if (!opcaoEscolhida(f, v) && !(typeof v === 'string' && v.trim())) out.push({ tipo: 'erro', texto: `Escolha: ${f.nome.split(' (')[0]}.`, aba: 'principal' })
   }

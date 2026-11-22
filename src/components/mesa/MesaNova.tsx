@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { AudioLines, BrickWall, Grid3x3, Glasses, Flame, Trash, SquareDashed, Sun, ArrowDown, ArrowLeft, ArrowUp, BookOpen, CircleHelp, Crown, Globe, Library, MoreHorizontal, ScrollText, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
+import { AudioLines, Map as MapaIcone, BrickWall, Grid3x3, Glasses, Flame, Trash, SquareDashed, Sun, ArrowDown, ArrowLeft, ArrowUp, BookOpen, CircleHelp, Crown, Globe, Library, MoreHorizontal, ScrollText, CloudFog, Dices, Eraser, Eye, EyeOff, Hand, History, Image as ImageIcon, Layers, Lock, LockOpen, MapPin, MessageSquare, Music2, Pencil, Plus, Ruler, Settings2, Square, Swords, Trash2, UserRound, Volume2, VolumeX, X } from 'lucide-react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
@@ -17,7 +17,8 @@ import { CORES_AREA, FORMAS_AREA, lerAreasEfeito, tokensNaArea, type AreaEfeito,
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
 import PainelCampanha from './PainelCampanha'
 import PainelMusica from './PainelMusica'
-import { lerPreferencias } from '@/lib/preferencias'
+import { lerPreferencias, movimentoReduzido } from '@/lib/preferencias'
+import { MotionConfig, motion } from 'motion/react'
 import { useMesaDeSom } from './useMesaDeSom'
 import PainelSom from './PainelSom'
 import PainelTabelas from './PainelTabelas'
@@ -85,7 +86,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [atravessar, setAtravessar] = useState(false)
   const [comoJogador, setComoJogador] = useState(false)
   const [dicas, setDicas] = useState<'auto' | 'aberto' | 'fechado'>('auto')
-  const [aba, setAba] = useState<'fichas' | 'tokens' | 'iniciativa' | 'musica' | 'sons' | 'campanha' | 'tabelas' | 'biblioteca' | 'mestre'>('iniciativa')
+  const [aba, setAba] = useState<'fichas' | 'tokens' | 'iniciativa' | 'musica' | 'sons' | 'visao' | 'regras' | 'campanha' | 'tabelas' | 'biblioteca' | 'mestre'>('iniciativa')
   // Mesa organizada (v0.36.4): o mapa em destaque; chat e painel de ferramentas são abas laterais que recolhem.
   // No computador o chat começa aberto; no celular tudo começa recolhido (e só um abre por vez, por cima do mapa).
   const grande = () => typeof window !== 'undefined' && window.innerWidth >= 1024
@@ -164,7 +165,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   useEffect(() => { const t = setInterval(() => void carregar(), tempoReal ? 30000 : 4000); return () => clearInterval(t) }, [carregar, tempoReal])
   // Mesa de Som (v0.36.5): o estado mora aqui para o ambiente continuar com o painel fechado.
   const enviarSom = useCallback((evento: string, payload: Record<string, unknown>) => { void canal.current?.send({ type: 'broadcast', event: evento, payload }) }, [])
-  const mesaSom = useMesaDeSom({ campanhaId, admin: e?.campanha.meuPapel === 'mestre' || e?.campanha.meuPapel === 'comestre', enviar: enviarSom })
+  const mesaSom = useMesaDeSom({ campanhaId, eu: e?.eu ?? '', admin: e?.campanha.meuPapel === 'mestre' || e?.campanha.meuPapel === 'comestre', enviar: enviarSom })
   const receptorSom = useRef(mesaSom)
   useEffect(() => { receptorSom.current = mesaSom }, [mesaSom])
   useEffect(() => {
@@ -347,11 +348,13 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       { id: 'iniciativa', icone: Swords, nome: 'Iniciativa', ajuda: admin ? 'Ordem dos turnos. “Preparar combate” rola a iniciativa de todos; “Próximo turno” passa a vez.' : 'Ordem dos turnos do combate. Quando for a sua vez, aparece “⚔️ Sua vez”.' },
       ...(!espectador ? [{ id: 'tokens', icone: UserRound, nome: 'Tokens', ajuda: 'Tudo que está no mapa: vida, condições e quem pode mover cada token.' } as Parte] : []),
     ] },
-    { id: 'musica', icone: Music2, nome: 'Música', partes: [{ id: 'musica', icone: Music2, nome: 'Música', ajuda: admin ? 'A trilha da sessão: o que você tocar, todos ouvem juntos.' : 'A trilha da sessão, tocada pelo mestre (cada um ajusta o próprio volume).' },
+    { id: 'musica', icone: Music2, nome: 'Som', partes: [{ id: 'musica', icone: Music2, nome: 'Trilha', ajuda: admin ? 'A trilha da sessão: o que você tocar, todos ouvem juntos.' : 'A trilha da sessão, tocada pelo mestre (cada um ajusta o próprio volume).' },
       { id: 'sons', icone: AudioLines, nome: admin ? 'Mesa de som' : 'Sons', ajuda: admin ? 'Efeitos na hora, ambientes em camadas e cenas prontas. Todos ouvem; cada um escolhe o próprio volume.' : 'Efeitos e ambientes tocados pelo mestre. Ajuste o seu volume ou desligue os sons de susto.' }] },
     ...(!espectador ? [{ id: 'diario', icone: BookOpen, nome: 'Diário', partes: [{ id: 'campanha', icone: BookOpen, nome: 'Diário', ajuda: 'Sessões, anotações (privadas ou compartilhadas)' + (admin ? ' e recompensas (XP, moedas, pontos).' : '.') } as Parte] }] : []),
     ...(admin ? [{ id: 'mestre', icone: Crown, nome: 'Mestre', partes: [
-      { id: 'mestre', icone: Settings2, nome: 'Controles', ajuda: 'Cenas e mapa, névoa, regras de combate e descanso do grupo.' },
+      { id: 'mestre', icone: MapaIcone, nome: 'Cenas e mapa', ajuda: 'Troque a cena que está na mesa, crie cenas novas e monte o mapa (tamanho e imagens).' },
+      { id: 'visao', icone: CloudFog, nome: 'Névoa e luz', ajuda: 'O que os jogadores veem: névoa, visão dos personagens, escuridão e travar os tokens.' },
+      { id: 'regras', icone: Settings2, nome: 'Combate e descanso', ajuda: 'Como o dano entra, a regra de vida 0 e o descanso do grupo.' },
       { id: 'biblioteca', icone: Library, nome: 'Biblioteca', ajuda: 'Itens e poderes prontos para entregar com “🎁 Dar”.' },
       { id: 'tabelas', icone: Dices, nome: 'Tabelas', ajuda: 'Role na hora nomes, encontros, rumores e tesouros (para todos ou só para você).' },
     ] as Parte[] }] : []),
@@ -370,7 +373,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
     toast.success(sessaoAberta ? 'Sessão encerrada.' : 'Sessão aberta! O grupo já pode entrar.')
   }
 
-  return <div className="fixed inset-0 flex flex-col overflow-hidden bg-(--s-0d0c19) text-(--a-f4f0ff)">
+  return <MotionConfig reducedMotion={movimentoReduzido() ? 'always' : 'user'}><div className="fixed inset-0 flex flex-col overflow-hidden bg-(--s-0d0c19) text-(--a-f4f0ff)">
     <RolagemCentral ref={dados} som={som} />
     {animacaoAssim && <AnimacaoAssim dados={animacaoAssim} fechar={fecharAssim} />}
     <header className="relative z-40 flex shrink-0 items-center gap-1.5 border-b border-(--a-373251) bg-gradient-to-r from-(--s-1b1830) via-(--s-1d1733) to-(--s-1b1830) px-2 py-1.5 sm:gap-2 sm:px-3">
@@ -475,7 +478,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           onArrastando={(id, x, y) => aoVivo('token:' + id, 60, 'token', { id, x, y })}
           onTracando={(id, pontos) => aoVivo('traco:' + id, 120, 'traco', { id, cor, pontos })}
           onCursor={(x, y) => aoVivo('cursor', 90, 'cursor', { id: e.eu, nome: nomes[e.eu] ?? '', x, y })} />
-          : <div className="flex h-full items-center justify-center p-6 text-center text-(--a-b4aeca)">{admin ? 'Crie uma cena em "Mestre → Controles" para começar.' : 'O mestre ainda não abriu nenhuma cena.'}</div>}
+          : <div className="flex h-full items-center justify-center p-6 text-center text-(--a-b4aeca)">{admin ? 'Crie uma cena em "Mestre → Cenas e mapa" para começar.' : 'O mestre ainda não abriu nenhuma cena.'}</div>}
 
         {(pendentes.length > 0 || areasCena.length > 0) && <div className="absolute right-2 top-2 z-30 flex max-h-[calc(100%-5rem)] flex-col items-end gap-2">
           {pendentes.length > 0 && <DecisoesMestre pendentes={pendentes} acao={acao} />}
@@ -491,7 +494,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
 
       </section>
 
-      {painel && <aside aria-label="Painel da mesa" className="fixed inset-x-0 bottom-14 z-40 flex h-[72dvh] flex-col rounded-t-2xl border-t border-(--a-55456e) bg-(--s-14121f) shadow-[0_-12px_40px_#000a] lg:static lg:z-auto lg:h-auto lg:w-[380px] lg:shrink-0 lg:rounded-none lg:border-l lg:border-t-0 lg:shadow-none">
+      {painel && <motion.aside initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: 'easeOut' }} aria-label="Painel da mesa" className="fixed inset-x-0 bottom-14 z-40 flex h-[72dvh] flex-col rounded-t-2xl border-t border-(--a-55456e) bg-(--s-14121f) shadow-[0_-12px_40px_#000a] lg:static lg:z-auto lg:h-auto lg:w-[380px] lg:shrink-0 lg:rounded-none lg:border-l lg:border-t-0 lg:shadow-none">
         <div className="flex shrink-0 items-center gap-2 border-b border-(--a-373251) bg-(--s-17142a) px-3 py-2">
           <grupoAtual.icone size={17} className="text-(--a-b99bff)" /><h2 className="flex-1 font-bold">{grupoAtual.nome}</h2>
           <button type="button" onClick={() => setPainel(false)} aria-label="Recolher o painel" title="Recolher o painel" className="rounded-lg p-1.5 hover:bg-(--s-34294f)"><X size={18} /></button>
@@ -501,7 +504,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
             className={'inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-xs ' + (p.id === parteAtual.id ? 'border-(--a-b99bff) bg-(--s-2b2143) text-white' : 'border-transparent text-(--a-b4aeca) hover:bg-(--s-241d38)')}><p.icone size={13} /> {p.nome}</button>)}
         </div>}
         <p className="flex shrink-0 items-start gap-1.5 border-b border-(--a-2b2540) bg-(--s-15122a) px-3 py-1.5 text-[11px] leading-snug text-(--a-a99bbb)"><CircleHelp size={13} className="mt-px shrink-0" /> {parteAtual.ajuda}</p>
-        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+        <motion.div key={parteAtual.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }} className="min-h-0 flex-1 overflow-y-auto p-3">
           {parteAtual.id === 'fichas' && <PainelFichas fichas={fichasMesa} carregar={() => void carregarFichas()} tokens={e.tokens} admin={admin} cenaId={cena?.id ?? null} acao={acao} atacarCom={iniciarAtaque} abrirFicha={setFichaAberta} />}
           {parteAtual.id === 'tokens' && <PainelTokens e={e} admin={admin} acao={acao} campanhaId={campanhaId} abrir={setTokenAberto} />}
           {parteAtual.id === 'iniciativa' && <PainelIniciativa e={e} admin={admin} acao={acao} fichas={fichasMesa} atacar={iniciarAtaque} />}
@@ -510,15 +513,17 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
           {parteAtual.id === 'campanha' && <PainelCampanha campanhaId={campanhaId} e={e} admin={admin} />}
           {parteAtual.id === 'biblioteca' && admin && <PainelBiblioteca campanhaId={campanhaId} e={e} />}
           {parteAtual.id === 'tabelas' && admin && <PainelTabelas campanhaId={campanhaId} acao={acao} />}
-          {parteAtual.id === 'mestre' && admin && sistemaDaCampanha(e.campanha.sistema ?? '') === 'dnd5e-srd' && <a href={'/mestre/dnd?campanha=' + campanhaId} className="mb-3 flex items-center gap-3 rounded-xl border border-(--a-b99bff)/60 bg-(--s-2b2140) p-3 text-sm hover:brightness-110">
+          {parteAtual.id === 'regras' && admin && sistemaDaCampanha(e.campanha.sistema ?? '') === 'dnd5e-srd' && <a href={'/mestre/dnd?campanha=' + campanhaId} className="mb-3 flex items-center gap-3 rounded-xl border border-(--a-b99bff)/60 bg-(--s-2b2140) p-3 text-sm hover:brightness-110">
             <span className="text-2xl" aria-hidden>🧰</span><span className="min-w-0 flex-1"><strong className="block text-white">Ferramentas do mestre (D&D 2024)</strong><span className="text-xs text-(--a-cfc0df)">Encontro pelo XP do grupo, CDs, XP e níveis, condições e conferir fichas.</span></span><span aria-hidden>→</span></a>}
-          {parteAtual.id === 'mestre' && admin && <><PainelMestre e={e} acao={acao} campanhaId={campanhaId} setModo={setModo} /><div className="h-3" /><ConfigCombate acerto={e.combate?.acerto ?? 'mestre'} morte={e.combate?.morte ?? 'testes'} acao={acao} /><div className="h-3" /><DescansoGrupo acao={acao} carregar={() => void carregarFichas()} /></>}
-        </div>
-      </aside>}
+          {parteAtual.id === 'mestre' && admin && <PainelMestre parte="cenas" e={e} acao={acao} campanhaId={campanhaId} setModo={setModo} />}
+          {parteAtual.id === 'visao' && admin && <PainelMestre parte="visao" e={e} acao={acao} campanhaId={campanhaId} setModo={setModo} />}
+          {parteAtual.id === 'regras' && admin && <><ConfigCombate acerto={e.combate?.acerto ?? 'mestre'} morte={e.combate?.morte ?? 'testes'} acao={acao} /><div className="h-3" /><DescansoGrupo acao={acao} carregar={() => void carregarFichas()} /></>}
+        </motion.div>
+      </motion.aside>}
 
-      {chatAberto && <aside aria-label="Chat da mesa" className="fixed inset-x-0 bottom-14 top-12 z-40 flex flex-col border-t border-(--a-55456e) bg-(--s-14121f) shadow-[0_-12px_40px_#000a] lg:static lg:z-auto lg:w-[360px] lg:shrink-0 lg:border-l lg:border-t-0 lg:shadow-none">
+      {chatAberto && <motion.aside initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2, ease: 'easeOut' }} aria-label="Chat da mesa" className="fixed inset-x-0 bottom-14 top-12 z-40 flex flex-col border-t border-(--a-55456e) bg-(--s-14121f) shadow-[0_-12px_40px_#000a] lg:static lg:z-auto lg:w-[360px] lg:shrink-0 lg:border-l lg:border-t-0 lg:shadow-none">
         <ChatMesa campanhaId={campanhaId} e={e} nomes={nomes} papelDe={papelDe} admin={admin} espectador={espectador} acao={acao} destacar={destacar} abrirHistorico={() => setHistorico(true)} recolher={fecharChat} />
-      </aside>}
+      </motion.aside>}
 
       {/* Barra da mesa: no celular fica embaixo; no computador, na lateral direita. */}
       <nav aria-label="Barra da mesa" className="flex h-14 shrink-0 border-t border-(--a-373251) bg-(--s-17142a) lg:h-auto lg:w-[68px] lg:flex-col lg:border-l lg:border-t-0 lg:py-2">
@@ -541,10 +546,10 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       abrirFicha={!espectador && (token.ficha_id || token.ficha_modelo) && (admin || token.dono_id === e.eu) && e.fichas.some(f => f.id === (token.ficha_id ?? token.ficha_modelo)) ? () => { setTokenAberto(null); setFichaAberta(token.ficha_id ?? token.ficha_modelo ?? null) } : undefined} />}
     {fichaAberta && <FichaNaMesa ref={iframeFicha} fichas={e.fichas} aberta={fichaAberta} trocar={setFichaAberta} fechar={() => setFichaAberta(null)} />}
     {historico && <Historico campanhaId={campanhaId} membros={e.membros} fechar={() => setHistorico(false)} />}
-  </div>
+  </div></MotionConfig>
 }
 
-function PainelMestre({ e, acao, campanhaId, setModo }: { e: Estado; acao: Acao; campanhaId: string; setModo: (m: ModoMesa) => void }) {
+function PainelMestre({ parte, e, acao, campanhaId, setModo }: { parte: 'cenas' | 'visao'; e: Estado; acao: Acao; campanhaId: string; setModo: (m: ModoMesa) => void }) {
   const [nova, setNova] = useState({ nome: '', mapa_url: '', grid_cols: 20, grid_rows: 15, enviado: false })
   const [enviando, setEnviando] = useState('')
   const cena = e.cenaAtiva
@@ -584,6 +589,25 @@ function PainelMestre({ e, acao, campanhaId, setModo }: { e: Estado; acao: Acao;
   const PRESETS: [string, number, number][] = [['Pequeno', 15, 10], ['Médio', 25, 18], ['Grande', 40, 28], ['Enorme', 60, 40], ['Região', 100, 70], ['Mundo', 200, 140]]
 
   return <div className="space-y-5 text-sm">
+    {parte === 'cenas' && <>
+    <section className="space-y-2">
+      <h3 className="font-semibold">🎬 Cenas</h3>
+      <ul className="space-y-1">{e.cenas.map(c => <li key={c.id} className={'flex flex-wrap items-center gap-2 rounded-lg p-2 ' + (c.ativa ? 'bg-(--a-5b4380)' : 'bg-(--s-1e1a30)')}>
+        <span className="flex-1 truncate">{c.nome}{c.ativa && ' · na mesa'}</span>
+        {!c.ativa && <button type="button" className={btn} onClick={() => acao({ acao: 'cena_ativar', cenaId: c.id })}>Mostrar</button>}
+        <button type="button" aria-label={'Excluir ' + c.nome} className={btn} onClick={() => { if (window.confirm(`Excluir a cena "${c.nome}" e seus tokens?`)) void acao({ acao: 'cena_excluir', cenaId: c.id }) }}><Trash2 size={14} /></button>
+      </li>)}</ul>
+      <form className="space-y-2 rounded-lg border border-(--a-373251) p-2" onSubmit={criarCena}>
+        <input required aria-label="Nome da cena" value={nova.nome} onChange={x => setNova({ ...nova, nome: x.target.value })} placeholder="Nova cena (ex.: Saloon)" className={input} />
+        <label className={btn + ' cursor-pointer'}><ImageIcon size={14} /> {enviando === 'nova' ? 'Enviando…' : nova.enviado ? 'Mapa escolhido ✓ (trocar)' : 'Mapa do aparelho (opcional)'}
+          <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={x => { const f = x.target.files?.[0]; if (f) void fundoNovaCena(f); x.target.value = '' }} /></label>
+        {!nova.enviado && <input aria-label="Link da imagem do mapa" value={nova.mapa_url} onChange={x => setNova({ ...nova, mapa_url: x.target.value })} placeholder="ou cole um link https://…" className={input} />}
+        <div className="flex items-center gap-2"><span>Tamanho</span><input aria-label="Colunas" type="number" min={5} max={MAX_GRADE} value={nova.grid_cols} onChange={x => setNova({ ...nova, grid_cols: Number(x.target.value) })} className={input + ' !w-20'} />×
+          <input aria-label="Linhas" type="number" min={5} max={MAX_GRADE} value={nova.grid_rows} onChange={x => setNova({ ...nova, grid_rows: Number(x.target.value) })} className={input + ' !w-20'} /></div>
+        <button type="submit" className={btn}><Plus size={14} /> Criar cena</button>
+      </form>
+    </section>
+
     {cena && <section className="space-y-2">
       <h3 className="font-semibold">📐 Tamanho do mapa</h3>
       <div className="flex flex-wrap gap-1">{PRESETS.map(([n, c, r]) => <button key={n} type="button" onClick={() => setTam({ c, r })} className={btn + (tam.c === c && tam.r === r ? ' bg-(--a-5b4380)' : '')}>{n} {c}×{r}</button>)}</div>
@@ -614,6 +638,9 @@ function PainelMestre({ e, acao, campanhaId, setModo }: { e: Estado; acao: Acao;
       <p className="text-xs text-(--a-b4aeca)">✂️ escolhe a parte da imagem · ⛶ estica a imagem no mapa todo · <Layers size={12} className="inline" /> “Montar mapa” (no canto do mapa) arrasta e redimensiona.</p>
     </section>}
 
+    </>}
+    {parte === 'visao' && !cena && <p className="text-(--a-b4aeca)">Nenhuma cena na mesa ainda. Crie ou mostre uma em Cenas e mapa.</p>}
+    {parte === 'visao' && <>
     {cena && <section className="space-y-2">
       <h3 className="font-semibold">👁️ O que os jogadores veem</h3>
       <div className="flex flex-wrap gap-2">
@@ -629,24 +656,7 @@ function PainelMestre({ e, acao, campanhaId, setModo }: { e: Estado; acao: Acao;
       <button type="button" className={btn} onClick={() => acao({ acao: 'cena_editar', cenaId: cena.id, tokens_travados: !cena.tokens_travados })}>{cena.tokens_travados ? <><LockOpen size={14} /> Destravar tokens dos jogadores</> : <><Lock size={14} /> Travar tokens dos jogadores</>}</button>
     </section>}
 
-    <section className="space-y-2">
-      <h3 className="font-semibold">🎬 Cenas</h3>
-      <ul className="space-y-1">{e.cenas.map(c => <li key={c.id} className={'flex flex-wrap items-center gap-2 rounded-lg p-2 ' + (c.ativa ? 'bg-(--a-5b4380)' : 'bg-(--s-1e1a30)')}>
-        <span className="flex-1 truncate">{c.nome}{c.ativa && ' · na mesa'}</span>
-        {!c.ativa && <button type="button" className={btn} onClick={() => acao({ acao: 'cena_ativar', cenaId: c.id })}>Mostrar</button>}
-        <button type="button" aria-label={'Excluir ' + c.nome} className={btn} onClick={() => { if (window.confirm(`Excluir a cena "${c.nome}" e seus tokens?`)) void acao({ acao: 'cena_excluir', cenaId: c.id }) }}><Trash2 size={14} /></button>
-      </li>)}</ul>
-      <form className="space-y-2 rounded-lg border border-(--a-373251) p-2" onSubmit={criarCena}>
-        <input required aria-label="Nome da cena" value={nova.nome} onChange={x => setNova({ ...nova, nome: x.target.value })} placeholder="Nova cena (ex.: Saloon)" className={input} />
-        <label className={btn + ' cursor-pointer'}><ImageIcon size={14} /> {enviando === 'nova' ? 'Enviando…' : nova.enviado ? 'Mapa escolhido ✓ (trocar)' : 'Mapa do aparelho (opcional)'}
-          <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={x => { const f = x.target.files?.[0]; if (f) void fundoNovaCena(f); x.target.value = '' }} /></label>
-        {!nova.enviado && <input aria-label="Link da imagem do mapa" value={nova.mapa_url} onChange={x => setNova({ ...nova, mapa_url: x.target.value })} placeholder="ou cole um link https://…" className={input} />}
-        <div className="flex items-center gap-2"><span>Tamanho</span><input aria-label="Colunas" type="number" min={5} max={MAX_GRADE} value={nova.grid_cols} onChange={x => setNova({ ...nova, grid_cols: Number(x.target.value) })} className={input + ' !w-20'} />×
-          <input aria-label="Linhas" type="number" min={5} max={MAX_GRADE} value={nova.grid_rows} onChange={x => setNova({ ...nova, grid_rows: Number(x.target.value) })} className={input + ' !w-20'} /></div>
-        <button type="submit" className={btn}><Plus size={14} /> Criar cena</button>
-      </form>
-    </section>
-
+    </>}
     {recortar && cena && <RecorteImagem url={recortar.url} inicial={recortar} onCancelar={() => setRecortar(null)} onSalvar={(r, arImg) => {
       // Mantém a largura no mapa e ajusta a altura à proporção da parte escolhida.
       const h = Math.max(1, Math.round(recortar.w * (r.ch * arImg) / r.cw))

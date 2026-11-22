@@ -138,6 +138,17 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       await Promise.all(todas.map((x, k) => x.ordem === k ? null : rest(`prg_musicas?id=eq.${q(x.id)}`, { method: 'PATCH', body: JSON.stringify({ ordem: k }) })))
       return ok({ ok: true })
     }
+    case 'musica_reordenar': {
+      // Arrastar e soltar (v0.36.6): a nova ordem inteira da playlist, só pelo dono.
+      const [p] = await rest<{ id: string; dono_id: string; campanha_id: string }[]>(`prg_playlists?select=id,dono_id,campanha_id&id=eq.${q(String(b.playlistId ?? ''))}&campanha_id=eq.${q(cid)}`)
+      if (!p) throw new ErroApi(404, 'Playlist não encontrada.')
+      if (p.dono_id !== eu) throw new ErroApi(403, 'Só o dono pode mudar esta playlist.')
+      const ids = Array.isArray(b.ids) ? b.ids.filter((x: unknown): x is string => typeof x === 'string').slice(0, 200) : []
+      const todas = await rest<{ id: string; ordem: number }[]>(`prg_musicas?select=id,ordem&playlist_id=eq.${q(p.id)}`)
+      if (ids.length !== todas.length || new Set(ids).size !== ids.length || !ids.every(id => todas.some(x => x.id === id))) throw new ErroApi(400, 'A lista de músicas mudou. Recarregue e tente de novo.')
+      await Promise.all(ids.map((id, k) => todas.find(x => x.id === id)!.ordem === k ? null : rest(`prg_musicas?id=eq.${q(id)}`, { method: 'PATCH', body: JSON.stringify({ ordem: k }) })))
+      return ok({ ok: true })
+    }
     // ---- Somente o mestre: o que toca para todo mundo ----
     case 'tocar': {
       if (!admin) throw new ErroApi(403, 'Apenas o mestre escolhe a música da mesa.')

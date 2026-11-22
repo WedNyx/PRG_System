@@ -12,7 +12,7 @@ import { filtroResultado, resumirRolagens, type EventoResumo } from '@/lib/histo
 import { gruposDaExpressao, resultadoAssim } from '@/lib/sistemas/assimilacao'
 import { acertou, ALCANCE_CORPO, criticoBlades, distancia, gastarCusto, ordenarIniciativa, regraDeAtaque, regraDeIniciativa, rolarDano, resumoCombate, type EntradaOrdem } from '@/lib/sistemas/combate'
 import { carregarSistema } from '@/lib/nuvem/sistemasServidor'
-import { adiarNaOrdem, entrarNaOrdem, moverNaOrdem, mudarValor, sairDaOrdem } from '@/lib/sistemas/ordemCombate'
+import { adiarNaOrdem, entrarNaOrdem, moverNaOrdem, moverPara, mudarValor, sairDaOrdem } from '@/lib/sistemas/ordemCombate'
 import { ehV8 } from '@/lib/nuvem/categorias'
 import { lerAreasEfeito, MAX_AREAS_POR_CENA, normalizarAreaEfeito } from '@/lib/mesa/areasEfeito'
 import { caminhoLivre, lerParedes, MAX_PAREDES, MAX_PAREDES_PEDIDO, normalizarParede } from '@/lib/mesa/paredes'
@@ -806,7 +806,7 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       exigirAdmin(admin)
       const id = typeof b.id === 'string' ? b.id : ''
       const mesa = await mexerNaOrdem(cid, o => !o.lista.some(x => x.id === id) ? null
-        : b.acao === 'iniciativa_mover' ? moverNaOrdem(o.lista, id, b.direcao === -1 ? -1 : 1, o.turno)
+        : b.acao === 'iniciativa_mover' ? (typeof b.para === 'number' && Number.isFinite(b.para) ? moverPara(o.lista, id, b.para, o.turno) : moverNaOrdem(o.lista, id, b.direcao === -1 ? -1 : 1, o.turno))
         : b.acao === 'iniciativa_valor' ? mudarValor(o.lista, id, inteiro(b.valor, -100, 1000) ?? 0, o.turno)
         : sairDaOrdem(o.lista, id, o.turno))
       if (!mesa) throw new ErroApi(404, 'Não está mais na ordem do combate.')

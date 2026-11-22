@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useCallback, useState, type ReactNode } from 'react'
+import dynamic from 'next/dynamic'
+import { AnimatePresence, motion } from 'motion/react'
 import { toast } from 'sonner'
 import { GitBranch, LockKeyhole, X } from 'lucide-react'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
@@ -18,13 +20,15 @@ import { arvoreDoSistema, chaveEscolha, rotuloMarco, type EstadoMarco, type Marc
 const ESTADOS: Record<EstadoMarco, { texto: string; icone: string }> = {
   recebido: { texto: 'Já tem', icone: '✧' }, proximo: { texto: 'Próximo', icone: '➜' }, futuro: { texto: 'Mais tarde', icone: '🔒' }, referencia: { texto: 'Guia', icone: '◇' },
 }
-const MESTRE = 'mestre'
+const MESTRE = 'mestre', MAPA = 'mapa'
+// React Flow só carrega quando alguém abre o mapa (fica fora do pacote principal da ficha).
+const MapaArvore = dynamic(() => import('./MapaArvore'), { ssr: false, loading: () => <p className="rounded-2xl border border-(--a-55456e) p-6 text-center text-sm text-(--a-cfc0df)">Abrindo o mapa…</p> })
 
 export default function ArvoreSistema({ s, d, onChange, somenteLeitura, children }: { s: Sistema; d: DadosFicha; onChange: (d: DadosFicha) => void; somenteLeitura: boolean; children?: ReactNode }) {
   const arvore = arvoreDoSistema(s, d)
   const identidade = s.visual?.arvore ?? identidadeVisual(s), tema = temaArvore(identidade)
   const ramos = arvore?.ramos ?? []
-  const [ramoId, setRamoId] = useState(ramos[0]?.id ?? MESTRE)
+  const [ramoId, setRamoId] = useState(ramos.length > 1 ? MAPA : ramos[0]?.id ?? MESTRE)
   const [futuros, setFuturos] = useState(false)
   const [visao, setVisao] = useState<'yggdrasil' | 'lista'>('yggdrasil')
   const [aberto, setAberto] = useState<string | null>(null)
@@ -35,6 +39,7 @@ export default function ArvoreSistema({ s, d, onChange, somenteLeitura, children
   const contar = (r: RamoSistema) => r.marcos.filter(m => m.estado === 'recebido').length
   const unidade = arvore?.medida?.unidade
   const quando = (m: Marco) => m.rotulo ?? (m.estado !== 'referencia' ? rotuloMarco(m.quando, unidade) : '')
+  const abrirMarco = useCallback((id: string) => setAberto(a => a === id ? null : id), [])
   // Árvore do autor: liberar e devolver gastam/devolvem pontos e trazem a habilidade para os poderes.
   const aplicarNo = (r: { arvore?: Arvore; erro?: string }, ok: string) => {
     if (!r.arvore) { toast.error(r.erro ?? 'Não deu.'); return }
@@ -42,7 +47,7 @@ export default function ArvoreSistema({ s, d, onChange, somenteLeitura, children
   }
   const autor = arvore?.autor
 
-  const detalhe = (m: Marco) => <div className="relative z-20 mt-3 rounded-xl border border-amber-300/35 bg-[#201a21] p-3 text-left">
+  const detalhe = (m: Marco) => <motion.div key={m.id} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="relative z-20 mt-3 rounded-xl border border-amber-300/35 bg-[#201a21] p-3 text-left">
     <div className="flex items-start justify-between gap-2"><p className="font-semibold text-white">{m.titulo}</p>
       <button type="button" aria-label="Fechar" onClick={() => setAberto(null)} className="min-h-9 min-w-9 rounded-lg border border-(--a-55456e) p-1.5"><X size={15} /></button></div>
     <p className="mt-1 text-xs text-(--a-c4b6d4)">{[quando(m), ESTADOS[m.estado].texto].filter(Boolean).join(' · ')}</p>
@@ -57,7 +62,7 @@ export default function ArvoreSistema({ s, d, onChange, somenteLeitura, children
     {m.escolha !== false && <label className="mt-3 block text-xs text-(--a-d3adf0)">O que você escolheu aqui
       <input value={escolha(m)} disabled={somenteLeitura} maxLength={200} onChange={e => anotar(m, e.target.value)} placeholder="Ex.: o nome do poder ou talento"
         className="mt-1 w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-sm text-white" /></label>}
-  </div>
+  </motion.div>
 
   return <section className="space-y-4 rounded-2xl border border-(--ficha-borda) bg-(--ficha-cartao) p-4" aria-label="Árvore do sistema">
     <div>
@@ -69,12 +74,20 @@ export default function ArvoreSistema({ s, d, onChange, somenteLeitura, children
       </div>}
     </div>
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="tablist" aria-label="Ramos da árvore">
-      {[...ramos, { id: MESTRE, titulo: autor ? 'Editar a árvore e extras' : 'Habilidades adicionais do mestre', icone: '🌠', cor: '#7edac0', marcos: [] as Marco[] }].map(r => <button key={r.id} type="button" role="tab" aria-selected={ramoId === r.id} onClick={() => { setRamoId(r.id); setAberto(null) }}
+      {[...(ramos.length > 1 ? [{ id: MAPA, titulo: 'Mapa completo', icone: '🗺️', cor: '#e9d9a8', marcos: [] as Marco[] }] : []), ...ramos, { id: MESTRE, titulo: autor ? 'Editar a árvore e extras' : 'Habilidades adicionais do mestre', icone: '🌠', cor: '#7edac0', marcos: [] as Marco[] }].map(r => <button key={r.id} type="button" role="tab" aria-selected={ramoId === r.id} onClick={() => { setRamoId(r.id); setAberto(null) }}
         className={'flex min-h-14 min-w-0 items-center gap-2 rounded-xl border p-2 text-left text-xs transition ' + (ramoId === r.id ? 'bg-(--s-34294f) text-white' : 'border-(--a-55456e) bg-(--s-171325) text-(--a-cfc0df)')} style={ramoId === r.id ? { borderColor: r.cor } : undefined}>
         <span aria-hidden className="text-lg">{r.icone}</span><span className="min-w-0"><strong className="block break-words leading-tight">{r.titulo}</strong>
-          {r.id !== MESTRE && <span className="opacity-75">{r.marcos.some(m => m.estado !== 'referencia') ? `${contar(r)} de ${r.marcos.length}` : `${r.marcos.length} ${r.marcos.length === 1 ? 'marco' : 'marcos'}`}</span>}</span></button>)}
+          {r.id !== MESTRE && r.id !== MAPA && <span className="opacity-75">{r.marcos.some(m => m.estado !== 'referencia') ? `${contar(r)} de ${r.marcos.length}` : `${r.marcos.length} ${r.marcos.length === 1 ? 'marco' : 'marcos'}`}</span>}</span></button>)}
     </div>
-    {ramoId === MESTRE || !ramo ? children : <div>
+    {ramoId === MAPA ? <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-(--a-cfc0df)">Todos os ramos de uma vez. Arraste para andar, use a pinça (ou a rodinha) para aproximar e toque num marco para ver e anotar.</p>
+        {ramos.some(r => r.marcos.some(m => m.estado === 'futuro')) && <label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-(--a-55456e) px-3 text-xs text-(--a-cfc0df)"><input type="checkbox" checked={futuros} onChange={e => setFuturos(e.target.checked)} /> Mostrar os futuros</label>}
+      </div>
+      <MapaArvore ramos={ramos} tema={tema} nome={d.nome || 'Personagem'} sub={arvore?.medida ? arvore.medida.nome + ' ' + rotuloMarco(arvore.medida.atual, unidade).replace(/^Nível /, '') : tema.nome.replace(/^\S+\s/, '')}
+        quando={quando} aberto={aberto} abrir={abrirMarco} escolha={escolha} mostrarFuturos={futuros} />
+      <AnimatePresence>{(() => { const m = ramos.flatMap(r => r.marcos).find(x => x.id === aberto); return m ? detalhe(m) : null })()}</AnimatePresence>
+    </div> : ramoId === MESTRE || !ramo ? children : <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex flex-wrap items-center gap-2 font-semibold" style={{ color: ramo.cor }}><span aria-hidden>{ramo.icone}</span>{ramo.titulo}{ramo.id === 'autor' && autor && <span className="rounded-full border border-current px-2 py-0.5 text-xs font-normal">{autor.livres} {autor.livres === 1 ? 'ponto livre' : 'pontos livres'}</span>}</h3>
         <div className="flex flex-wrap items-center gap-2">

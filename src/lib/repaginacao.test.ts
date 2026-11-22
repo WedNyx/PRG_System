@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { limparPreferencias, PREFERENCIAS_PADRAO } from './preferencias'
 import { AMBIENTES, CENAS_PRONTAS, EFEITOS, efeitoRepentino, ehEfeito, limparCamadas, limparCena } from './mesa/somMesa'
 import { filtrarBusca, normalizar, type ItemBusca } from './busca'
@@ -41,5 +41,39 @@ describe('Repaginação (v0.36.5)', () => {
     expect(TEMA_PADRAO).toBe('lunar'); expect(TEMAS[0].id).toBe('lunar'); expect(TEMAS.some(t => t.id === 'sonhos')).toBe(true)
     expect(limparVisual({ movimento: 'reduzido', efeitos: 'leves' })).toEqual({ movimento: 'reduzido', efeitos: 'leves' })
     expect(limparVisual({ movimento: 'rapido', efeitos: 'muitos' })).toEqual({})
+  })
+})
+
+describe('Fichas e mesa (v0.36.6)', () => {
+  it('arrastar na iniciativa: vai para a posição certa e a vez continua com quem estava nela', async () => {
+    const { moverPara } = await import('./sistemas/ordemCombate')
+    const l = [{ id: 'a', nome: 'A', valor: 20 }, { id: 'b', nome: 'B', valor: 15 }, { id: 'c', nome: 'C', valor: 10 }]
+    const r = moverPara(l, 'c', 0, 0)
+    expect(r.lista.map(x => x.id)).toEqual(['c', 'a', 'b'])
+    expect(r.lista[r.turno].id).toBe('a')
+    expect(moverPara(l, 'x', 0, 1)).toEqual({ lista: l, turno: 1 })
+  })
+  it('Arsenal da Ordem: só estatísticas, sem citar o livro', async () => {
+    const { ARSENAL_ORDEM } = await import('./arsenalOrdem')
+    expect(ARSENAL_ORDEM.length).toBeGreaterThan(10)
+    expect(ARSENAL_ORDEM.every(x => !/livro de regras|p\. ?\d/i.test(x.descricao))).toBe(true)
+    expect(ARSENAL_ORDEM.find(x => x.nome === 'Machadinha')?.rolagens?.[0].expr).toBe('3d6')
+  })
+  it('áudio da Mesa de Som só da própria campanha e do próprio Storage', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://x.supabase.co')
+    const { audioDaPlataforma } = await import('./imagens')
+    const cid = '0b9b2f0e-1111-4111-8111-111111111111'
+    const url = `https://x.supabase.co/storage/v1/object/public/prg-mesa/${cid}/a1.mp3`
+    expect(audioDaPlataforma(url, cid)).toBe(true)
+    expect(audioDaPlataforma(url, '0b9b2f0e-2222-4222-8222-222222222222')).toBe(false)
+    expect(audioDaPlataforma('https://evil.com/a.mp3')).toBe(false)
+    expect(audioDaPlataforma(`https://evil.com/storage/v1/object/public/prg-mesa/${cid}/a1.mp3`, cid)).toBe(false)
+    const outraCid = '0b9b2f0e-2222-4222-8222-222222222222'
+    expect(audioDaPlataforma(`https://x.supabase.co/storage/v1/object/public/prg-mesa/${outraCid}/a1.mp3?x=/storage/v1/object/public/prg-mesa/${cid}/a1.mp3`, cid)).toBe(false)
+    vi.unstubAllEnvs()
+  })
+  it('cada sistema tem o roteiro da ficha de papel', async () => {
+    const { FICHA_OFICIAL } = await import('./sistemas/fichaOficial')
+    for (const id of ['dnd5e-srd', 'pf2e', 'ordem-paranormal', 'tormenta20', 'fate-core', 'blades', 'call-of-cthulhu', 'brp', 'mork-borg', 'assimilacao', 'faroeste-arcano']) expect(FICHA_OFICIAL[id]?.ordem.length, id).toBeGreaterThan(3)
   })
 })

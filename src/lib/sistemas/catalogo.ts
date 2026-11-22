@@ -1,4 +1,5 @@
 import type { PericiaDef, Sistema } from './tipos'
+import { OPCOES_EXTRAS } from './opcoesExtras'
 import { ANTECEDENTES_PHB, ANTECEDENTES_LEGADOS_2014, ESPECIES_PHB, FONTE_PHB, FONTE_LEGADO_2014 } from './dnd2024Fontes'
 import { ANTECEDENTES_PHB_GUIA } from './dnd2024AntecedentesPhb'
 
@@ -875,6 +876,11 @@ export function sistemaDaCampanha(nome: string): string {
 }
 /** O sistema Lunethernnyis original continua usando a Ficha V8. */
 export const SISTEMA_V8 = 'lunethernnyis-v8'
+// v0.36.6: origens, trilhas, divindades, ocupações e antecedentes viram sugestões (o campo segue aceitando qualquer texto).
+for (const s of SISTEMAS) {
+  const extra = OPCOES_EXTRAS[s.id]
+  if (extra) s.campos = s.campos.map(f => extra[f.id] && f.tipo === 'texto' ? { ...f, tipo: 'escolha', opcoes: extra[f.id], sugestao: true } : f)
+}
 /** Sistemas fora da plataforma por enquanto (o autor está revisando): sem fichas novas; as antigas continuam abrindo. */
 export const SISTEMAS_OCULTOS = new Set([SISTEMA_V8, ...SISTEMAS.filter(s => s.oculto).map(s => s.id)])
 export const SISTEMAS_VISIVEIS = SISTEMAS.filter(s => !s.oculto)

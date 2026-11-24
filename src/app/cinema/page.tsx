@@ -132,7 +132,9 @@ export default function Cinema() {
           O anfitrião não está mais na sala.<button type="button" className={botao} disabled={ocupado} onClick={() => void enviar('assumir')}><Crown size={15} /> Assumir o controle</button></p>}
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="min-w-0 space-y-3">
+          <div className="relative min-w-0 space-y-3">
+            {/* Brilho da tela iluminando a "sala" ao redor, como a luz de uma projeção. */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_55%_50%_at_50%_40%,color-mix(in_oklab,var(--ouro)_14%,transparent),transparent_70%)]" />
             <ReprodutorCinema estado={sala.estado} desvio={desvio} />
             {host ? <div className="flex flex-wrap gap-2" aria-label="Controles do anfitrião">
               {(['voltar', 'pausar', 'continuar', 'avancar'] as const).map((a, i) => <button key={a} type="button" className={i === 1 || i === 2 ? botao : secundario} disabled={ocupado || !sala.estado.reproducao.video_id} onClick={() => void enviar(a)}>{['⏪ −10 s', '⏸ Pausar', '▶ Reproduzir', '+10 s ⏩'][i]}</button>)}

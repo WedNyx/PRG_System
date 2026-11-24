@@ -199,7 +199,9 @@ function poderAberto(a: Arvore, n: NoArvore): Poder[] {
   const h = n.aberto ? a.preenchidas?.[n.id] : undefined
   if (!h || !(h.nome || h.descricao || h.dano)) return []
   return [{ id: idPoderDoNo(n.id, 9), nome: h.nome || n.nome, tipo: 'habilidade', ...(h.descricao ? { descricao: h.descricao } : {}), ...(h.dano ? { expressao: h.dano } : {}),
-    ...(h.custo && n.aberto?.recurso ? { recurso: n.aberto.recurso, custo: h.custo } : {}), ...(h.usos ? { usosMax: h.usos } : {}) } as Poder]
+    ...(h.custo && n.aberto?.recurso ? { recurso: n.aberto.recurso, custo: h.custo } : {}),
+    // "Usos por combate" (v0.36.9): não espera descanso — some em "Fim do combate", em Poderes e habilidades.
+    ...(h.usos ? { usosMax: h.usos, recarga: 'combate' as const } : {}) } as Poder]
 }
 /** Grava (ou apaga, se vazio) o que o jogador escreveu num espaço em aberto. */
 export function preencherNo(a: Arvore, id: string, h: unknown): Arvore {

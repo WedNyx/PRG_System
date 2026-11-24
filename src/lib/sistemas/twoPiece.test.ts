@@ -40,7 +40,8 @@ describe('Two Piece (sistema autoral do Raijin, v0.36.9)', () => {
     for (const id of ['tp-centro', 'tp-haki-arm-1']) { const x = liberarNo(a, id, 0, null); expect(x.erro).toBeUndefined(); a = x.arvore! }
     expect(liberarNo(a, 'tp-haki-arm-3', 0, null).erro).toBeTruthy() // precisa do 2 antes
     a = preencherNo(a, 'tp-haki-arm-1', { nome: 'Punho Negro', descricao: 'Endurece o braço.', dano: '2d8 + 3', custo: 4, usos: 2 })
-    expect(poderesDaArvore(a)).toEqual([expect.objectContaining({ nome: 'Punho Negro', expressao: '2d8+3', recurso: 'em', custo: 4, usosMax: 2, descricao: 'Endurece o braço.' })])
+    // "Usos por combate" (achado do Codex): não pode depender de descanso para voltar — recarga precisa ser "combate".
+    expect(poderesDaArvore(a)).toEqual([expect.objectContaining({ nome: 'Punho Negro', expressao: '2d8+3', recurso: 'em', custo: 4, usosMax: 2, recarga: 'combate', descricao: 'Endurece o braço.' })])
     a = preencherNo(a, 'tp-haki-arm-1', { nome: 'Observar', dano: 'rm -rf' })
     expect(poderesDaArvore(a)[0]).toMatchObject({ nome: 'Observar' }); expect(poderesDaArvore(a)[0].expressao).toBeUndefined()
     expect(preencherNo(a, 'tp-centro', { nome: 'x' })).toBe(a) // o centro não é espaço em aberto

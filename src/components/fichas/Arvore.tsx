@@ -14,10 +14,11 @@ import { idDe } from '@/lib/sistemas/dnd2024Classes'
 import { ordenarNosVerticais } from '@/lib/sistemas/arvoreVisual'
 import {
   ACOES_DO_MESTRE, arvoreExemplo, concederNo, CORES_NO, desfazer, devolverNo, difereDoSistema, disponiveis, excluirNoArvore, gastos, gravarNoArvore, lerArvore, liberarNo, LIM_ARVORE,
-  mesclarArvore, mudarPontos, novoIdNo, noAtivo, podeDevolver, podeLiberar, requisitoFichaAtendido, retirarNo, sincronizarPoderes, TEXTO_ACAO,
-  type Arvore, type EfeitoNo, type EntradaHistorico, type NoArvore, type RequisitoFichaNo,
+  mesclarArvore, mudarPontos, novoIdNo, noAtivo, podeDevolver, podeLiberar, preencherNo, requisitoFichaAtendido, retirarNo, sincronizarPoderes, TEXTO_ACAO,
+  type Arvore, type EfeitoNo, type EntradaHistorico, type HabilidadePreenchida, type NoArvore, type RequisitoFichaNo,
   FORMAS_NO, TAMANHOS_NO, lerIconeNo,
 } from '@/lib/sistemas/arvore'
+import EscreverHabilidade from './EscreverHabilidade'
 
 const R = 34 // raio do hexágono
 const MARGEM = 170
@@ -259,7 +260,8 @@ export default function ArvoreHabilidades({ s, d, onChange, somenteLeitura, rola
 
     {no && !editor && <DetalheNo no={no} a={a} dados={s.id === 'dnd5e-srd' ? d : undefined} extra={extra} nivel={nivel} alvos={alvos} recursos={s.recursos} somenteLeitura={somenteLeitura || montando || editorSistema} cartoes={cartoes}
       mestre={mestre && !editorSistema && !somenteLeitura} conceder={() => aplicar(concederNo(a, no.id), `${no.nome}: concedido sem custo.`)} retirar={() => aplicar(retirarNo(a, no.id))}
-      liberar={() => liberar(no)} devolver={() => devolver(no)} rolar={rolar} fechar={() => setSel(null)} />}
+      liberar={() => liberar(no)} devolver={() => devolver(no)} rolar={rolar} fechar={() => setSel(null)}
+      preencher={h => aplicar({ arvore: preencherNo(a, no.id, h) }, 'Habilidade salva: aparece em Poderes e habilidades.')} />}
     {!no && a.nos.length > 0 && <p className="px-4 py-3 text-xs text-(--a-a998bd)">{visualizacao === 'cartoes' ? 'Selecione uma habilidade para ver os efeitos e requisitos.' : 'Toque num hexágono para ver o que ele faz.'} {somenteLeitura ? '' : visualizacao === 'cartoes' ? 'Os cartões disponíveis podem ser liberados conforme pontos e requisitos.' : 'Os que brilham na borda já podem ser liberados.'}</p>}
     {verHistorico && <HistoricoArvore historico={historico} podeDesfazer={podeDesfazer} desfazer={e => aplicar(desfazer(a, e.id, extra, nivel, s.id === 'dnd5e-srd' ? d : undefined), 'Desfeito.')} />}
     {editor && <EditorNo inicial={editor} a={a} sistema={s} alvos={alvos} recursos={s.recursos} temNivel={nivel !== null || editorSistema} cartoes={cartoes} gravar={gravarNo} fechar={() => setEditor(null)} />}
@@ -285,9 +287,9 @@ function textoEfeito(e: EfeitoNo, alvos: { id: string; nome: string }[], recurso
   return [`${TIPOS_PODER.find(t => t.id === p.tipo)?.icone ?? '🌀'} ${p.nome}`, p.expressao, rec && `${p.custo ?? 0} ${rec}`, p.usosMax && `${p.usosMax}× até descansar`].filter(Boolean).join(' · ')
 }
 
-function DetalheNo({ no, a, dados, extra, nivel, alvos, recursos, somenteLeitura, mestre, liberar, devolver, conceder, retirar, rolar, fechar, cartoes }: {
+function DetalheNo({ no, a, dados, extra, nivel, alvos, recursos, somenteLeitura, mestre, liberar, devolver, conceder, retirar, preencher, rolar, fechar, cartoes }: {
   no: NoArvore; a: Arvore; dados?: DadosFicha; extra: number; nivel: number | null; alvos: { id: string; nome: string }[]; recursos: Sistema['recursos']; somenteLeitura: boolean; mestre: boolean
-  liberar: () => void; devolver: () => void; conceder: () => void; retirar: () => void; rolar: (expressao: string, rotulo: string) => void; fechar: () => void; cartoes: boolean
+  liberar: () => void; devolver: () => void; conceder: () => void; retirar: () => void; preencher: (h: HabilidadePreenchida) => void; rolar: (expressao: string, rotulo: string) => void; fechar: () => void; cartoes: boolean
 }) {
   const liberado = a.liberados.includes(no.id), ativo = noAtivo(a, no, dados), concedido = !!a.concedidos?.includes(no.id), pode = podeLiberar(a, no.id, extra, nivel, dados), volta = podeDevolver(a, no.id)
   return <div className="border-t border-(--a-2b2140) bg-(--s-14111f) p-4">
@@ -315,6 +317,10 @@ function DetalheNo({ no, a, dados, extra, nivel, alvos, recursos, somenteLeitura
       {liberado && !concedido && <button type="button" disabled={!volta.ok} onClick={devolver} className={btn}><Undo2 size={14} /> Devolver pontos</button>}
       {liberado && !concedido && !volta.ok && <span className="text-xs text-(--a-b4aeca)">{volta.motivo}</span>}
     </div>}
+    {no.aberto && liberado && <EscreverHabilidade inicial={a.preenchidas?.[no.id]} somenteLeitura={somenteLeitura}
+      recurso={no.aberto.recurso ? { id: no.aberto.recurso, nome: recursos.find(r => r.id === no.aberto!.recurso)?.nome ?? no.aberto.recurso.toUpperCase() } : undefined}
+      salvar={preencher} />}
+    {no.aberto && !liberado && <p className="mt-2 text-xs text-(--a-c4b6d4)">✍️ Espaço em aberto: depois de liberar, você escreve aqui a habilidade que combinou com o mestre.</p>}
     {mestre && <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-dashed border-(--a-3d3152) pt-3">
       <span className="text-xs text-(--a-a998bd)">Exceção do mestre:</span>
       {!concedido && <button type="button" onClick={conceder} className={btn + ' !border-amber-300/60 !text-amber-200'} title="Libera sem gastar pontos, sem requisitos e sem nível mínimo"><Gift size={14} /> Conceder sem custo</button>}

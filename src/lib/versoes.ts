@@ -27,6 +27,13 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.36.8', data: '2026-11-23',
+    titulo: 'Um segredo no portal',
+    itens: [
+      'Há uma sala escondida na plataforma para assistir vídeos com os amigos, no mesmo segundo, com fila, chat e a lista de quem está assistindo. Quem achar, achou. ✦',
+    ],
+  },
+  {
     versao: '0.36.7', data: '2026-11-22',
     titulo: 'Árvore em constelação, árvore mais personalizável e mestre tira ou exclui fichas da campanha',
     itens: [

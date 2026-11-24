@@ -48,13 +48,16 @@ export default function ReprodutorCinema({ estado, desvio }: { estado: EstadoCin
     return () => clearInterval(t)
   }, [estado, desvio, pronto])
   useEffect(() => { if (pronto) player.current?.setVolume(volume) }, [volume, pronto])
-  return <section className="space-y-3">
-    <div className="aspect-video overflow-hidden rounded-xl bg-black" ref={host} />
-    {erro && <p role="alert">{erro}</p>}
-    <div className="flex flex-wrap items-center gap-3">
-      <button type="button" onClick={() => { if (!estado.reproducao.pausado && estado.reproducao.tocando) player.current?.playVideo() }}>Ativar reprodução neste aparelho</button>
-      <label>Volume <input type="range" min={0} max={100} value={volume} onChange={e => setVolume(Number(e.target.value))} /></label>
-      <button type="button" onClick={() => { void host.current?.requestFullscreen?.().catch(() => setErro('Tela cheia indisponível neste aparelho.')) }}>Tela cheia</button>
+  const btn = 'inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-(--a-62527e) px-3 text-xs text-(--a-e4d3ff) hover:bg-(--s-2b2140)'
+  return <section className="space-y-2" aria-label="Vídeo">
+    <div className="relative aspect-video overflow-hidden rounded-2xl border border-(--a-3d3152) bg-black shadow-[0_10px_40px_#000a]" ref={host}>
+      {!estado.reproducao.video_id && <div className="pointer-events-none absolute inset-0 grid place-items-center p-4 text-center text-sm text-(--a-b5a5c8)">🎞️ Nenhum vídeo passando. O anfitrião escolhe na fila.</div>}
+    </div>
+    {erro && <p role="alert" className="text-sm text-red-200">{erro}</p>}
+    <div className="flex flex-wrap items-center gap-2">
+      <button type="button" className={btn} onClick={() => { if (!estado.reproducao.pausado && estado.reproducao.tocando) player.current?.playVideo() }}>🔊 Ativar o som neste aparelho</button>
+      <label className="inline-flex items-center gap-2 text-xs text-(--a-cfc0df)">Volume <input type="range" min={0} max={100} value={volume} onChange={e => setVolume(Number(e.target.value))} className="w-28" /></label>
+      <button type="button" className={btn} onClick={() => { void host.current?.requestFullscreen?.().catch(() => setErro('Tela cheia indisponível neste aparelho.')) }}>⛶ Tela cheia</button>
     </div>
   </section>
 }

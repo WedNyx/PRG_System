@@ -27,6 +27,13 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.36.10', data: '2026-11-24',
+    titulo: 'Grimório da Ordem Paranormal com todos os rituais do livro',
+    itens: [
+      'Ordem Paranormal: o Grimório agora tem os rituais do Livro de Regras dos cinco elementos e dos quatro círculos, cada um com o custo em PE e um resumo curto nosso. Aprender um ritual o coloca em Meus rituais; os detalhes completos (execução, alcance, dados, versões Discente e Verdadeiro) continuam no livro.',
+    ],
+  },
+  {
     versao: '0.36.9', data: '2026-11-24',
     titulo: 'Two Piece, do Raijin (pirata), espaços em aberto na árvore e menus com a cara de cada sistema',
     itens: [

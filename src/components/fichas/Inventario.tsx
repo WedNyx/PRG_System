@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { enviarImagemNuvem, ErroNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 import ArteItem from './ArteItem'
 import BuscaIcones from './BuscaIcones'
+import { CUSTO_CIRCULO, RITUAIS_ORDEM, type RitualOrdem } from '@/lib/sistemas/rituaisOrdem'
 import { arsenalDoSistema } from '@/lib/arsenalSistemas'
 import ArsenalPronto from './ArsenalPronto'
 import { itemDoArsenal } from '@/lib/arsenal'
@@ -355,16 +356,13 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
   const [verGrimorio, setVerGrimorio] = useState(true)
   const [buscaRitual, setBuscaRitual] = useState('')
   const custosRituais = [0,1,3,6,10]
-  const catalogoInicial: { nome: string; elemento: NonNullable<Poder['elementoOrdem']>; circulo: number }[] = [
-    ...(['Conhecimento','Energia','Morte','Sangue'] as const).map(elemento => ({nome:'Amaldiçoar Arma',elemento,circulo:1})),
-    ...['Compreensão Paranormal','Enfeitiçar','Perturbação','Ouvir os Sussurros','Tecer Ilusão','Terceiro Olho'].map(nome=>({nome,elemento:'Conhecimento' as const,circulo:1})),
-    ...['Amaldiçoar Tecnologia','Coincidência Forçada','Eletrocussão','Embaralhar','Luz','Polarização Caótica'].map(nome=>({nome,elemento:'Energia' as const,circulo:1})),
-    {nome:'Cicatrização',elemento:'Morte',circulo:1},
-    {nome:'Cinerária',elemento:'Medo',circulo:1}
-  ]
-  const detalhesRitual = (r: typeof catalogoInicial[number]) => r.nome === 'Amaldiçoar Arma' && r.elemento === 'Sangue' ? 'Livro de Regras v1.2, p. 124. Ação padrão; toque; arma corpo a corpo ou pacote de munição; duração: cena. A arma recebe dano extra de Sangue. Normal: 1 PE, +1d6. Discente: 3 PE no total, +2d6, requer 2º círculo. Verdadeiro: 6 PE no total, +4d6, requer 3º círculo e afinidade. O dano é adicional ao ataque, não causado na conjuração.' : undefined
+  // Grimório (v0.36.9): todos os rituais do Livro de Regras, com resumo nosso (o texto completo fica no livro).
+  const catalogoInicial = RITUAIS_ORDEM
+  const detalhesRitual = (r: RitualOrdem) => r.nome === 'Amaldiçoar Arma'
+    ? `${r.resumo} Normal: 1 PE, +1d6. Discente: 3 PE no total, +2d6 (2º círculo). Verdadeiro: 6 PE no total, +4d6 (3º círculo e afinidade). O dano soma ao ataque, não à conjuração.`
+    : `${r.resumo} Custo base: ${CUSTO_CIRCULO[r.circulo]} PE. Execução, alcance, alvo, duração, dados e as versões Discente e Verdadeiro: confira no livro.`
   const pe = s.recursos.find(r => r.id.toLowerCase() === 'pe' || /pontos de esforço/i.test(r.nome) || r.nome.toUpperCase() === 'PE')
-  const conhecidos = (r: typeof catalogoInicial[number]) => rituais.some(p=>p.nome.toLocaleLowerCase('pt-BR')===r.nome.toLocaleLowerCase('pt-BR') && p.elementoOrdem===r.elemento)
+  const conhecidos = (r: RitualOrdem) => rituais.some(p=>p.nome.toLocaleLowerCase('pt-BR')===r.nome.toLocaleLowerCase('pt-BR') && p.elementoOrdem===r.elemento)
 
   const grupos = ordem ? abaOrdem === 'poderes'
     ? FONTES_ORDEM.map(f => ({ titulo: f === 'Outro' ? 'Outros poderes' : 'Poderes de ' + f.toLowerCase(), itens: poderes.filter(p => p.tipo !== 'magia' && (p.fonteOrdem ?? 'Outro') === f) }))
@@ -449,7 +447,7 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
       {ordem && abaOrdem === "rituais" && <label className="ordem-circulo-filtro">Círculo<select value={circulo} onChange={e => setCirculo(e.target.value)} className={input}>{["Todos","1","2","3","4"].map(n => <option key={n} value={n}>{n === "Todos" ? n : n + "º círculo"}</option>)}</select></label>}
     {ordem && abaOrdem === 'rituais' && <div className="mt-3 space-y-3">
       <div className="grid grid-cols-2 gap-2"><button type="button" className={botao} aria-pressed={verGrimorio} onClick={()=>setVerGrimorio(true)}>Grimório</button><button type="button" className={botao} aria-pressed={!verGrimorio} onClick={()=>setVerGrimorio(false)}>Meus rituais</button></div>
-      {verGrimorio && <><p className="text-xs">Catálogo inicial • Livro de Regras v1.2 • detalhes em revisão</p><input className={input} aria-label="Buscar ritual" placeholder="Buscar ritual…" value={buscaRitual} onChange={e=>setBuscaRitual(e.target.value)}/>
+      {verGrimorio && <><p className="text-xs">Grimório: {RITUAIS_ORDEM.length} rituais do Livro de Regras, com um resumo nosso. Os detalhes de cada ritual estão no livro.</p><input className={input} aria-label="Buscar ritual" placeholder="Buscar ritual…" value={buscaRitual} onChange={e=>setBuscaRitual(e.target.value)}/>
       {ELEMENTOS_ORDEM.filter(e=>elemento==='Todos'||elemento===e).map(e=>{
         const cor = {Sangue:'#ff536b',Morte:'#ded7df',Conhecimento:'#ffdc78',Energia:'#df83ff',Medo:'#ffffff'}[e]
         const filtrados = catalogoInicial.filter(r=>r.elemento===e && (circulo==='Todos'||circulo===String(r.circulo)) && r.nome.toLocaleLowerCase('pt-BR').includes(buscaRitual.toLocaleLowerCase('pt-BR')))
@@ -466,14 +464,14 @@ export function PoderesFicha({ s, d, c, onChange, somenteLeitura, rolar, abrirDe
             return <details key={n} open={itens.length>0?true:undefined} className="rounded-xl overflow-hidden" style={{border:'1px solid '+cor+'33',background:cor+'05'}}>
               <summary className="flex items-center justify-between gap-2 cursor-pointer px-3 py-3" style={{color:cor,listStyle:'none'}}><span className="font-semibold">{n}º círculo <span className="text-xs opacity-70">· {custosRituais[n]} PE</span></span><span className="text-xs opacity-80">{itens.length} {itens.length===1?'ritual':'rituais'} ▾</span></summary>
               <div className="px-2 pb-2 space-y-2">{itens.length===0?<p className="text-xs opacity-70 px-2 py-2">Catálogo em revisão.</p>:itens.map(r=><article key={r.nome} className="rounded-xl p-3 space-y-3" style={{background:'rgba(10,8,14,.65)',border:'1px solid '+cor+'44'}}>
-                <div className="flex items-start gap-2"><div className="flex-1 min-w-0"><strong className="text-base leading-tight block">{r.nome}</strong><span className="text-xs opacity-70">Livro de Regras v1.2</span></div><span className="shrink-0 rounded-lg px-2 py-1 text-sm font-bold" style={{color:cor,background:cor+'18'}}>{custosRituais[n]} PE</span></div>
-                {detalhesRitual(r)?<details className="rounded-lg" style={{border:'1px solid '+cor+'33'}}><summary className="cursor-pointer px-3 py-2 text-sm font-medium" style={{color:cor}}>Ficha do ritual</summary><div className="p-3 space-y-3">
+                <div className="flex items-start gap-2"><div className="flex-1 min-w-0"><strong className="text-base leading-tight block">{r.nome}</strong><span className="block text-xs leading-snug opacity-80">{r.resumo}</span>{r.conferir && <span className="mt-1 inline-block rounded bg-white/10 px-1.5 text-[10px] opacity-80">confira no livro</span>}</div><span className="shrink-0 rounded-lg px-2 py-1 text-sm font-bold" style={{color:cor,background:cor+'18'}}>{custosRituais[n]} PE</span></div>
+                {r.nome === 'Amaldiçoar Arma'?<details className="rounded-lg" style={{border:'1px solid '+cor+'33'}}><summary className="cursor-pointer px-3 py-2 text-sm font-medium" style={{color:cor}}>Ficha do ritual</summary><div className="p-3 space-y-3">
                   <div className="grid grid-cols-2 gap-2">{[['Execução','Ação padrão'],['Alcance','Toque'],['Alvo','Arma corpo a corpo ou pacote de munição'],['Duração','Cena']].map(([label,value])=><div key={label} className="rounded-lg p-2" style={{background:cor+'09'}}><div className="text-xs opacity-70">{label}</div><div className="text-sm break-words">{value}</div></div>)}</div>
-                  <p className="text-sm leading-relaxed">A arma ou munição recebe dano adicional de Sangue ao atacar durante a cena.</p>
+                  <p className="text-sm leading-relaxed">A arma ou munição recebe dano adicional de {r.elemento} ao atacar durante a cena.</p>
                   <div className="text-xs uppercase tracking-widest opacity-70">Aprimoramentos</div>
-                  {[['Normal','1 PE','+1d6','1º círculo'],['Discente','3 PE','+2d6','2º círculo'],['Verdadeiro','6 PE','+4d6','3º círculo e afinidade']].map(([nome,custo,dano,requisito])=><div key={nome} className="rounded-lg p-2" style={{border:'1px solid '+cor+'33'}}><div className="flex justify-between items-center gap-2"><strong className="text-sm">{nome}</strong><span className="text-sm font-semibold" style={{color:cor}}>{custo}</span></div><div className="text-sm mt-1">{dano} de Sangue</div><div className="text-xs opacity-70 mt-1">Requisito: {requisito}</div></div>)}
+                  {[['Normal','1 PE','+1d6','1º círculo'],['Discente','3 PE','+2d6','2º círculo'],['Verdadeiro','6 PE','+4d6','3º círculo e afinidade']].map(([nome,custo,dano,requisito])=><div key={nome} className="rounded-lg p-2" style={{border:'1px solid '+cor+'33'}}><div className="flex justify-between items-center gap-2"><strong className="text-sm">{nome}</strong><span className="text-sm font-semibold" style={{color:cor}}>{custo}</span></div><div className="text-sm mt-1">{dano} de {r.elemento}</div><div className="text-xs opacity-70 mt-1">Requisito: {requisito}</div></div>)}
                   <p className="text-xs opacity-60">Valores totais de PE · Livro de Regras v1.2</p>
-                </div></details>:<p className="text-xs opacity-70">Detalhes em revisão.</p>}
+                </div></details>:<p className="text-xs opacity-70">Execução, alcance, dados e as versões Discente e Verdadeiro estão no livro. Depois de aprender, escreva-os na ficha do ritual.</p>}
                 <button type="button" className={botao+' w-full'} style={{borderColor:cor+'66',color:cor,background:cor+'12'}} disabled={somenteLeitura||conhecidos(r)} onClick={()=>setEditando({id:novoId(),nome:r.nome,tipo:'magia',elementoOrdem:r.elemento,circuloOrdem:r.circulo,recurso:pe?.id,custo:custosRituais[n],descricao:detalhesRitual(r)})}>{conhecidos(r)?'✓ Ritual aprendido':'+ Aprender ritual'}</button>
               </article>)}</div>
             </details>

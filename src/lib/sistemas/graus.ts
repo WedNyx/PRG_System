@@ -73,14 +73,15 @@ export function lerNomesSecoes(v: unknown): Sistema['nomesSecoes'] {
   const out = Object.fromEntries(SECOES.flatMap(k => typeof o[k] === 'string' && (o[k] as string).trim() ? [[k, (o[k] as string).trim().slice(0, 40)]] : []))
   return Object.keys(out).length ? out : undefined
 }
-/** Perícias criadas pelo jogador: nome curto e id próprio (x_…). */
-export function lerPericiasExtras(v: unknown): { id: string; nome: string }[] {
+/** Perícias criadas pelo jogador: nome curto, id próprio (x_…) e, se o sistema usa atributos, de qual ela rola (v0.36.9: achado do Codex, PR do Two Piece). */
+export function lerPericiasExtras(v: unknown, atributosValidos: string[] = []): { id: string; nome: string; atributo?: string }[] {
   const vistos = new Set<string>()
   return (Array.isArray(v) ? v : []).slice(0, 40).flatMap(x => {
     const o = x && typeof x === 'object' ? x as Record<string, unknown> : {}
     const id = typeof o.id === 'string' && /^x_[a-z0-9]{4,16}$/.test(o.id) ? o.id : '', nome = typeof o.nome === 'string' ? o.nome.trim().slice(0, 60) : ''
     if (!id || !nome || vistos.has(id)) return []
-    vistos.add(id); return [{ id, nome }]
+    const atributo = typeof o.atributo === 'string' && atributosValidos.includes(o.atributo) ? o.atributo : undefined
+    vistos.add(id); return [{ id, nome, ...(atributo ? { atributo } : {}) }]
   })
 }
 

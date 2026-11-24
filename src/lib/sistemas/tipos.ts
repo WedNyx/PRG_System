@@ -153,8 +153,9 @@ export type DadosFicha = {
   nivelAtributos?: Record<string, number>
   poderes?: unknown[]
   uso?: unknown
-  /** Perícias que o próprio jogador criou (sistemas com perícias livres, v0.35.6); o valor fica em `pericias[id]`. */
-  periciasExtras?: { id: string; nome: string }[]
+  /** Perícias que o próprio jogador criou (sistemas com perícias livres, v0.35.6); o valor fica em `pericias[id]`.
+   * `atributo` (v0.36.9): em sistemas de pool de dados ("parada"), de qual atributo ela rola os dados — senão a rolagem trata o total como quantidade de dados, não como bônus. */
+  periciasExtras?: { id: string; nome: string; atributo?: string }[]
   /** Marcações da ficha que não calculam nada (v0.35.9): caixas de estresse, salvaguardas contra a morte, espaços de magia usados, relógios, condições… */
   marcas?: Record<string, boolean | number | string>
   /** Partes extras (v0.36.0, ver extrasFicha.ts): o que o personagem tem. O que muda no jogo fica em `marcas`. */

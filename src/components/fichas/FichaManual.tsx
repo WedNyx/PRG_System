@@ -100,6 +100,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const somenteLeitura = bloqueada || modo === 'consulta'
   const [detalhes, setDetalhes] = useState(false)
   const [novaPericia, setNovaPericia] = useState('')
+  const [novaPericiaAtributo, setNovaPericiaAtributo] = useState('')
   // Visual do sistema (v0.35.1): cores, letra dos títulos e o jeito de mostrar atributos e perícias.
   const identidade = identidadeVisual(s)
   const AtributoComposto = s.id === 'dnd5e-srd' ? AtributoDnd : AtributoComMod
@@ -182,7 +183,8 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   function criarPericia() {
     const nome = novaPericia.trim().slice(0, 60); if (!nome) return
     const id = 'x_' + Math.random().toString(36).slice(2, 10)
-    onChange({ ...d, periciasExtras: [...periciasExtras, { id, nome }] }); setNovaPericia('')
+    const atributo = parada && s.atributos.some(a => a.id === novaPericiaAtributo) ? novaPericiaAtributo : undefined
+    onChange({ ...d, periciasExtras: [...periciasExtras, { id, nome, ...(atributo ? { atributo } : {}) }] }); setNovaPericia(''); setNovaPericiaAtributo('')
   }
   function tirarPericia(id: string) {
     const { [id]: _f, ...resto } = d.pericias; void _f
@@ -496,9 +498,13 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
                   </div> })}
               </div>
             </div>)}
-            {s.pericias.livres && !somenteLeitura && <form onSubmit={e => { e.preventDefault(); criarPericia() }} className="mt-3 flex gap-2">
+            {s.pericias.livres && !somenteLeitura && <form onSubmit={e => { e.preventDefault(); criarPericia() }} className="mt-3 flex flex-wrap gap-2">
               <input value={novaPericia} maxLength={60} onChange={e => setNovaPericia(e.target.value)} aria-label={'Nova ' + tituloPer.toLowerCase()} placeholder="Ex.: Investigação, Medicina, Rua…" className={input + ' min-w-0 flex-1'} />
-              <button type="submit" disabled={!novaPericia.trim() || periciasExtras.length >= 40} className="inline-flex items-center gap-1 rounded-lg border border-(--a-5e4b78) px-3 text-sm hover:bg-(--s-34294f) disabled:opacity-40"><Plus size={14} /> Nova perícia</button>
+              {parada && s.atributos.length > 0 && <select value={novaPericiaAtributo} onChange={e => setNovaPericiaAtributo(e.target.value)} aria-label={'Atributo da nova ' + tituloPer.toLowerCase()} className={input + ' w-auto'}>
+                <option value="">De qual atributo?</option>
+                {s.atributos.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}
+              </select>}
+              <button type="submit" disabled={!novaPericia.trim() || periciasExtras.length >= 40 || !!(parada && s.atributos.length > 0 && !novaPericiaAtributo)} className="inline-flex items-center gap-1 rounded-lg border border-(--a-5e4b78) px-3 text-sm hover:bg-(--s-34294f) disabled:opacity-40"><Plus size={14} /> Nova perícia</button>
             </form>}
             </>}
           </section>}

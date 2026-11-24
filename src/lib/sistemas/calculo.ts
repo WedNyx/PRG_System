@@ -148,7 +148,7 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     ...(s.id === 'dnd5e-srd' && d.dndEscolhas !== undefined ? { dndEscolhas: lerEscolhasDnd(d.dndEscolhas) } : {}),
     ...(d.criacaoLivre !== undefined ? { criacaoLivre: d.criacaoLivre === true } : {}),
     // Perícias criadas pelo jogador (sistemas com perícias livres, v0.35.6).
-    ...(s.pericias?.livres && d.periciasExtras !== undefined ? { periciasExtras: lerPericiasExtras(d.periciasExtras) } : {}),
+    ...(s.pericias?.livres && d.periciasExtras !== undefined ? { periciasExtras: lerPericiasExtras(d.periciasExtras, s.atributos.map(a => a.id)) } : {}),
     ...(d.marcas !== undefined ? { marcas: lerMarcas(d.marcas) } : {}),
     ...lerExtrasDaFicha(d),
     ...(s.id === 'dnd5e-srd' && d.dndAntecedente !== undefined && lerRegistroAntecedenteDnd(d.dndAntecedente) ? { dndAntecedente: lerRegistroAntecedenteDnd(d.dndAntecedente)! } : {}),
@@ -159,7 +159,7 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
     ...(d.arvore !== undefined ? { arvore: lerArvore(d.arvore), poderes: sincronizarPoderes(lerPoderes(d.poderes), lerArvore(d.arvore), { campos: { ...base.campos, ...(d.campos ?? {}) }, dndEscolhas: d.dndEscolhas, dndMulticlasse: d.dndMulticlasse }) }
       : d.poderes !== undefined ? { poderes: lerPoderes(d.poderes) } : {}),
   }
-  const manual = lerManual(s, d.manual)
+  const manual = lerManual(s, d.manual, out.periciasExtras)
   return manual ? { ...out, manual } : out
 }
 
@@ -168,7 +168,7 @@ export function normalizarFicha(s: Sistema, d: Partial<DadosFicha> | null | unde
  * perícias e máximos dos recursos) para nada mudar na tela; daí em diante, só o que o jogador e o mestre digitam.
  */
 export function tornarManual(s: Sistema, d: DadosFicha): DadosFicha {
-  const lido = lerManual(s, d.manual)
+  const lido = lerManual(s, d.manual, d.periciasExtras)
   if (lido) return { ...d, manual: lido }
   const c = calcularRegras(s, d)
   const recursos = { ...d.recursos }
@@ -214,15 +214,20 @@ export function bonusDasEscolhas(s: Sistema, d: Pick<DadosFicha, 'campos'>): Rec
 }
 
 const numOuNulo = (v: unknown) => v === null || v === undefined || v === '' ? null : Number.isFinite(Number(v)) ? Math.max(-9999, Math.min(9999, Math.round(Number(v)))) : null
-/** Lê os números digitados da ficha manual (limpos, só ids do sistema). */
-export function lerManual(s: Sistema, x: unknown): FichaManual | undefined {
+/**
+ * Lê os números digitados da ficha manual (limpos, só ids do sistema).
+ * `periciasExtras`: perícias livres (v0.35.6) já criadas nesta ficha — contam também, senão o total
+ * digitado no modo "bônus" (não "valor") se perderia ao salvar (achado do Codex, PR do Two Piece).
+ */
+export function lerManual(s: Sistema, x: unknown, periciasExtras: { id: string }[] = []): FichaManual | undefined {
   if (!x || typeof x !== 'object' || Array.isArray(x)) return undefined
   const o = x as Record<string, unknown>
   const mapa = (v: unknown, ids: string[]) => { const m = v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {}
     return Object.fromEntries(ids.map(id => [id, numOuNulo(m[id])])) }
   const mods = mapa(o.mods, s.atributos.map(a => a.id))
+  const idsPericias = [...(s.pericias?.lista ?? []).map(p => p.id), ...(s.pericias?.livres ? periciasExtras.map(p => p.id) : [])]
   return { mods: Object.fromEntries(Object.entries(mods).map(([k, v]) => [k, v ?? 0])),
-    derivados: mapa(o.derivados, s.derivados.map(x => x.id)), pericias: mapa(o.pericias, (s.pericias?.lista ?? []).map(p => p.id)) }
+    derivados: mapa(o.derivados, s.derivados.map(x => x.id)), pericias: mapa(o.pericias, idsPericias) }
 }
 /** Foto dos números que a regra dava: fichas antigas viram manuais sem mudar nada do que o jogador via. */
 export function fotoManual(c: Calculo): FichaManual {

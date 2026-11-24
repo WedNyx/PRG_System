@@ -317,7 +317,7 @@ function DetalheNo({ no, a, dados, extra, nivel, alvos, recursos, somenteLeitura
       {liberado && !concedido && <button type="button" disabled={!volta.ok} onClick={devolver} className={btn}><Undo2 size={14} /> Devolver pontos</button>}
       {liberado && !concedido && !volta.ok && <span className="text-xs text-(--a-b4aeca)">{volta.motivo}</span>}
     </div>}
-    {no.aberto && liberado && <EscreverHabilidade inicial={a.preenchidas?.[no.id]} somenteLeitura={somenteLeitura}
+    {no.aberto && liberado && <EscreverHabilidade key={no.id} inicial={a.preenchidas?.[no.id]} somenteLeitura={somenteLeitura}
       recurso={no.aberto.recurso ? { id: no.aberto.recurso, nome: recursos.find(r => r.id === no.aberto!.recurso)?.nome ?? no.aberto.recurso.toUpperCase() } : undefined}
       salvar={preencher} />}
     {no.aberto && !liberado && <p className="mt-2 text-xs text-(--a-c4b6d4)">✍️ Espaço em aberto: depois de liberar, você escreve aqui a habilidade que combinou com o mestre.</p>}

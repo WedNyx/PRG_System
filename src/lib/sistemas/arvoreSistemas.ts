@@ -14,7 +14,7 @@ export type Marco = { id: string; quando: number; titulo: string; texto: string;
   /** Texto curto no lugar de “Nível N” (ex.: “Camada 2 · 1 ponto”). */
   rotulo?: string
   /** Marco que é um hexágono da árvore do autor: dá para liberar e devolver (com pontos). */
-  no?: { id: string; custo: number; liberado: boolean; concedido: boolean; motivo?: string } }
+  no?: { id: string; custo: number; liberado: boolean; concedido: boolean; motivo?: string; /** Espaço em aberto: o jogador escreve a habilidade. */ aberto?: { recurso?: string } } }
 export type RamoSistema = { id: string; titulo: string; icone: string; cor: string; marcos: Marco[]; vazio?: string }
 /** `medida`: o que conta a progressão (Nível, NEX…). Sem medida, os marcos são só referência. */
 export type ArvoreDoSistema = { medida?: { nome: string; atual: number; unidade?: string; max: number }; dica: string; ramos: RamoSistema[]
@@ -217,11 +217,12 @@ function ramoDoAutor(s: Sistema, d: DadosFicha, a: Arvore, extra: number): RamoS
   return { id: 'autor', titulo: 'Árvore de ' + s.nome, icone: '⬡', cor: '#ffc18f', marcos: nos.map(n => {
     const liberado = a.liberados.includes(n.id), pode = podeLiberar(a, n.id, extra, nivel, d)
     const requer = n.requer.map(r => a.nos.find(x => x.id === r)?.nome).filter(Boolean)
-    return { id: 'au-' + n.id, quando: prof.get(n.id)!, titulo: n.nome, escolha: false,
+    const escrito = n.aberto ? a.preenchidas?.[n.id] : undefined
+    return { id: 'au-' + n.id, quando: prof.get(n.id)!, titulo: escrito?.nome || n.nome, escolha: false,
       texto: [n.descricao, requer.length ? 'Precisa antes: ' + requer.join(', ') + '.' : '', n.nivel ? 'A partir do nível ' + n.nivel + '.' : ''].filter(Boolean).join('\n'),
-      rotulo: `${n.custo} ${n.custo === 1 ? 'ponto' : 'pontos'}`,
+      rotulo: n.custo ? `${n.custo} ${n.custo === 1 ? 'ponto' : 'pontos'}` : n.aberto ? 'Espaço em aberto' : 'Sem custo',
       estado: (liberado ? 'recebido' : pode.ok ? 'proximo' : 'futuro') as EstadoMarco,
-      no: { id: n.id, custo: n.custo, liberado, concedido: !!a.concedidos?.includes(n.id), ...(pode.ok || liberado ? {} : { motivo: pode.motivo }) } }
+      no: { id: n.id, custo: n.custo, liberado, concedido: !!a.concedidos?.includes(n.id), ...(pode.ok || liberado ? {} : { motivo: pode.motivo }), ...(n.aberto ? { aberto: n.aberto } : {}) } }
   }) }
 }
 
@@ -237,7 +238,7 @@ export function arvoreDoSistema(s: Sistema, d: DadosFicha): ArvoreDoSistema | nu
   const autor = doAutor ? { arvore: doAutor, livres: disponiveis(doAutor, extra), extra, nivel: s.campos.some(c => c.id === 'nivel') ? Math.max(1, Number(d.campos.nivel) || 1) : null, ...ganhoDeNivel(s, d, extra) } : undefined
   const ramosAutor = doAutor ? [ramoDoAutor(s, d, doAutor, extra)] : []
   if (!base && !marcas.length && !ramosAutor.length) return s.extras?.includes('marcas') ? { dica: 'Cada marca vira um ramo: crie as marcas na aba Marcas.', ramos: [] } : null
-  const dica = base?.dica ?? (ramosAutor.length ? 'A árvore que o autor do sistema montou: gaste os pontos para liberar as habilidades.' : 'Cada marca é um ramo: o nível dela libera as habilidades.')
+  const dica = base?.dica ?? (ramosAutor.length ? (doAutor?.nos.some(n => n.custo > 0) || extra > 0 ? 'A árvore que o autor do sistema montou: gaste os pontos para liberar as habilidades.' : 'A árvore que o autor do sistema montou: libere as habilidades em ordem, do centro para fora.') : 'Cada marca é um ramo: o nível dela libera as habilidades.')
   return { ...(base ?? {}), dica, ramos: [...ramosAutor, ...marcas, ...(base?.ramos ?? [])], ...(autor ? { autor } : {}) }
 }
 export const chaveEscolha = (marcoId: string) => ('arv_' + marcoId).slice(0, 40)

@@ -298,6 +298,7 @@ const FAIXAS: Record<string, { simbolo: string; frase: string; fundo: string; bo
   'ordem-paranormal': { simbolo: '🩸', frase: 'Agente · o paranormal está por perto', fundo: 'linear-gradient(120deg,#3a0b16,#120a0d 60%,#2a0a12)', borda: '#ff4058' },
   tormenta20: { simbolo: '⭐', frase: 'Herói · d20 + atributo + perícia', fundo: 'linear-gradient(120deg,#3a0d0d,#160b0b 60%,#2a160b)', borda: '#ff7a6b' },
   'mork-borg': { simbolo: '💀', frase: 'O mundo está morrendo. Você também.', fundo: '#000', borda: '#ffe600' },
+  'two-piece': { simbolo: '🏴‍☠️', frase: 'Tripulante · d20 em parada, fica com o maior · +2 por perícia', fundo: 'linear-gradient(120deg,#0b2a33,#0d1418 55%,#3a2a12)', borda: '#e9b44c' },
   assimilacao: { simbolo: '🧬', frase: 'Sobreviver depois do Colapso', fundo: 'linear-gradient(120deg,#0c2a28,#0f0f16 60%,#2a0f2e)', borda: '#5eead4' },
 }
 export function FaixaDoSistema({ s, nome }: { s: Sistema; nome: string }) {

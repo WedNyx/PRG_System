@@ -4,7 +4,7 @@ import type { Sistema, VisualAutor } from './tipos'
 
 /** Desenhos de árvore que o autor pode escolher (os mesmos dos sistemas prontos). */
 export const ARVORES_VISUAIS: { id: string; nome: string }[] = [
-  { id: '', nome: 'O do visual do sistema' }, { id: 'padrao', nome: '🌳 Raízes' }, { id: 'moderno', nome: '◈ Moderno (tempo atual)' }, { id: 'nova', nome: '◈ Rede N.O.V.A (moderna)' },
+  { id: '', nome: 'O do visual do sistema' }, { id: 'padrao', nome: '🌳 Raízes' }, { id: 'moderno', nome: '◈ Moderno (tempo atual)' }, { id: 'pirata', nome: '🏴‍☠️ Mapa do tesouro' }, { id: 'nova', nome: '◈ Rede N.O.V.A (moderna)' },
   { id: 'ordem-paranormal', nome: '🕯️ Círculo ritual' }, { id: 'opositores', nome: '✨ Constelação' }, { id: 'tormenta20', nome: '⚡ Tempestade' },
   { id: 'pf2e', nome: '🛡️ Estandartes' }, { id: 'faroeste-arcano', nome: '🌵 Trilha' }, { id: 'call-of-cthulhu', nome: '🧵 Quadro de pistas' },
   { id: 'fate-core', nome: '✦ Escada' }, { id: 'blades', nome: '🏮 Becos' }, { id: 'mork-borg', nome: '💀 Ruína' }, { id: 'marcas', nome: '🐾 Rastro' },
@@ -31,7 +31,7 @@ export function lerVisualAutor(v: unknown): Sistema['visual'] | undefined {
   const atr = um(o.atributosEstilo, ['circulo', 'hexagono', 'escudo', 'losango'] as const); if (atr) out.atributosEstilo = atr
   const barras = um(o.barrasEstilo, ['fina', 'grossa', 'brilho', 'segmentada'] as const); if (barras) out.barrasEstilo = barras
   const lig = um(o.arvoreLigacao, ['reta', 'curva', 'circuito'] as const); if (lig) out.arvoreLigacao = lig
-  const fa = um(o.arvoreFundo, ['estrelas', 'liso'] as const); if (fa) out.arvoreFundo = fa
+  const fa = um(o.arvoreFundo, ['estrelas', 'liso', 'mapa'] as const); if (fa) out.arvoreFundo = fa
   const montagem = lerMontagem(o.montagem); if (montagem) out.montagem = montagem
   return Object.keys(out).length ? out : undefined
 }
@@ -44,5 +44,6 @@ export const TEMAS_ESTUDIO: { id: string; nome: string; visual: VisualAutor }[] 
   { id: 'gotico', nome: '🦇 Gótico', visual: { acento: '#c4142c', borda: '#4a1a22', cartao: '#140b0e', texto: '#e8d6d9', fundo: '#070405', fonte: 'classica', cartaoEstilo: 'contorno', moldura: 'ornamento', raio: 2, atributosEstilo: 'escudo', barrasEstilo: 'fina' } },
   { id: 'floresta', nome: '🌿 Floresta', visual: { acento: '#8fd16a', borda: '#3d5a32', cartao: '#13201a', texto: '#e2f0da', fundo: '#0a130e', fonte: 'serifada', raio: 20, brilho: 'suave', atributosEstilo: 'circulo' } },
   { id: 'oceano', nome: '🌊 Oceano', visual: { acento: '#5cc8ff', borda: '#24557a', cartao: '#0d1c2c', texto: '#d9efff', fundo: '#061019', fonte: 'moderna', cartaoEstilo: 'vidro', raio: 18, barrasEstilo: 'grossa' } },
+  { id: 'pirata', nome: '🏴‍☠️ Pirata', visual: { acento: '#e9b44c', borda: '#8c6a32', cartao: '#10222b', texto: '#f2e6c9', fundo: '#071318', fonte: 'classica', fonteCorpo: 'serifada', cartaoEstilo: 'pergaminho', moldura: 'ornamento', raio: 10, atributosEstilo: 'circulo', barrasEstilo: 'grossa', arvoreFundo: 'mapa' } },
   { id: 'terminal', nome: '💾 Terminal', visual: { acento: '#39ff7a', borda: '#1d5a30', cartao: '#050a06', texto: '#b6ffcb', fundo: '#000000', fonte: 'mono', fonteCorpo: 'mono', cartaoEstilo: 'contorno', raio: 0, barrasEstilo: 'segmentada', atributosEstilo: 'losango' } },
 ]

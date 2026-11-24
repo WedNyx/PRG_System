@@ -365,6 +365,12 @@ function EditorNo({ inicial, a, sistema, alvos, recursos, temNivel, cartoes, gra
             {TAMANHOS_NO.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select></label>
         </div>
       </fieldset>
+      <fieldset className="mt-3 rounded-xl border border-(--a-3d3152) p-3 text-sm"><legend className="px-1 text-xs font-semibold">Espaço em aberto</legend>
+        <label className="flex items-start gap-2 text-xs"><input type="checkbox" className="mt-0.5" checked={!!n.aberto} onChange={e => { const { aberto: _a, ...r } = n; void _a; setN(e.target.checked ? { ...r, aberto: {} } : r) }} />
+          <span>O jogador escreve a habilidade depois de liberar (nome, descrição, dados de dano, custo e usos), combinando com o mestre.</span></label>
+        {n.aberto && <label className="mt-2 block text-xs">O custo gasta<select value={n.aberto.recurso ?? ''} onChange={e => setN({ ...n, aberto: e.target.value ? { recurso: e.target.value } : {} })} className={input + ' mt-1'}>
+          <option value="">Nada (sem custo)</option>{sistema.recursos.map(r => <option key={r.id} value={r.id}>{r.nome}</option>)}</select></label>}
+      </fieldset>
       <div className="mt-3 flex flex-wrap items-end gap-4">
         <div className="text-sm">Custo (pontos)<div className="mt-1 flex items-center gap-2">
           <button type="button" className={btn + ' !px-2'} aria-label="Diminuir custo" onClick={() => setN({ ...n, custo: Math.max(0, n.custo - 1) })}><Minus size={14} /></button>

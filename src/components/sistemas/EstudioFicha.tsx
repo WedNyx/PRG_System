@@ -172,7 +172,7 @@ export default function EstudioFicha({ sistema, visual, mudarVisual, nomes, muda
         <label className="block text-xs">Ligações da árvore<select value={visual.arvoreLigacao ?? ''} onChange={e => set('arvoreLigacao', (e.target.value || undefined) as VisualAutor['arvoreLigacao'])} className={campo + ' mt-1'}>
           <option value="">Tracejadas</option><option value="reta">Retas</option><option value="curva">Curvas</option><option value="circuito">Circuito</option></select></label>
         <label className="block text-xs">Fundo da árvore<select value={visual.arvoreFundo ?? ''} onChange={e => set('arvoreFundo', (e.target.value || undefined) as VisualAutor['arvoreFundo'])} className={campo + ' mt-1'}>
-          <option value="">Grade</option><option value="estrelas">Estrelas</option><option value="liso">Liso</option></select></label>
+          <option value="">Grade</option><option value="estrelas">Estrelas</option><option value="mapa">Mapa do tesouro</option><option value="liso">Liso</option></select></label>
       </div>
       <p className="text-[11px] text-(--a-a998bd)">A árvore aparece na ficha como você montou no construtor (em “Árvore de habilidades padrão”), crescendo do centro para fora. Em cada hexágono dá para escolher símbolo, forma e tamanho.</p>
     </section>

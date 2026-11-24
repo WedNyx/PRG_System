@@ -27,6 +27,7 @@ export const temaDoSistema = (id: string): Tema => TEMAS[id] ?? PADRAO
 export { identidadeVisual } from '@/lib/sistemas/visualIdentidade'
 TEMAS.opositores = { acento: '#ddc58d', borda: '#826b9f', cartao: '#211a34', fonte: 'var(--font-cinzel), Georgia, serif' }
 TEMAS.nova = { acento: '#ffc18f', borda: '#925e59', cartao: '#292033' }
+TEMAS['two-piece'] = { acento: '#e9b44c', borda: '#8c6a32', cartao: '#10222b', fonte: 'var(--font-cinzel), Georgia, serif' }
 TEMAS.marcas = { acento: '#9fe0ff', borda: '#4f6aa8', cartao: '#161b30', fonte: 'var(--font-cinzel), Georgia, serif' }
 /** Variáveis CSS que a ficha usa nos cartões e títulos. */
 export const estiloTema = (t: Tema) => ({ '--ficha-acento': t.acento, '--ficha-borda': t.borda, '--ficha-cartao': t.cartao, '--ficha-fonte': t.fonte ?? 'inherit' } as CSSProperties)

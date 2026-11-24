@@ -140,4 +140,12 @@ export const TEMAS_ARVORE: Record<string, TemaArvore> = {
 }
 TEMAS_ARVORE.brp = { ...TEMAS_ARVORE['call-of-cthulhu'] }
 TEMAS_ARVORE.moderno = { ...TEMAS_ARVORE.nova, nome: '◈ Moderno' }
+/* Two Piece (v0.36.9): mapa do tesouro — mar escuro, papel envelhecido nos nós e a rota tracejada até o X. */
+TEMAS_ARVORE.pirata = {
+  nome: '🏴‍☠️ Mapa do tesouro', fundo: 'bg-[radial-gradient(ellipse_at_50%_20%,#1d4450_0%,#0d2229_55%,#071318_100%)] border-[#e9b44c]/35',
+  decoracao: <div aria-hidden className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(#e9b44c14_1px,transparent_1px),linear-gradient(90deg,#e9b44c14_1px,transparent_1px)] [background-size:48px_48px]" />,
+  ligacao: 'trilha', cor: '#d94b3b', espessura: 2.5,
+  no: 'border-[#8c6a32] bg-[linear-gradient(160deg,#e9d6a8,#c9a46a)] text-[#2a1a0a] hover:brightness-105 shadow-[0_6px_18px_#0009]', noAtivo: 'ring-2 ring-[#e9b44c] brightness-110',
+  titulo: 'text-[#2a1a0a] font-bold [font-family:var(--font-cinzel),serif]', sub: 'text-[#5a3d1a]', selo: 'border-[#8c6a32] bg-[#2a1a0a] text-[#e9b44c]',
+}
 export const temaArvore = (identidade: string) => TEMAS_ARVORE[identidade] ?? TEMAS_ARVORE.padrao

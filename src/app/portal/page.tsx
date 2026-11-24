@@ -293,7 +293,7 @@ export default function PortalAventureiros() {
     <main className="min-h-screen fundo-tema text-(--a-f4f0ff) px-4 py-5 sm:py-8">
       <div className="mx-auto max-w-6xl">
         <header className="flex items-center justify-between gap-3">
-          <span className="flex items-center gap-2 font-bold tracking-wide text-lg sm:text-xl"><LuaLogo /><Link href="/portal">PRG System</Link></span>
+          <span className="relative flex items-center gap-2 font-bold tracking-wide text-lg sm:text-xl"><LuaLogo /><Link href="/portal">PRG System</Link><Link href="/cinema" aria-label="Cinema Secreto" className="absolute -top-4 right-0 h-4 w-12 rounded opacity-0 hover:opacity-100 focus-visible:opacity-100 text-xs text-violet-300">✦</Link></span>
           <span className="flex items-center gap-2"><AjudaTela titulo="Ajuda do portal" intro="O portal é a porta de entrada: cada pessoa tem o seu perfil de aventureiro." passos={[
             { icone: '🌙', titulo: 'De onde você vem?', texto: 'Escolha o seu grupo. Ele só separa os perfis de cada turma de amigos.' },
             { icone: '🧙', titulo: 'Escolha o seu perfil', texto: 'Toque no seu aventureiro para entrar na Central, onde ficam suas fichas e campanhas.' },

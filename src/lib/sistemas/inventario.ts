@@ -39,8 +39,8 @@ export type RolagemItem = { nome: string; expr: string }
 export const ELEMENTOS_ORDEM = ['Sangue', 'Morte', 'Conhecimento', 'Energia', 'Medo'] as const
 export const FONTES_ORDEM = ['Classe', 'Trilha', 'Paranormal', 'Outro'] as const
 export type Poder = { elementoOrdem?: typeof ELEMENTOS_ORDEM[number]; fonteOrdem?: typeof FONTES_ORDEM[number]; circuloOrdem?: number; id: string; nome: string; tipo: TipoPoder; recurso?: string; custo?: number; usosMax?: number; expressao?: string; alcance?: number; descricao?: string
-  /** Em que descanso os usos voltam (padrão: longo). */
-  recarga?: 'curto' }
+  /** Quando os usos voltam (padrão: descanso longo). "combate": não espera descanso, só o fim do combate (ação própria). */
+  recarga?: 'curto' | 'combate' }
 export type Uso = { itens: Record<string, { qtd: number; equipado: boolean }>; poderes: Record<string, number>; carteira: string }
 
 export const CATEGORIAS_ITEM: { id: CategoriaItem; nome: string; icone: string }[] = [
@@ -106,7 +106,7 @@ export function normalizarPoder(v: unknown): Poder | null {
     ...(FONTES_ORDEM.some(e => e === o.fonteOrdem) ? { fonteOrdem: o.fonteOrdem as Poder['fonteOrdem'] } : {}),
     ...([1,2,3,4].some(n => n === o.circuloOrdem) ? { circuloOrdem: Number(o.circuloOrdem) } : {}),
     ...(recurso ? { recurso, custo: num(o.custo, 0, 999, 1) } : {}),
-    ...(Number(o.usosMax) > 0 ? { usosMax: num(o.usosMax, 1, 99), ...(o.recarga === 'curto' ? { recarga: 'curto' as const } : {}) } : {}),
+    ...(Number(o.usosMax) > 0 ? { usosMax: num(o.usosMax, 1, 99), ...(o.recarga === 'curto' || o.recarga === 'combate' ? { recarga: o.recarga } : {}) } : {}),
     ...(expressao && EXPR.test(expressao) ? { expressao } : {}),
     ...(Number(o.alcance) > 0 ? { alcance: num(o.alcance, 0, 1000) } : {}),
     ...(o.descricao ? { descricao: txt(o.descricao, LIM.texto) } : {}),

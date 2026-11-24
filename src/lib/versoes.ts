@@ -27,6 +27,16 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.36.9', data: '2026-11-24',
+    titulo: 'Two Piece, do Raijin (pirata), espaços em aberto na árvore e menus com a cara de cada sistema',
+    itens: [
+      'Novo sistema autoral: Two Piece, do Raijin — d20 com atributos contados em dados (fica com o maior), perícias +2, PV, MP, SN e EM, Esquiva, Bloqueio e Desvio técnico, e a árvore com Classe, Raça, Fruta, Haki e Rokushiki. Só o Raijin edita no construtor.',
+      'Árvore com espaços em aberto: o autor marca um hexágono como “espaço em aberto” e, depois de liberar, o jogador escreve a habilidade que combinou com o mestre (nome, descrição, dados de dano, custo e usos por combate). Ela entra sozinha em Poderes e habilidades, com rolagem e custo.',
+      'Two Piece com estética de pirata: mar à noite com carta náutica, cartões de pergaminho com rebites dourados, atributos em moedas e a árvore como mapa do tesouro com rosa dos ventos. O tema “🏴‍☠️ Pirata” e o mapa do tesouro também ficam no Estúdio para qualquer autor.',
+      'O menu das fichas ganhou a cara de cada sistema, como o de D&D: ícones e nomes do próprio jogo (Dossiê e Rituais na Ordem, Canalha e Truques em Blades, Tripulante e Baú no Two Piece…) e, no celular, uma barra única com as cores do sistema.',
+    ],
+  },
+  {
     versao: '0.36.8', data: '2026-11-23',
     titulo: 'Um segredo no portal',
     itens: [

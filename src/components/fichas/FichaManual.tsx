@@ -3,7 +3,7 @@ import { tituloSistemaNaFicha, edicaoEfetivaDaFicha } from '@/lib/sistemas/edica
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { Dice5, GitBranch, Info, Heart, Shield, Sparkles, User, BookOpen, Backpack, ScrollText } from 'lucide-react'
+import { Dice5, Info, Heart, Plus, Shield, Sparkles, Trash2 } from 'lucide-react'
 import { classesDaFicha } from '@/lib/sistemas/dnd2024Classes'
 import { classesDaFicha2014 } from '@/lib/sistemas/dnd2014Multiclasse'
 import { calcular } from '@/lib/sistemas/calculo'
@@ -23,6 +23,7 @@ import ArvoreDndOficial from './ArvoreDndOficial'
 import ArvoreSistema from './ArvoreSistema'
 import { FONTES_AUTOR } from '@/lib/sistemas/visualAutor'
 import { cssDoVisual, ordenarAbas, tituloDoBloco } from '@/lib/sistemas/montagemFicha'
+import { itemDoMenu } from './menuSistema'
 import JanelaDescanso from './Descanso'
 import type { Item } from '@/lib/sistemas/inventario'
 import BarraRecurso, { corDoRecurso, MiniBarra } from './BarraRecurso'
@@ -97,6 +98,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const setModo = (x: ModoFicha) => { setModoBruto(x); try { localStorage.setItem(CHAVE_MODO, x) } catch { /* sem espaço */ } }
   const somenteLeitura = bloqueada || modo === 'consulta'
   const [detalhes, setDetalhes] = useState(false)
+  const [novaPericia, setNovaPericia] = useState('')
   // Visual do sistema (v0.35.1): cores, letra dos títulos e o jeito de mostrar atributos e perícias.
   const identidade = identidadeVisual(s)
   const AtributoComposto = s.id === 'dnd5e-srd' ? AtributoDnd : AtributoComMod
@@ -113,6 +115,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     'mork-borg': 'M4 10A8 8 0 0 1 20 10V15L16 17V22H8V17L4 15Z M7 10L10 13M10 10L7 13M14 10L17 13M17 10L14 13M12 15V18M10 19V22M14 19V22',
     assimilacao: 'M12 3Q22 3 20 12Q18 22 10 20Q1 18 4 9Q6 5 12 3Z M12 3Q8 12 16 19 M4 9Q12 8 20 12 M10 12L14 9M10 12L9 17',
     opositores: 'M16 2A10 10 0 1 0 21 17A9 9 0 0 1 16 2Z M18 4V10 M15 7H21 M20 11V15 M18 13H22',
+    'two-piece': 'M12 3C8 3 6 5.5 6 8.5C6 10.5 7 11.8 8.5 12.5V15H15.5V12.5C17 11.8 18 10.5 18 8.5C18 5.5 16 3 12 3Z M9.5 8.5A1 1 0 1 0 9.5 8.51 M14.5 8.5A1 1 0 1 0 14.5 8.51 M10 15V17 M12 15V17 M14 15V17 M3 18L21 22 M21 18L3 22',
     nova: 'M12 2L22 8V16L12 22L2 16V8Z M7 8H12V12H17V16 M7 6V10 M17 14V18 M12 2V5 M12 19V22',
     marcas: 'M12 21a9 9 0 1 0 0-18a9 9 0 1 0 0 18 M12 17c-2.5 0-4-1.4-4-3s1.8-3 4-3s4 1.4 4 3s-1.5 3-4 3 M7.5 10.5a1.3 1.6 0 1 0 0.01 0 M10.3 7.8a1.3 1.6 0 1 0 0.01 0 M13.7 7.8a1.3 1.6 0 1 0 0.01 0 M16.5 10.5a1.3 1.6 0 1 0 0.01 0',
   }
@@ -169,8 +172,21 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
   const [descansando, setDescansando] = useState(false)
   const propsInv = { edicaoDnd: edicaoEfetivaDaFicha(s, d) ?? undefined, s: sInv, d, c, onChange, somenteLeitura, rolar: rolarExpr, abrirDescanso: somenteLeitura ? undefined : () => setDescansando(true) }
 
+  // Perícias livres (v0.35.6): além das do sistema, as que o próprio jogador criou.
+  const periciasExtras = s.pericias?.livres ? (d.periciasExtras ?? []) : []
+  const minhaPericia = new Set(periciasExtras.map(x => x.id))
   const grupos = new Map<string, NonNullable<Sistema['pericias']>['lista']>()
   for (const p of s.pericias?.lista ?? []) grupos.set(p.grupo ?? '', [...(grupos.get(p.grupo ?? '') ?? []), p])
+  if (periciasExtras.length) grupos.set('', [...(grupos.get('') ?? []), ...periciasExtras])
+  function criarPericia() {
+    const nome = novaPericia.trim().slice(0, 60); if (!nome) return
+    const id = 'x_' + Math.random().toString(36).slice(2, 10)
+    onChange({ ...d, periciasExtras: [...periciasExtras, { id, nome }] }); setNovaPericia('')
+  }
+  function tirarPericia(id: string) {
+    const { [id]: _f, ...resto } = d.pericias; void _f
+    onChange({ ...d, periciasExtras: periciasExtras.filter(x => x.id !== id), pericias: resto })
+  }
   const secaoDeLista = (id: string) => /inventario|equipamento|armas|protecao|ataques|dinheiro/.test(id) ? 'equipamentos'
     : /habilidade|tecnica|talento|magia|poder|facanha|transforma|rituais|tracos/.test(id) ? 'habilidades' : 'anotacoes'
   const listasDe = (sec: string) => s.listas.filter(l => secaoDeLista(l.id) === sec)
@@ -206,6 +222,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     'mork-borg': ['O condenado', 'Provas do fim', 'Dons e maldições', 'Despojos', 'Crônica da ruína'],
     assimilacao: ['Registro do sobrevivente', 'Adaptações e competências', 'Mutações e capacidades', 'Suprimentos', 'Diário de sobrevivência'],
     opositores: ['Identidade lunar', 'Constelação de atributos', 'Legado e poderes', 'Relíquias e pertences', 'Memórias sob a lua'],
+    'two-piece': ['Ficha do tripulante', 'Atributos e perícias', 'Frutas, Haki e técnicas', 'Baú do navio', 'Diário de bordo'],
     nova: ['Perfil N.O.V.A', 'Matriz de competências', 'Protocolos e capacidades', 'Módulos e suprimentos', 'Registro de operações'],
     marcas: ['Portador da marca', 'Atributos e perícias', 'Poderes e técnicas', 'Pertences e orbes', 'Crônica e objetivos'],
   }
@@ -308,7 +325,8 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
           <p className="hidden px-2 pb-1 text-xs font-bold uppercase tracking-widest text-(--a-ed9cd8) lg:block">🌙 Menu da ficha</p>
           {ABAS.map(x => <button key={x.id} type="button" onClick={() => ir(x.id)} aria-label={x.nome} aria-current={secao === x.id ? 'page' : undefined}
             className={'min-w-0 min-h-12 rounded-xl px-1.5 py-2 text-center text-xs transition sm:px-3 sm:text-sm lg:w-full lg:text-left ' + (secao === x.id ? 'bg-(--a-5b4380) text-white' : 'bg-(--s-201a32) text-(--a-d6c8e8) hover:bg-(--s-2b2140) lg:bg-transparent')}>
-            {identidade === 'dnd5e-srd' ? <span className="dnd-menu-label">{(() => { const Icone = x.id === 'arvore' ? GitBranch : [User,Dice5,BookOpen,Backpack,ScrollText][indiceCapitulo(x.id)] ?? Info; return <Icone size={19} aria-hidden="true"/> })()}<span className="dnd-menu-curto">{x.id === 'arvore' ? 'Árvore' : ['Principal','Atributos','Poderes','Itens','Diário'][indiceCapitulo(x.id)] ?? x.nome}</span><span className="dnd-menu-longo">{x.nome}</span></span> : <span className="break-words">{x.icone} {x.nome}</span>}
+            {(() => { const [Icone, curto] = itemDoMenu(identidade, x.id), proprio = montagem?.secoes?.find(m => m.id === x.id)?.icone
+              return <span className="dnd-menu-label ficha-menu-label">{proprio ? <span aria-hidden="true" className="text-lg leading-none">{proprio}</span> : <Icone size={19} aria-hidden="true" />}<span className="dnd-menu-curto">{x.id !== 'arvore' && s.nomesSecoes?.[x.id as keyof typeof s.nomesSecoes] ? x.nome : curto}</span><span className="dnd-menu-longo">{x.nome}</span></span> })()}
             <span className="hidden text-xs text-(--a-c4b6d4) lg:block">{rubrica?.[indiceCapitulo(x.id)] ?? x.sub}</span>
           </button>)}
         </div>
@@ -472,9 +490,14 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
                       className={input + ' !w-16 shrink-0 text-center' + (dossie ? ' !border-[#8a7a55] !bg-[#f6efdc] !font-bold !text-[#2a1f14]' : s.id === 'dnd5e-srd' ? ' dnd-bonus' : '')} />
                     {s.rolagem !== 'assimilacao' && podeRolar && <button type="button" onClick={() => p.atributo || !parada ? rolar(p.nome, tot, dadosDe(p.atributo)) : rolar(p.nome, 0, tot)} aria-label={'Rolar ' + p.nome}
                       className={'shrink-0 rounded-lg px-2 py-1.5 ' + (dossie ? 'bg-[#5f4f35] text-[#f6efdc] hover:bg-[#7a6646]' : 'bg-(--s-34294f) hover:bg-(--s-4b3a6e)')}><Dice5 size={16} aria-hidden="true" /></button>}
+                    {minhaPericia.has(p.id) && !somenteLeitura && <button type="button" onClick={() => tirarPericia(p.id)} aria-label={'Tirar ' + p.nome} className="shrink-0 rounded-lg p-1.5 text-red-200 hover:bg-(--s-34294f)"><Trash2 size={14} /></button>}
                   </div> })}
               </div>
             </div>)}
+            {s.pericias.livres && !somenteLeitura && <form onSubmit={e => { e.preventDefault(); criarPericia() }} className="mt-3 flex gap-2">
+              <input value={novaPericia} maxLength={60} onChange={e => setNovaPericia(e.target.value)} aria-label={'Nova ' + tituloPer.toLowerCase()} placeholder="Ex.: Investigação, Medicina, Rua…" className={input + ' min-w-0 flex-1'} />
+              <button type="submit" disabled={!novaPericia.trim() || periciasExtras.length >= 40} className="inline-flex items-center gap-1 rounded-lg border border-(--a-5e4b78) px-3 text-sm hover:bg-(--s-34294f) disabled:opacity-40"><Plus size={14} /> Nova perícia</button>
+            </form>}
             </>}
           </section>}
         </div>}

@@ -730,3 +730,35 @@ html[data-movimento="reduzido"] .constelacao-pronto .constelacao-forma { animati
 .constelacao-no:focus-visible { outline: 2px solid var(--ficha-acento); }
 .constelacao .react-flow__controls button { background: #11141b; border-color: #ffffff1a; color: #d7deea; }
 .constelacao .react-flow__node-hab { pointer-events: all !important; cursor: default; }
+
+/* ---- Menu da ficha com a cara de cada sistema (v0.36.9): no celular, barra única com ícones de traço, como no D&D ---- */
+@media (max-width: 1023px) {
+  [data-visual]:not([data-visual="dnd5e-srd"]) .ficha-menu > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(54px, 1fr)); gap: .2rem; overflow: visible; padding: .25rem;
+    background: color-mix(in oklab, var(--ficha-cartao) 88%, #000); border: 1px solid var(--ficha-borda); border-radius: 12px; }
+  [data-visual]:not([data-visual="dnd5e-srd"]) .ficha-menu button { min-width: 0; min-height: 52px; padding: .3rem .1rem; border-radius: 8px; text-align: center; background: transparent;
+    color: color-mix(in oklab, var(--ficha-acento) 70%, #fff); }
+  [data-visual]:not([data-visual="dnd5e-srd"]) .ficha-menu button[aria-current="page"] { background: color-mix(in oklab, var(--ficha-acento) 22%, var(--ficha-cartao)); box-shadow: inset 0 -2px 0 var(--ficha-acento); color: #fff; }
+}
+.ficha-menu-label svg { flex-shrink: 0; }
+[data-visual="mork-borg"] .ficha-menu-label { text-transform: uppercase; letter-spacing: .04em; }
+
+/* ---- Two Piece (v0.36.9): estética de pirata — mar à noite, carta náutica, madeira e ouro ---- */
+[data-visual="two-piece"] .ficha-fundo { background:
+  radial-gradient(ellipse at 50% -10%, #e9b44c22, transparent 45%),
+  radial-gradient(ellipse at 15% 110%, #1d5563aa, transparent 55%),
+  linear-gradient(#e9b44c0a 1px, transparent 1px) 0 0 / 64px 64px,
+  linear-gradient(90deg, #e9b44c0a 1px, transparent 1px) 0 0 / 64px 64px,
+  repeating-radial-gradient(ellipse at 50% 140%, transparent 0 22px, #ffffff05 22px 24px),
+  linear-gradient(180deg, #0b2028, #071318 70%, #050d11); }
+[data-visual="two-piece"] .ficha-painel { position: relative; }
+[data-visual="two-piece"] .ficha-painel::before, [data-visual="two-piece"] .ficha-painel::after { content: ""; position: absolute; top: 8px; width: 7px; height: 7px; border-radius: 9999px;
+  background: radial-gradient(circle at 35% 35%, #f6d78a, #8c6a32 70%); box-shadow: 0 1px 2px #000a; pointer-events: none; }
+[data-visual="two-piece"] .ficha-painel::before { left: 8px; } [data-visual="two-piece"] .ficha-painel::after { right: 8px; }
+[data-visual="two-piece"] .ficha-menu > div { background: repeating-linear-gradient(90deg, #2a1a0e 0 38px, #24160c 38px 40px), #2a1a0e !important; border-color: #8c6a32 !important; }
+[data-visual="two-piece"] .ficha-menu button { color: #f2dca0; }
+[data-visual="two-piece"] .ficha-menu button[aria-current="page"] { background: linear-gradient(180deg, #5a3a1a, #3a2410) !important; box-shadow: inset 0 -2px 0 #e9b44c, inset 3px 0 0 #e9b44c !important; color: #fff; }
+[data-visual="two-piece"] .ficha-capitulo { border-color: #8c6a32; }
+.constelacao[data-fundo="mapa"] { background: radial-gradient(ellipse at 50% 40%, #1d4450, #0d2229 60%, #071318) !important; border-color: #e9b44c55 !important; }
+.constelacao[data-fundo="mapa"] .react-flow__edge-path { stroke-dasharray: 7 6 !important; }
+.constelacao[data-fundo="mapa"] .react-flow__edge:not(.animated) .react-flow__edge-path { stroke: #d94b3b !important; }
+.constelacao .react-flow { --xy-background-color: transparent; background: transparent; }

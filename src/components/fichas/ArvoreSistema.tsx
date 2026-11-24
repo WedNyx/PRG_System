@@ -7,7 +7,8 @@ import { toast } from 'sonner'
 import { GitBranch, LockKeyhole, X } from 'lucide-react'
 import { movimentoReduzido } from '@/lib/preferencias'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
-import { devolverNo, liberarNo, sincronizarPoderes, type Arvore } from '@/lib/sistemas/arvore'
+import { devolverNo, liberarNo, preencherNo, sincronizarPoderes, type Arvore } from '@/lib/sistemas/arvore'
+import EscreverHabilidade from './EscreverHabilidade'
 import { lerPoderes } from '@/lib/sistemas/inventario'
 import { identidadeVisual } from '@/lib/sistemas/visualIdentidade'
 import { caminhoLigacao, temaArvore, type Lado } from './temasArvore'
@@ -60,10 +61,14 @@ export default function ArvoreSistema({ s, d, onChange, somenteLeitura, children
     {m.estado === 'futuro' && <p className="mt-2 flex items-center gap-2 text-xs text-(--a-c4b6d4)"><LockKeyhole size={14} /> {m.no?.motivo ?? 'Ainda não chegou neste marco.'}</p>}
     {m.no && autor && !somenteLeitura && <div className="mt-3 flex flex-wrap gap-2">
       {!m.no.liberado && <button type="button" disabled={m.estado !== 'proximo'} onClick={() => aplicarNo(liberarNo(autor.arvore, m.no!.id, autor.extra, autor.nivel, d), m.titulo + ' liberado!')}
-        className="min-h-10 rounded-lg bg-(--a-7654bb) px-3 text-xs font-semibold text-white disabled:opacity-40">Liberar (−{m.no.custo} {m.no.custo === 1 ? 'ponto' : 'pontos'})</button>}
+        className="min-h-10 rounded-lg bg-(--a-7654bb) px-3 text-xs font-semibold text-white disabled:opacity-40">{m.no.custo ? `Liberar (−${m.no.custo} ${m.no.custo === 1 ? 'ponto' : 'pontos'})` : 'Liberar'}</button>}
       {m.no.liberado && !m.no.concedido && <button type="button" onClick={() => aplicarNo(devolverNo(autor.arvore, m.no!.id), 'Pontos devolvidos.')}
-        className="min-h-10 rounded-lg border border-(--a-55456e) px-3 text-xs text-white">Devolver os pontos</button>}
+        className="min-h-10 rounded-lg border border-(--a-55456e) px-3 text-xs text-white">{m.no.custo ? 'Devolver os pontos' : 'Desfazer a liberação'}</button>}
     </div>}
+    {m.no?.aberto && m.no.liberado && autor && <EscreverHabilidade key={m.id} inicial={autor.arvore.preenchidas?.[m.no.id]} somenteLeitura={somenteLeitura}
+      recurso={m.no.aberto.recurso ? { id: m.no.aberto.recurso, nome: s.recursos.find(r => r.id === m.no!.aberto!.recurso)?.nome ?? m.no.aberto.recurso.toUpperCase() } : undefined}
+      salvar={h => aplicarNo({ arvore: preencherNo(autor.arvore, m.no!.id, h) }, 'Habilidade salva: aparece em Poderes e habilidades.')} />}
+    {m.no?.aberto && !m.no.liberado && <p className="mt-2 text-xs text-(--a-c4b6d4)">✍️ Espaço em aberto: depois de liberar, você escreve aqui a habilidade que combinou com o mestre.</p>}
     {m.escolha !== false && <label className="mt-3 block text-xs text-(--a-d3adf0)">O que você escolheu aqui
       <input value={escolha(m)} disabled={somenteLeitura} maxLength={200} onChange={e => anotar(m, e.target.value)} placeholder="Ex.: o nome do poder ou talento"
         className="mt-1 w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-sm text-white" /></label>}
@@ -102,7 +107,7 @@ export default function ArvoreSistema({ s, d, onChange, somenteLeitura, children
           {!doAutor && ramo.marcos.some(m => m.estado === 'futuro') && <label className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-(--a-55456e) px-3 text-xs text-(--a-cfc0df)"><input type="checkbox" checked={futuros} onChange={e => setFuturos(e.target.checked)} /> Mostrar os futuros</label>}
         </div>
       </div>
-      {doAutor && autor && <div className="mb-3 grid gap-2 sm:grid-cols-[auto_1fr]" data-pontos-arvore>
+      {doAutor && autor && (autor.arvore.nos.some(n => n.custo > 0) || autor.extra > 0) && <div className="mb-3 grid gap-2 sm:grid-cols-[auto_1fr]" data-pontos-arvore>
         <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[.04] px-4 py-3">
           <span className="text-3xl font-black tabular-nums text-white">{autor.livres}</span>
           <span className="text-xs leading-tight text-(--a-cfc0df)">{autor.livres === 1 ? 'ponto' : 'pontos'}<br />para gastar</span>

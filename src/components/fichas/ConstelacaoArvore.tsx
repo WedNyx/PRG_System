@@ -16,19 +16,19 @@ import { FormaSvg, raioDoNo, simboloDoNo } from './formaNo'
  */
 const BASE = 36, ESCALA = 1.45, MARGEM = 14
 type Estado = 'recebido' | 'proximo' | 'futuro'
-type DadosNo = { n: NoArvore; estado: Estado; concedido: boolean; aberto: boolean; abrir: (id: string) => void; marco: string }
+type DadosNo = { n: NoArvore; titulo: string; estado: Estado; concedido: boolean; aberto: boolean; abrir: (id: string) => void; marco: string }
 type DadosAneis = { raios: number[] }
 
 const centroHandle = (r: number) => ({ left: '50%', top: r + MARGEM, transform: 'translate(-50%,-50%)', opacity: 0, width: 2, height: 2, minWidth: 0, minHeight: 0, border: 0, pointerEvents: 'none' as const })
 
 function NoHabilidade({ data }: NodeProps<Node<DadosNo>>) {
-  const { n, estado, concedido, aberto, abrir, marco } = data
+  const { n, titulo, estado, concedido, aberto, abrir, marco } = data
   const r = raioDoNo(n.tamanho, BASE), lado = r * 2 + MARGEM * 2
   const texto = estado === 'recebido' ? 'liberada' : estado === 'proximo' ? 'pode liberar' : 'bloqueada'
   return <div className="flex flex-col items-center" style={{ width: Math.max(lado, 150) }}>
     <Handle type="target" position={Position.Top} style={centroHandle(r)} isConnectable={false} />
     <Handle type="source" position={Position.Bottom} style={centroHandle(r)} isConnectable={false} />
-    <button type="button" onClick={() => abrir(marco)} aria-pressed={aberto} aria-label={`${n.nome}, ${texto}, custo ${n.custo}${n.nivel ? ', a partir do nível ' + n.nivel : ''}`}
+    <button type="button" onClick={() => abrir(marco)} aria-pressed={aberto} aria-label={`${titulo}, ${texto}, ${n.custo ? 'custo ' + n.custo : 'sem custo'}${n.nivel ? ', a partir do nível ' + n.nivel : ''}`}
       className={'nodrag constelacao-no relative rounded-full outline-offset-4 ' + (estado === 'proximo' ? 'constelacao-pronto' : '')} data-estado={estado} style={{ width: lado, height: lado }}>
       <svg viewBox={`${-lado / 2} ${-lado / 2} ${lado} ${lado}`} width={lado} height={lado} aria-hidden className="overflow-visible">
         {aberto && <FormaSvg forma={n.forma} r={r + 9} fill="none" style={{ stroke: '#fff', strokeWidth: 1.5, opacity: 0.85 }} />}
@@ -41,12 +41,12 @@ function NoHabilidade({ data }: NodeProps<Node<DadosNo>>) {
           fill: estado === 'recebido' ? '#0b0d12' : estado === 'proximo' ? 'var(--ficha-acento)' : '#7c8597' }}>{simboloDoNo(n)}</text>
       </svg>
       {!!n.nivel && <span className="absolute rounded-md border border-white/20 bg-[#0b0d12] px-1 text-[9px] font-bold leading-4 text-[#c9d2e3]" style={{ left: MARGEM + r * 0.08, top: MARGEM + r * 0.12 }}>NV{n.nivel}</span>}
-      <span className="absolute grid size-5 place-items-center rounded-full border bg-[#0b0d12] text-[10px] font-bold text-white" style={{ right: MARGEM + r * 0.08, top: MARGEM + r * 0.12, borderColor: estado === 'futuro' ? '#4a5263' : 'var(--ficha-acento)' }}>{n.custo}</span>
+      {n.custo > 0 && <span className="absolute grid size-5 place-items-center rounded-full border bg-[#0b0d12] text-[10px] font-bold text-white" style={{ right: MARGEM + r * 0.08, top: MARGEM + r * 0.12, borderColor: estado === 'futuro' ? '#4a5263' : 'var(--ficha-acento)' }}>{n.custo}</span>}
       {estado === 'futuro' && <span className="absolute grid size-5 place-items-center rounded-full bg-[#0b0d12] text-[#8a93a6]" style={{ left: '50%', bottom: MARGEM - 6, transform: 'translateX(-50%)' }}><LockKeyhole size={11} /></span>}
       {concedido && <span className="absolute text-amber-200" style={{ left: MARGEM - 4, bottom: MARGEM }}><Gift size={12} /></span>}
     </button>
     <span className={'mt-0.5 line-clamp-2 max-w-[150px] text-center text-[10.5px] font-semibold uppercase leading-tight tracking-[.12em] [font-family:var(--font-inter),system-ui,sans-serif] ' + (estado === 'recebido' ? 'text-white' : estado === 'proximo' ? 'text-[#d7deea]' : 'text-[#8a93a6]')}
-      style={{ textShadow: '0 1px 4px #000' }}>{n.nome}</span>
+      style={{ textShadow: '0 1px 4px #000' }}>{titulo}</span>
   </div>
 }
 function Aneis({ data }: NodeProps<Node<DadosAneis>>) {
@@ -74,7 +74,7 @@ export default function ConstelacaoArvore({ arvore, marcos, aberto, abrir, ligac
     for (const n of nos) {
       const m = porId.get(n.id)!, r = raioDoNo(n.tamanho, BASE), largura = Math.max(r * 2 + MARGEM * 2, 150)
       nodes.push({ id: 'c:' + n.id, type: 'hab', position: { x: n.x * ESCALA - largura / 2, y: n.y * ESCALA - r - MARGEM }, draggable: false,
-        data: { n, estado: (m.estado === 'referencia' ? 'futuro' : m.estado) as Estado, concedido: !!m.no?.concedido, aberto: aberto === m.id, abrir, marco: m.id } })
+        data: { n, titulo: m.titulo, estado: (m.estado === 'referencia' ? 'futuro' : m.estado) as Estado, concedido: !!m.no?.concedido, aberto: aberto === m.id, abrir, marco: m.id } })
     }
     const vis = new Set(nos.map(n => n.id)), edges: Edge[] = []
     for (const n of nos) for (const r of n.requer) {
@@ -89,14 +89,18 @@ export default function ConstelacaoArvore({ arvore, marcos, aberto, abrir, ligac
   }, [arvore, marcos, aberto, abrir, ligacao, mostrarFuturos])
 
   return <div className="constelacao relative h-[62vh] min-h-[400px] overflow-hidden rounded-2xl border border-white/10 bg-[#0b0d12]" data-constelacao data-fundo={fundo}>
+
     {fundo === 'estrelas' && <div aria-hidden className="pointer-events-none absolute inset-0 [background-image:radial-gradient(1px_1px_at_20%_30%,#fff8,transparent),radial-gradient(1px_1px_at_70%_60%,#fff6,transparent),radial-gradient(1.5px_1.5px_at_40%_80%,#fff5,transparent),radial-gradient(1px_1px_at_85%_20%,#fff7,transparent),radial-gradient(1px_1px_at_10%_75%,#fff5,transparent)] [background-size:220px_220px]" />}
     <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_45%,color-mix(in_oklab,var(--ficha-acento)_16%,transparent),transparent_62%)]" />
-    <ReactFlow nodes={nodes} edges={edges} nodeTypes={TIPOS} fitView fitViewOptions={{ nodes: foco, padding: 0.15, maxZoom: 1.1 }} minZoom={0.25} maxZoom={2}
+    <ReactFlow nodes={nodes} edges={edges} nodeTypes={TIPOS} fitView fitViewOptions={{ nodes: foco, padding: 0.15, maxZoom: 1.1, minZoom: 0.5 }} minZoom={0.25} maxZoom={2}
       nodesConnectable={false} elementsSelectable={false} proOptions={{ hideAttribution: true }} colorMode="dark" aria-label="Constelação de habilidades">
-      {fundo === 'grade' && <Background variant={BackgroundVariant.Lines} gap={32} color="#ffffff" style={{ opacity: 0.04 }} />}
-      {foco.length > 8 && <MiniMap pannable zoomable ariaLabel="Minimapa da árvore" maskColor="#000a" style={{ background: '#11141b', border: '1px solid #ffffff1a' }} nodeStrokeWidth={2}
+      {(fundo === 'grade' || fundo === 'mapa') && <Background variant={BackgroundVariant.Lines} gap={32} color="#ffffff" style={{ opacity: 0.04 }} />}
+      {foco.length > 8 && <MiniMap className="max-sm:!hidden" pannable zoomable ariaLabel="Minimapa da árvore" maskColor="#000a" style={{ background: fundo === 'mapa' ? '#0d2229' : '#11141b', border: '1px solid #ffffff1a' }} nodeStrokeWidth={2}
         nodeColor={n => n.type !== 'hab' ? 'transparent' : (n.data as DadosNo).estado === 'recebido' ? '#e2e8f0' : (n.data as DadosNo).estado === 'proximo' ? '#8fa3c7' : '#4a5263'} />}
       <Controls showInteractive={false} position="top-left" aria-label="Zoom da árvore" />
     </ReactFlow>
+    {fundo === 'mapa' && <svg aria-hidden viewBox="-50 -50 100 100" className="pointer-events-none absolute bottom-3 left-3 z-[5] size-28 opacity-30 sm:size-36">
+      <g fill="none" stroke="#e9b44c" strokeWidth="1.2"><circle r="30" /><circle r="22" strokeDasharray="2 3" /><path d="M0 -46 L6 -6 L46 0 L6 6 L0 46 L-6 6 L-46 0 L-6 -6 Z" fill="#e9b44c22" /><path d="M0 -46 L0 46 M-46 0 L46 0" /></g>
+      <text y="-34" textAnchor="middle" fontSize="9" fill="#e9b44c" fontFamily="serif">N</text></svg>}
   </div>
 }

@@ -1,6 +1,6 @@
 {
   "name": "prg-system",
-  "version": "0.36.8",
+  "version": "0.36.9",
   "private": true,
   "scripts": {
     "dev": "next dev",

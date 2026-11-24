@@ -24,7 +24,11 @@ export type NoArvore = {
   requisitoFicha?: RequisitoFichaNo
   /** Aparência escolhida pelo autor (v0.36.7): símbolo dentro do nó (emoji ou até 2 letras), forma e tamanho. */
   icone?: string; forma?: FormaNo; tamanho?: TamanhoNo
+  /** Espaço em aberto (v0.36.9): depois de liberar, o jogador escreve a habilidade (com o mestre): descrição, dano e custo. */
+  aberto?: { recurso?: string }
 }
+/** O que o jogador escreveu num espaço em aberto da árvore (v0.36.9). */
+export type HabilidadePreenchida = { nome?: string; descricao?: string; dano?: string; custo?: number; usos?: number }
 export type FormaNo = 'hexagono' | 'circulo' | 'losango' | 'quadrado'
 export type TamanhoNo = 'p' | 'g'
 export const FORMAS_NO: { id: FormaNo; nome: string }[] = [{ id: 'hexagono', nome: 'Hexágono' }, { id: 'circulo', nome: 'Círculo' }, { id: 'losango', nome: 'Losango' }, { id: 'quadrado', nome: 'Quadrado' }]
@@ -39,6 +43,8 @@ export type Arvore = {
   /** Liberados pelo mestre como exceção: não gastam pontos nem pedem requisitos (sempre dentro de `liberados`). */
   concedidos?: string[]
   historico?: EntradaHistorico[]
+  /** Habilidades escritas pelo jogador nos espaços em aberto (por id do nó). */
+  preenchidas?: Record<string, HabilidadePreenchida>
 }
 
 export const CORES_NO = ['#a78bfa', '#38bdf8', '#34d399', '#fbbf24', '#f472b6', '#f87171', '#e2e8f0', '#22d3ee']
@@ -80,7 +86,26 @@ export function lerArvore(v: unknown): Arvore {
   const liberados = [...new Set((Array.isArray(o.liberados) ? o.liberados : []).filter((l): l is string => typeof l === 'string' && ids.has(l)))]
   const concedidos = [...new Set((Array.isArray(o.concedidos) ? o.concedidos : []).filter((l): l is string => typeof l === 'string' && liberados.includes(l)))]
   const historico = (Array.isArray(o.historico) ? o.historico : []).slice(0, LIM_ARVORE.historico).map(lerEntrada).filter((e): e is EntradaHistorico => !!e)
-  return { pontos: num(o.pontos, 0, 9999), nos, liberados, ...(concedidos.length ? { concedidos } : {}), ...(historico.length ? { historico } : {}) }
+  const preenchidas = lerPreenchidas(o.preenchidas, ids)
+  return { pontos: num(o.pontos, 0, 9999), nos, liberados, ...(concedidos.length ? { concedidos } : {}), ...(historico.length ? { historico } : {}), ...(Object.keys(preenchidas).length ? { preenchidas } : {}) }
+}
+
+/** Dano escrito pelo jogador: só dados, números, + e − (ex.: 2d8+3). */
+export const DANO_VALIDO = /^\s*\d{0,2}d\d{1,3}(\s*[+-]\s*(\d{0,2}d\d{1,3}|\d{1,3}))*\s*$|^\s*\d{1,3}\s*$/i
+export function lerPreenchida(v: unknown): HabilidadePreenchida | null {
+  if (!v || typeof v !== 'object') return null
+  const o = v as Record<string, unknown>
+  const nome = txt(o.nome, LIM_ARVORE.nome).trim(), descricao = txt(o.descricao, LIM_ARVORE.descricao).trim()
+  const dano = typeof o.dano === 'string' && DANO_VALIDO.test(o.dano) ? o.dano.replace(/\s+/g, '').toLowerCase().slice(0, 40) : ''
+  const custo = num(o.custo, 0, 999), usos = num(o.usos, 0, 99)
+  const out: HabilidadePreenchida = { ...(nome ? { nome } : {}), ...(descricao ? { descricao } : {}), ...(dano ? { dano } : {}), ...(custo ? { custo } : {}), ...(usos ? { usos } : {}) }
+  return Object.keys(out).length ? out : null
+}
+function lerPreenchidas(v: unknown, ids: Set<string>): Record<string, HabilidadePreenchida> {
+  const out: Record<string, HabilidadePreenchida> = {}
+  if (!v || typeof v !== 'object') return out
+  for (const [k, x] of Object.entries(v as Record<string, unknown>).slice(0, LIM_ARVORE.nos)) { const h = ids.has(k) ? lerPreenchida(x) : null; if (h) out[k] = h }
+  return out
 }
 
 /** Um hexágono limpo (ou null). `vistos` evita ids repetidos. */
@@ -108,7 +133,8 @@ function lerNo(x: unknown, vistos = new Set<string>()): NoArvore | null {
     ...(nivel > 0 ? { nivel } : {}), ...(requisitoFicha ? { requisitoFicha } : {}),
     ...(lerIconeNo(n.icone) ? { icone: lerIconeNo(n.icone) } : {}),
     ...(FORMAS_NO.some(f => f.id === n.forma) && n.forma !== 'hexagono' ? { forma: n.forma as FormaNo } : {}),
-    ...(n.tamanho === 'p' || n.tamanho === 'g' ? { tamanho: n.tamanho } : {}) }
+    ...(n.tamanho === 'p' || n.tamanho === 'g' ? { tamanho: n.tamanho } : {}),
+    ...(n.aberto ? { aberto: typeof (n.aberto as { recurso?: unknown }).recurso === 'string' && /^[a-z][a-z0-9_]{0,24}$/.test((n.aberto as { recurso: string }).recurso) ? { recurso: (n.aberto as { recurso: string }).recurso } : {} } : {}) }
 }
 
 const ACOES: AcaoArvore[] = ['liberar', 'devolver', 'conceder', 'retirar', 'criar', 'editar', 'excluir', 'pontos']
@@ -167,7 +193,25 @@ export function podeDevolver(a: Arvore, id: string, retirarConcedido = false): {
 
 /** Habilidades que os nós liberados dão (entram em “Poderes e habilidades”). */
 export const poderesDaArvore = (a: Arvore, dados?: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>): Poder[] =>
-  a.nos.filter(n => noAtivo(a, n, dados)).flatMap(n => n.efeitos.flatMap(e => e.tipo === 'poder' ? [e.poder] : []))
+  a.nos.filter(n => noAtivo(a, n, dados)).flatMap(n => [...n.efeitos.flatMap(e => e.tipo === 'poder' ? [e.poder] : []), ...poderAberto(a, n)])
+/** Espaço em aberto já escrito pelo jogador vira uma habilidade em “Poderes e habilidades” (com dano, custo e usos). */
+function poderAberto(a: Arvore, n: NoArvore): Poder[] {
+  const h = n.aberto ? a.preenchidas?.[n.id] : undefined
+  if (!h || !(h.nome || h.descricao || h.dano)) return []
+  return [{ id: idPoderDoNo(n.id, 9), nome: h.nome || n.nome, tipo: 'habilidade', ...(h.descricao ? { descricao: h.descricao } : {}), ...(h.dano ? { expressao: h.dano } : {}),
+    ...(h.custo && n.aberto?.recurso ? { recurso: n.aberto.recurso, custo: h.custo } : {}),
+    // "Usos por combate" (v0.36.9): não espera descanso — some em "Fim do combate", em Poderes e habilidades.
+    ...(h.usos ? { usosMax: h.usos, recarga: 'combate' as const } : {}) } as Poder]
+}
+/** Grava (ou apaga, se vazio) o que o jogador escreveu num espaço em aberto. */
+export function preencherNo(a: Arvore, id: string, h: unknown): Arvore {
+  const n = a.nos.find(x => x.id === id)
+  if (!n?.aberto) return a
+  const limpo = lerPreenchida(h), preenchidas = { ...(a.preenchidas ?? {}) }
+  if (limpo) preenchidas[id] = limpo; else delete preenchidas[id]
+  const { preenchidas: _p, ...resto } = a; void _p
+  return Object.keys(preenchidas).length ? { ...resto, preenchidas } : resto
+}
 
 /** Bônus somados de todos os nós liberados, por alvo (mesmo formato dos itens). */
 export function bonusDaArvore(a: Arvore, dados?: Pick<DadosFicha, 'campos' | 'dndEscolhas' | 'dndMulticlasse'>): Record<string, number> {

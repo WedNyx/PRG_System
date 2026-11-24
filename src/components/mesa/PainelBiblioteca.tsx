@@ -26,7 +26,7 @@ function Icone({ b, tamanho = 44 }: { b: { tipo: 'item' | 'poder'; nome: string;
 function detalhe(d: Record<string, unknown>, tipo: 'item' | 'poder') {
   const r = d.raridade ? RARIDADES.find(x => x.id === d.raridade)?.nome : ''
   return [r, tipo === 'item' ? CATEGORIAS_ITEM.find(c => c.id === d.categoria)?.nome : TIPOS_PODER.find(t => t.id === d.tipo)?.nome,
-    d.dano || d.expressao, d.usosMax ? `${d.usosMax}× (${d.recarga === 'curto' ? 'desc. curto' : 'desc. longo'})` : '', Array.isArray(d.bonus) && d.bonus.length ? `${d.bonus.length} bônus` : ''].filter(Boolean).join(' · ')
+    d.dano || d.expressao, d.usosMax ? `${d.usosMax}× (${d.recarga === 'curto' ? 'desc. curto' : d.recarga === 'combate' ? 'fim do combate' : 'desc. longo'})` : '', Array.isArray(d.bonus) && d.bonus.length ? `${d.bonus.length} bônus` : ''].filter(Boolean).join(' · ')
 }
 
 /** Aba “Biblioteca” do mestre: catálogo de itens e poderes da campanha + prontos da plataforma; “Dar” entrega direto nas fichas. */

@@ -52,7 +52,7 @@ export type VisualAutor = {
   atributosEstilo?: 'circulo' | 'hexagono' | 'escudo' | 'losango'
   barrasEstilo?: 'fina' | 'grossa' | 'brilho' | 'segmentada'
   /** Árvore em constelação (v0.36.7): como as ligações são desenhadas e o fundo do mapa. */
-  arvoreLigacao?: 'reta' | 'tracejada' | 'curva' | 'circuito'; arvoreFundo?: 'grade' | 'estrelas' | 'liso'
+  arvoreLigacao?: 'reta' | 'tracejada' | 'curva' | 'circuito'; arvoreFundo?: 'grade' | 'estrelas' | 'liso' | 'mapa'
   montagem?: MontagemFicha
 }
 export type SecaoFicha = 'principal' | 'atributos' | 'habilidades' | 'equipamentos' | 'anotacoes' | 'marcas' | 'formas' | 'invocacoes' | 'efeitos'

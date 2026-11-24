@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { validarSistema } from './autoral'
+import { sistemaEmBranco, validarSistema } from './autoral'
 import { dadoDoGrau, expressaoGraus, grauValido, lerGraus, lerPericiasExtras, lerTabelas, linhaDaTabela, opcoesDeGrau, rotuloGrau } from './graus'
 import { normalizarFicha, fichaVazia } from './calculo'
 
@@ -30,6 +30,9 @@ describe('graus de dado (v0.35.6)', () => {
   })
   it('perícias do jogador', () => {
     expect(lerPericiasExtras([{ id: 'x_abc123', nome: ' Medicina ' }, { id: 'ruim', nome: 'X' }, { id: 'x_abc123', nome: 'Dup' }])).toEqual([{ id: 'x_abc123', nome: 'Medicina' }])
+    // v0.36.9 (achado do Codex, PR do Two Piece): perícia livre guarda de qual atributo rola os dados num sistema de pool ("parada"); sem isso a rolagem trataria o bônus digitado como quantidade de dados.
+    expect(lerPericiasExtras([{ id: 'x_luta01', nome: 'Luta de rua', atributo: 'FIS' }], ['FIS', 'PSI'])).toEqual([{ id: 'x_luta01', nome: 'Luta de rua', atributo: 'FIS' }])
+    expect(lerPericiasExtras([{ id: 'x_luta02', nome: 'Inválida', atributo: 'FORJADO' }], ['FIS', 'PSI'])).toEqual([{ id: 'x_luta02', nome: 'Inválida' }])
   })
 })
 
@@ -84,5 +87,17 @@ describe('marcações da ficha (v0.35.9)', async () => {
   it('marcações contam como PV e recursos (o jogador marca no jogo); perícias criadas, como perícias', () => {
     expect(categoria('blades', 'marcas')).toBe('pv')
     expect(categoria('autoral-x', 'periciasExtras')).toBe('pericias')
+  })
+})
+
+describe('perícias livres fora do modo graus (achado do Codex, PR do Two Piece)', () => {
+  const def = sistemaEmBranco() as Record<string, unknown>
+  const pericias = def.pericias as Record<string, unknown>
+  const r = validarSistema({ ...def, nome: 'Teste livres', pericias: { ...pericias, livres: true } }, { id: 'autoral-' + 'e'.repeat(32), autor: 'Wed' })
+  it('o total digitado (modo "bônus") numa perícia livre não se perde ao normalizar a ficha', () => {
+    if (!r.ok) throw new Error(JSON.stringify(r.erros))
+    expect(r.sistema.rolagem).not.toBe('graus'); expect(r.sistema.pericias?.modo).toBe('treino'); expect(r.sistema.pericias?.livres).toBe(true)
+    const d = normalizarFicha(r.sistema, { ...fichaVazia(r.sistema), periciasExtras: [{ id: 'x_abc123', nome: 'Minha perícia' }], manual: { mods: {}, derivados: {}, pericias: { x_abc123: 7 } } })
+    expect(d.manual?.pericias.x_abc123).toBe(7)
   })
 })

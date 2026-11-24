@@ -2,11 +2,10 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
-import confetti from 'canvas-confetti'
 import { detectarCritico } from '@/lib/dice'
 import { somCritico, somFalha, somRolagem } from '@/lib/sons'
 import { detalheDaRolagem, notacao3D } from '@/lib/dados3d'
-import { lerPreferencias, movimentoReduzido } from '@/lib/preferencias'
+import { lerPreferencias, movimentoReduzido, usePreferencias } from '@/lib/preferencias'
 
 export type Rolagem = {
   /** O que foi rolado (ex.: "Força", "Bola de fogo"). */
@@ -43,9 +42,12 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
 
   // Vai direto para o <body>: assim fica no meio da tela mesmo dentro de painéis com efeitos (blur, transform).
   const noNavegador = useSyncExternalStore(() => () => {}, () => true, () => false)
+  const dados3d = usePreferencias().dados3d
 
   useEffect(() => {
-    if (!noNavegador) return
+    // Sem "Dados 3D" (Perfil › Jogabilidade), nem baixa o motor: ele nunca era usado mesmo assim (só a rolagem
+    // já conferia a preferência). Ligando de novo, o motor carrega na hora, pronto para a próxima rolagem.
+    if (!noNavegador || !dados3d || box.current) return
     let cancelado = false
     void (async () => {
       try {
@@ -64,7 +66,7 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
       } catch (e) { console.warn('Dados 3D indisponíveis:', e) }
     })()
     return () => { cancelado = true; timers.current.forEach(clearTimeout) }
-  }, [id, noNavegador])
+  }, [id, noNavegador, dados3d])
 
   const fechar = useCallback(() => {
     timers.current.forEach(clearTimeout); timers.current = []
@@ -95,7 +97,7 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
         setFase('cartao')
         if (critico === 'critico') {
           if (comSom) somCritico()
-          if (pref.confetes && !movimentoReduzido()) confetti({ particleCount: 140, spread: 80, origin: { y: 0.55 }, colors: ['#b99bff', '#ed9cd8', '#fbbf24', '#ffffff'] })
+          if (pref.confetes && !movimentoReduzido()) void import('canvas-confetti').then(({ default: confetti }) => confetti({ particleCount: 140, spread: 80, origin: { y: 0.55 }, colors: ['#b99bff', '#ed9cd8', '#fbbf24', '#ffffff'] }))
         } else if (critico === 'falha' && comSom) somFalha()
         timers.current.push(setTimeout(() => { if (minha === rodada.current) fechar() }, TEMPO_CARTAO))
       }

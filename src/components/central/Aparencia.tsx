@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ImagePlus, RotateCcw, Trash2 } from 'lucide-react'
+import { ImagePlus, RotateCcw, Trash2, Zap, ZapOff } from 'lucide-react'
 import { enviarImagemNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
+import { mudarPreferencias, usePreferencias } from '@/lib/preferencias'
 import { TEMAS, type Tema } from '@/lib/tema'
 import { aplicarVisual, CORES_PRONTAS, FONTES, limparVisual, TAMANHOS, type Visual } from '@/lib/visual'
 
@@ -21,6 +22,9 @@ export default function Aparencia({ perfilId, inicial, tema, escolherTema, salvo
   const [enviando, setEnviando] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const ultimo = useRef(JSON.stringify(inicial))
+  const dados3d = usePreferencias().dados3d
+  // Modo de desempenho (v0.36.9): liga de uma vez as três coisas mais pesadas para aparelhos simples.
+  const modoDesempenho = v.movimento === 'reduzido' && v.efeitos === 'leves' && !dados3d
 
   async function enviar(novo: Visual) {
     setEstado('salvando')
@@ -48,6 +52,11 @@ export default function Aparencia({ perfilId, inicial, tema, escolherTema, salvo
     setEnviando(true); setErro('')
     try { mudar({ fundo: await enviarImagemNuvem('imagens', f, 1920), fundoEscuro: v.fundoEscuro ?? 40 }) }
     catch (e) { setErro(e instanceof Error ? e.message : 'Falha ao enviar a imagem.') } finally { setEnviando(false) }
+  }
+  // Liga/desliga de uma vez: dados 3D (deste aparelho), movimento e efeitos (do perfil).
+  function alternarDesempenho() {
+    mudarPreferencias({ dados3d: modoDesempenho })
+    mudar({ movimento: modoDesempenho ? undefined : 'reduzido', efeitos: modoDesempenho ? undefined : 'leves' })
   }
 
   const rotulo = { salvo: '✓ Salvo no seu perfil', salvando: '☁️ Salvando…', pendente: '✏️ Salvando em instantes…', erro: '⚠️ Não salvou' }[estado]
@@ -138,12 +147,19 @@ export default function Aparencia({ perfilId, inicial, tema, escolherTema, salvo
     <section className={bloco} aria-labelledby="ap-conforto">
       <h2 id="ap-conforto" className="text-lg font-bold">🌙 Conforto</h2>
       <p className="mt-1 text-sm text-(--a-bfb2cf)">Para quem enjoa com animações ou usa um aparelho mais simples.</p>
+      <button type="button" aria-pressed={modoDesempenho} onClick={alternarDesempenho}
+        className={'mt-3 flex w-full items-center gap-3 rounded-xl border-2 px-3 py-3 text-left transition ' + (modoDesempenho ? 'border-emerald-400 bg-emerald-950/40' : 'border-(--a-55456e) bg-(--s-171325)/80 hover:border-(--a-6d5690)')}>
+        {modoDesempenho ? <Zap size={20} className="shrink-0 text-emerald-300" /> : <ZapOff size={20} className="shrink-0 text-(--a-a99bbb)" />}
+        <span className="min-w-0 flex-1"><span className="block font-semibold">{modoDesempenho ? '✓ ' : ''}Modo de desempenho</span>
+          <span className="block text-xs text-(--a-a99bbb)">Liga de uma vez: sem dados 3D, sem animações nem confetes, sem vidro desfocado. Para celular, tablet ou PC mais simples.</span></span>
+      </button>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <button type="button" aria-pressed={v.movimento === 'reduzido'} onClick={() => mudar({ movimento: v.movimento === 'reduzido' ? undefined : 'reduzido' })} className={chip(v.movimento === 'reduzido') + ' text-left'}>
           <span className="block font-semibold">{v.movimento === 'reduzido' ? '✓ ' : ''}Reduzir movimento</span><span className="block text-xs text-(--a-a99bbb)">Sem animações, transições nem confetes.</span></button>
         <button type="button" aria-pressed={v.efeitos === 'leves'} onClick={() => mudar({ efeitos: v.efeitos === 'leves' ? undefined : 'leves' })} className={chip(v.efeitos === 'leves') + ' text-left'}>
           <span className="block font-semibold">{v.efeitos === 'leves' ? '✓ ' : ''}Efeitos leves</span><span className="block text-xs text-(--a-a99bbb)">Sem vidro desfocado nem brilhos: mais leve e com mais contraste.</span></button>
       </div>
+      <p className="mt-2 text-xs text-(--a-a99bbb)">Dados 3D fica no aparelho; movimento e efeitos ficam salvos no perfil.</p>
     </section>
   </div>
 }

@@ -17,14 +17,16 @@ export default function ReprodutorCinema({ estado, desvio }: { estado: EstadoCin
     if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
       const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; document.head.appendChild(s)
     }
+    let timer: number | null = null
     const iniciar = () => {
       if (!ativo || player.current || !host.current || !w.YT?.Player) return
+      if (timer) { clearInterval(timer); timer = null } // já criou: para de checar a cada 250 ms
       const el = document.createElement('div'); host.current.appendChild(el)
       player.current = new w.YT.Player(el, { width: '100%', height: '100%', playerVars: { controls: 0, playsinline: 1, origin: location.origin }, events: { onReady: () => { if (ativo) setPronto(true) }, onError: () => { if (ativo) setErro('Este vídeo não pode ser reproduzido aqui. Escolha outro.') } } })
     }
     iniciar()
-    const timer = window.setInterval(iniciar, 250)
-    return () => { ativo = false; clearInterval(timer); player.current?.destroy(); player.current = null; ultimo.current = '' }
+    if (!player.current) timer = window.setInterval(iniciar, 250)
+    return () => { ativo = false; if (timer) clearInterval(timer); player.current?.destroy(); player.current = null; ultimo.current = '' }
   }, [])
   useEffect(() => {
     if (!pronto) return

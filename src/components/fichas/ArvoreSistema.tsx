@@ -2,9 +2,10 @@
 
 import { useCallback, useState, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { toast } from 'sonner'
 import { GitBranch, LockKeyhole, X } from 'lucide-react'
+import { movimentoReduzido } from '@/lib/preferencias'
 import type { DadosFicha, Sistema } from '@/lib/sistemas/tipos'
 import { devolverNo, liberarNo, sincronizarPoderes, type Arvore } from '@/lib/sistemas/arvore'
 import { lerPoderes } from '@/lib/sistemas/inventario'
@@ -68,7 +69,7 @@ export default function ArvoreSistema({ s, d, onChange, somenteLeitura, children
         className="mt-1 w-full rounded-lg border border-(--a-5e4b78) bg-(--s-151123) p-2 text-sm text-white" /></label>}
   </motion.div>
 
-  return <section className="space-y-4 rounded-2xl border border-(--ficha-borda) bg-(--ficha-cartao) p-4" aria-label="Árvore do sistema">
+  return <MotionConfig reducedMotion={movimentoReduzido() ? 'always' : 'user'}><section className="space-y-4 rounded-2xl border border-(--ficha-borda) bg-(--ficha-cartao) p-4" aria-label="Árvore do sistema">
     <div>
       <h2 className="flex items-center gap-2 text-lg font-bold text-(--ficha-acento) [font-family:var(--ficha-fonte)]"><GitBranch size={20} /> Árvore de habilidades</h2>
       <p className="mt-1 text-sm text-(--a-cfc0df)">{arvore?.dica ?? 'Habilidades extras que o mestre cria para o personagem.'} Nada aqui muda a ficha sozinho.</p>
@@ -158,5 +159,5 @@ export default function ArvoreSistema({ s, d, onChange, somenteLeitura, children
           {aberto === m.id && detalhe(m)}
         </li>)}</ol>}
     </div>}
-  </section>
+  </section></MotionConfig>
 }

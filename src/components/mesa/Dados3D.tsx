@@ -1,8 +1,8 @@
 'use client'
 
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
-import confetti from 'canvas-confetti'
 import { detectarCritico } from '@/lib/dice'
+import { movimentoReduzido } from '@/lib/preferencias'
 import { somCritico, somFalha, somRolagem } from '@/lib/sons'
 
 export type Dados3DHandle = {
@@ -104,12 +104,12 @@ const Dados3D = forwardRef<Dados3DHandle, { somAtivo: boolean }>(function Dados3
         setTimeout(() => {
           if (critico === 'critico') {
             if (somAtivoRef.current) somCritico()
-            confetti({
+            if (!movimentoReduzido()) void import('canvas-confetti').then(({ default: confetti }) => confetti({
               particleCount: 120,
               spread: 75,
               origin: { y: 0.7 },
               colors: ['#f59e0b', '#fbbf24', '#fde68a', '#ffffff'],
-            })
+            }))
           } else if (somAtivoRef.current) {
             somFalha()
           }

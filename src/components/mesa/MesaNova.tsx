@@ -162,7 +162,13 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const recarregarEmBreve = useCallback(() => { if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(() => void carregar(), 150) }, [carregar])
 
   useEffect(() => { void carregar() }, [carregar])
-  useEffect(() => { const t = setInterval(() => void carregar(), tempoReal ? 30000 : 4000); return () => clearInterval(t) }, [carregar, tempoReal])
+  // Aba em segundo plano: não gasta rede/CPU; ao voltar, recarrega na hora para não ficar com estado velho.
+  useEffect(() => {
+    const t = setInterval(() => { if (document.visibilityState === 'visible') void carregar() }, tempoReal ? 30000 : 4000)
+    const volta = () => { if (document.visibilityState === 'visible') void carregar() }
+    document.addEventListener('visibilitychange', volta)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', volta) }
+  }, [carregar, tempoReal])
   // Mesa de Som (v0.36.5): o estado mora aqui para o ambiente continuar com o painel fechado.
   const enviarSom = useCallback((evento: string, payload: Record<string, unknown>) => { void canal.current?.send({ type: 'broadcast', event: evento, payload }) }, [])
   const mesaSom = useMesaDeSom({ campanhaId, eu: e?.eu ?? '', admin: e?.campanha.meuPapel === 'mestre' || e?.campanha.meuPapel === 'comestre', enviar: enviarSom })

@@ -81,10 +81,13 @@ export default function Cinema() {
     return () => clearTimeout(t)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   // A sala continua atualizando a cada 2,5 s (estado, quem está e chat). Também é o “estou aqui” da lista de pessoas.
+  // Com a aba em segundo plano, não consulta (economiza rede/bateria — e quem saiu da aba some da lista, como deveria).
   useEffect(() => {
     if (!ativa) return
-    const t = window.setInterval(() => { void consultar(ativa).catch(e => { if (e instanceof ErroNuvem && e.status === 404) { setAviso('A sala foi encerrada pelo anfitrião.'); sairDaTela() } }) }, 2500)
-    return () => clearInterval(t)
+    const consultarSeVisivel = () => { if (document.visibilityState === 'visible') void consultar(ativa).catch(e => { if (e instanceof ErroNuvem && e.status === 404) { setAviso('A sala foi encerrada pelo anfitrião.'); sairDaTela() } }) }
+    const t = window.setInterval(consultarSeVisivel, 2500)
+    document.addEventListener('visibilitychange', consultarSeVisivel)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', consultarSeVisivel) }
   }, [ativa, consultar])
   useEffect(() => { const el = lista.current; if (el && aba === 'chat') el.scrollTop = el.scrollHeight }, [mensagens, aba])
   const trocarAba = (a: Aba) => { abaRef.current = a; setAba(a); if (a === 'chat') setNaoLidas(0) }

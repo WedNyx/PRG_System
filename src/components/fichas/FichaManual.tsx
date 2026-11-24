@@ -17,6 +17,7 @@ import PainelDoSistema, { FaixaDoSistema, RECURSOS_NO_PAINEL } from './PaineisSi
 import AtributosLua from './AtributosLua'
 import { AtributosGraus, PericiasGraus, RegrasDoSistema, TabelasDoSistema } from './FichaGraus'
 import RolagemCentral, { type RolagemCentralHandle } from '@/components/dados/RolagemCentral'
+import BotaoRolarFlutuante from './BotaoRolarFlutuante'
 import { InventarioFicha, PoderesFicha } from './Inventario'
 import ArvoreHabilidades from './Arvore'
 import ArvoreDndOficial from './ArvoreDndOficial'
@@ -268,6 +269,7 @@ export default function FichaManual({ sistema: s, dados: d, onChange, somenteLei
     {/* eslint-disable-next-line @next/next/no-img-element */}
     {s.visual?.logo && <img src={s.visual.logo} alt={'Logo de ' + s.nome} data-logo-sistema className="ficha-logo mx-auto mb-3 block max-h-28 w-auto max-w-full object-contain drop-shadow-[0_4px_18px_#000a]" />}
     <RolagemCentral ref={central} />
+    {s.rolagem !== 'assimilacao' && <BotaoRolarFlutuante rolar={rolarExpr} />}
     {descansando && <JanelaDescanso s={s} d={d} onChange={onChange} rolarTotal={rolarTotal} fechar={() => setDescansando(false)} />}
     {!bloqueada && <div className="ficha-modos mb-3 flex flex-wrap items-center gap-2">
       <div role="radiogroup" aria-label="Modo da ficha" className="flex gap-1 rounded-2xl border border-(--a-55456e) bg-(--s-171325)/90 p-1">

@@ -1,5 +1,6 @@
 import { ator, linkCampanha, nomeDaCampanha, notificar, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi, checarOrigem } from '@/lib/nuvem/servidor'
 import { isUuid, normalizarExcecoes, podeAdministrar } from '@/lib/nuvem/validacao'
+import { devolverFichasDe } from '@/lib/nuvem/devolverFicha'
 
 export const dynamic = 'force-dynamic'
 type Ctx = { params: Promise<{ id: string; aid: string }> }
@@ -43,7 +44,10 @@ export const DELETE = rota<Ctx>(async (req, { params }) => {
   if (!saindo && !podeAdministrar(meu)) throw new ErroApi(403, 'Sem permissão para remover participantes.')
   if (!saindo && meu === 'comestre' && alvo === 'comestre') throw new ErroApi(403, 'Só o mestre remove co-mestres.')
   await rest(`prg_campanha_membros?campanha_id=eq.${q(id)}&aventureiro_id=eq.${q(aid)}`, { method: 'DELETE' })
-  // As fichas de campanha do jogador ficam arquivadas (não são apagadas).
-  await rest(`prg_fichas?campanha_id=eq.${q(id)}&dono_id=eq.${q(aid)}`, { method: 'PATCH', body: JSON.stringify({ status: 'arquivada' }) })
-  return ok({ ok: true })
+  // v0.37.0: as fichas de campanha do jogador voltam para ele como fichas avulsas (antes ficavam “arquivadas” sem saída).
+  const nomeC = await nomeDaCampanha(id)
+  const devolvidas = await devolverFichasDe(id, aid, nomeC)
+  if (!saindo) await notificar([{ destinatario_id: aid, campanha_id: id, tipo: 'removido', titulo: `🚪 O mestre tirou você de ${nomeC}`,
+    texto: devolvidas ? 'Suas fichas dessa campanha voltaram para as suas fichas avulsas.' : '' }], eu)
+  return ok({ ok: true, devolvidas })
 })

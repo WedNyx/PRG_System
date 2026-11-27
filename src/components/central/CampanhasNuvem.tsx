@@ -7,6 +7,7 @@ import { CAMPOS, REGRAS, permissoesPadrao, type Modelo, type Permissoes, type Re
 import { ESTADOS, ESTADO_TITULO, type EstadoCampanha } from '@/lib/nuvem/validacao'
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import PainelFichasCampanha from './PainelFichasCampanha'
+import BuscarArroba from './BuscarArroba'
 import CartaoCapa, { selo } from './CartaoCapa'
 import { enviarImagemNuvem } from '@/lib/nuvem/cliente'
 import SeletorSistemaCampanha from './SeletorSistemaCampanha'
@@ -21,8 +22,8 @@ type Campanha = {
   id: string; nome: string; descricao: string; sistema: string; modelo_padrao: Modelo
   permissoes: Permissoes; config_progressao?: ConfiguracaoProgressao; estado: EstadoCampanha; mestre_id: string; meuPapel: 'mestre' | 'comestre' | 'jogador' | 'espectador'; pendencias?: number; sessao_aberta?: boolean; capa_url?: string | null
 }
-type Membro = { aventureiro_id: string; papel: string; excecoes?: Partial<Permissoes>; aventureiro: { apelido: string; avatar: string | null } | null }
-type Convite = { codigo: string; expira_em: string; usos: number; max_usos: number; situacao: string }
+type Membro = { aventureiro_id: string; papel: string; excecoes?: Partial<Permissoes>; aventureiro: { apelido: string; avatar: string | null; usuario?: string } | null }
+type Convite = { codigo: string; expira_em: string; usos: number; max_usos: number; situacao: string; para?: { apelido: string; usuario: string } | null }
 type Pedido = { id: string; mensagem: string; aventureiro: { apelido: string; avatar: string | null } | null }
 type Detalhe = { campanha: Campanha; membros: Membro[]; convites: Convite[]; solicitacoes: Pedido[] }
 
@@ -120,11 +121,18 @@ function FormCampanha({ aventureiroId, campanha, onFechar }: { aventureiroId: st
   const [fontesExtras, setFontesExtras] = useState<string[]>(lerConfiguracaoProgressao(campanha?.config_progressao).fontesExtras ?? [])
   const [erro, setErro] = useState('')
   const [salvando, setSalvando] = useState(false)
+  // v0.37.0: já na criação dá para chamar os jogadores pelo @ (cada um recebe o convite no sino).
+  const [chamados, setChamados] = useState<string[]>([])
   async function salvar(e: React.FormEvent) {
     e.preventDefault(); setSalvando(true); setErro('')
     try {
       const body = { nome, descricao, sistema, modeloPadrao: modelo, permissoes: regras, ...(sistemaDaCampanha(sistema) === 'dnd5e-srd' ? { configProgressao: { modo: modoProgressao, baseLivro, fontes, fontesExtras } } : {}) }
-      await api(campanha ? 'campanhas/' + campanha.id : 'campanhas', { method: campanha ? 'PATCH' : 'POST', body, aventureiro: aventureiroId })
+      const r = await api<{ campanha?: { id: string } }>(campanha ? 'campanhas/' + campanha.id : 'campanhas', { method: campanha ? 'PATCH' : 'POST', body, aventureiro: aventureiroId })
+      const falhas: string[] = []
+      if (!campanha && r.campanha?.id) for (const u of chamados) {
+        try { await api(`campanhas/${r.campanha.id}/convites`, { method: 'POST', body: { usuario: u }, aventureiro: aventureiroId }) } catch (er) { falhas.push(`@${u}: ${msg(er)}`) }
+      }
+      if (falhas.length) window.alert('A campanha foi criada, mas alguns convites não foram:\n' + falhas.join('\n'))
       onFechar(true)
     } catch (e) { setErro(msg(e)); setSalvando(false) }
   }
@@ -144,6 +152,13 @@ function FormCampanha({ aventureiroId, campanha, onFechar }: { aventureiroId: st
       {CAMPOS.map(campo => <label key={campo.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-(--a-55456e) p-3 text-sm"><span>{campo.titulo}</span>
         <select value={regras[campo.id]} onChange={e => setRegras(a => ({ ...a, [campo.id]: e.target.value as Regra }))} className="rounded-lg border border-(--a-70588c) bg-(--s-151123) p-2 text-white">{REGRAS.map(r => <option key={r.id} value={r.id}>{r.titulo}</option>)}</select></label>)}
     </fieldset>
+    {!campanha && <div className="space-y-2" data-chamar-na-criacao>
+      <p className="font-semibold">Chamar jogadores <span className="text-xs font-normal text-(--a-ab9bbc)">(opcional)</span></p>
+      <p className="text-xs text-(--a-ab9bbc)">Digite o @ de cada um. Eles recebem o convite no sino e entram direto ao aceitar. Dá para chamar mais gente depois.</p>
+      <BuscarArroba aventureiroId={aventureiroId} esconder={chamados} escolher={u => setChamados(c => c.includes(u) || c.length >= 20 ? c : [...c, u])} />
+      {chamados.length > 0 && <ul className="flex flex-wrap gap-1.5">{chamados.map(u => <li key={u} className="inline-flex items-center gap-1 rounded-full bg-(--s-3a2a53) py-1 pl-3 pr-1 text-sm">@{u}
+        <button type="button" onClick={() => setChamados(c => c.filter(x => x !== u))} aria-label={'Tirar @' + u} className="rounded-full p-1 hover:bg-white/10"><X size={13} /></button></li>)}</ul>}
+    </div>}
     {erro && <p role="alert" className="text-sm text-red-200">{erro}</p>}
     <button type="submit" disabled={salvando} className={btnPrim}>{salvando ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Salvar</button>
   </form>
@@ -230,7 +245,7 @@ function Gerenciar({ aventureiroId, id, onVoltar, onEditar }: { aventureiroId: s
         const souEu = m.aventureiro_id === aventureiroId
         return <li key={m.aventureiro_id} className="flex flex-wrap items-center gap-3 rounded-xl bg-(--s-171325) p-3">
           <Avatar a={m.aventureiro} />
-          <div className="min-w-0 flex-1"><p className="font-semibold">{m.aventureiro?.apelido}{souEu && ' (você)'}</p>
+          <div className="min-w-0 flex-1"><p className="font-semibold">{m.aventureiro?.apelido}{souEu && ' (você)'}{m.aventureiro?.usuario && <span className="ml-1.5 text-xs font-normal text-(--a-b5a5c8)">@{m.aventureiro.usuario}</span>}</p>
             <p className="text-xs text-(--a-b5a5c8)">{m.papel === 'mestre' ? '👑 Mestre' : m.papel === 'comestre' ? '👑 Co-mestre' : m.papel === 'espectador' ? '👁️ Espectador (só assiste)' : '⚔️ Jogador'}{m.excecoes && Object.keys(m.excecoes).length ? ' · com exceções de permissão' : ''}</p></div>
           {mestre && m.papel !== 'mestre' && <select aria-label={'Papel de ' + m.aventureiro?.apelido} value={m.papel} disabled={ocupado}
             onChange={e => acao(() => call(`campanhas/${id}/membros/${m.aventureiro_id}`, 'PATCH', { papel: e.target.value }))}
@@ -239,7 +254,7 @@ function Gerenciar({ aventureiroId, id, onVoltar, onEditar }: { aventureiroId: s
           {m.papel !== 'mestre' && (souEu || (admin && !(c.meuPapel === 'comestre' && m.papel === 'comestre'))) &&
             <button type="button" disabled={ocupado} title={souEu ? 'Sair da campanha' : 'Remover'} aria-label={souEu ? 'Sair da campanha' : 'Remover ' + m.aventureiro?.apelido}
               onClick={() => acao(async () => { await call(`campanhas/${id}/membros/${m.aventureiro_id}`, 'DELETE'); if (souEu) onVoltar() },
-                souEu ? 'Sair desta campanha? Suas fichas dela serão arquivadas.' : `Remover ${m.aventureiro?.apelido}? As fichas dele nesta campanha serão arquivadas.`)}
+                souEu ? 'Sair desta campanha? Suas fichas dela voltam para as suas fichas avulsas.' : `Remover ${m.aventureiro?.apelido}? As fichas dele nesta campanha voltam para ele como fichas avulsas.`)}
               className="rounded-lg p-2 text-[#f2a9c3] hover:bg-[#4b253a]">{souEu ? <DoorOpen size={18} /> : <UserMinus size={18} />}</button>}
         </li>
       })}</ul>
@@ -250,12 +265,19 @@ function Gerenciar({ aventureiroId, id, onVoltar, onEditar }: { aventureiroId: s
     {admin && <section className="rounded-2xl border border-(--a-55456e) bg-(--s-201a32) p-5">
       <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">Convites</h3>
         <button type="button" disabled={ocupado || c.estado === 'encerrada'} onClick={() => acao(() => call(`campanhas/${id}/convites`, 'POST', { dias: 7, maxUsos: 20 }))} className={btn}><Link2 size={16} /> Gerar convite (7 dias)</button></div>
-      <p className="mt-2 text-xs text-(--a-ab9bbc)">Quem usar o convite envia um pedido; você aceita ou recusa aqui. Para renovar, gere um novo e revogue o antigo.</p>
+      <div className="mt-3" data-convidar-arroba>
+        <BuscarArroba aventureiroId={aventureiroId} ocupado={ocupado || c.estado === 'encerrada'}
+          esconder={[...d.membros.map(m => m.aventureiro?.usuario ?? ''), ...d.convites.filter(v => v.situacao === 'valido' && v.para).map(v => v.para!.usuario)]}
+          escolher={u => acao(() => call(`campanhas/${id}/convites`, 'POST', { usuario: u }))} />
+        <p className="mt-1.5 text-xs text-(--a-ab9bbc)">Pelo @, a pessoa recebe o convite no sino e entra direto ao aceitar. Pelo link, quem usar envia um pedido e você aceita ou recusa aqui.</p>
+      </div>
       <ul className="mt-3 space-y-2">{d.convites.map(v => <li key={v.codigo} className={'flex flex-wrap items-center gap-3 rounded-xl bg-(--s-171325) p-3 ' + (v.situacao !== 'valido' ? 'opacity-60' : '')}>
-        <span className="font-mono text-lg tracking-widest">{v.codigo}</span>
-        <span className="flex-1 text-xs text-(--a-b5a5c8)">{v.situacao === 'valido' ? `Válido até ${new Date(v.expira_em).toLocaleDateString('pt-BR')} · ${v.usos}/${v.max_usos} usos` : v.situacao === 'revogado' ? 'Revogado' : v.situacao === 'expirado' ? 'Expirado' : 'Limite de usos atingido'}</span>
+        {v.para ? <span className="font-semibold">✉️ @{v.para.usuario}</span> : <span className="font-mono text-lg tracking-widest">{v.codigo}</span>}
+        <span className="flex-1 text-xs text-(--a-b5a5c8)">{v.para
+          ? (v.situacao === 'valido' ? `Esperando ${v.para.apelido} aceitar · até ${new Date(v.expira_em).toLocaleDateString('pt-BR')}` : v.situacao === 'esgotado' ? `${v.para.apelido} aceitou` : v.situacao === 'revogado' ? 'Revogado' : 'Expirou sem resposta')
+          : v.situacao === 'valido' ? `Válido até ${new Date(v.expira_em).toLocaleDateString('pt-BR')} · ${v.usos}/${v.max_usos} usos` : v.situacao === 'revogado' ? 'Revogado' : v.situacao === 'expirado' ? 'Expirado' : 'Limite de usos atingido'}</span>
         {v.situacao === 'valido' && <>
-          <button type="button" onClick={() => copiar(v.codigo)} className={btn}>{copiado === v.codigo ? <Check size={16} /> : <Copy size={16} />} {copiado === v.codigo ? 'Copiado' : 'Copiar link'}</button>
+          {!v.para && <button type="button" onClick={() => copiar(v.codigo)} className={btn}>{copiado === v.codigo ? <Check size={16} /> : <Copy size={16} />} {copiado === v.codigo ? 'Copiado' : 'Copiar link'}</button>}
           <button type="button" disabled={ocupado} onClick={() => acao(() => call(`campanhas/${id}/convites?codigo=${v.codigo}`, 'DELETE'), 'Revogar este convite?')} className="rounded-lg p-2 text-[#f2a9c3] hover:bg-[#4b253a]" aria-label="Revogar convite"><Trash2 size={18} /></button>
         </>}
       </li>)}</ul>

@@ -10,7 +10,7 @@ await call(M,'PATCH',`campanhas/${cid}/membros/${C}`,{papel:'comestre'})
 const nova=async nome=>(await call(M,'POST',`campanhas/${cid}/fichas`,{tipo:'jogador',jogadorId:J,sistema:'tormenta20',nome})).d.ficha.id
 const f1=await nova('Lyra'), f2=await nova('Borin')
 // Tirar da campanha
-r=await call(J,'POST',`campanhas/${cid}/fichas/${f1}`,{acao:'devolver'}); check('jogador não tira a ficha da campanha', r.s===403, r)
+r=await call(J,'POST',`campanhas/${cid}/fichas/${f2}`,{bloqueada:true}); check('jogador não usa as ações do mestre (travar)', r.s===403, r)
 r=await call(C,'POST',`campanhas/${cid}/fichas/${f1}`,{acao:'devolver'}); check('co-mestre tira a ficha da campanha', r.s===200, r)
 r=await call(J,'GET','fichas/'+f1); check('a ficha volta para o jogador como avulsa, com o nome da campanha', r.s===200 && !r.d.ficha.campanha_id && r.d.ficha.status==='ativa' && /\(de Mesa Tirar\)$/.test(r.d.ficha.nome), r.d.ficha && {c:r.d.ficha.campanha_id,s:r.d.ficha.status,n:r.d.ficha.nome})
 r=await call(M,'GET',`campanhas/${cid}/fichas`); check('e some da lista da campanha', !r.d.fichas.some(x=>x.id===f1), r.d.fichas.map(x=>x.nome))

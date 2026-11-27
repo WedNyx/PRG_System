@@ -9,11 +9,11 @@ import { sistemaPorId } from '@/lib/sistemas/catalogo'
 const nomeSistema = (id: string) => sistemaPorId(id)?.nome ?? (id.startsWith('autoral-') ? 'Sistema autoral' : id)
 
 type Previa = {
-  convite: { codigo: string; situacao: 'valido' | 'revogado' | 'expirado' | 'esgotado' }
+  convite: { codigo: string; situacao: 'valido' | 'revogado' | 'expirado' | 'esgotado'; direto?: boolean }
   campanha: { id: string; nome: string; descricao: string; sistema: string; estado: string; mestre: { apelido: string } | null } | null
   jaParticipa: boolean; pedidoPendente: boolean
 }
-const motivo = { revogado: 'Este convite foi revogado pelo mestre.', expirado: 'Este convite expirou. Peça um novo ao mestre.', esgotado: 'Este convite atingiu o limite de usos.' }
+const motivo = { revogado: 'Este convite foi revogado pelo mestre.', expirado: 'Este convite expirou. Peça um novo ao mestre.', esgotado: 'Este convite já foi usado.' }
 
 export default function ConvitePage({ params }: { params: Promise<{ codigo: string }> }) {
   const { codigo } = use(params)
@@ -23,6 +23,7 @@ export default function ConvitePage({ params }: { params: Promise<{ codigo: stri
   const [mensagem, setMensagem] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [enviado, setEnviado] = useState(false)
+  const [entrou, setEntrou] = useState<string | null>(null)
 
   useEffect(() => {
     if (!NUVEM_ATIVA) { setErro('Convites exigem a sincronização na nuvem, que ainda não está ativa.'); return }
@@ -32,7 +33,10 @@ export default function ConvitePage({ params }: { params: Promise<{ codigo: stri
 
   async function pedir() {
     setEnviando(true); setErro('')
-    try { await api('convites/' + encodeURIComponent(codigo), { method: 'POST', body: { mensagem } }); setEnviado(true) }
+    try {
+      const r = await api<{ entrou?: boolean; campanhaId?: string }>('convites/' + encodeURIComponent(codigo), { method: 'POST', body: { mensagem } })
+      if (r.entrou && r.campanhaId) setEntrou(r.campanhaId); else setEnviado(true)
+    }
     catch (e) { setErro(e instanceof ErroNuvem ? e.message : 'Falha de conexão.') } finally { setEnviando(false) }
   }
 
@@ -54,8 +58,10 @@ export default function ConvitePage({ params }: { params: Promise<{ codigo: stri
         <h1 className="mt-3 break-words text-2xl font-bold">{previa.campanha.nome}</h1>
         <p className="mt-1 text-sm text-(--a-c4b6d4)">{nomeSistema(previa.campanha.sistema)}{previa.campanha.mestre ? ' · Mestre: ' + previa.campanha.mestre.apelido : ''}</p>
         {previa.campanha.descricao && <p className="mt-4 whitespace-pre-wrap break-words text-left text-sm text-(--a-d1c4df)">{previa.campanha.descricao}</p>}
-        {previa.jaParticipa ? <p className="mt-6 text-[#a9f0c8]">Você já participa desta campanha.</p>
-          : enviado || previa.pedidoPendente ? <div className="mt-6 text-left">
+        {entrou ? <div className="mt-6"><p className="text-[#a9f0c8]">Você entrou na campanha! 🎉</p>
+            <Link href={'/central?secao=campanhas&campanha=' + entrou} className="mt-4 inline-block rounded-xl bg-(--a-7652ac) px-5 py-3 font-semibold">Abrir a campanha</Link></div>
+          : previa.jaParticipa ? <p className="mt-6 text-[#a9f0c8]">Você já participa desta campanha.</p>
+          : enviado || (previa.pedidoPendente && !previa.convite.direto) ? <div className="mt-6 text-left">
             <p className="text-center text-[#a9f0c8]">Pedido enviado! Assim que o mestre aceitar, a campanha aparece na sua Central.</p>
             <div className="mt-4 rounded-2xl border border-(--a-55456e) bg-(--s-1b1529) p-4 text-sm text-(--a-cfc0df)">
               <p className="font-semibold text-white">Enquanto isso:</p>
@@ -68,6 +74,11 @@ export default function ConvitePage({ params }: { params: Promise<{ codigo: stri
           </div>
           : previa.convite.situacao !== 'valido' ? <p className="mt-6 text-[#f2a9c3]">{motivo[previa.convite.situacao]}</p>
           : previa.campanha.estado === 'encerrada' ? <p className="mt-6 text-[#f2a9c3]">Esta campanha foi encerrada.</p>
+          : previa.convite.direto ? <div className="mt-6 space-y-3">
+            <p className="text-sm text-(--a-cfc0df)">O mestre chamou você pelo seu @. Aceitando, você entra direto como jogador.</p>
+            <button type="button" onClick={pedir} disabled={enviando} className="flex w-full items-center justify-center gap-2 rounded-xl bg-(--a-7652ac) px-5 py-3 font-semibold hover:bg-(--a-8b68c4) disabled:opacity-50">
+              {enviando ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />} Aceitar convite</button>
+          </div>
           : <div className="mt-6 space-y-3 text-left">
             <label className="block text-sm">Mensagem para o mestre (opcional)
               <textarea maxLength={300} rows={2} value={mensagem} onChange={e => setMensagem(e.target.value)} className="mt-2 w-full rounded-xl border border-(--a-70588c) bg-(--s-151123) p-3 text-white" placeholder="Ex.: Quero jogar com uma maga!" /></label>

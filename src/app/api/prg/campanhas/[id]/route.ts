@@ -14,13 +14,16 @@ export const GET = rota<Ctx>(async (req, { params }) => {
   const [campanha] = await rest<Record<string, unknown>[]>(`prg_campanhas?select=*&id=eq.${q(id)}&limit=1`)
   // O mundo (com páginas “só o mestre”) só sai pela rota /mundo, que filtra para os jogadores.
   if (campanha) { delete campanha.mundo; delete campanha.tabelas }
-  const membros = await rest<Record<string, unknown>[]>(
-    `prg_campanha_membros?select=aventureiro_id,papel,excecoes,entrou_em,aventureiro:prg_public_adventurers(apelido,avatar)&campanha_id=eq.${q(id)}&order=entrou_em.asc`)
+  // O @usuario (v0.37.0) só existe depois da migração 040: sem ela, a lista vem sem o @.
+  const lerMembros = (extra: string) => rest<Record<string, unknown>[]>(
+    `prg_campanha_membros?select=aventureiro_id,papel,excecoes,entrou_em,aventureiro:prg_public_adventurers(apelido,avatar${extra})&campanha_id=eq.${q(id)}&order=entrou_em.asc`)
+  const membros = await lerMembros(',usuario').catch(() => lerMembros(''))
   const admin = podeAdministrar(papel)
   let convites: (ConviteRow & { situacao: string })[] = []
   let solicitacoes: unknown[] = []
   if (admin) {
-    const cs = await rest<ConviteRow[]>(`prg_convites?select=codigo,expira_em,usos,max_usos,revogado,criado_em&campanha_id=eq.${q(id)}&order=criado_em.desc&limit=20`)
+    const lerConvites = (extra: string) => rest<ConviteRow[]>(`prg_convites?select=codigo,expira_em,usos,max_usos,revogado,criado_em${extra}&campanha_id=eq.${q(id)}&order=criado_em.desc&limit=30`)
+    const cs = await lerConvites(',para:prg_public_adventurers!prg_convites_para_id_fkey(apelido,usuario)').catch(() => lerConvites(''))
     convites = cs.map(c => ({ ...c, situacao: situacaoConvite(c) }))
     solicitacoes = await rest(`prg_solicitacoes?select=id,aventureiro_id,mensagem,criada_em,aventureiro:prg_public_adventurers(apelido,avatar)&campanha_id=eq.${q(id)}&estado=eq.pendente&order=criada_em.asc`)
   }

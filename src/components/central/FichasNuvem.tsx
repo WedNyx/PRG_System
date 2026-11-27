@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ChevronRight, Cloud, FileUp, History, Loader2, Plus, Send, Trash2, Upload } from 'lucide-react'
+import { ChevronRight, Cloud, FileUp, History, Loader2, Plus, Send, Trash2, Undo2, Upload } from 'lucide-react'
+import { textoDesvincular } from './PainelFichasCampanha'
 import { toast } from 'sonner'
 import { lerArquivo } from '@/lib/fichaArquivo'
 import CartaoCapa, { selo } from './CartaoCapa'
@@ -14,7 +15,7 @@ import { useOpcoesSistema } from '@/lib/sistemas/cliente'
 
 const linkFicha = (f: { id: string; sistema: string }) => (f.sistema === SISTEMA_V8 ? '/ficha-v8?nuvem=' : '/ficha?nuvem=') + f.id
 
-type Ficha = { id: string; nome: string; sistema: string; retrato?: string | null; status: string; observacao_mestre?: string; bloqueada?: boolean; campanha_id: string | null; atualizada_em: string; campanha: { nome: string } | null }
+type Ficha = { id: string; nome: string; sistema: string; retrato?: string | null; status: string; npc?: boolean; observacao_mestre?: string; bloqueada?: boolean; campanha_id: string | null; atualizada_em: string; campanha: { nome: string } | null }
 const TITULO_STATUS: Record<string, string> = { pendente: '⏳ Aguardando o mestre', recusada: '✋ Ajustes pedidos', arquivada: '📦 Arquivada' }
 const msg = (e: unknown) => e instanceof ErroNuvem ? e.message : 'Falha de conexão. Tente novamente.'
 
@@ -69,6 +70,17 @@ export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: st
     try { await api('fichas/' + f.id, { method: 'DELETE', aventureiro: aventureiroId }); await carregar() } catch (e) { setErro(msg(e)) } finally { setOcupado(false) }
   }
 
+  /** v0.37.0: tirar a ficha da campanha (também as “arquivadas” de campanhas de onde a pessoa já saiu). */
+  async function desvincular(f: Ficha) {
+    if (!f.campanha_id || f.npc || !window.confirm(textoDesvincular(f))) return
+    setOcupado(true); setErro('')
+    try {
+      const r = await api<{ resultado?: string }>(`campanhas/${f.campanha_id}/fichas/${f.id}`, { method: 'POST', aventureiro: aventureiroId, body: { acao: 'devolver' } })
+      toast.success(r.resultado === 'removida' ? 'Pronto! A cópia saiu da campanha.' : `📦 ${f.nome || 'Personagem'} voltou para as suas fichas avulsas.`)
+      await carregar()
+    } catch (e) { setErro(msg(e)) } finally { setOcupado(false) }
+  }
+
   const lista = fichas?.filter(f => tipo === 'independentes' ? !f.campanha_id : !!f.campanha_id) ?? null
   const grupos = new Map<string, Ficha[]>()
   if (tipo === 'campanhas') for (const f of lista ?? []) grupos.set(f.campanha?.nome ?? 'Campanha', [...(grupos.get(f.campanha?.nome ?? 'Campanha') ?? []), f])
@@ -96,6 +108,7 @@ export default function FichasNuvem({ aventureiroId, tipo }: { aventureiroId: st
     <div className="flex flex-wrap items-center gap-2">
       <Link href={linkFicha(f)} className="inline-flex items-center gap-1 rounded-lg bg-(--s-3b2b57) px-3 py-2 text-sm font-semibold text-(--a-e4d3ff) hover:bg-(--a-533b78)">Abrir <ChevronRight size={16} /></Link>
       {tipo === 'independentes' && <button type="button" disabled={ocupado} onClick={() => abrirEnvio(f)} className="inline-flex items-center gap-1 rounded-lg border border-(--a-70588c) px-3 py-2 text-sm hover:bg-(--s-38294d)"><Send size={15} /> Enviar para campanha</button>}
+      {f.campanha_id && !f.npc && <button type="button" disabled={ocupado} onClick={() => desvincular(f)} data-desvincular className="inline-flex items-center gap-1 rounded-lg border border-(--a-70588c) px-3 py-2 text-sm hover:bg-(--s-38294d)"><Undo2 size={15} /> {f.status === 'pendente' ? 'Cancelar envio' : 'Desvincular'}</button>}
       {f.campanha_id && <Link href={'/historico?ficha=' + f.id} className="inline-flex items-center gap-1 rounded-lg border border-(--a-70588c) px-3 py-2 text-sm hover:bg-(--s-38294d)"><History size={15} /> Histórico</Link>}
       {tipo === 'independentes' && <button type="button" disabled={ocupado} onClick={() => excluir(f)} aria-label={'Excluir ficha ' + f.nome} className="ml-auto rounded-lg p-2 text-[#f2a9c3] hover:bg-[#4b253a]"><Trash2 size={18} /></button>}
     </div>

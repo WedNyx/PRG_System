@@ -15,8 +15,9 @@ export async function GET() {
   if (!enabled() || !url() || !key()) return unavailable()
   try {
     const buscar = (sel: string) => fetch(url() + '/rest/v1/prg_public_adventurers?select=' + sel + '&order=created_at.asc&limit=300', { headers: headers(), cache: 'no-store' })
-    let response = await buscar('id,apelido,avatar,grupo,senha_hash,visual')
-    // Colunas novas podem não existir antes das migrações 025 (visual), 023 (senha) e 017 (grupo).
+    let response = await buscar('id,apelido,avatar,grupo,senha_hash,visual,usuario')
+    // Colunas novas podem não existir antes das migrações 040 (@usuario), 025 (visual), 023 (senha) e 017 (grupo).
+    if (response.status === 400) response = await buscar('id,apelido,avatar,grupo,senha_hash,visual')
     if (response.status === 400) response = await buscar('id,apelido,avatar,grupo,senha_hash')
     if (response.status === 400) response = await buscar('id,apelido,avatar,grupo')
     if (response.status === 400) response = await buscar('id,apelido,avatar')
@@ -49,14 +50,14 @@ export async function POST(request: NextRequest) {
   if (avatar !== null && (typeof avatar !== 'string' || avatar.length > 120_000 || !/^data:image\/jpeg;base64,[a-zA-Z0-9+/=]+$/.test(avatar)))
     return NextResponse.json({ erro: 'Foto inválida ou muito grande.' }, { status: 400 })
   try {
-    const response = await fetch(url() + '/rest/v1/prg_public_adventurers?select=id,apelido,avatar,grupo', {
+    const response = await fetch(url() + '/rest/v1/prg_public_adventurers?select=*', {
       method: 'POST', headers: { ...headers(), Prefer: 'return=representation' },
       body: JSON.stringify({ apelido: valid.apelido, avatar, grupo }),
       cache: 'no-store',
     })
     if (response.status === 409) return NextResponse.json({ erro: 'Esse apelido já está em uso.' }, { status: 409 })
     if (!response.ok) throw new Error('Falha ao cadastrar')
-    const result = await response.json()
-    return NextResponse.json({ perfil: result[0] }, { status: 201 })
+    const [p] = await response.json() as Record<string, unknown>[]
+    return NextResponse.json({ perfil: { id: p.id, apelido: p.apelido, avatar: p.avatar, grupo: p.grupo, usuario: p.usuario } }, { status: 201 })
   } catch { return NextResponse.json({ erro: 'Não foi possível cadastrar o aventureiro.' }, { status: 502 }) }
 }

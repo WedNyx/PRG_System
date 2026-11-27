@@ -27,6 +27,18 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.37.0', data: '2026-11-27',
+    titulo: '@ para chamar jogadores, desvincular personagem, feedback e a Homenagem a Leste',
+    itens: [
+      'Cada perfil ganhou um @ (tipo Discord): ele aparece no seu perfil e dá para trocar em “Editar perfil”. Os perfis antigos receberam um @ feito a partir do nome.',
+      'Convidar pelo @: na campanha (e já na hora de criar), digite o @ ou o nome de quem você quer chamar. A pessoa recebe o convite no sino e entra direto ao aceitar. O link de convite continua funcionando.',
+      'Desvincular personagem: o próprio jogador pode tirar a ficha dele da campanha (“Desvincular”), ou cancelar uma ficha enviada que ainda espera o mestre. A ficha volta para as fichas avulsas, nada se perde.',
+      'Ao sair (ou ser tirado) de uma campanha, as fichas voltam para as suas fichas avulsas em vez de ficarem arquivadas. As que tinham ficado arquivadas antes também voltaram.',
+      'Balão de feedback no canto da Central: mande uma ideia, um problema ou um elogio direto para o Wed (sem e-mail), com limite para ninguém lotar.',
+      'Homenagem a Leste: uma aba no canto com um agradecimento e o link para o código da plataforma no GitHub.',
+    ],
+  },
+  {
     versao: '0.36.10', data: '2026-11-24',
     titulo: 'Grimório da Ordem Paranormal com todos os rituais do livro',
     itens: [

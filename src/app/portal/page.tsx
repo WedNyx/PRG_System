@@ -14,6 +14,7 @@ import AjudaTela from '@/components/AjudaTela'
 import { aplicarVisual, limparVisual } from '@/lib/visual'
 import LuaLogo from '@/components/LuaDinamica'
 import CantoDaPlataforma from '@/components/CantoDaPlataforma'
+import Moldura from '@/components/perfil/Moldura'
 
 type Perfil = { id: string; apelido: string; avatar?: string; grupo?: string; protegido?: boolean; visual?: unknown }
 const GRUPO_KEY = 'prg-grupo-v1'
@@ -372,7 +373,10 @@ export default function PortalAventureiros() {
                   }}
                   className="flex w-full flex-col items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-(--a-b99bff)">
                   <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border-2 border-(--a-51466a) bg-(--s-28233e) text-5xl font-bold text-(--a-b99bff) shadow-xl transition-all duration-200 group-hover:scale-105 group-hover:border-(--a-b99bff) group-hover:shadow-[0_0_24px_#7654bb66]">
-                    {perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : perfil.apelido[0].toUpperCase()}
+                    {/* v0.37.1: com moldura, a foto vira um círculo com a moldura em volta. */}
+                    {limparVisual(perfil.visual).moldura
+                      ? <Moldura id={limparVisual(perfil.visual).moldura} className="w-[66%]"><span className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-full bg-(--s-342749) text-4xl">{perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : perfil.apelido[0].toUpperCase()}</span></Moldura>
+                      : perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : perfil.apelido[0].toUpperCase()}
                     {perfil.protegido && <span className="absolute bottom-1.5 right-1.5 rounded-full bg-black/70 px-1.5 py-0.5 text-sm" role="img" aria-label="Perfil com senha">🔒</span>}
                   </div>
                   <span className="max-w-full break-words text-center text-sm font-medium text-(--a-b4aeca) group-hover:text-white">{perfil.apelido}</span>

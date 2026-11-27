@@ -6,6 +6,9 @@ import { detectarCritico } from '@/lib/dice'
 import { somCritico, somFalha, somRolagem } from '@/lib/sons'
 import { detalheDaRolagem, notacao3D } from '@/lib/dados3d'
 import { lerPreferencias, movimentoReduzido, usePreferencias } from '@/lib/preferencias'
+import { colorsetDe, estiloDado, imagemTextura, PASTA_DADOS3D, type EstiloDado } from '@/lib/estilosDados'
+import { visualGuardado } from '@/lib/visual'
+import { aventureiroAtual } from '@/lib/nuvem/cliente'
 
 export type Rolagem = {
   /** O que foi rolado (ex.: "Força", "Bola de fogo"). */
@@ -18,11 +21,19 @@ export type Rolagem = {
   /** Linha extra embaixo do total (ex.: "Sucesso especial"). */
   nota?: string | null
   privada?: boolean
+  /** Estilo dos dados de quem rolou (v0.37.1). Sem ele, usa o do perfil deste aparelho. */
+  dado?: string | null
+}
+
+/** Estilo dos dados do perfil escolhido neste aparelho (Perfil › Aparência). */
+export function meuEstiloDado(): EstiloDado {
+  const id = aventureiroAtual()
+  return estiloDado(id ? visualGuardado(id).dado : undefined)
 }
 export type RolagemCentralHandle = { mostrar: (r: Rolagem) => void }
 
 type Corpo = { mass: number; sleepTimeLimit: number; linearDamping: number; angularDamping: number }
-type DiceBox = { initialize: () => Promise<void>; roll: (notacao: string) => Promise<unknown>; clearDice: () => void; world: { addBody: (b: Corpo) => void } }
+type DiceBox = { initialize: () => Promise<void>; roll: (notacao: string) => Promise<unknown>; clearDice: () => void; updateConfig: (c: Record<string, unknown>) => Promise<void>; world: { addBody: (b: Corpo) => void } }
 
 const TEMPO_MAX_DADOS = 6000, TEMPO_CARTAO = 4500, MAX_CHIPS = 24
 
@@ -33,6 +44,7 @@ const TEMPO_MAX_DADOS = 6000, TEMPO_CARTAO = 4500, MAX_CHIPS = 24
 const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(function RolagemCentral({ som = true }, ref) {
   const [id] = useState(() => 'dados-centro-' + Math.random().toString(36).slice(2, 9))
   const box = useRef<DiceBox | null>(null)
+  const estiloAtual = useRef('ametista')
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const rodada = useRef(0)
   const somRef = useRef(som)
@@ -54,8 +66,9 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
         // dice-box-threejs: aceita o resultado já sorteado (ex.: "1d20@7"), então a face de cima é a do servidor.
         const { default: DiceBox } = await import('@3d-dice/dice-box-threejs')
         const b = new DiceBox('#' + id, {
-          sounds: false, shadows: true, light_intensity: 0.9, gravity_multiplier: 400, baseScale: 110, strength: 1,
-          theme_customColorset: { name: 'prg-roxo', foreground: '#ffffff', background: '#7c3aed', outline: '#2e1065', texture: 'none', material: 'glass' },
+          // Texturas (mármore, estrelas, dragão…) ficam em /assets/dados3d/textures (v0.37.1).
+          assetPath: PASTA_DADOS3D, sounds: false, shadows: true, light_intensity: 0.9, gravity_multiplier: 400, baseScale: 110, strength: 1,
+          theme_customColorset: colorsetDe(estiloDado('ametista')),
         }) as unknown as DiceBox
         await b.initialize()
         // Os dados “assentam” mais rápido e tremem menos no fim (mesma física na simulação e na animação,
@@ -85,7 +98,8 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
     mostrar(r) {
       timers.current.forEach(clearTimeout); timers.current = []
       const minha = ++rodada.current
-      setAtual(r); setFase('rolando')
+      const estilo = r.dado !== undefined && r.dado !== null ? estiloDado(r.dado) : meuEstiloDado()
+      setAtual({ ...r, dado: estilo.id }); setFase('rolando')
       // Preferências do aparelho (Perfil › Jogabilidade, v0.36.5).
       const pref = lerPreferencias(), comSom = somRef.current && pref.somDados
       if (comSom) somRolagem()
@@ -104,9 +118,14 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
       const notacao = notacao3D(r.expressao, r.resultados)
       if (box.current && notacao && pref.dados3d) {
         try {
-          box.current.clearDice()
+          const b = box.current
+          b.clearDice()
           // O cartão aparece quando os dados param (ou depois de um tempo, se algo travar).
-          void box.current.roll(notacao).then(() => timers.current.push(setTimeout(mostrarCartao, 250)), mostrarCartao)
+          // v0.37.1: troca as cores/material para o estilo de quem rolou antes de jogar os dados.
+          void (async () => {
+            if (estiloAtual.current !== estilo.id) { await b.updateConfig({ theme_customColorset: colorsetDe(estilo) }); estiloAtual.current = estilo.id }
+            await b.roll(notacao)
+          })().then(() => timers.current.push(setTimeout(mostrarCartao, 250)), mostrarCartao)
           timers.current.push(setTimeout(mostrarCartao, TEMPO_MAX_DADOS))
         } catch (e) { console.warn('Erro ao animar dados:', e); timers.current.push(setTimeout(mostrarCartao, 250)) }
       } else timers.current.push(setTimeout(mostrarCartao, 250))
@@ -116,6 +135,7 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
   const critico = atual ? detectarCritico(atual.expressao, atual.resultados) : null
   const extras = atual ? atual.resultados.length - MAX_CHIPS : 0
   const det = atual ? detalheDaRolagem(atual.expressao, atual.resultados) : null
+  const est = estiloDado(atual?.dado)
   if (!noNavegador) return null
   return createPortal(<>
     {/* Fundo: escurece e brilha no centro enquanto rola; toque fecha. */}
@@ -132,7 +152,8 @@ const RolagemCentral = forwardRef<RolagemCentralHandle, { som?: boolean }>(funct
       <p className={'mt-1 bg-gradient-to-b bg-clip-text text-7xl font-black tabular-nums text-transparent ' + (critico === 'critico' ? 'from-amber-200 to-amber-500' : critico === 'falha' ? 'from-red-300 to-red-600' : 'from-(--a-e4d3ff) to-(--a-9f6bff)')}>{atual.total}</p>
       <div className="mt-3 flex flex-wrap justify-center gap-1.5">
         {atual.resultados.slice(0, MAX_CHIPS).map((n, i) => { const fora = det?.descartados.has(i)
-          return <span key={i} title={fora ? 'Descartado' : undefined} className={'flex h-9 min-w-9 items-center justify-center rounded-lg border px-1.5 text-base font-bold tabular-nums ' + (fora ? 'border-(--a-3d3152) bg-(--s-1a1528) text-(--a-7d6f92) line-through' : 'border-(--a-62527e) bg-(--s-2b2140)')}>{n}</span> })}
+          return <span key={i} title={fora ? 'Descartado' : undefined} data-chip-dado={est.id} className={'flex h-9 min-w-9 items-center justify-center rounded-lg border-2 px-1.5 text-base font-bold tabular-nums ' + (fora ? 'border-(--a-3d3152) bg-(--s-1a1528) text-(--a-7d6f92) line-through' : '')}
+            style={fora ? undefined : { backgroundColor: est.fundo, color: est.numero, borderColor: est.contorno, textShadow: '0 1px 2px rgba(0,0,0,.35)', ...(est.textura ? { backgroundImage: `url("${imagemTextura(est.textura)}")`, backgroundSize: '64px', backgroundBlendMode: 'multiply' } : {}) }}>{n}</span> })}
         {!!det?.modificador && <span className="flex h-9 items-center rounded-lg bg-[#1f3a2c] px-2 text-base font-bold tabular-nums text-emerald-200" title="Bônus somado aos dados">{det.modificador > 0 ? '+' : '−'}{Math.abs(det.modificador)}</span>}
         {extras > 0 && <span className="flex h-9 items-center px-1.5 text-sm text-(--a-b4aeca)">+{extras}</span>}
       </div>

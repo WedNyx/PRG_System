@@ -4,6 +4,8 @@
  */
 import { imagemDaPlataforma } from './imagens'
 import { TEMA_PADRAO, TEMAS, type Tema } from './tema'
+import { ehMoldura } from './molduras'
+import { ehEstiloDado } from './estilosDados'
 
 export type Fonte = 'fantasia' | 'elegante' | 'simples'
 export type Tamanho = 'p' | 'm' | 'g'
@@ -31,6 +33,10 @@ export type Visual = {
   movimento?: 'reduzido'
   /** Conforto (v0.36.5): 'leves' tira o vidro desfocado e os brilhos (mais leve em aparelhos simples). */
   efeitos?: 'leves'
+  /** Moldura em volta da foto (v0.37.1), vista por todo mundo. As especiais são conferidas no servidor. */
+  moldura?: string
+  /** Aparência dos dados (v0.37.1): quem rola usa o seu; na mesa todos veem. */
+  dado?: string
 }
 
 export const FONTES: { id: Fonte; nome: string; descricao: string }[] = [
@@ -69,6 +75,8 @@ export function limparVisual(v: unknown): Visual {
   if (TAMANHOS.some(t => t.id === o.tamanho)) r.tamanho = o.tamanho as Tamanho
   if (o.movimento === 'reduzido') r.movimento = 'reduzido'
   if (o.efeitos === 'leves') r.efeitos = 'leves'
+  if (ehMoldura(o.moldura)) r.moldura = o.moldura
+  if (ehEstiloDado(o.dado)) r.dado = o.dado
   return r
 }
 

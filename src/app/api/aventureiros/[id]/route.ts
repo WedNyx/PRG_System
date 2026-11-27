@@ -5,6 +5,7 @@ import { validarApelidoAventureiro } from '@/lib/auth/aventureiro'
 import { ehGrupo } from '@/lib/grupos'
 import { limparVisual } from '@/lib/visual'
 import { validarUsuario } from '@/lib/usuario'
+import { molduraPorId, podeUsarMoldura } from '@/lib/molduras'
 import { apagarCookie } from '@/lib/nuvem/senha'
 
 export const dynamic = 'force-dynamic'
@@ -44,6 +45,13 @@ export const PATCH = rota<Ctx>(async (req, { params }) => {
     // Aparência do perfil: só campos conhecidos; foto de fundo só do armazenamento da plataforma.
     const v = b.visual === null ? null : limparVisual(b.visual)
     if (v && JSON.stringify(v).length > 2000) throw new ErroApi(400, 'Aparência inválida.')
+    // Molduras especiais (v0.37.1): “Coroa do Mestre” só para quem mestra; as de homenagem, só para quem está na lista.
+    const m = v?.moldura ? molduraPorId(v.moldura) : undefined
+    if (v && m?.trava) {
+      const [eu] = await rest<{ usuario?: string }[]>(`prg_public_adventurers?select=usuario&id=eq.${q(id)}&limit=1`).catch(() => [])
+      const mestra = m.trava === 'mestre' ? (await rest<unknown[]>(`prg_campanhas?select=id&mestre_id=eq.${q(id)}&limit=1`)).length > 0 : false
+      if (!podeUsarMoldura(m.id, { mestre: mestra, usuario: eu?.usuario })) throw new ErroApi(403, m.trava === 'mestre' ? 'A Coroa do Mestre é de quem mestra uma campanha.' : `A moldura “${m.nome}” é especial.`)
+    }
     mud.visual = v && Object.keys(v).length ? v : null
   }
   if (!Object.keys(mud).length) throw new ErroApi(400, 'Nada para alterar.')

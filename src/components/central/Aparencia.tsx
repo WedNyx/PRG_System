@@ -6,6 +6,11 @@ import { enviarImagemNuvem, NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 import { mudarPreferencias, usePreferencias } from '@/lib/preferencias'
 import { TEMAS, type Tema } from '@/lib/tema'
 import { aplicarVisual, CORES_PRONTAS, FONTES, limparVisual, TAMANHOS, type Visual } from '@/lib/visual'
+import { api } from '@/lib/nuvem/cliente'
+import { MOLDURAS, podeUsarMoldura } from '@/lib/molduras'
+import { DADO_PADRAO, ESTILOS_DADOS } from '@/lib/estilosDados'
+import { AmostraMoldura } from '@/components/perfil/Moldura'
+import AmostraDado from '@/components/dados/AmostraDado'
 
 type Estado = 'salvo' | 'salvando' | 'pendente' | 'erro'
 const amostra = (matiz: number, l = 0.62, c = 0.16) => `oklch(${l} ${c} ${matiz})`
@@ -13,8 +18,8 @@ const bloco = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32)/90 p-4 sm:
 const chip = (ativo: boolean) => 'rounded-xl border px-3 py-2 text-sm transition ' + (ativo ? 'border-(--a-e4d3ff) bg-(--s-3a2c58) text-white' : 'border-(--a-55456e) text-(--a-cfc0df) hover:bg-(--s-2b2140)')
 
 /** Central → Aparência: tema, foto de fundo, cores, cartões, fonte e tamanho. Muda na hora e salva sozinho no perfil. */
-export default function Aparencia({ perfilId, inicial, tema, escolherTema, salvo }: {
-  perfilId: string; inicial: Visual; tema: Tema; escolherTema: (t: Tema) => void; salvo: (v: Visual) => void
+export default function Aparencia({ perfilId, inicial, tema, escolherTema, salvo, usuario, letra }: {
+  perfilId: string; inicial: Visual; tema: Tema; escolherTema: (t: Tema) => void; salvo: (v: Visual) => void; usuario?: string; letra?: string
 }) {
   const [v, setV] = useState<Visual>(inicial)
   const [estado, setEstado] = useState<Estado>('salvo')
@@ -23,6 +28,15 @@ export default function Aparencia({ perfilId, inicial, tema, escolherTema, salvo
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const ultimo = useRef(JSON.stringify(inicial))
   const dados3d = usePreferencias().dados3d
+  // Coroa do Mestre (v0.37.1): libera para quem mestra alguma campanha.
+  const [mestra, setMestra] = useState(false)
+  useEffect(() => {
+    if (!NUVEM_ATIVA) return
+    let ativo = true
+    api<{ campanhas: { meuPapel: string }[] }>('campanhas', { aventureiro: perfilId })
+      .then(r => { if (ativo) setMestra(r.campanhas.some(c => c.meuPapel === 'mestre')) }).catch(() => {})
+    return () => { ativo = false }
+  }, [perfilId])
   // Modo de desempenho (v0.36.9): liga de uma vez as três coisas mais pesadas para aparelhos simples.
   const modoDesempenho = v.movimento === 'reduzido' && v.efeitos === 'leves' && !dados3d
 
@@ -66,7 +80,7 @@ export default function Aparencia({ perfilId, inicial, tema, escolherTema, salvo
     <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-(--a-55456e) bg-(--s-171325)/80 px-4 py-3 text-sm">
       <span className="flex-1 text-(--a-cfc0df)">Tudo muda na hora. {NUVEM_ATIVA ? 'Fica salvo no seu perfil e vale em qualquer aparelho.' : 'Fica salvo neste aparelho.'}</span>
       {NUVEM_ATIVA && <span aria-live="polite" className={'rounded-full border px-2.5 py-1 text-xs ' + (estado === 'erro' ? 'border-red-800 text-red-200' : estado === 'salvo' ? 'border-emerald-700/60 text-emerald-200' : 'border-amber-700/60 text-amber-100')}>{rotulo}</span>}
-      <button type="button" onClick={() => definir(v.tema ? { tema: v.tema } : {})}
+      <button type="button" onClick={() => definir({ ...(v.tema ? { tema: v.tema } : {}), ...(v.moldura ? { moldura: v.moldura } : {}), ...(v.dado ? { dado: v.dado } : {}) })}
         className="inline-flex items-center gap-1.5 rounded-xl border border-(--a-62527e) px-3 py-1.5 text-xs hover:bg-(--s-2b2140)"><RotateCcw size={14} /> Voltar ao padrão do tema</button>
     </div>
     {erro && <p role="alert" className="rounded-xl border border-red-800/70 bg-red-950/40 p-3 text-sm text-red-200">{erro}</p>}
@@ -84,6 +98,32 @@ export default function Aparencia({ perfilId, inicial, tema, escolherTema, salvo
             </span>
             <span className="block bg-(--s-201a32)/95 px-2.5 py-2"><span className="block text-sm font-semibold">{t.nome}</span><span className="line-clamp-2 block text-[11px] text-(--a-bfb2cf)">{t.descricao}</span></span>
           </button> })}
+      </div>
+    </section>
+
+    <section className={bloco} aria-labelledby="ap-moldura" data-escolher-moldura>
+      <h2 id="ap-moldura" className="text-lg font-bold">🖼️ Moldura do perfil</h2>
+      <p className="mt-1 text-sm text-(--a-bfb2cf)">Um enfeite em volta da sua foto. Todo mundo vê: no portal, nas campanhas e na mesa.</p>
+      <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+        {[{ id: '', nome: 'Sem moldura', descricao: 'Só a foto', trava: undefined }, ...MOLDURAS].map(m => {
+          const ativo = (v.moldura ?? '') === m.id, livre = !m.id || podeUsarMoldura(m.id, { mestre: mestra, usuario })
+          return <button key={m.id || 'nenhuma'} type="button" disabled={!livre} aria-pressed={ativo} onClick={() => mudar({ moldura: m.id || undefined })}
+            title={livre ? m.descricao : '🔒 ' + m.descricao}
+            className={'flex flex-col items-center gap-2 rounded-xl border-2 px-1 pb-2 pt-4 text-center transition ' + (ativo ? 'border-(--a-e4d3ff) bg-(--s-3a2c58)' : 'border-(--a-48385e) hover:border-(--a-8b6cba)') + (livre ? '' : ' cursor-not-allowed opacity-45')}>
+            {m.id ? <AmostraMoldura id={m.id} letra={letra} /> : <span className="flex size-12 items-center justify-center rounded-full border border-(--a-62527e) bg-(--s-342749) text-lg font-bold text-(--a-d8c0ff)">{letra ?? '✦'}</span>}
+            <span className="mt-1 text-[11px] font-semibold leading-tight">{!livre && '🔒 '}{m.nome}</span>
+          </button> })}
+      </div>
+    </section>
+
+    <section className={bloco} aria-labelledby="ap-dados" data-escolher-dado>
+      <h2 id="ap-dados" className="text-lg font-bold">🎲 Seus dados</h2>
+      <p className="mt-1 text-sm text-(--a-bfb2cf)">A cara dos dados quando você rola. Na mesa, todo mundo vê os dados com o estilo de quem rolou.</p>
+      <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+        {ESTILOS_DADOS.map(e => { const ativo = (v.dado ?? DADO_PADRAO) === e.id
+          return <button key={e.id} type="button" aria-pressed={ativo} onClick={() => mudar({ dado: e.id === DADO_PADRAO ? undefined : e.id })} title={e.descricao}
+            className={'flex flex-col items-center gap-1 rounded-xl border-2 px-1 py-2 text-center transition ' + (ativo ? 'border-(--a-e4d3ff) bg-(--s-3a2c58)' : 'border-(--a-48385e) hover:border-(--a-8b6cba)')}>
+            <AmostraDado e={e} /><span className="text-[11px] font-semibold">{e.nome}</span></button> })}
       </div>
     </section>
 

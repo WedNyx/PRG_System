@@ -3,7 +3,7 @@ import { useId, type ReactNode } from 'react'
 const C = 68
 const pol = (r: number, g: number) => { const a = (g - 90) * Math.PI / 180; return [C + r * Math.cos(a), C + r * Math.sin(a)] }
 const f = (n: number) => Math.round(n * 10) / 10
-const volta = (n, ini = 0) => Array.from({ length: n }, (_, i) => ini + i * 360 / n)
+const volta = (n: number, ini = 0) => Array.from({ length: n }, (_, i) => ini + i * 360 / n)
 const estrela = (x: number, y: number, r: number, extra = '') => { const p = Array.from({ length: 8 }, (_, i) => { const a = i * Math.PI / 4 - Math.PI / 2, k = i % 2 ? r * .36 : r; return f(x + k * Math.cos(a)) + ',' + f(y + k * Math.sin(a)) }); return `<polygon ${extra} points="${p.join(' ')}"/>` }
 
 const MOLDURAS = [
@@ -146,7 +146,7 @@ const animationCss = "/* Animações: só quando \"Animadas\" está ligado e o a
 function Arte({ id, uid }: { id: string; uid: string }) {
  const m = MOLDURAS.find(m => m.id === id); if (!m) return null;
  const raw = '<defs>'+defs+'<mask id="m-anel"><rect x="-20" y="-20" width="176" height="176" fill="white"/><circle cx="68" cy="68" r="50" fill="black"/></mask></defs><g class="an">'+(details[id] || '')+m.arte()+'</g>';
- const markup = raw.replace(/id="([\w-]+)"/g, (_, x) => `id="${uid}-${x}"`).replace(/url\(#([\w-]+)\)/g, (_, x) => `url(#${uid}-${x})`);
+ const markup = raw.replace(/id="([\w-]+)"/g, (_, x: string) => `id="${uid}-${x}"`).replace(/url\(#([\w-]+)\)/g, (_, x: string) => `url(#${uid}-${x})`);
  return <><style>{animationCss}</style><g dangerouslySetInnerHTML={{ __html: markup }} /></>;
 }
 /** Envolve a foto redonda com a moldura escolhida. Sem moldura, devolve a foto como está. */

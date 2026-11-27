@@ -26,17 +26,21 @@ function MolduraViva({ id, children, className, efeitos }: { id: string; childre
   useEffect(() => {
     const el = caixa.current
     if (!efeitos || !el || !temEfeitos(id) || typeof IntersectionObserver === 'undefined') return
-    let parar: (() => void) | null = null
-    const ligar = () => {
-      if (parar || !palco.current || !svg.current) return
-      const tam = el.offsetWidth
-      if (tam < TAMANHO_MINIMO_EFEITOS || movimentoReduzido() || document.documentElement.dataset.efeitos === 'leves') return
-      parar = ligarEfeitos(id, palco.current, tam, svg.current)
+    let parar: (() => void) | null = null, visivel = false
+    // Pode ligar agora? (tamanho, e nem "movimento reduzido" nem "efeitos leves"); reavaliado a cada mudança.
+    const pode = () => el.offsetWidth >= TAMANHO_MINIMO_EFEITOS && !movimentoReduzido() && document.documentElement.dataset.efeitos !== 'leves'
+    // Liga/desliga ao vivo (achado do Codex): troca de preferência enquanto a moldura grande já está na tela.
+    const atualizar = () => {
+      if (visivel && pode()) { if (!parar && palco.current && svg.current) parar = ligarEfeitos(id, palco.current, el.offsetWidth, svg.current) }
+      else { parar?.(); parar = null }
     }
-    const desligar = () => { parar?.(); parar = null }
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) ligar(); else desligar() })
+    const io = new IntersectionObserver(([e]) => { visivel = e.isIntersecting; atualizar() })
     io.observe(el)
-    return () => { io.disconnect(); desligar() }
+    const media = window.matchMedia?.('(prefers-reduced-motion: reduce)')
+    media?.addEventListener('change', atualizar)
+    const mo = new MutationObserver(atualizar)
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-movimento', 'data-efeitos'] })
+    return () => { io.disconnect(); media?.removeEventListener('change', atualizar); mo.disconnect(); parar?.() }
   }, [id, efeitos, arte])
 
   return <span ref={caixa} className={'relative inline-flex shrink-0 ' + className} data-moldura={id}>

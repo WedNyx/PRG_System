@@ -1,5 +1,6 @@
 import { ator, lerJson, ok, papelNaCampanha, q, rest, rota, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar, situacaoConvite, validarCampanha, type ConviteRow } from '@/lib/nuvem/validacao'
+import { limparVisual } from '@/lib/visual'
 import { lerConfiguracaoProgressao, type ModoProgressao } from '@/lib/sistemas/modoProgressao'
 
 export const dynamic = 'force-dynamic'
@@ -17,7 +18,13 @@ export const GET = rota<Ctx>(async (req, { params }) => {
   // O @usuario (v0.37.0) só existe depois da migração 040: sem ela, a lista vem sem o @.
   const lerMembros = (extra: string) => rest<Record<string, unknown>[]>(
     `prg_campanha_membros?select=aventureiro_id,papel,excecoes,entrou_em,aventureiro:prg_public_adventurers(apelido,avatar${extra})&campanha_id=eq.${q(id)}&order=entrou_em.asc`)
-  const membros = await lerMembros(',usuario').catch(() => lerMembros(''))
+  // v0.37.1: do visual de cada um só sai a moldura (o resto da aparência é da própria pessoa).
+  const membros = (await lerMembros(',usuario,visual').catch(() => lerMembros(''))).map(m => {
+    const a = m.aventureiro as Record<string, unknown> | null
+    if (!a || !('visual' in a)) return m
+    const { visual, ...resto } = a
+    return { ...m, aventureiro: { ...resto, moldura: limparVisual(visual).moldura ?? null } }
+  })
   const admin = podeAdministrar(papel)
   let convites: (ConviteRow & { situacao: string })[] = []
   let solicitacoes: unknown[] = []

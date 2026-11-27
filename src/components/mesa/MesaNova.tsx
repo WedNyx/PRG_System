@@ -49,7 +49,7 @@ type Iniciativa = { id: string; nome: string; valor: number; tokenId?: string | 
 export type Estado = {
   campanha: { id: string; nome: string; sistema?: string; meuPapel: string }; mesa: { iniciativa: Iniciativa[]; turno: number; rodada: number }
   cenas: Cena[]; cenaAtiva: Cena | null; tokens: Token[]; desenhos: { id: string; cor: string; pontos: number[] }[]; eventos: Evento[]
-  membros: { aventureiro_id: string; papel: string; aventureiro: { apelido: string } | null }[]; fichas: { id: string; nome: string; dono_id: string; npc: boolean }[]; eu: string
+  membros: { aventureiro_id: string; papel: string; aventureiro: { apelido: string; moldura?: string | null; dado?: string | null } | null }[]; fichas: { id: string; nome: string; dono_id: string; npc: boolean }[]; eu: string
   musica?: EstadoMusica; agora?: string; sessao?: { aberta: boolean; aberta_em: string | null }; combate?: { acerto: 'automatico' | 'mestre'; morte?: 'desligado' | 'testes' | 'desesperadas' }
 }
 export type Acao = (b: Record<string, unknown>) => Promise<Record<string, unknown>>
@@ -118,6 +118,8 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   const [animacaoAssim, setAnimacaoAssim] = useState<DadoAssim[] | null>(null)
   const fecharAssim = useCallback(() => setAnimacaoAssim(null), [])
   const ultimoEvento = useRef(0)
+  // v0.37.1: estilo de dados de cada participante (a rolagem aparece com os dados de quem rolou).
+  const dadoDe = useRef<Record<string, string | null>>({})
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   /** Mostra a rolagem no meio da tela: dados 3D + cartão com o total e cada dado. */
@@ -130,10 +132,11 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
       return
     }
     const a = ev.tipo === 'ataque' ? ev.dados : null
-    dados.current?.mostrar({ rotulo: a ? `⚔️ ${a.arma} → ${a.alvo.nome}` : ev.texto, quem: ev.personagem || ev.autor?.apelido, expressao: ev.expressao, resultados: ev.resultados, total: ev.total ?? 0,
+    const dado = (ev.autor_id && dadoDe.current[ev.autor_id]) || 'ametista'
+    dados.current?.mostrar({ dado, rotulo: a ? `⚔️ ${a.arma} → ${a.alvo.nome}` : ev.texto, quem: ev.personagem || ev.autor?.apelido, expressao: ev.expressao, resultados: ev.resultados, total: ev.total ?? 0,
       privada: ev.visibilidade !== 'publica', nota: a ? (a.acerto ? `✅ Acertou!${a.comparar === 'maior_igual' ? ` (Defesa ${a.defesa})` : ''}` : `❌ Errou${a.comparar === 'maior_igual' ? ` (Defesa ${a.defesa})` : ''}`) : null })
     // Acertou: depois do cartão do ataque, rola o dano no meio da tela.
-    if (a?.acerto && a.dano) setTimeout(() => dados.current?.mostrar({ rotulo: `💥 Dano em ${a.alvo.nome}`, quem: ev.personagem, expressao: a.dano!.expressao, resultados: a.dano!.resultados, total: a.dano!.total,
+    if (a?.acerto && a.dano) setTimeout(() => dados.current?.mostrar({ dado, rotulo: `💥 Dano em ${a.alvo.nome}`, quem: ev.personagem, expressao: a.dano!.expressao, resultados: a.dano!.resultados, total: a.dano!.total,
       nota: a.status === 'pendente' ? '⏳ O mestre vai confirmar' : a.vida?.depois !== null && a.vida?.depois !== undefined ? `❤️ ${a.alvo.nome}: ${a.vida.depois}${a.vida.max ? '/' + a.vida.max : ''}` : null }), 5200)
   }, [])
 
@@ -284,6 +287,7 @@ export default function MesaNova({ campanhaId }: { campanhaId: string }) {
   }, [vidaAberta])
 
   const nomes = useMemo(() => Object.fromEntries((e?.membros ?? []).map(m => [m.aventureiro_id, m.aventureiro?.apelido ?? '?'])), [e?.membros])
+  useEffect(() => { dadoDe.current = Object.fromEntries((e?.membros ?? []).map(m => [m.aventureiro_id, m.aventureiro?.dado ?? null])) }, [e?.membros])
   // Mensagens novas enquanto o chat está recolhido (o que já estava na mesa ao entrar não conta).
   const ultimoId = e?.eventos.at(-1)?.id ?? 0
   const novosChat = chatAberto || !e ? 0 : e.eventos.filter(ev => ev.id > vistoChat && ev.autor_id !== e.eu && ev.tipo !== 'sistema').length

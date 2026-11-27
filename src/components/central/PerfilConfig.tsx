@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Pencil, UserRound } from 'lucide-react'
 import Aparencia from './Aparencia'
+import Moldura from '@/components/perfil/Moldura'
 import { ConfigSenha } from '@/components/perfil/Senha'
 import ApagarPerfil from '@/components/perfil/ApagarPerfil'
 import { mudarPreferencias, usePreferencias, type Preferencias } from '@/lib/preferencias'
@@ -12,7 +13,7 @@ import { NUVEM_ATIVA } from '@/lib/nuvem/cliente'
 
 export type AbaPerfil = 'aparencia' | 'jogabilidade' | 'notificacoes' | 'privacidade' | 'conta'
 export const ABAS_PERFIL: { id: AbaPerfil; icone: string; nome: string; palavras: string }[] = [
-  { id: 'aparencia', icone: '🎨', nome: 'Aparência', palavras: 'tema cores fundo fonte movimento efeitos' },
+  { id: 'aparencia', icone: '🎨', nome: 'Aparência', palavras: 'tema cores fundo fonte movimento efeitos moldura dados' },
   { id: 'jogabilidade', icone: '🎲', nome: 'Jogabilidade', palavras: 'dados 3d som confetes chat mesa' },
   { id: 'notificacoes', icone: '🔔', nome: 'Notificações', palavras: 'avisos sininho baloes' },
   { id: 'privacidade', icone: '🔒', nome: 'Dados e privacidade', palavras: 'senha codigo recuperacao apagar perfil' },
@@ -47,7 +48,7 @@ export default function PerfilConfig({ aba, mudarAba, perfil, tema, escolherTema
       {ABAS_PERFIL.map(a => <button key={a.id} type="button" role="tab" aria-selected={aba === a.id} onClick={() => mudarAba(a.id)} className="prg-chip shrink-0 !px-4 !py-2 !text-sm">{a.icone} {a.nome}</button>)}
     </div>
     <div className="mt-5">
-      {aba === 'aparencia' && <Aparencia perfilId={perfil.id} inicial={limparVisual(perfil.visual)} tema={tema} escolherTema={escolherTema} salvo={visualSalvo} />}
+      {aba === 'aparencia' && <Aparencia perfilId={perfil.id} inicial={limparVisual(perfil.visual)} tema={tema} escolherTema={escolherTema} salvo={visualSalvo} usuario={perfil.usuario} letra={perfil.apelido[0]?.toUpperCase()} />}
 
       {aba === 'jogabilidade' && <div className="space-y-4">
         <p className="rounded-2xl border border-(--a-55456e) bg-(--s-171325)/80 px-4 py-3 text-sm text-(--a-cfc0df)">Valem para este aparelho: dá para jogar com som no computador e em silêncio no celular. As fichas continuam 100% manuais em qualquer escolha.</p>
@@ -83,9 +84,9 @@ export default function PerfilConfig({ aba, mudarAba, perfil, tema, escolherTema
       </div>}
 
       {aba === 'conta' && <section className={bloco + ' flex flex-wrap items-center gap-4'} aria-label="Conta">
-        <span className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-(--ouro) bg-(--s-342749) text-2xl font-semibold">
+        <Moldura id={limparVisual(perfil.visual).moldura}><span className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-(--ouro) bg-(--s-342749) text-2xl font-semibold">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : perfil.apelido[0]?.toUpperCase()}</span>
+          {perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : perfil.apelido[0]?.toUpperCase()}</span></Moldura>
         <span className="min-w-0 flex-1"><span className="block text-lg font-bold">{perfil.apelido}</span><span className="block text-sm text-(--a-a99bbb)">{perfil.usuario && <span data-meu-arroba className="mr-1.5 font-semibold text-(--a-d3adf0)">@{perfil.usuario}</span>}{perfil.grupo || 'Aventureiro'}</span></span>
         <div className="flex flex-wrap gap-2">
           {NUVEM_ATIVA && <button type="button" onClick={editarPerfil} className="prg-botao prg-botao-primario"><Pencil size={16} /> Editar apelido, @ e foto</button>}

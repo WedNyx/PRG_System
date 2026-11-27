@@ -1,6 +1,7 @@
 'use client'
 
 import CantoDaPlataforma from '@/components/CantoDaPlataforma'
+import Moldura from '@/components/perfil/Moldura'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -150,9 +151,9 @@ function CentralContent() {
   if (!perfil) return <main className="flex min-h-screen flex-col items-center justify-center gap-4 fundo-tema px-5 text-center text-(--a-e8dff7)"><MoonStar size={48} className="text-(--a-bda0f5)" /><h1 className="text-2xl font-bold">Aventureiro não encontrado</h1><p className="text-(--a-bdb1ce)">{error || 'Selecione um perfil no portal para continuar.'}</p><Link href="/portal" className="rounded-xl bg-(--a-7853b4) px-5 py-3 font-semibold">Voltar aos perfis</Link></main>
 
   const cardClass = 'group rounded-2xl border border-(--a-55456e) bg-(--s-201a32)/90 p-4 sm:p-5 text-left transition hover:-translate-y-0.5 hover:border-(--a-b79aff) hover:bg-(--s-2b2143) focus-visible:outline-2 focus-visible:outline-(--a-c5a7ff)'
-  const avatar = (classe: string) => <span className={'flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-(--ouro) bg-(--s-342749) font-semibold text-(--a-d8c0ff) ' + classe}>
+  const avatar = (classe: string) => <Moldura id={limparVisual(perfil.visual).moldura}><span className={'flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-(--ouro) bg-(--s-342749) font-semibold text-(--a-d8c0ff) ' + classe}>
     {/* eslint-disable-next-line @next/next/no-img-element */}
-    {perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : perfil.apelido[0]?.toUpperCase()}</span>
+    {perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : perfil.apelido[0]?.toUpperCase()}</span></Moldura>
 
   return (
     <main className={'min-h-screen fundo-tema text-(--a-f2ebff)' + (entrada ? ' prg-entrada' : '')}>

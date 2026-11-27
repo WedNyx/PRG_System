@@ -27,6 +27,15 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.37.1', data: '2026-11-27',
+    titulo: 'Molduras de perfil e dados com a sua cara',
+    itens: [
+      'Molduras de perfil: em Perfil › Aparência, escolha um enfeite em volta da sua foto (Lua Minguante, Constelação, Chamas, Gelo, Floresta, Pirata, Neon, Ritual, Ouro Real). Todo mundo vê no portal, na Central e nas campanhas.',
+      'Molduras especiais: a Coroa do Mestre libera para quem mestra uma campanha, e as Escamas do Dragão são a homenagem para quem ajudou a plataforma.',
+      'Seus dados: 23 estilos prontos, vários com textura de verdade — Mármore, Céu Estrelado, Mar Astral, Escamas de Dragão, Pele de Lagarto, Chamas, Caveiras, Vitral, Água, Gelo, Purpurina, Pergaminho, Carvalho, metais escovados (Ouro, Prata, Cobre) e mais. Os dados 3D e o cartão do resultado usam o seu estilo, e na mesa todo mundo vê os dados com a cara de quem rolou.',
+    ],
+  },
+  {
     versao: '0.37.0', data: '2026-11-27',
     titulo: '@ para chamar jogadores, desvincular personagem, feedback e a Homenagem a Leste',
     itens: [

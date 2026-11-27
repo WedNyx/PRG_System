@@ -8,6 +8,7 @@ import { ESTADOS, ESTADO_TITULO, type EstadoCampanha } from '@/lib/nuvem/validac
 import { api, ErroNuvem } from '@/lib/nuvem/cliente'
 import PainelFichasCampanha from './PainelFichasCampanha'
 import BuscarArroba from './BuscarArroba'
+import Moldura from '@/components/perfil/Moldura'
 import CartaoCapa, { selo } from './CartaoCapa'
 import { enviarImagemNuvem } from '@/lib/nuvem/cliente'
 import SeletorSistemaCampanha from './SeletorSistemaCampanha'
@@ -22,7 +23,7 @@ type Campanha = {
   id: string; nome: string; descricao: string; sistema: string; modelo_padrao: Modelo
   permissoes: Permissoes; config_progressao?: ConfiguracaoProgressao; estado: EstadoCampanha; mestre_id: string; meuPapel: 'mestre' | 'comestre' | 'jogador' | 'espectador'; pendencias?: number; sessao_aberta?: boolean; capa_url?: string | null
 }
-type Membro = { aventureiro_id: string; papel: string; excecoes?: Partial<Permissoes>; aventureiro: { apelido: string; avatar: string | null; usuario?: string } | null }
+type Membro = { aventureiro_id: string; papel: string; excecoes?: Partial<Permissoes>; aventureiro: { apelido: string; avatar: string | null; usuario?: string; moldura?: string | null } | null }
 type Convite = { codigo: string; expira_em: string; usos: number; max_usos: number; situacao: string; para?: { apelido: string; usuario: string } | null }
 type Pedido = { id: string; mensagem: string; aventureiro: { apelido: string; avatar: string | null } | null }
 type Detalhe = { campanha: Campanha; membros: Membro[]; convites: Convite[]; solicitacoes: Pedido[] }
@@ -164,9 +165,9 @@ function FormCampanha({ aventureiroId, campanha, onFechar }: { aventureiroId: st
   </form>
 }
 
-function Avatar({ a }: { a: { apelido: string; avatar: string | null } | null }) {
-  return <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-(--a-8d70b6) bg-(--s-342749) text-sm font-semibold">
-    {a?.avatar ? <img src={a.avatar} alt="" className="h-full w-full object-cover" /> : (a?.apelido?.[0] ?? '?').toUpperCase()}</span>
+function Avatar({ a }: { a: { apelido: string; avatar: string | null; moldura?: string | null } | null }) {
+  return <Moldura id={a?.moldura}><span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-(--a-8d70b6) bg-(--s-342749) text-sm font-semibold">
+    {a?.avatar ? <img src={a.avatar} alt="" className="h-full w-full object-cover" /> : (a?.apelido?.[0] ?? '?').toUpperCase()}</span></Moldura>
 }
 
 function Gerenciar({ aventureiroId, id, onVoltar, onEditar }: { aventureiroId: string; id: string; onVoltar: () => void; onEditar: (c: Campanha) => void }) {

@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import { limparVisual } from '@/lib/visual'
 import { ator, buscarFicha, nomeDaCampanha, notificar, participantes, lerJson, ok, papelNaCampanha, q, rest, rota, rpc, ErroApi } from '@/lib/nuvem/servidor'
 import { isUuid, podeAdministrar, type Papel } from '@/lib/nuvem/validacao'
 import { aplicarNevoa, compactarNevoa, corValida, filtroVisibilidade, MAX_GRADE, normalizarAreasNevoa, normalizarCamadas, normalizarLuz, normalizarCondicoes, normalizarIniciativa, normalizarPontos, podeMoverToken, todasCelulas, urlValida, type Movimento, type Visibilidade } from '@/lib/nuvem/mesa'
@@ -216,7 +217,9 @@ export const GET = rota<Ctx>(async (req, { params }) => {
     ativa ? rest(`prg_tokens?select=*&cena_id=eq.${q(ativa.id)}${admin ? '' : '&visivel=eq.true'}&order=criado_em.asc`) : Promise.resolve([]),
     ativa ? rest(`prg_desenhos?select=id,cor,pontos,autor_id&cena_id=eq.${q(ativa.id)}&order=criado_em.asc&limit=300`) : Promise.resolve([]),
     rest<unknown[]>(`prg_mesa_eventos?select=${EVENTO}&campanha_id=eq.${q(cid)}&${vis}&order=id.desc&limit=80`),
-    rest(`prg_campanha_membros?select=aventureiro_id,papel,aventureiro:prg_public_adventurers(apelido,avatar)&campanha_id=eq.${q(cid)}`),
+    // v0.37.1: junto vão a moldura e o estilo de dados de cada um (só isso do visual).
+    rest<{ aventureiro: Record<string, unknown> | null }[]>(`prg_campanha_membros?select=aventureiro_id,papel,aventureiro:prg_public_adventurers(apelido,avatar,visual)&campanha_id=eq.${q(cid)}`)
+      .then(ms => ms.map(m => { if (!m.aventureiro) return m; const { visual, ...a } = m.aventureiro; const v = limparVisual(visual); return { ...m, aventureiro: { ...a, moldura: v.moldura ?? null, dado: v.dado ?? null } } })),
     rest(`prg_fichas?select=id,nome,dono_id,npc&campanha_id=eq.${q(cid)}&status=eq.ativa${admin ? '' : `&dono_id=eq.${q(eu)}&npc=eq.false`}&limit=200`),
   ])
   // Tokens ligados a fichas mostram a vida da ficha (ela é quem manda).

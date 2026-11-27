@@ -9,7 +9,7 @@ import { aplicarVisual, CORES_PRONTAS, FONTES, limparVisual, TAMANHOS, type Visu
 import { api } from '@/lib/nuvem/cliente'
 import { MOLDURAS, podeUsarMoldura } from '@/lib/molduras'
 import { DADO_PADRAO, ESTILOS_DADOS } from '@/lib/estilosDados'
-import { AmostraMoldura } from '@/components/perfil/Moldura'
+import Moldura, { AmostraMoldura } from '@/components/perfil/Moldura'
 import AmostraDado from '@/components/dados/AmostraDado'
 
 type Estado = 'salvo' | 'salvando' | 'pendente' | 'erro'
@@ -18,8 +18,8 @@ const bloco = 'rounded-2xl border border-(--a-55456e) bg-(--s-201a32)/90 p-4 sm:
 const chip = (ativo: boolean) => 'rounded-xl border px-3 py-2 text-sm transition ' + (ativo ? 'border-(--a-e4d3ff) bg-(--s-3a2c58) text-white' : 'border-(--a-55456e) text-(--a-cfc0df) hover:bg-(--s-2b2140)')
 
 /** Central → Aparência: tema, foto de fundo, cores, cartões, fonte e tamanho. Muda na hora e salva sozinho no perfil. */
-export default function Aparencia({ perfilId, inicial, tema, escolherTema, salvo, usuario, letra }: {
-  perfilId: string; inicial: Visual; tema: Tema; escolherTema: (t: Tema) => void; salvo: (v: Visual) => void; usuario?: string; letra?: string
+export default function Aparencia({ perfilId, inicial, tema, escolherTema, salvo, usuario, letra, avatar }: {
+  perfilId: string; inicial: Visual; tema: Tema; escolherTema: (t: Tema) => void; salvo: (v: Visual) => void; usuario?: string; letra?: string; avatar?: string
 }) {
   const [v, setV] = useState<Visual>(inicial)
   const [estado, setEstado] = useState<Estado>('salvo')
@@ -28,13 +28,13 @@ export default function Aparencia({ perfilId, inicial, tema, escolherTema, salvo
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const ultimo = useRef(JSON.stringify(inicial))
   const dados3d = usePreferencias().dados3d
-  // Coroa do Mestre (v0.37.1): libera para quem mestra alguma campanha.
-  const [mestra, setMestra] = useState(false)
+  // Molduras especiais (v0.37.2): o servidor diz o que já foi conquistado (mestrou 15 min, criou um sistema).
+  const [conq, setConq] = useState<{ mestre: boolean; criador: boolean; minutos: number | null }>({ mestre: false, criador: false, minutos: null })
   useEffect(() => {
     if (!NUVEM_ATIVA) return
     let ativo = true
-    api<{ campanhas: { meuPapel: string }[] }>('campanhas', { aventureiro: perfilId })
-      .then(r => { if (ativo) setMestra(r.campanhas.some(c => c.meuPapel === 'mestre')) }).catch(() => {})
+    api<{ mestre: boolean; criador: boolean; minutos: number | null }>('conquistas', { aventureiro: perfilId })
+      .then(r => { if (ativo) setConq(r) }).catch(() => {})
     return () => { ativo = false }
   }, [perfilId])
   // Modo de desempenho (v0.36.9): liga de uma vez as três coisas mais pesadas para aparelhos simples.
@@ -103,12 +103,17 @@ export default function Aparencia({ perfilId, inicial, tema, escolherTema, salvo
 
     <section className={bloco} aria-labelledby="ap-moldura" data-escolher-moldura>
       <h2 id="ap-moldura" className="text-lg font-bold">🖼️ Moldura do perfil</h2>
-      <p className="mt-1 text-sm text-(--a-bfb2cf)">Um enfeite em volta da sua foto. Todo mundo vê: no portal, nas campanhas e na mesa.</p>
+      <p className="mt-1 text-sm text-(--a-bfb2cf)">Um enfeite em volta da sua foto. Todo mundo vê: no portal, na Central e nas campanhas. Na foto grande ela ganha vida (fogo, neve, vagalumes…).</p>
+      {v.moldura && <div className="mt-4 flex justify-center py-8" data-previa-moldura>
+        <Moldura id={v.moldura}><span className="flex size-32 items-center justify-center overflow-hidden rounded-full bg-(--s-342749) text-5xl font-bold text-(--a-d8c0ff)">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : letra ?? '✦'}</span></Moldura>
+      </div>}
       <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
         {[{ id: '', nome: 'Sem moldura', descricao: 'Só a foto', trava: undefined }, ...MOLDURAS].map(m => {
-          const ativo = (v.moldura ?? '') === m.id, livre = !m.id || podeUsarMoldura(m.id, { mestre: mestra, usuario })
+          const ativo = (v.moldura ?? '') === m.id, livre = !m.id || podeUsarMoldura(m.id, { ...conq, usuario })
           return <button key={m.id || 'nenhuma'} type="button" disabled={!livre} aria-pressed={ativo} onClick={() => mudar({ moldura: m.id || undefined })}
-            title={livre ? m.descricao : '🔒 ' + m.descricao}
+            title={livre ? m.descricao : '🔒 ' + m.descricao + (m.id === 'mestre' && conq.minutos !== null ? ` (você tem ${conq.minutos} min)` : '')}
             className={'flex flex-col items-center gap-2 rounded-xl border-2 px-1 pb-2 pt-4 text-center transition ' + (ativo ? 'border-(--a-e4d3ff) bg-(--s-3a2c58)' : 'border-(--a-48385e) hover:border-(--a-8b6cba)') + (livre ? '' : ' cursor-not-allowed opacity-45')}>
             {m.id ? <AmostraMoldura id={m.id} letra={letra} /> : <span className="flex size-12 items-center justify-center rounded-full border border-(--a-62527e) bg-(--s-342749) text-lg font-bold text-(--a-d8c0ff)">{letra ?? '✦'}</span>}
             <span className="mt-1 text-[11px] font-semibold leading-tight">{!livre && '🔒 '}{m.nome}</span>

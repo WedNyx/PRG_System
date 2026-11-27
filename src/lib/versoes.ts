@@ -27,6 +27,15 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.37.2', data: '2026-11-28',
+    titulo: 'Molduras com cara de verdade',
+    itens: [
+      'Todas as molduras foram redesenhadas: fogo de verdade, gelo lapidado com neve, lua com crateras e luar, nebulosa com cometa, floresta com vagalumes, corda de navio com o mar, tubos de neon com raios, círculo de runas com fumaça e ouro com luz passeando e gemas lapidadas.',
+      'Na foto grande (perfil, portal e a prévia em Aparência) a moldura ganha vida; nos tamanhos pequenos fica só o desenho, leve. Com “movimento reduzido” ou “efeitos leves”, tudo fica parado.',
+      'Molduras especiais: a Coroa do Mestre agora libera para quem já mestrou na mesa por 15 minutos ou mais (as sessões antigas contam), e a nova Criador de Mundos libera para quem criou um sistema no site.',
+    ],
+  },
+  {
     versao: '0.37.1', data: '2026-11-27',
     titulo: 'Molduras de perfil e dados com a sua cara',
     itens: [

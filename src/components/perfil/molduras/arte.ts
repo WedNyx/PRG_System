@@ -125,7 +125,7 @@ function florestaSvg(id: string) {
 }
 
 function pirataSvg(id: string) {
-  const cordas = volta(64).map((g, i) => { const [x, y] = pol(55.5, g); return `<ellipse cx="${f(x)}" cy="${f(y)}" rx="2.9" ry="1.5" transform="rotate(${f(g + 45)} ${f(x)} ${f(y)})" fill="url(#${id}-fio)" stroke="#4a2c0f" stroke-width=".35"/>` }).join('')
+  const cordas = volta(64).map(g => { const [x, y] = pol(55.5, g); return `<ellipse cx="${f(x)}" cy="${f(y)}" rx="2.9" ry="1.5" transform="rotate(${f(g + 45)} ${f(x)} ${f(y)})" fill="url(#${id}-fio)" stroke="#4a2c0f" stroke-width=".35"/>` }).join('')
   return `<defs>${defsComuns(id)}
     <linearGradient id="${id}-fio" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3d9a4"/><stop offset=".5" stop-color="#c08a4a"/><stop offset="1" stop-color="#6b4218"/></linearGradient>
     <linearGradient id="${id}-madeira" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b9783a"/><stop offset=".4" stop-color="#7a4416"/><stop offset=".6" stop-color="#9a5a22"/><stop offset="1" stop-color="#4a250a"/></linearGradient>
@@ -157,7 +157,6 @@ function neonSvg(id: string) {
 function ritualSvg(id: string) {
   const G = ['M-3 -5 L3 5 M3 -5 L-3 5', 'M0 -5 L0 5 M-3 -2 L3 -2', 'M-3 5 L0 -5 L3 5', 'M-3 -5 L3 -5 L-3 5 L3 5', 'M0 -5 L0 5 M0 0 L3 -4', 'M-3 0 A3 3 0 1 0 3 0 M0 -5 L0 5', 'M-3 -5 L0 0 L3 -5 M0 0 L0 5', 'M-3 -3 L3 -3 M-3 3 L3 3 M0 -5 L0 5']
   const runas = (r: number, n: number, esc: number, cls: string) => `<g class="${cls}">${volta(n).map((g, i) => { const [x, y] = pol(r, g); return `<path d="${G[(i * 3) % G.length]}" transform="translate(${f(x)} ${f(y)}) rotate(${g}) scale(${esc})" stroke="#fecaca" stroke-width="1.3" fill="none" stroke-linecap="round"/>` }).join('')}</g>`
-  const tri = (rot: number) => `<path d="M${[0, 120, 240].map(g => pol(51, g + rot).map(f).join(' ')).join(' L')}Z" fill="none" stroke="#ef4444" stroke-width=".6" opacity=".5"/>`
   return `<defs>${defsComuns(id)}<filter id="${id}-sangue" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6" result="b"/><feFlood flood-color="#ff2a2a"/><feComposite in2="b" operator="in" result="c"/><feMerge><feMergeNode in="c"/><feMergeNode in="c"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
     <circle cx="68" cy="68" r="52.5" fill="none" stroke="#1a0505" stroke-width="5"/>
     <g filter="url(#${id}-sangue)">
@@ -213,7 +212,7 @@ function criadorSvg(id: string) {
       <path d="M-23 -7 Q-12 -11 0 -6 Q12 -11 23 -7 L24 9 Q12 5 0 10 Q-12 5 -24 9Z" fill="url(#${id}-couro)" stroke="#1c0a03" stroke-width=".6"/>
       <path d="M-21 -7.5 Q-11 -11 0 -6 L0 8 Q-11 3.5 -21 7Z" fill="url(#${id}-pagina)"/><path d="M21 -7.5 Q11 -11 0 -6 L0 8 Q11 3.5 21 7Z" fill="url(#${id}-pagina)"/>
       <path d="M0 -6 L0 8.5" stroke="#a16207" stroke-width=".6"/>
-      ${[-3, -.5, 2, 4.5].map((y, i) => `<path d="M-18 ${y} Q-10 ${y - 1.6} -3 ${y}" fill="none" stroke="#0f766e" stroke-width=".45" opacity=".8"/><path d="M3 ${y} Q10 ${y - 1.6} 18 ${y}" fill="none" stroke="#0f766e" stroke-width=".45" opacity=".8"/>`).join('')}
+      ${[-3, -.5, 2, 4.5].map(y => `<path d="M-18 ${y} Q-10 ${y - 1.6} -3 ${y}" fill="none" stroke="#0f766e" stroke-width=".45" opacity=".8"/><path d="M3 ${y} Q10 ${y - 1.6} 18 ${y}" fill="none" stroke="#0f766e" stroke-width=".45" opacity=".8"/>`).join('')}
       <circle cx="0" cy="-2" r="7" fill="#5eead4" opacity=".25" filter="url(#${id}-luz)" class="pagina-brilho"/></g>
     <g class="pena" filter="url(#${id}-sombra)"><g transform="rotate(-35)">
       <path d="M0 -26 C10 -18 10 2 0 18 C-10 2 -10 -18 0 -26Z" fill="url(#${id}-pena)" stroke="#64748b" stroke-width=".6"/>

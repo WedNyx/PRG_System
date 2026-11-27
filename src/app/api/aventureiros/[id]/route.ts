@@ -4,6 +4,7 @@ import { isUuid } from '@/lib/nuvem/validacao'
 import { validarApelidoAventureiro } from '@/lib/auth/aventureiro'
 import { ehGrupo } from '@/lib/grupos'
 import { limparVisual } from '@/lib/visual'
+import { validarUsuario } from '@/lib/usuario'
 import { apagarCookie } from '@/lib/nuvem/senha'
 
 export const dynamic = 'force-dynamic'
@@ -23,6 +24,14 @@ export const PATCH = rota<Ctx>(async (req, { params }) => {
     if (!v.ok) throw new ErroApi(400, v.erro)
     mud.apelido = v.apelido
   }
+  if (b.usuario !== undefined) {
+    // @usuario (v0.37.0): único; checado antes para a mensagem de “já em uso” falar do @ e não do apelido.
+    const v = validarUsuario(b.usuario)
+    if (!v.ok) throw new ErroApi(400, v.erro)
+    const dono = await rest<{ id: string }[]>(`prg_public_adventurers?select=id&usuario=eq.${q(v.usuario)}&id=neq.${q(id)}&limit=1`)
+    if (dono.length) throw new ErroApi(409, `O @${v.usuario} já é de outra pessoa.`)
+    mud.usuario = v.usuario
+  }
   if (b.avatar !== undefined) {
     if (b.avatar !== null && (typeof b.avatar !== 'string' || b.avatar.length > 120_000 || !AVATAR.test(b.avatar))) throw new ErroApi(400, 'Foto inválida ou muito grande.')
     mud.avatar = b.avatar
@@ -38,9 +47,9 @@ export const PATCH = rota<Ctx>(async (req, { params }) => {
     mud.visual = v && Object.keys(v).length ? v : null
   }
   if (!Object.keys(mud).length) throw new ErroApi(400, 'Nada para alterar.')
-  let r: { id: string; apelido: string; avatar: string | null; grupo?: string; visual?: unknown }[]
-  try { r = await rest(`prg_public_adventurers?id=eq.${q(id)}&select=id,apelido,avatar${mud.grupo ? ',grupo' : ''}${'visual' in mud ? ',visual' : ''}`, { method: 'PATCH', prefer: 'return=representation', body: JSON.stringify(mud) }) }
-  catch (e) { if (e instanceof ErroApi && e.status === 409) throw new ErroApi(409, 'Esse apelido já está em uso.'); throw e }
+  let r: { id: string; apelido: string; avatar: string | null; grupo?: string; visual?: unknown; usuario?: string }[]
+  try { r = await rest(`prg_public_adventurers?id=eq.${q(id)}&select=id,apelido,avatar${mud.grupo ? ',grupo' : ''}${'visual' in mud ? ',visual' : ''}${mud.usuario ? ',usuario' : ''}`, { method: 'PATCH', prefer: 'return=representation', body: JSON.stringify(mud) }) }
+  catch (e) { if (e instanceof ErroApi && e.status === 409) throw new ErroApi(409, mud.usuario && !mud.apelido ? 'Esse @ acabou de ser escolhido por outra pessoa.' : 'Esse apelido já está em uso.'); throw e }
   if (!r.length) throw new ErroApi(404, 'Aventureiro não encontrado.')
   return ok({ perfil: r[0] })
 })

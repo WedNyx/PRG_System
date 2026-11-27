@@ -8,13 +8,15 @@ import { ConfigSenha } from './Senha'
 import ApagarPerfil from './ApagarPerfil'
 import { ehGrupo, GRUPO_PADRAO, type GrupoId } from '@/lib/grupos'
 import NaTela from '@/components/NaTela'
+import { limparUsuario, validarUsuario, USUARIO_MAX } from '@/lib/usuario'
 
-type Perfil = { id: string; apelido: string; avatar?: string | null; grupo?: string }
+type Perfil = { id: string; apelido: string; avatar?: string | null; grupo?: string; usuario?: string }
 const CROP = 256, SAIDA = 320
 
 /** Janela para o aventureiro mudar o próprio nome e foto (salva na nuvem). */
 export default function EditarPerfil({ perfil, fechar, salvo }: { perfil: Perfil; fechar: () => void; salvo: (p: Perfil) => void }) {
   const [apelido, setApelido] = useState(perfil.apelido)
+  const [usuario, setUsuario] = useState(perfil.usuario ?? '')
   const [grupo, setGrupo] = useState<GrupoId>(ehGrupo(perfil.grupo) ? perfil.grupo : GRUPO_PADRAO)
   const [avatar, setAvatar] = useState<string | null>(perfil.avatar ?? null)
   const [crop, setCrop] = useState<string | null>(null)
@@ -64,15 +66,18 @@ export default function EditarPerfil({ perfil, fechar, salvo }: { perfil: Perfil
     if (crop) { setErro('Confirme o recorte da foto primeiro.'); return }
     const v = validarApelidoAventureiro(apelido)
     if (!v.ok) { setErro(v.erro); return }
+    const mudouArroba = !!perfil.usuario && limparUsuario(usuario) !== perfil.usuario
+    const u = validarUsuario(usuario)
+    if (mudouArroba && !u.ok) { setErro(u.erro); return }
     setOcupado(true); setErro('')
     try {
       const r = await fetch('/api/aventureiros/' + perfil.id, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json', 'x-prg-aventureiro': perfil.id },
-        body: JSON.stringify({ apelido: v.apelido, avatar, ...(grupo !== (perfil.grupo ?? GRUPO_PADRAO) ? { grupo } : {}) }),
+        body: JSON.stringify({ apelido: v.apelido, avatar, ...(mudouArroba && u.ok ? { usuario: u.usuario } : {}), ...(grupo !== (perfil.grupo ?? GRUPO_PADRAO) ? { grupo } : {}) }),
       })
       const d = await r.json().catch(() => ({}))
       if (!r.ok) throw new Error(d.erro || 'Não foi possível salvar.')
-      salvo({ ...d.perfil, grupo: d.perfil.grupo ?? perfil.grupo }); fechar()
+      salvo({ ...d.perfil, grupo: d.perfil.grupo ?? perfil.grupo, usuario: d.perfil.usuario ?? perfil.usuario }); fechar()
     } catch (er) { setErro(er instanceof Error ? er.message : 'Falha ao salvar.') } finally { setOcupado(false) }
   }
 
@@ -109,6 +114,11 @@ export default function EditarPerfil({ perfil, fechar, salvo }: { perfil: Perfil
       </div>
       <label className="block text-sm text-(--a-b4aeca)">Nome do aventureiro
         <input value={apelido} onChange={e => setApelido(e.target.value)} maxLength={40} required className="mt-2 w-full rounded-lg border border-(--a-4a4267) bg-(--s-100f20) p-3 text-white outline-none focus:border-(--a-b99bff)" /></label>
+      {perfil.usuario !== undefined && <label className="block text-sm text-(--a-b4aeca)">Seu @ <span className="text-xs">(é por ele que te chamam para campanhas)</span>
+        <span className="mt-2 flex items-center rounded-lg border border-(--a-4a4267) bg-(--s-100f20) px-3 focus-within:border-(--a-b99bff)"><span className="text-(--a-8f84aa)">@</span>
+          <input value={usuario} onChange={e => setUsuario(e.target.value.replace(/^@+/, '').toLowerCase())} maxLength={USUARIO_MAX} autoCapitalize="none" autoComplete="off" spellCheck={false} data-campo-usuario
+            className="min-w-0 flex-1 bg-transparent p-3 pl-1 text-white outline-none" /></span>
+        <span className="mt-1 block text-xs text-(--a-8f84aa)">Letras sem acento, números, “_” e “.”, de 3 a 20.</span></label>}
       <EscolherGrupo valor={grupo} mudar={setGrupo} />
       <ConfigSenha id={perfil.id} />
       <ApagarPerfil perfil={perfil} />

@@ -29,6 +29,11 @@ const STATUS: Record<string, [string, string]> = {
   pendente: ['Aguardando o mestre', 'bg-[#4d3f1d] text-[#f3dc9a]'], ativa: ['Aprovada', 'bg-[#1f4a35] text-[#a9f0c8]'],
   recusada: ['Recusada', 'bg-[#3d2530] text-[#e6aebf]'], arquivada: ['Arquivada', 'bg-(--s-3a3352) text-(--a-d6c8f0)'],
 }
+/** v0.37.0: o próprio jogador tira a ficha da campanha. Cópia enviada e nunca mexida só some (a original continua com ele). */
+export const textoDesvincular = (f: { nome: string; status: string }) => f.status === 'pendente'
+  ? `Cancelar o envio de “${f.nome || 'sem nome'}”? A cópia sai da campanha; a sua ficha original continua com você.`
+  : `Desvincular “${f.nome || 'sem nome'}” desta campanha? Ela sai da mesa e volta para as suas fichas avulsas (nada se perde). Se for uma cópia que nunca foi mexida, ela só some, porque a original já está com você.`
+
 export function SeloStatus({ status }: { status: string }) {
   const [t, c] = STATUS[status] ?? [status, 'bg-(--s-3a3352)']
   return <span className={'rounded-full px-2 py-0.5 text-[11px] ' + c}>{t}</span>
@@ -123,7 +128,8 @@ export default function PainelFichasCampanha({ aventureiroId, campanhaId, admin,
   if (!admin) return <section className={sec}>
     <h3 className="font-semibold">Minhas fichas nesta campanha</h3>
     {erro && <p role="alert" className="mt-2 text-sm text-red-200">{erro}</p>}
-    <ul className="mt-3 space-y-2">{fichas.map(f => cartao(f))}</ul>
+    <ul className="mt-3 space-y-2">{fichas.map(f => cartao(f, !f.npc && f.dono_id === aventureiroId && <button type="button" disabled={ocupado} data-desvincular
+      onClick={() => acao(() => call(`campanhas/${campanhaId}/fichas/${f.id}`, 'POST', { acao: 'devolver' }), textoDesvincular(f))} className={btn}><Undo2 size={14} /> {f.status === 'pendente' ? 'Cancelar envio' : 'Desvincular'}</button>))}</ul>
     {fichas.length === 0 && <p className="mt-2 text-sm text-(--a-c4b6d4)">Envie uma ficha independente pela aba Fichas → “Enviar para campanha”.</p>}
     {alteracoes.length > 0 && <><h4 className="mt-4 text-sm font-semibold">Meus pedidos de alteração</h4>
       <ul className="mt-2 space-y-1 text-xs">{alteracoes.map(a => <li key={a.id} className="rounded-lg bg-(--s-171325) p-2">{a.ficha?.nome}: {a.categorias.map(tituloArea).join(', ')} — <strong>{a.estado === 'pendente' ? 'aguardando' : a.estado === 'aceita' ? 'aceito' : a.estado === 'recusada' ? 'recusado' : 'ajuste pedido'}</strong>{a.justificativa && ` (“${a.justificativa}”)`}</li>)}</ul></>}

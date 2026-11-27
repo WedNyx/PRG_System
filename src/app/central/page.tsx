@@ -1,5 +1,6 @@
 'use client'
 
+import CantoDaPlataforma from '@/components/CantoDaPlataforma'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -22,7 +23,7 @@ import Sino from '@/components/Sino'
 import { CHAVE_ENTRADA } from '@/components/perfil/TransicaoPerfil'
 import { aplicarTema, TEMA_PADRAO, temaAtual, type Tema } from '@/lib/tema'
 
-type Perfil = { id: string; apelido: string; avatar?: string; grupo?: string; visual?: unknown }
+type Perfil = { id: string; apelido: string; avatar?: string; grupo?: string; visual?: unknown; usuario?: string }
 /** Os cinco destinos da Central (v0.36.5). */
 type Destino = 'inicio' | 'personagens' | 'campanhas' | 'ferramentas' | 'perfil'
 type AbaPersonagens = 'avulsas' | 'campanhas' | 'criar'
@@ -174,7 +175,7 @@ function CentralContent() {
         <aside aria-label="Menu da Central" className={'sticky top-16 hidden h-[calc(100vh-4rem)] shrink-0 flex-col border-r border-(--a-48385e) bg-(--s-171225)/95 p-3 backdrop-blur transition-[width] lg:flex ' + (recolhida ? 'w-[76px]' : 'w-64')}>
           {!recolhida && <div className="mb-4 flex items-center gap-3 rounded-2xl border border-(--a-4b3b62) bg-gradient-to-br from-(--s-2b1f40) to-(--s-1b1629) p-3">
             {avatar('h-11 w-11')}
-            <span className="min-w-0 flex-1"><span className="block truncate font-semibold">{perfil.apelido}</span><span className="block truncate text-[11px] text-(--a-aa8ecb)">{perfil.grupo || 'Aventureiro'}</span></span>
+            <span className="min-w-0 flex-1"><span className="block truncate font-semibold">{perfil.apelido}</span><span className="block truncate text-[11px] text-(--a-aa8ecb)">{perfil.usuario ? '@' + perfil.usuario : perfil.grupo || 'Aventureiro'}</span></span>
           </div>}
           {!recolhida && <p className="mb-2 px-3 text-[11px] uppercase tracking-[.2em] text-(--ouro)">Sua jornada</p>}
           <nav aria-label="Navegação da Central" className="space-y-1">
@@ -191,7 +192,7 @@ function CentralContent() {
             <button type="button" onClick={alternarLateral} className={'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-(--a-cbb6e5) hover:bg-(--s-2b213d) ' + (recolhida ? 'justify-center' : '')} aria-label={recolhida ? 'Abrir o menu lateral' : undefined}>{recolhida ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}{!recolhida && 'Recolher menu'}</button>
           </div>
         </aside>
-        <div className="min-w-0 flex-1 px-4 pb-28 pt-6 sm:px-7 lg:px-10 lg:pb-10 lg:pt-8">
+        <div className="min-w-0 flex-1 px-4 pb-40 pt-6 sm:px-7 lg:px-10 lg:pb-24 lg:pt-8">
           {destino === 'inicio' && <>
             <section className="relative overflow-hidden rounded-3xl border border-(--a-655079) bg-gradient-to-br from-(--s-302044) to-(--s-1b172b) p-6 shadow-[0_10px_40px_#09050b55] sm:p-9">
               <span aria-hidden="true" className="pointer-events-none absolute -right-10 -top-16 size-56 rounded-full border border-(--ouro)/25" />
@@ -243,8 +244,9 @@ function CentralContent() {
           return <button key={item.id} type="button" onClick={() => ir(item.id)} aria-current={ativo ? 'page' : undefined} className={'flex min-h-14 flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-medium transition ' + (ativo ? 'text-white' : 'text-(--a-a99bbb)')}>
             <span className={'flex h-7 w-12 items-center justify-center rounded-full transition ' + (ativo ? 'bg-(--s-4a3470) shadow-[inset_0_-2px_0_var(--ouro)]' : '')}><item.icon size={18} aria-hidden="true" /></span>{item.id === 'perfil' ? 'Perfil' : item.nome}</button> })}
       </nav>
+      <CantoDaPlataforma aventureiroId={CLOUD_ENABLED ? perfil.id : undefined} acimaDaBarra />
       <BuscaUniversal aberto={buscando} fechar={fecharBusca} aventureiroId={perfil.id} fixos={fixosBusca} />
-      {editando && <EditarPerfil perfil={perfil} fechar={() => setEditando(false)} salvo={p => setPerfil(antes => ({ ...antes, id: p.id, apelido: p.apelido, avatar: p.avatar ?? undefined, grupo: p.grupo }))} />}
+      {editando && <EditarPerfil perfil={perfil} fechar={() => setEditando(false)} salvo={p => setPerfil(antes => ({ ...antes, id: p.id, apelido: p.apelido, avatar: p.avatar ?? undefined, grupo: p.grupo, usuario: p.usuario }))} />}
     </main>
   )
 }

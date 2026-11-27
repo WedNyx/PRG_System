@@ -38,7 +38,7 @@ function Opcao({ chave, titulo, dica }: { chave: keyof Preferencias; titulo: str
  */
 export default function PerfilConfig({ aba, mudarAba, perfil, tema, escolherTema, visualSalvo, editarPerfil }: {
   aba: AbaPerfil; mudarAba: (a: AbaPerfil) => void
-  perfil: { id: string; apelido: string; avatar?: string; grupo?: string; visual?: unknown }
+  perfil: { id: string; apelido: string; avatar?: string; grupo?: string; visual?: unknown; usuario?: string }
   tema: Tema; escolherTema: (t: Tema) => void; visualSalvo: (v: Visual) => void; editarPerfil: () => void
 }) {
   const pref = usePreferencias()
@@ -86,9 +86,9 @@ export default function PerfilConfig({ aba, mudarAba, perfil, tema, escolherTema
         <span className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-(--ouro) bg-(--s-342749) text-2xl font-semibold">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {perfil.avatar ? <img src={perfil.avatar} alt="" className="h-full w-full object-cover" /> : perfil.apelido[0]?.toUpperCase()}</span>
-        <span className="min-w-0 flex-1"><span className="block text-lg font-bold">{perfil.apelido}</span><span className="block text-sm text-(--a-a99bbb)">{perfil.grupo || 'Aventureiro'}</span></span>
+        <span className="min-w-0 flex-1"><span className="block text-lg font-bold">{perfil.apelido}</span><span className="block text-sm text-(--a-a99bbb)">{perfil.usuario && <span data-meu-arroba className="mr-1.5 font-semibold text-(--a-d3adf0)">@{perfil.usuario}</span>}{perfil.grupo || 'Aventureiro'}</span></span>
         <div className="flex flex-wrap gap-2">
-          {NUVEM_ATIVA && <button type="button" onClick={editarPerfil} className="prg-botao prg-botao-primario"><Pencil size={16} /> Editar apelido e foto</button>}
+          {NUVEM_ATIVA && <button type="button" onClick={editarPerfil} className="prg-botao prg-botao-primario"><Pencil size={16} /> Editar apelido, @ e foto</button>}
           <Link href="/portal" className="prg-botao prg-botao-secundario"><UserRound size={16} /> Trocar aventureiro</Link>
         </div>
       </section>}

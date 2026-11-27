@@ -13,6 +13,7 @@ import { JanelaSenha, situacaoSenha } from '@/components/perfil/Senha'
 import AjudaTela from '@/components/AjudaTela'
 import { aplicarVisual, limparVisual } from '@/lib/visual'
 import LuaLogo from '@/components/LuaDinamica'
+import CantoDaPlataforma from '@/components/CantoDaPlataforma'
 
 type Perfil = { id: string; apelido: string; avatar?: string; grupo?: string; protegido?: boolean; visual?: unknown }
 const GRUPO_KEY = 'prg-grupo-v1'
@@ -290,7 +291,7 @@ export default function PortalAventureiros() {
   }
 
   return (
-    <main className="min-h-screen fundo-tema text-(--a-f4f0ff) px-4 py-5 sm:py-8">
+    <main className="min-h-screen fundo-tema text-(--a-f4f0ff) px-4 pb-20 pt-5 sm:pt-8">
       <div className="mx-auto max-w-6xl">
         <header className="flex items-center justify-between gap-3">
           <span className="relative flex items-center gap-2 font-bold tracking-wide text-lg sm:text-xl"><LuaLogo /><Link href="/portal">PRG System</Link><Link href="/cinema" aria-label="Cinema Secreto" className="absolute -top-4 right-0 h-4 w-12 rounded opacity-0 hover:opacity-100 focus-visible:opacity-100 text-xs text-violet-300">✦</Link></span>
@@ -512,6 +513,7 @@ export default function PortalAventureiros() {
           </section>
         </div>
       )}
+      <CantoDaPlataforma />
     </main>
   )
 }

@@ -48,7 +48,7 @@ export default function PerfilConfig({ aba, mudarAba, perfil, tema, escolherTema
       {ABAS_PERFIL.map(a => <button key={a.id} type="button" role="tab" aria-selected={aba === a.id} onClick={() => mudarAba(a.id)} className="prg-chip shrink-0 !px-4 !py-2 !text-sm">{a.icone} {a.nome}</button>)}
     </div>
     <div className="mt-5">
-      {aba === 'aparencia' && <Aparencia perfilId={perfil.id} inicial={limparVisual(perfil.visual)} tema={tema} escolherTema={escolherTema} salvo={visualSalvo} usuario={perfil.usuario} letra={perfil.apelido[0]?.toUpperCase()} />}
+      {aba === 'aparencia' && <Aparencia perfilId={perfil.id} inicial={limparVisual(perfil.visual)} tema={tema} escolherTema={escolherTema} salvo={visualSalvo} usuario={perfil.usuario} letra={perfil.apelido[0]?.toUpperCase()} avatar={perfil.avatar} />}
 
       {aba === 'jogabilidade' && <div className="space-y-4">
         <p className="rounded-2xl border border-(--a-55456e) bg-(--s-171325)/80 px-4 py-3 text-sm text-(--a-cfc0df)">Valem para este aparelho: dá para jogar com som no computador e em silêncio no celular. As fichas continuam 100% manuais em qualquer escolha.</p>

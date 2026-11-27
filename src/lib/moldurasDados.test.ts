@@ -6,13 +6,15 @@ import { limparVisual } from './visual'
 describe('molduras (v0.37.1)', () => {
   it('ids únicos e as livres liberadas para todos', () => {
     expect(new Set(MOLDURAS.map(m => m.id)).size).toBe(MOLDURAS.length)
-    expect(podeUsarMoldura('lua', { mestre: false })).toBe(true)
+    expect(podeUsarMoldura('lua', { mestre: false, criador: false })).toBe(true)
   })
-  it('a Coroa do Mestre só para quem mestra; a especial só para a lista', () => {
-    expect(podeUsarMoldura('mestre', { mestre: false })).toBe(false)
-    expect(podeUsarMoldura('mestre', { mestre: true })).toBe(true)
-    expect(podeUsarMoldura('leste', { mestre: true, usuario: 'qualquer_um' })).toBe(ESPECIAIS.includes('qualquer_um'))
-    expect(podeUsarMoldura('nao-existe', { mestre: true })).toBe(false)
+  it('Coroa só para quem mestrou, Criador só para quem criou sistema, homenagem só para a lista', () => {
+    expect(podeUsarMoldura('mestre', { mestre: false, criador: true })).toBe(false)
+    expect(podeUsarMoldura('mestre', { mestre: true, criador: false })).toBe(true)
+    expect(podeUsarMoldura('criador', { mestre: true, criador: false })).toBe(false)
+    expect(podeUsarMoldura('criador', { mestre: false, criador: true })).toBe(true)
+    expect(podeUsarMoldura('leste', { mestre: true, criador: true, usuario: 'qualquer_um' })).toBe(ESPECIAIS.includes('qualquer_um'))
+    expect(podeUsarMoldura('nao-existe', { mestre: true, criador: true })).toBe(false)
   })
 })
 
@@ -40,5 +42,18 @@ describe('visual guarda moldura e dado (v0.37.1)', () => {
   it('aceita só ids conhecidos', () => {
     expect(limparVisual({ moldura: 'chamas', dado: 'neon' })).toEqual({ moldura: 'chamas', dado: 'neon' })
     expect(limparVisual({ moldura: '<script>', dado: 42 })).toEqual({})
+  })
+})
+
+describe('arte das molduras (v0.37.2)', () => {
+  it('toda moldura tem arte, com ids únicos por instância', async () => {
+    const { MOLDURAS } = await import('./molduras')
+    const { arteDaMoldura } = await import('../components/perfil/molduras/arte')
+    for (const m of MOLDURAS) {
+      const a = arteDaMoldura(m.id, 'x1'), b = arteDaMoldura(m.id, 'x2')
+      expect(a.length).toBeGreaterThan(80)
+      for (const id of a.match(/id="([^"]+)"/g) ?? []) expect(b).not.toContain(id)
+    }
+    expect(arteDaMoldura('nao-existe', 'x')).toBe('')
   })
 })

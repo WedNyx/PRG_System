@@ -762,3 +762,21 @@ html[data-movimento="reduzido"] .constelacao-pronto .constelacao-forma { animati
 .constelacao[data-fundo="mapa"] .react-flow__edge-path { stroke-dasharray: 7 6 !important; }
 .constelacao[data-fundo="mapa"] .react-flow__edge:not(.animated) .react-flow__edge-path { stroke: #d94b3b !important; }
 .constelacao .react-flow { --xy-background-color: transparent; background: transparent; }
+
+/* Molduras de perfil v0.37.2: animações leves (CSS) do desenho; os efeitos pesados (canvas) ficam em components/perfil/molduras/efeitos.ts. */
+.moldura-arte .cintilar { transform-box: fill-box; transform-origin: center; animation: moldura-cintilar 2.8s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.moldura-arte :is(.frio-pulsa, .brasa-pulsa, .olho-d) { animation: moldura-pulsar 2.2s ease-in-out infinite; }
+.moldura-arte .brasa-pulsa { animation-duration: 1.4s; }
+.moldura-arte .gira-lento { transform-origin: 68px 68px; animation: moldura-girar 60s linear infinite; }
+.moldura-arte .leme { animation: moldura-girar 14s linear infinite; }
+.moldura-arte .ancora { transform-box: fill-box; transform-origin: 50% 0%; animation: moldura-balancar 3.2s ease-in-out infinite; }
+.moldura-arte .folha-viva { transform-box: fill-box; transform-origin: 50% 100%; animation: moldura-balancar 3.4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.moldura-arte .coroa-g { animation: moldura-flutuar 3s ease-in-out infinite; }
+.moldura-arte .runa-c { animation: moldura-pulsar 2.6s ease-in-out infinite; animation-delay: var(--d, 0s); }
+@keyframes moldura-cintilar { 0%, 100% { opacity: 0; transform: scale(.3); } 45% { opacity: 1; transform: scale(1); } }
+@keyframes moldura-pulsar { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@keyframes moldura-girar { to { transform: rotate(360deg); } }
+@keyframes moldura-balancar { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+@keyframes moldura-flutuar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.6px); } }
+@media (prefers-reduced-motion: reduce) { .moldura-arte * { animation: none !important; } }
+html[data-movimento="reduzido"] .moldura-arte * { animation: none !important; }

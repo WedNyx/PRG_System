@@ -8,6 +8,7 @@ const ok = (c, m) => { if (!c) { console.log('✘ ' + m); process.exitCode = 1 }
 ;(async () => {
   let r = await call(M, 'POST', 'campanhas', { nome: 'Mesa das Molduras', sistema: 'tormenta20', modeloPadrao: 'C' }); const cid = r.d.campanha.id
   r = await call(M, 'POST', `campanhas/${cid}/convites`, { usuario: 'jogador_sol' }); await call(J, 'POST', 'convites/' + r.d.convite.codigo, {})
+  await fetch((process.env.PRG_REST || 'http://localhost:3001/rest/v1') + `/prg_public_adventurers?id=eq.${M}`, { method: 'PATCH', headers: { 'content-type': 'application/json', apikey: process.env.KEY, Authorization: 'Bearer ' + process.env.KEY }, body: JSON.stringify({ minutos_mestrados: 20 }) })
   await call(M, 'PATCH', M, { visual: { moldura: 'mestre', dado: 'ouro' } }, '/api/aventureiros/')
   const b = await chromium.launch(); const erros = []
   const abrir = async (quem, disp, url) => {
@@ -18,7 +19,7 @@ const ok = (c, m) => { if (!c) { console.log('✘ ' + m); process.exitCode = 1 }
   // Jogador escolhe no celular
   let p = await abrir(J, devices['Pixel 7'], '/central?secao=perfil&aba=aparencia')
   const sec = p.locator('[data-escolher-moldura]'); await sec.scrollIntoViewIfNeeded()
-  ok(await sec.getByRole('button', { name: /Coroa do Mestre/ }).isDisabled() && await sec.getByRole('button', { name: /Escamas do Dragão/ }).isDisabled(), 'as especiais aparecem travadas para o jogador')
+  ok(await sec.getByRole('button', { name: /Coroa do Mestre/ }).isDisabled() && await sec.getByRole('button', { name: /Escamas do Dragão/ }).isDisabled() && await sec.getByRole('button', { name: /Criador de Mundos/ }).isDisabled(), 'as especiais aparecem travadas para o jogador')
   await sec.getByRole('button', { name: /Chamas/ }).click(); await p.waitForTimeout(400)
   await p.screenshot({ path: O + '/md-1-molduras.png' })
   const sd = p.locator('[data-escolher-dado]'); await sd.scrollIntoViewIfNeeded()

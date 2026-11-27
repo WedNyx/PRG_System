@@ -252,13 +252,19 @@ export const POST = rota<Ctx>(async (req, { params }) => {
       const aberta = b.aberta === true
       const mud: Record<string, unknown> = { sessao_aberta: aberta, sessao_aberta_em: aberta ? new Date().toISOString() : null }
       if (!aberta) {
-        // Ao encerrar, a música para para todo mundo.
-        const [c] = await rest<{ musica: Record<string, unknown>; sessao_aberta: boolean; sessao_aberta_em: string | null; mestre_id: string }[]>(`prg_campanhas?select=musica,sessao_aberta,sessao_aberta_em,mestre_id&id=eq.${q(cid)}`)
-        mud.musica = { ...(c?.musica ?? {}), tocando: false, pausado: false }
-        // v0.37.2: o tempo da sessão conta para o mestre (libera a Coroa do Mestre com 15 minutos).
-        if (c?.sessao_aberta && c.sessao_aberta_em) {
-          const min = Math.floor((Date.now() - Date.parse(c.sessao_aberta_em)) / 60_000)
-          if (min > 0) await rpc('prg_somar_minutos_mestrados', { p_id: c.mestre_id, p_min: min }).catch(() => {})
+        // Fecha de forma atômica (só se ainda estiver aberta): evita contar os minutos duas vezes se dois fecharem
+        // juntos (mestre e co-mestre) ou se a resposta se perder e o cliente tentar de novo (achado do Codex).
+        const [c] = await rest<{ musica: Record<string, unknown>; sessao_aberta_em: string | null; mestre_id: string }[]>(
+          `prg_campanhas?id=eq.${q(cid)}&sessao_aberta=eq.true&select=musica,sessao_aberta_em,mestre_id`,
+          { method: 'PATCH', prefer: 'return=representation', body: JSON.stringify({ sessao_aberta: false }) })
+        if (c) {
+          // A música para para todo mundo.
+          mud.musica = { ...(c.musica ?? {}), tocando: false, pausado: false }
+          // v0.37.2: o tempo da sessão conta para o mestre (libera a Coroa do Mestre com 15 minutos).
+          if (c.sessao_aberta_em) {
+            const min = Math.floor((Date.now() - Date.parse(c.sessao_aberta_em)) / 60_000)
+            if (min > 0) await rpc('prg_somar_minutos_mestrados', { p_id: c.mestre_id, p_min: min }).catch(() => {})
+          }
         }
       }
       await rest(`prg_campanhas?id=eq.${q(cid)}`, { method: 'PATCH', body: JSON.stringify(mud) })

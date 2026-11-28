@@ -54,6 +54,8 @@
 [data-tema="classico"] { --cartao-alfa: 1; --vidro: 0px; }
 [data-fonte="elegante"] { --fonte-titulo: var(--font-cormorant), Georgia, serif; }
 [data-fonte="simples"] { --fonte-titulo: var(--font-inter), var(--font-geist-sans), system-ui, sans-serif; }
+/* v0.37.3: a barra de rolagem tem espaço reservado sempre — trocar de uma tela curta para uma comprida não “dá zoom” no fundo. */
+html { scrollbar-gutter: stable; }
 html[data-tamanho="p"] { font-size: 15px; }
 html[data-tamanho="g"] { font-size: 17.5px; }
 

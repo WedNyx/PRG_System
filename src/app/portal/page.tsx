@@ -291,6 +291,16 @@ export default function PortalAventureiros() {
     finally { setProcessando(false) }
   }
 
+  /**
+   * v0.37.3: só ao entrar de verdade (sem senha, aparelho lembrado ou senha certa) o perfil fica escolhido
+   * e a aparência dele (tema, cores, tamanho do texto) passa a valer. Antes, valia já no toque, mesmo sem a senha.
+   */
+  function entrar(e: NonNullable<typeof entrando>) {
+    try { localStorage.setItem(SELECTED_KEY, e.perfil.id) } catch {}
+    if (e.perfil.visual !== undefined) aplicarVisual(e.perfil.id, limparVisual(e.perfil.visual))
+    setEntrando(e)
+  }
+
   return (
     <main className="min-h-screen fundo-tema text-(--a-f4f0ff) px-4 pb-20 pt-5 sm:pt-8">
       <div className="mx-auto max-w-6xl">
@@ -354,9 +364,6 @@ export default function PortalAventureiros() {
                 <Link href={'/central?personagem=' + encodeURIComponent(perfil.id)}
                   onClick={event => {
                     event.preventDefault()
-                    try { localStorage.setItem(SELECTED_KEY, perfil.id) } catch {}
-                    // A aparência do perfil já vale na transição para a Central.
-                    if (perfil.visual !== undefined) aplicarVisual(perfil.id, limparVisual(perfil.visual))
                     // Volta para um convite aberto antes de escolher o perfil (somente caminhos internos).
                     const depois = new URLSearchParams(window.location.search).get('depois')
                     const destino = depois && /^\/convite\/[A-Za-z0-9-]{1,20}$/.test(depois) ? depois : '/central?personagem=' + encodeURIComponent(perfil.id)
@@ -365,11 +372,11 @@ export default function PortalAventureiros() {
                     const caixa = event.currentTarget.querySelector('div')?.getBoundingClientRect() ?? event.currentTarget.getBoundingClientRect()
                     if (perfil.protegido) {
                       // Perfil com senha: se este aparelho ainda não está lembrado, pede a senha antes.
-                      situacaoSenha(perfil.id).then(s => { if (s.conectado) setEntrando({ perfil, origem: caixa, destino }); else setComSenha({ perfil, origem: caixa, destino }) })
+                      situacaoSenha(perfil.id).then(s => { if (s.conectado) entrar({ perfil, origem: caixa, destino }); else setComSenha({ perfil, origem: caixa, destino }) })
                         .catch(() => setComSenha({ perfil, origem: caixa, destino }))
                       return
                     }
-                    setEntrando({ perfil, origem: caixa, destino })
+                    entrar({ perfil, origem: caixa, destino })
                   }}
                   className="flex w-full flex-col items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-(--a-b99bff)">
                   <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border-2 border-(--a-51466a) bg-(--s-28233e) text-5xl font-bold text-(--a-b99bff) shadow-xl transition-all duration-200 group-hover:scale-105 group-hover:border-(--a-b99bff) group-hover:shadow-[0_0_24px_#7654bb66]">
@@ -415,7 +422,7 @@ export default function PortalAventureiros() {
 
       {vendoSaude && senhaAdmin && <SaudePlataforma senha={senhaAdmin} fechar={() => setVendoSaude(false)} />}
 
-      {comSenha && <JanelaSenha perfil={comSenha.perfil} fechar={() => setComSenha(null)} aoEntrar={() => { setEntrando(comSenha); setComSenha(null) }} />}
+      {comSenha && <JanelaSenha perfil={comSenha.perfil} fechar={() => setComSenha(null)} aoEntrar={() => { entrar(comSenha); setComSenha(null) }} />}
       {entrando && <TransicaoPerfil perfil={entrando.perfil} origem={entrando.origem} aoTerminar={() => router.push(entrando.destino)} />}
 
       {pedindoSenha && (

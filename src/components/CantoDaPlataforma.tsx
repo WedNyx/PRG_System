@@ -15,15 +15,17 @@ export const REPOSITORIO = 'https://github.com/WedNyx/PRG_System'
  */
 export default function CantoDaPlataforma({ aventureiroId, acimaDaBarra }: { aventureiroId?: string; acimaDaBarra?: boolean }) {
   const [aberto, setAberto] = useState<'homenagem' | 'feedback' | null>(null)
+  // v0.37.3: desenhado direto no <body> (NaTela). Dentro da página, a animação de entrada e os efeitos de vidro
+  // faziam o “fixo no canto” virar “rola junto com a página”.
   return <>
-    <div data-canto-plataforma className={'fixed right-3 z-30 flex items-center gap-2 ' + (acimaDaBarra ? 'bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4' : 'bottom-4')}>
+    <NaTela><div data-canto-plataforma className={'fixed right-3 z-30 flex items-center gap-2 ' + (acimaDaBarra ? 'bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4' : 'bottom-4')}>
       <button type="button" onClick={() => setAberto('homenagem')} data-homenagem-leste
         className="inline-flex items-center gap-1.5 rounded-full border border-(--a-8b68c4)/70 bg-(--s-171325)/90 px-3 py-1.5 text-[11px] font-semibold text-(--a-d3adf0) shadow-lg backdrop-blur hover:bg-(--s-2b2140)">
         <Heart size={12} aria-hidden /> Homenagem a Leste</button>
       {aventureiroId && <button type="button" onClick={() => setAberto('feedback')} aria-label="Mandar feedback" title="Mandar feedback" data-abrir-feedback
         className="flex h-10 w-10 items-center justify-center rounded-full border border-(--a-8b68c4) bg-(--a-7654bb) text-white shadow-lg hover:bg-(--a-8a67ce)">
         <MessageCircleHeart size={19} aria-hidden /></button>}
-    </div>
+    </div></NaTela>
     {aberto && <NaTela><div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-3 sm:items-center" onMouseDown={e => { if (e.target === e.currentTarget) setAberto(null) }}>
       <div role="dialog" aria-modal="true" aria-labelledby="canto-titulo" onKeyDown={e => { if (e.key === 'Escape') setAberto(null) }}
         className="w-full max-w-md rounded-2xl border border-(--a-62527e) bg-(--s-19172c) p-5 text-(--a-f2ebff) shadow-2xl">

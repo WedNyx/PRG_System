@@ -27,6 +27,15 @@ export function versaoValida(versao: string): boolean {
 
 export const VERSOES: Versao[] = [
   {
+    versao: '0.37.3', data: '2026-11-28',
+    titulo: 'Três correções que o Leste achou',
+    itens: [
+      'O fundo não “dá zoom” mais ao passar de uma tela curta para uma comprida (o espaço da barra de rolagem agora fica sempre reservado).',
+      'Os botões do canto (Homenagem a Leste e feedback) ficam presos no canto da tela também nas páginas compridas.',
+      'No portal, perfil com senha só aplica o tema, as cores e o tamanho do texto depois que a senha é aceita (antes valia já no toque).',
+    ],
+  },
+  {
     versao: '0.37.2', data: '2026-11-28',
     titulo: 'Molduras com cara de verdade',
     itens: [
